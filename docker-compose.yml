@@ -1,0 +1,107 @@
+version: "3.9"
+
+# ============================================================================
+# Local Development Compose for insilo
+# Runs the entire stack on a developer machine.
+# Production deployment happens via Olares manifest, not this file.
+# ============================================================================
+
+services:
+  # ----- Frontend ---------------------------------------------------------
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+  # ----- Backend API ------------------------------------------------------
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - WHISPER_URL=http://whisper:8001
+      - OLLAMA_URL=http://ollama:11434
+      - EMBEDDINGS_URL=http://embeddings:8002
+    depends_on:
+      - redis
+      - whisper
+      - ollama
+      - embeddings
+
+  # ----- Celery Worker ----------------------------------------------------
+  worker:
+    build: ./backend
+    command: celery -A app.workers.celery_app worker -l info --concurrency=2
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - WHISPER_URL=http://whisper:8001
+      - OLLAMA_URL=http://ollama:11434
+      - EMBEDDINGS_URL=http://embeddings:8002
+    depends_on:
+      - redis
+      - whisper
+      - ollama
+
+  # ----- AI Services ------------------------------------------------------
+  whisper:
+    build: ./backend/services/whisper
+    ports:
+      - "8001:8001"
+    volumes:
+      - whisper-models:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  embeddings:
+    build: ./backend/services/embeddings
+    ports:
+      - "8002:8002"
+    volumes:
+      - embeddings-models:/models
+
+  # ----- Infrastructure ---------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+# Supabase wird separat via supabase CLI (`supabase start`) gestartet,
+# nicht hier — das gibt uns Auth + Storage + Realtime aus einer Hand.
+
+volumes:
+  whisper-models:
+  ollama-data:
+  embeddings-models:
+  redis-data:

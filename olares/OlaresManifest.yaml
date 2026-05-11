@@ -1,0 +1,226 @@
+# ============================================================================
+# Olares App Manifest for insilo
+#
+# This manifest describes the application that runs on the customer's Olares
+# device. It declares required resources, container topology, persistence
+# volumes, and ingress configuration.
+#
+# Reference: https://docs.olares.com/developer/develop/
+# ============================================================================
+
+apiVersion: app.bytetrade.io/v1alpha1
+kind: OlaresApp
+
+metadata:
+  name: insilo
+  title: insilo
+  version: 0.1.0
+  description: "On-Premise Meeting-Intelligenz für deutsche Mittelständler"
+  publisher: kaivo.studio
+  categories:
+    - Productivity
+    - AI
+  icon: ./icons/app-icon.png
+
+spec:
+  versionName: "0.1.0"
+
+  fullDescription: |
+    insilo ist eine vollständig on-premise betriebene Lösung für
+    Meeting-Aufnahme, Transkription und intelligente Zusammenfassung.
+
+    Kernversprechen: Keine Daten verlassen jemals Ihre Olares-Box.
+    Keine Cloud-Dienste, keine Telemetrie, keine externen AI-Calls.
+
+    Die App nutzt das mitgelieferte lokale LLM (Qwen 2.5 14B), Whisper-large-v3
+    für Transkription und BGE-M3 für semantische Suche.
+
+  language:
+    - de
+    - en  # planned
+
+  # ---- Resource Requirements ------------------------------------------------
+  requiredMemory: 64Gi
+  requiredCPU: 8
+  requiredDisk: 250Gi
+  requiredGPU:
+    nvidia.com/gpu: 1
+
+  # ---- Middleware Dependencies ----------------------------------------------
+  middleware:
+    postgres:
+      username: insilo_admin
+      databases:
+        - name: insilo
+          extensions:
+            - vector
+            - pg_trgm
+            - uuid-ossp
+            - pgcrypto
+
+    redis:
+      namespace: insilo
+
+  # ---- Storage --------------------------------------------------------------
+  persistence:
+    - name: audio-storage
+      path: /data/audio
+      size: 100Gi
+    - name: models
+      path: /data/models
+      size: 50Gi
+    - name: uploads-temp
+      path: /data/uploads
+      size: 20Gi
+
+  # ---- Permissions ----------------------------------------------------------
+  permission:
+    appData: true
+    sysData: false
+    userData:
+      - "*"  # Nur Daten der eigenen Mandanten, RLS geregelt
+
+# ---- Containers ------------------------------------------------------------
+containers:
+  - name: frontend
+    image: ghcr.io/kaivo-studio/insilo-frontend:0.1.0
+    ports:
+      - containerPort: 3000
+        protocol: TCP
+    env:
+      - name: NODE_ENV
+        value: production
+      - name: NEXT_PUBLIC_SUPABASE_URL
+        value: $(SUPABASE_URL)
+      - name: NEXT_PUBLIC_API_URL
+        value: "http://backend:8000"
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 500m
+      limits:
+        memory: 1Gi
+        cpu: "1"
+
+  - name: backend
+    image: ghcr.io/kaivo-studio/insilo-backend:0.1.0
+    ports:
+      - containerPort: 8000
+        protocol: TCP
+    env:
+      - name: SUPABASE_URL
+        value: $(SUPABASE_URL)
+      - name: REDIS_URL
+        value: "redis://redis:6379/0"
+      - name: WHISPER_URL
+        value: "http://whisper:8001"
+      - name: OLLAMA_URL
+        value: "http://ollama:11434"
+      - name: EMBEDDINGS_URL
+        value: "http://embeddings:8002"
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: "1"
+      limits:
+        memory: 4Gi
+        cpu: "2"
+
+  - name: worker
+    image: ghcr.io/kaivo-studio/insilo-backend:0.1.0
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "-l", "info"]
+    env:
+      # ... gleich wie backend ...
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: "1"
+      limits:
+        memory: 4Gi
+        cpu: "2"
+
+  - name: whisper
+    image: ghcr.io/kaivo-studio/insilo-whisper:0.1.0
+    ports:
+      - containerPort: 8001
+        protocol: TCP
+    env:
+      - name: WHISPER_MODEL
+        value: large-v3
+      - name: WHISPER_DEVICE
+        value: cuda
+    volumeMounts:
+      - name: models
+        mountPath: /models
+    resources:
+      requests:
+        memory: 8Gi
+        cpu: "2"
+        nvidia.com/gpu: "1"
+      limits:
+        memory: 16Gi
+        cpu: "4"
+        nvidia.com/gpu: "1"
+
+  - name: ollama
+    image: ollama/ollama:latest
+    ports:
+      - containerPort: 11434
+        protocol: TCP
+    volumeMounts:
+      - name: models
+        mountPath: /root/.ollama
+    resources:
+      requests:
+        memory: 16Gi
+        cpu: "2"
+        nvidia.com/gpu: "1"
+      limits:
+        memory: 32Gi
+        cpu: "4"
+        nvidia.com/gpu: "1"
+
+  - name: embeddings
+    image: ghcr.io/kaivo-studio/insilo-embeddings:0.1.0
+    ports:
+      - containerPort: 8002
+        protocol: TCP
+    volumeMounts:
+      - name: models
+        mountPath: /models
+    resources:
+      requests:
+        memory: 4Gi
+        cpu: "1"
+      limits:
+        memory: 8Gi
+        cpu: "2"
+
+# ---- Public Entrance (User-Facing) -----------------------------------------
+entrances:
+  - name: insilo-app
+    host: insilo
+    port: 3000
+    title: "insilo"
+    icon: ./icons/app-icon.png
+    authLevel: private  # nur eingeloggte Olares-User
+    invisible: false
+
+# ---- Network Policies ------------------------------------------------------
+# Strict: no outbound except optional update channel (controlled separately)
+networkPolicies:
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: insilo
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8001
+        - protocol: TCP
+          port: 8002
+        - protocol: TCP
+          port: 11434
+    # NO general internet egress

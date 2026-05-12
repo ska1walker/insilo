@@ -1,14 +1,15 @@
 import type { Config } from "tailwindcss";
 
-export default {
+const config: Config = {
   content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx,mdx}",
+    "./app/**/*.{ts,tsx,mdx}",
+    "./components/**/*.{ts,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
+        // Primärfarben — sparsam nutzen
         white: "#FFFFFF",
         black: "#0A0A0A",
         gold: {
@@ -17,50 +18,64 @@ export default {
           deep: "#9C8147",
           faint: "#F5EDD9",
         },
+
+        // Flächen
         surface: {
           soft: "#FAFAF7",
           warm: "#F5F3EE",
         },
+
+        // Borders
         border: {
           subtle: "#E8E6E1",
           strong: "#D4D1CA",
         },
+
+        // Text-Hierarchie
         text: {
           primary: "#0A0A0A",
           secondary: "#4A4842",
           meta: "#737065",
           disabled: "#A8A599",
         },
+
+        // Status
         recording: "#C84A3F",
         success: "#4A7C59",
         warning: "#B8893C",
         error: "#A33A2F",
       },
+
       fontFamily: {
         display: ['"Lexend Deca"', "sans-serif"],
         body: ['"Inter"', "sans-serif"],
         mono: ['"JetBrains Mono"', "monospace"],
       },
-      spacing: {
-        "0.5": "0.125rem",
-        "1": "0.25rem",
-        "2": "0.5rem",
-        "3": "0.75rem",
-        "4": "1rem",
-        "6": "1.5rem",
-        "8": "2rem",
-        "12": "3rem",
-        "16": "4rem",
-        "24": "6rem",
-        "32": "8rem",
+
+      fontSize: {
+        // Type-Skala aus docs/DESIGN.md
+        "h1": ["clamp(2.5rem, 5vw, 3.5rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "h2": ["2rem", { lineHeight: "1.2", letterSpacing: "-0.015em" }],
+        "h3": ["1.5rem", { lineHeight: "1.3", letterSpacing: "-0.01em" }],
+        "h4": ["1.125rem", { lineHeight: "1.4" }],
+        "body-lg": ["1.0625rem", { lineHeight: "1.6" }],
+        "body": ["1rem", { lineHeight: "1.6" }],
+        "body-sm": ["0.875rem", { lineHeight: "1.5" }],
+        "meta": ["0.8125rem", { lineHeight: "1.4", letterSpacing: "0.01em" }],
+        "label": ["0.6875rem", { lineHeight: "1.2", letterSpacing: "0.08em" }],
       },
+
+      spacing: {
+        // 8px-Grid (Tailwind nutzt 4px-Grid; wir mappen entsprechend)
+      },
+
       borderRadius: {
         sm: "4px",
         md: "6px",
         lg: "8px",
         xl: "12px",
-        full: "9999px",
       },
+
       boxShadow: {
         xs: "0 1px 2px rgba(10, 10, 10, 0.04)",
         sm: "0 2px 4px rgba(10, 10, 10, 0.05)",
@@ -68,24 +83,34 @@ export default {
         lg: "0 8px 24px rgba(10, 10, 10, 0.08)",
         gold: "0 4px 16px rgba(201, 169, 97, 0.15)",
       },
+
       transitionTimingFunction: {
-        "out-soft": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",
       },
+
+      transitionDuration: {
+        fast: "150ms",
+        medium: "250ms",
+      },
+
       animation: {
         "pulse-line": "pulse-line 2.4s ease-in-out infinite",
         "pulse-gold": "pulse-gold 2s ease-in-out infinite",
       },
+
       keyframes: {
         "pulse-line": {
           "0%, 100%": { opacity: "0.4" },
           "50%": { opacity: "1" },
         },
         "pulse-gold": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(201, 169, 97, 0.4)" },
-          "50%": { boxShadow: "0 0 0 16px rgba(201, 169, 97, 0)" },
+          "0%, 100%": { transform: "scale(1)", boxShadow: "0 4px 16px rgba(201, 169, 97, 0.15)" },
+          "50%": { transform: "scale(1.02)", boxShadow: "0 4px 20px rgba(201, 169, 97, 0.3)" },
         },
       },
     },
   },
   plugins: [],
-} satisfies Config;
+};
+
+export default config;

@@ -1,14 +1,18 @@
+# ============================================================================
+# Insilo - .gitignore
+# ============================================================================
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
 # Dependencies
 node_modules/
-.pnp
+.pnp/
 .pnp.js
-
-# Build outputs
-.next/
-out/
-dist/
-build/
-*.tsbuildinfo
+.yarn/install-state.gz
 
 # Python
 __pycache__/
@@ -16,54 +20,73 @@ __pycache__/
 *$py.class
 *.so
 .Python
-venv/
 .venv/
+venv/
+env/
 *.egg-info/
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Environment
-.env
-.env.local
-.env.*.local
-!.env.example
+# Next.js
+.next/
+out/
+build/
+dist/
+.turbo/
 
-# Editor
+# Vercel (nicht relevant für Insilo, aber Vorsicht)
+.vercel
+
+# IDE & Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
-# Testing
-coverage/
-.nyc_output
+# Lokale Daten (Audio etc. niemals committen!)
+data/
+cache/
+uploads/
+*.wav
+*.mp3
+*.webm
+*.m4a
+*.ogg
 
-# Supabase local
-supabase/.branches
-supabase/.temp
+# Datenbank-Dumps
+*.sql.gz
+*.dump
+*.backup
 
-# Docker
-.docker/
+# Olares-Pakete (werden gebaut, nicht committed)
+*.tgz
+olares-build/
+insilo-build/
 
-# Models (too large for git)
-data/models/
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS
+.DS_Store
+desktop.ini
+
+# Models (gross, werden nicht committed)
 *.gguf
 *.bin
+*.pt
 *.safetensors
-
-# Production builds for Olares
-*.olares
-olares-package-*.tar.gz
-
-# Audit and audio data (NEVER commit user data)
-data/audio/
-data/uploads/
-data/backups/
+models/

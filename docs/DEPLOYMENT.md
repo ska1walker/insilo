@@ -1,278 +1,241 @@
 # Deployment
 
-> Wie das Produkt auf eine Olares-Box kommt und wie es dort aktualisiert wird.
+> Wie Insilo auf eine Olares-Box kommt — drei Wege.
 
 ---
 
 ## 1. Deployment-Modi
 
-### Modus A — Vorkonfigurierte Box (Standard)
+### Modus A — Markt-Installation (Standard, Phase 5+)
 
-kaivo.studio liefert eine **vorkonfigurierte Olares One** beim Kunden aus.
+Insilo ist im offiziellen Olares-Markt veröffentlicht. Der Kunde:
 
-**Vorbereitung im Werkstatt-Modus:**
-1. Olares One ausgepackt, mit Netzteil verbunden
-2. Olares OS auf neueste stabile Version updaten
-3. insilo-App-Paket installieren (über privates Olares-Repository)
-4. Initial-Migration: Default-Org, erster Admin-User
-5. Modelle vorladen: Whisper large-v3, Qwen 2.5 14B Q4, BGE-M3
-6. Health-Check ausführen
-7. Box wird in spezielle Versand-Verpackung verpackt
+1. Öffnet Olares-Desktop
+2. Geht zu **Market** → sucht "Insilo"
+3. Klickt **Install**
+4. Akzeptiert Permissions
+5. Wartet auf Installation (~5-10 Min für Modell-Pulls)
+6. App erscheint als Desktop-Icon
 
-**Vor-Ort beim Kunden:**
-1. Box ans Stromnetz und Netzwerk anschließen
-2. Per QR-Code in der Admin-UI: Box im lokalen DNS registrieren (z.B. `meeting.kanzlei-mueller.de`)
-3. TLS-Zertifikat wird automatisch ausgestellt (via Let's Encrypt oder eigener interner CA)
-4. Admin loggt sich erstmals ein, Passwort ändern
-5. Weitere User anlegen
-6. Schulung (2-3 Stunden vor Ort)
+**Vorteile:**
+- Update-Pfad via Markt eingebaut
+- Vom Kunden selbst durchführbar
+- Niedrige Vertriebskosten
 
-### Modus B — Bring-Your-Own-Box
+**Voraussetzung:** Insilo muss im Markt veröffentlicht und freigegeben sein.
 
-Kunde hat bereits eine Olares-fähige Hardware. insilo-App-Paket wird über das private Repository installiert.
+### Modus B — Custom Chart Upload (für Pilotphasen)
 
-### Modus C — Cloud-Variante (NICHT angeboten)
+Solange Markt-Release noch nicht erfolgt ist, oder für Custom-Builds:
 
-Wird bewusst nicht angeboten — wäre Vertragsbruch mit dem Kernversprechen.
+1. **Market** → **My Olares** → **Upload custom chart**
+2. `.tgz`-Datei auswählen
+3. Wartung des Linter-Checks
+4. **Install now**
 
----
+**Wann genutzt:** Pilotkunden vor Markt-Release, kundenspezifische Builds.
 
-## 2. Olares-App-Manifest
+### Modus C — Studio-Test (Entwicklung)
 
-Die App wird gemäß Olares-App-Spezifikation paketiert. Vereinfachtes Manifest:
+Während der Entwicklung läuft Insilo in Olares Studio:
 
-```yaml
-# olares/OlaresManifest.yaml
-apiVersion: app.bytetrade.io/v1alpha1
-metadata:
-  name: insilo
-  title: insilo
-  version: 0.1.0
-  description: "On-Premise Meeting-Intelligenz"
-  publisher: kaivo.studio
-  categories:
-    - Productivity
-    - AI
-spec:
-  versionName: "0.1.0"
-  fullDescription: |
-    Datensouveräne Meeting-Aufnahme, Transkription und Analyse —
-    vollständig auf der eigenen Hardware.
+1. **Studio** → **Create a new application**
+2. **Port your own container to Olares**
+3. Image, Port, Env, Volumes konfigurieren
+4. Click **Create**
+5. Test mit **Preview**
 
-  requiredMemory: 64Gi
-  requiredCPU: 8
-  requiredDisk: 200Gi
-  requiredGPU:
-    nvidia.com/gpu: 1
-
-  options:
-    appScope:
-      clusterScoped: false
-      appRef: []
-
-  middleware:
-    postgres:
-      username: insilo_admin
-      databases:
-        - name: insilo
-          extensions:
-            - vector
-            - pg_trgm
-            - uuid-ossp
-    redis:
-      namespace: insilo
-
-  permission:
-    appData: true
-    sysData: false
-
-entrances:
-  - name: insilo-app
-    host: insilo
-    port: 3000
-    title: "insilo"
-    icon: /icons/app-icon.png
-    authLevel: private
-```
+**Apps haben `-dev`-Suffix.** Nur für Entwicklung/Tests, nicht für Produktivnutzung.
 
 ---
 
-## 3. Container-Topologie
+## 2. Werkstatt-Modus (Vorkonfiguration)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    insilo-namespace                         │
-│                                                             │
-│  Frontend (Next.js)        ──→  Port 3000  → Olares Ingress │
-│  Backend (FastAPI)         ──→  Port 8000  → Internal       │
-│  Celery Worker (×2)        ──→  No port (background)        │
-│  Whisper Service (FastAPI) ──→  Port 8001  → Internal, GPU  │
-│  Ollama                    ──→  Port 11434 → Internal, GPU  │
-│  BGE Embedding Service     ──→  Port 8002  → Internal       │
-│                                                             │
-│  Supabase Stack:                                            │
-│  ├─ PostgreSQL 16          (Olares-managed Middleware)      │
-│  ├─ GoTrue (Auth)          ──→  Port 9999                   │
-│  ├─ Realtime               ──→  Port 4000                   │
-│  ├─ Storage                ──→  Port 5000                   │
-│  └─ PostgREST              ──→  Port 3001                   │
-│                                                             │
-│  Redis                     (Olares-managed Middleware)      │
-│                                                             │
-│  Persistence-Volumes:                                       │
-│  ├─ /data/audio            (Audio-Originale)                │
-│  ├─ /data/models           (Whisper, Qwen, BGE)             │
-│  └─ /data/uploads          (Temp-Uploads)                   │
-└─────────────────────────────────────────────────────────────┘
-```
+Bei Verkauf liefern wir **vorkonfigurierte** Olares-Boxen:
 
----
-
-## 4. Erstinstallation & Model-Download
-
-Beim ersten Start der App müssen die KI-Modelle heruntergeladen werden. Das passiert im Werkstatt-Modus mit Internet-Verbindung, **nicht** beim Kunden.
+### Schritte beim Hersteller (kaivo.studio Werkstatt)
 
 ```bash
-# Whisper
-huggingface-cli download Systran/faster-whisper-large-v3 \
-  --local-dir /data/models/whisper-large-v3
+# 1. Olares-Box auspacken, Strom + Netz anschließen
+# 2. Olares-OS auf aktuellen Stand updaten
+sudo olares-cli upgrade
 
-# Qwen 2.5 14B
-ollama pull qwen2.5:14b-instruct-q4_K_M
+# 3. Insilo aus Markt installieren
+# (via Olares-UI: Market → Insilo → Install)
 
-# BGE-M3
-huggingface-cli download BAAI/bge-m3 \
-  --local-dir /data/models/bge-m3
+# 4. KI-Modelle vorladen (sonst beim ersten Kundenstart langes Warten)
+#    Diese Modelle landen in /app/cache des insilo-Namespaces
+docker exec insilo-ollama ollama pull qwen2.5:14b-instruct-q4_K_M
+
+# 5. Initial-Migration durchführen
+#    (geschieht automatisch beim ersten App-Start)
+
+# 6. Erstadmin-Account anlegen
+#    Olares-Admin → Users → Create user
+
+# 7. Health-Checks ausführen
+curl https://<insilo-url>/health
 ```
 
-**Wichtig:** Nach Modell-Download wird die Box bewusst vom Internet getrennt, bevor sie zum Kunden ausgeliefert wird (außer Kunde wählt Auto-Update-Modus).
+### Beim Versand
+
+- Box wird per Einschreiben oder Spedition geliefert
+- Verschlusssiegel-Aufkleber zur Manipulationserkennung
+- Versiegelter Briefumschlag mit Initial-Passwort
+- Quick-Start-Karte mit URL und Login-Hinweisen
 
 ---
 
-## 5. Update-Mechanismus
+## 3. Vor-Ort-Installation beim Kunden
 
-### Modus 1: Auto-Pull (Default)
+**Zeitbedarf:** 2-4 Stunden vor Ort.
 
 ```
-┌────────────┐    täglich, 03:00 Uhr   ┌──────────────────────┐
-│  Olares-   │ ─────────────────────→ │ updates.kaivo.studio │
-│  Box       │ ←───────────────────── │  (Vercel-Edge)        │
-└────────────┘    Version-Manifest    └──────────────────────┘
-
-Falls neue Version verfügbar:
-1. Download des signierten Update-Pakets
-2. Signatur-Validierung (Cosign + öffentlicher Key)
-3. Stage: in /opt/insilo/staging
-4. Nächstes Wartungsfenster (Kunde-konfigurierbar):
-   - Active Connections wartens lassen
-   - Migrations ausführen
-   - Container neustarten (Rolling)
-5. Health-Checks
-6. Bei Erfolg: Promote staging → production
-7. Bei Fehler: Rollback auf Vorgängerversion
+1. Box ans Stromnetz + LAN anschließen
+2. Box hochfahren lassen (ca. 5 Min)
+3. Im lokalen DNS Eintrag setzen: insilo.kanzlei-mueller.de → Box-IP
+4. (Optional) Cloudflare Tunnel konfigurieren für Außenzugriff
+5. Admin-Login mit versiegeltem Passwort
+6. Passwort ändern (Olares-Settings)
+7. Weitere User in Olares anlegen
+8. Insilo-App öffnen, durch Onboarding klicken
+9. Erste Test-Aufnahme machen
+10. Schulungs-Workshop (1-2 Stunden) mit den Schlüsselnutzern
+11. Übergabeprotokoll unterschreiben
 ```
 
-**Was wird übertragen:** Container-Images + Migrations + Manifest. **Niemals** Kundendaten in Gegenrichtung.
+**Was der Kunde danach selbst kann:**
+- Neue Mitarbeiter anlegen
+- Templates anpassen
+- Aufbewahrungsfristen konfigurieren
+- Audit-Log einsehen
 
-### Modus 2: Manuelle Freigabe
-
-Box meldet "Update verfügbar" in der Admin-UI. Admin entscheidet aktiv. Sonst identisch zu Modus 1.
-
-### Modus 3: Air-Gapped
-
-Keine Outbound-Verbindung. kaivo.studio sendet:
-- Signiertes Update-Paket auf USB-Stick per Einschreiben
-- Oder: über SFTP zu einer kunden-betriebenen DMZ-Maschine
-
-Kunde-Admin importiert über die Admin-UI: "Update aus Datei einspielen".
+**Was den kaivo.studio Support braucht:**
+- Größere Konfigurationsänderungen
+- Migration zu anderer Version
+- Performance-Tuning bei Last
+- Recovery aus Backup
 
 ---
 
-## 6. Backup-Strategie
+## 4. Update-Pfad
 
-**Box-seitig (Kunde-Verantwortung):**
-- Olares hat eingebautes Velero-Backup
+### Wenn Insilo im Markt ist
+
+1. Wir laden neue Version (`.tgz`) in den Markt hoch
+2. Olares-Box meldet "Update verfügbar"
+3. Kunde-Admin entscheidet: jetzt oder zu Wartungszeit
+4. Olares orchestriert Rolling-Update aller Container
+5. Nach Health-Check: alte Version wird verworfen
+6. Bei Fehler: automatischer Rollback
+
+### Für Pilotkunden (vor Markt-Release)
+
+1. Wir schicken `.tgz` per SFTP oder USB-Stick (signiert)
+2. Kunde-Admin lädt es via **Upload custom chart** hoch
+3. Sonst identisch zu Markt-Update
+
+### Niemals automatisch
+
+Wir machen niemals Auto-Updates ohne Kunden-Einwilligung. Das wäre Vertrauensbruch.
+
+---
+
+## 5. Backup-Strategie
+
+### Olares-seitig (Kunde-Verantwortung)
+
+- Olares hat eingebautes **Velero**
 - Empfohlene Frequenz: täglich inkrementell, wöchentlich voll
-- Backup-Ziel: Kunde-eigener NAS oder verschlüsselter S3-Bucket
+- Backup-Ziel: Kunde-eigener NAS oder verschlüsselter S3-Bucket (extern)
 - **NIEMALS** automatisches Backup in kaivo.studio-Infrastruktur
 
-**App-seitig:**
+### Insilo-spezifisch
+
 - DB-Dump-Funktion in der Admin-UI (manuell)
 - Export von Meeting-Daten als ZIP (Audio + Transkript + Notiz)
-- Vor jeder Major-Update wird automatisch ein Restore-Point erstellt
+- Vor jedem Major-Update wird automatisch ein Restore-Point erstellt
+- Audio-Originale in MinIO werden vom Olares-Velero erfasst
 
 ---
 
-## 7. Remote-Support
+## 6. Remote-Support
 
-**Aktivierungsflow (Kunde-Seite):**
+### Aktivierungsflow
 
-1. Admin geht in Settings → Support
-2. Klickt "Remote-Support aktivieren"
-3. System generiert einmaligen Token, gültig für 24h
-4. Tailscale-Verbindung zu kaivo.studio-Support-Server wird aufgebaut
-5. Verbindung erscheint im Audit-Log
-6. Nach Abschluss: Admin deaktiviert manuell (oder Auto-Ablauf nach 24h)
+1. Kunde-Admin: Settings → Support → "Remote-Support aktivieren"
+2. System generiert Einmal-Token (24h gültig)
+3. Tailscale-Verbindung zu kaivo.studio-Support-Server wird aufgebaut
+4. Audit-Log: Eintrag mit Support-Session-ID
+5. Support-Mitarbeiter loggt sich ein
+6. Nach Abschluss: Admin deaktiviert (oder Auto-Ablauf)
 
-**Während aktiv:**
-- Support-Mitarbeiter sieht NUR Logs und kann Container-Commands ausführen
+### Während aktiv
+
+- Support-Mitarbeiter sieht NUR Logs + Container-Status
 - KEIN direkter DB-Zugriff auf User-Daten
 - Jede Aktion wird im Audit-Log dokumentiert
 
 ---
 
-## 8. Monitoring & Health
+## 7. Monitoring
 
-**Auf der Box (lokal):**
-- Olares-Dashboard zeigt: CPU, GPU, RAM, Disk, Network
-- App-spezifische Health-Endpoints:
-  - `/health/api` — Backend erreichbar
-  - `/health/db` — PostgreSQL erreichbar
-  - `/health/whisper` — Transkriptions-Service bereit
+### Auf der Box
+
+- Olares-Dashboard: CPU, GPU, RAM, Disk, Network
+- Insilo-Health-Endpoints:
+  - `/health/api` — Backend
+  - `/health/db` — DB-Verbindung
+  - `/health/whisper` — Transkriptions-Service
   - `/health/ollama` — LLM antwortet
-  - `/health/embeddings` — Embedding-Service bereit
+  - `/health/embeddings` — Embedding-Service
 
-**An kaivo.studio:**
+### An kaivo.studio
+
 - **Standardmäßig: nichts.** Keine Telemetrie.
-- **Optional (Kunde aktiviert):** Heartbeat-Ping zur kaivo.studio-Monitoring-API. Enthält NUR: Version, Uptime, Letzter Erfolgreicher Job. Keine Inhalte, keine User-Daten.
+- **Optional:** Kunde kann Heartbeat aktivieren — sendet nur Version + Uptime + Letzter-Job, keine Inhalte.
 
 ---
 
-## 9. Disaster Recovery
+## 8. Disaster Recovery
 
-**Szenarien & Reaktion:**
+| Szenario                          | Reaktion                                      | RTO     |
+|-----------------------------------|-----------------------------------------------|---------|
+| Box-Hardware-Ausfall              | Replacement-Box vorkonfiguriert ausliefern   | 24h     |
+| SSD-Defekt                        | Zweite SSD als Fallback (RAID)               | <1h     |
+| Falsche Update-Installation       | Olares-Rollback                              | <30 Min |
+| Datenverlust durch User-Fehler    | Soft-Delete: 30 Tage                         | sofort  |
+| Ransomware                        | Velero-Restore                               | 4h      |
+| Naturkatastrophe                  | Off-Site-Backup auf neuer Box                | 48h     |
 
-| Szenario                          | Reaktion                                      |
-|-----------------------------------|-----------------------------------------------|
-| Box-Hardware-Ausfall              | Replacement-Box vorkonfiguriert ausliefern, Backup einspielen |
-| SSD-Defekt                        | Zweite SSD-Slot der Olares One als Fallback   |
-| Falsche Update-Installation       | Auto-Rollback auf Vorgängerversion            |
-| Kunde löscht versehentlich Daten  | Soft-Delete: 30 Tage Wiederherstellbar        |
-| Ransomware-Verdacht               | Sofortiges Disconnect, Velero-Restore         |
-| Naturkatastrophe                  | Off-Site-Backup-Restore auf neuer Box         |
-
-**RPO (Recovery Point Objective):** 24 Stunden (täglich Backup)
-**RTO (Recovery Time Objective):** 4 Stunden (Replacement-Box + Restore)
-
-Diese SLAs sind Premium-Vertragsbestandteil, nicht Default.
+**RPO:** 24 Stunden (tägliches Backup)
+**RTO:** 4 Stunden mit Premium-SLA
 
 ---
 
-## 10. Werkstatt-Checklist (vor Versand)
+## 9. Werkstatt-Checkliste vor Versand
 
 ```
-□ Olares OS aktuell
-□ insilo-App in Production-Version installiert
-□ Whisper-Modell geladen und getestet
-□ Ollama-Modell geladen und getestet
-□ BGE-Modell geladen und getestet
-□ Datenbank-Migrations erfolgreich
-□ Default-Admin angelegt (Passwort im versiegelten Briefumschlag)
+Hardware-Seite:
+□ Olares One: aktuelle OS-Version
+□ Initialer Admin-Account angelegt
+□ Versiegelter Briefumschlag mit Initial-Passwort
+□ Verschlusssiegel-Aufkleber angebracht
+
+Insilo-Seite:
+□ App aus Markt installiert (Version-Tag dokumentiert)
+□ Whisper-Modell large-v3 geladen
+□ Ollama-Modell qwen2.5:14b geladen
+□ BGE-M3-Modell geladen
+□ Default-Org und 4 System-Templates vorhanden
 □ Test-Aufnahme: durch alle Stufen erfolgreich
 □ Health-Endpoints alle grün
-□ TLS-Zertifikat-Provisioning getestet
-□ Backup-Endpoint funktioniert
 □ Audit-Log läuft
-□ Auslieferungsdokumente (Übergabeprotokoll, Quick-Start) beiliegen
-□ Verpackung mit Versiegelungsstickern
+□ Backup-Endpoint getestet
+
+Dokumentation:
+□ Quick-Start-Karte für Endnutzer
+□ Admin-Handbuch für IT-Verantwortlichen
+□ Übergabeprotokoll
+□ Wartungsvertrag (falls vereinbart)
 ```

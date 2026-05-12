@@ -1,44 +1,44 @@
 # Roadmap
 
-> Phasenplan vom MVP bis zum verkaufsfähigen Produkt.
+> Phasenplan vom MVP bis zum Markt-Launch.
 
 ---
 
-## Phase 1 — Fundament (jetzt, ~2-3 Wochen)
+## Phase 1 — Fundament (jetzt, ~3 Wochen)
 
-**Ziel:** Lokale Dev-Umgebung läuft, ein einfaches Meeting kann aufgenommen, transkribiert und angezeigt werden.
+**Ziel:** Lokale Dev-Umgebung läuft. Ein einfaches Meeting kann aufgenommen, transkribiert und angezeigt werden.
 
 ### Backend
-- [ ] FastAPI-Projekt-Skeleton (`backend/`)
-- [ ] Supabase Self-Hosted aufsetzen (Docker Compose lokal)
-- [ ] Schema-Migrations (orgs, users, meetings, transcripts)
-- [ ] Auth-Endpoints über Supabase
+- [ ] FastAPI-Projekt-Skeleton (`backend/app/`)
+- [ ] Olares-Header-basierte User-Auth (X-Bfl-User)
+- [ ] Datenbank-Schema (PostgreSQL Migrations)
 - [ ] Audio-Upload-Endpoint (`POST /api/v1/recordings`)
-- [ ] Celery + Redis für Background-Jobs
+- [ ] Celery + KVRocks-Setup
 - [ ] faster-whisper Service als Container
+- [ ] WebSocket-Server für Live-Updates
 - [ ] Erste Transkriptions-Pipeline (ohne Diarization)
 
 ### Frontend
 - [ ] Next.js 15 Projekt-Setup (`frontend/`)
 - [ ] Tailwind v4 + shadcn/ui mit Design-Tokens
 - [ ] PWA-Manifest + Service Worker
-- [ ] Box-Onboarding-Flow (URL eingeben, Login)
 - [ ] Hauptscreen: Meeting-Liste
 - [ ] Aufnahme-Screen mit MediaRecorder
 - [ ] Meeting-Detail-Screen mit Transkript-View
+- [ ] WebSocket-Client für Live-Updates
 
-### Infrastruktur
-- [ ] Docker-Compose für lokale Dev (Backend + Supabase + Whisper)
-- [ ] `.env.example` mit allen nötigen Variablen
+### Lokale Dev-Infrastruktur
+- [ ] Docker-Compose mit PostgreSQL, KVRocks, MinIO (lokal — emuliert Olares-Middlewares)
+- [ ] `.env.example` mit allen Variablen
 - [ ] CI: Lint + Type-Check via GitHub Actions
 
-**Meilenstein:** Audio-Upload → 5 Min später Transkript sichtbar.
+**Meilenstein:** Audio-Upload → 5 Min später Transkript sichtbar (lokal).
 
 ---
 
 ## Phase 2 — Intelligenz (~2 Wochen)
 
-**Ziel:** Aus Transkripten werden strukturierte Notizen. Sprecher werden unterschieden.
+**Ziel:** Strukturierte Notizen, Sprecher-Trennung.
 
 - [ ] WhisperX Integration für Speaker Diarization
 - [ ] Ollama-Service als Container
@@ -47,16 +47,16 @@
 - [ ] Template-System (DB-Schema + CRUD-API)
 - [ ] System-Templates: "Allgemeine Besprechung", "Mandantengespräch", "Jahresgespräch"
 - [ ] Summary-Worker (Celery-Task)
-- [ ] Frontend: Zusammenfassungs-Tab im Meeting-Detail
+- [ ] Frontend: Zusammenfassungs-Tab
 - [ ] Frontend: Template-Auswahl beim Meeting-Start
 
-**Meilenstein:** Meeting wird automatisch mit gewähltem Template zusammengefasst, Sprecher sind benannt.
+**Meilenstein:** Meeting wird automatisch mit gewähltem Template zusammengefasst.
 
 ---
 
 ## Phase 3 — Suche & Interaktion (~2 Wochen)
 
-**Ziel:** "Ask"-Funktion über das Meeting-Archiv. Live-Transkription.
+**Ziel:** "Ask"-Funktion über das Meeting-Archiv.
 
 - [ ] BGE-M3 Embedding-Service
 - [ ] Chunk-and-Embed-Worker
@@ -71,58 +71,61 @@
 
 ---
 
-## Phase 4 — Olares-Verpackung (~1-2 Wochen)
+## Phase 4 — Olares-Paketierung (~2 Wochen)
 
-**Ziel:** Produkt ist als Olares-App-Paket installierbar.
+**Ziel:** Insilo läuft als echtes Olares-App-Paket auf einer Test-Olares.
 
-- [ ] Olares-App-Manifest (`olares/OlaresManifest.yaml`)
-- [ ] Multi-Container-Setup (Backend, Frontend, Whisper, Ollama, BGE, Supabase, Redis)
+- [ ] Helm-Chart komplett (Chart.yaml, OlaresManifest.yaml, values.yaml, templates/)
+- [ ] Multi-Container-Setup (Frontend, Backend, Worker, Whisper, Ollama, Embeddings)
 - [ ] GPU-Resource-Definitionen
-- [ ] Persistence-Volumes für DB und Audio
-- [ ] Olares Studio: Dev-Test gegen lokale Olares-VM
+- [ ] Persistence-Volumes für /app/data und /app/cache
+- [ ] Middleware-Integration: System-PostgreSQL + KVRocks
+- [ ] Olares Studio: Dev-Test gegen eigene Olares-VM
+- [ ] Markt-Upload mit `.tgz`-Validierung
 - [ ] Installations-Doku für Endkunden
-- [ ] Admin-UI: erste Version (Nutzer-Verwaltung, Box-Status)
+- [ ] Admin-UI: erste Version
 
-**Meilenstein:** Frische Olares-Instanz → App installieren → läuft.
+**Meilenstein:** Frische Olares → Insilo aus Markt installieren → läuft.
 
 ---
 
-## Phase 5 — Pilot-Deployment (~laufend)
+## Phase 5 — Pilot-Deployment (~Q1 2027)
 
 **Ziel:** Erste Box steht beim ersten Kunden.
 
-- [ ] Pilotkunde finden (via kaivo.studio / aimighty Vertrieb)
+- [ ] Pilotkunde finden (via aimighty Vertrieb)
 - [ ] Hardware bestellen (Olares One)
 - [ ] Vorkonfiguration im Werkstatt-Modus
 - [ ] Vor-Ort-Installation
 - [ ] Schulungs-Workshop (2-3 Stunden)
 - [ ] 30 Tage Hyper-Care-Phase
-- [ ] Feedback-Sammlung + Backlog-Update
+- [ ] Feedback sammeln, Backlog aktualisieren
 
-**Meilenstein:** Erste echte Meeting-Notizen werden im Produktivbetrieb erstellt.
+**Meilenstein:** Erste echte Meeting-Notizen im Produktivbetrieb.
 
 ---
 
-## Phase 6 — Skalierung (~Q4 2026 ff.)
+## Phase 6 — Skalierung (~ab Q2 2027)
 
-**Ziel:** Produkt wird breiter verkauft, Operations werden skaliert.
+**Ziel:** Wiederholbarer Verkaufsprozess.
 
-- [ ] Update-Mechanismus (Pull, Manual, Air-Gapped)
-- [ ] Monitoring & Health-Dashboard für Kunde-Boxen
+- [ ] Update-Mechanismus testen (mit echten Update-Releases)
+- [ ] Monitoring & Health-Dashboard für Kunden-Boxen
 - [ ] Erweiterte Templates (Branchen-spezifisch)
 - [ ] Custom-Vocabulary (Fachterminologie pro Kunde)
-- [ ] Multi-Mandant-Verwaltung (Holdings, Beratungen)
-- [ ] Optional: Eigene Mikrofon-Hardware (PLAUD-Style)
-- [ ] Erste branchenspezifische Submarken/Templates
+- [ ] Audit-Log-Viewer im Frontend
+- [ ] Marketing-Material: Website, Case-Studies, Demo-Videos
+- [ ] Vertriebs-Enablement für aimighty (Pitch-Deck, Demo-Skript)
 
 ---
 
-## Bewusste Auslassungen (Out of Scope MVP)
+## Bewusste Auslassungen (nicht im MVP)
 
-- ❌ Mobile Native Apps (iOS/Android) — PWA reicht
-- ❌ Web-Version für Desktop-Use — Mobile-First
+- ❌ Mobile Native Apps — PWA reicht
 - ❌ Cloud-Sync zwischen Boxen
 - ❌ Externe AI-API-Fallbacks
-- ❌ Eigenes Vertriebsfrontend für aimighty (kommt von dort)
-- ❌ Mehrsprachige UI außer Deutsch (Englisch erst ab Phase 6)
+- ❌ Eigenes Hardware-Design (Olares One reicht)
+- ❌ Englische UI (kommt frühestens Phase 7)
 - ❌ Eigene Sprachsynthese / TTS
+- ❌ Mobile Native Recording (PWA macht das)
+- ❌ Eigene Mikrofon-Hardware (Smartphone reicht — Unterschied zu PLAUD)

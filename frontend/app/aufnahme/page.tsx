@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
-import { saveMeeting } from "@/lib/db";
+import { ApiError } from "@/lib/api/client";
+import { createMeeting } from "@/lib/api/meetings";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
 
 type Phase = "idle" | "requesting" | "recording" | "saving" | "denied" | "unsupported";
@@ -106,20 +107,21 @@ export default function AufnahmePage() {
 
     const mimeType = recorder.mimeType || "audio/webm";
     const blob = new Blob(chunksRef.current, { type: mimeType });
-    const id = (crypto as Crypto & { randomUUID?: () => string }).randomUUID?.() ?? Math.random().toString(36).slice(2);
     const now = Date.now();
-    await saveMeeting(
-      {
-        id,
-        title: defaultMeetingTitle(now),
-        createdAt: now,
-        durationMs,
-        mimeType,
-        byteSize: blob.size,
-      },
-      blob,
-    );
-    router.push(`/m/${id}`);
+    const title = defaultMeetingTitle(now);
+
+    try {
+      const meeting = await createMeeting({ blob, title, durationMs, mimeType });
+      router.push(`/m/${meeting.id}`);
+    } catch (err) {
+      console.error("upload failed", err);
+      setPhase("idle");
+      if (err instanceof ApiError) {
+        setError(`Upload fehlgeschlagen (HTTP ${err.status}). Backend erreichbar?`);
+      } else {
+        setError("Upload fehlgeschlagen. Bitte erneut versuchen.");
+      }
+    }
   }
 
   function cancel() {
@@ -153,19 +155,13 @@ export default function AufnahmePage() {
           </p>
 
           {phase === "idle" && (
-            <button
-              type="button"
-              className="btn-record"
-              onClick={startRecording}
-            >
+            <button type="button" className="btn-record" onClick={startRecording}>
               Start
             </button>
           )}
 
           {phase === "requesting" && (
-            <button type="button" className="btn-record" disabled>
-              …
-            </button>
+            <button type="button" className="btn-record" disabled>…</button>
           )}
 
           {phase === "recording" && (
@@ -180,9 +176,7 @@ export default function AufnahmePage() {
           )}
 
           {phase === "saving" && (
-            <button type="button" className="btn-record recording" disabled>
-              …
-            </button>
+            <button type="button" className="btn-record recording" disabled>…</button>
           )}
 
           {(phase === "idle" || phase === "recording") && (
@@ -210,14 +204,12 @@ export default function AufnahmePage() {
           )}
 
           {error && (
-            <p className="mt-8 text-sm text-recording" role="alert">
-              {error}
-            </p>
+            <p className="mt-8 text-sm text-recording" role="alert">{error}</p>
           )}
 
           <p className="mt-16 max-w-[420px] text-center text-sm text-text-meta">
-            Audio wird vorerst nur lokal in Ihrem Browser gespeichert. Sobald
-            die Box konfiguriert ist, wird automatisch dorthin synchronisiert.
+            Audio wird auf der Olares-Box gespeichert. Lokal in der Dev-Umgebung:
+            MinIO unter <span className="mono">localhost:9000</span>.
           </p>
         </div>
       </main>
@@ -230,17 +222,14 @@ function phaseLabel(p: Phase): string {
     case "idle": return "Bereit";
     case "requesting": return "Mikrofon wird angefragt";
     case "recording": return "● Aufnahme läuft";
-    case "saving": return "Speichern";
+    case "saving": return "Übertragen";
     case "denied": return "Zugriff verweigert";
     case "unsupported": return "Nicht unterstützt";
   }
 }
 
 function Notice({
-  title,
-  body,
-  actionLabel,
-  onAction,
+  title, body, actionLabel, onAction,
 }: {
   title: string;
   body: string;
@@ -252,11 +241,7 @@ function Notice({
       <p className="font-display text-lg font-medium">{title}</p>
       <p className="mt-2 text-sm text-text-secondary">{body}</p>
       {actionLabel && onAction && (
-        <button
-          type="button"
-          onClick={onAction}
-          className="btn-secondary mt-4"
-        >
+        <button type="button" onClick={onAction} className="btn-secondary mt-4">
           {actionLabel}
         </button>
       )}

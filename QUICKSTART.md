@@ -1,79 +1,63 @@
-# Quickstart
+# Quickstart — lokale Entwicklung
 
-> So startest du mit Claude Code in diesem Projekt — in ca. 15 Minuten.
+> Diese Anleitung zeigt, wie Insilo lokal entwickelt wird.
+> Für das Olares-Deployment siehe [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md).
 
 ---
 
-## 1. Voraussetzungen installieren
+## Voraussetzungen
+
+- macOS oder Linux
+- Docker Desktop oder vergleichbares
+- Node.js 20+ (via nvm empfohlen)
+- Python 3.11+
+- (Optional) NVIDIA GPU für lokale KI-Tests — sonst nutzen wir Mocks
+
+---
+
+## 1. Repository klonen
 
 ```bash
-# Node.js 20+ (für Frontend)
-nvm install 20
-
-# Python 3.11+ (für Backend)
-pyenv install 3.11.10
-
-# Docker & Docker Compose (für KI-Services)
-# https://docs.docker.com/desktop/
-
-# Supabase CLI (für lokale Datenbank)
-brew install supabase/tap/supabase
-
-# Claude Code
-# https://docs.claude.com/en/docs/claude-code
+git clone git@github.com:ska1walker/insilo.git
+cd insilo
 ```
 
 ---
 
-## 2. Claude Code aktivieren
+## 2. Umgebungsvariablen
 
-Beim ersten Start im Projektverzeichnis lädt Claude Code automatisch die `CLAUDE.md`. Zusätzlich diese Skills aktivieren:
-
-```bash
-# Im Projektverzeichnis
-claude plugin add anthropic/frontend-design
-claude plugin add nextlevelbuilder/ui-ux-pro-max-skill
-```
-
-**Prüfen:** `claude plugin list` sollte beide Skills zeigen.
-
----
-
-## 3. Lokale Datenbank starten
-
-```bash
-cd supabase
-supabase start
-```
-
-Das gibt dir `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` aus.
-
-`.env`-Datei erstellen:
 ```bash
 cp .env.example .env
-# Werte aus `supabase status` eintragen
 ```
 
-Migrations ausführen:
+Standardwerte funktionieren für lokale Entwicklung.
+
+---
+
+## 3. Lokale Olares-Middleware-Emulation
+
+Olares stellt PostgreSQL, KVRocks und MinIO als geteilte System-Services bereit. Lokal emulieren wir das mit Docker-Compose:
+
 ```bash
-supabase db reset  # spielt 0001 + 0002 + seed automatisch ein
+docker-compose up -d
+```
+
+Das startet:
+- **PostgreSQL 16** mit pgvector und pg_trgm auf Port 5432
+- **Redis 7** (KVRocks-kompatibel für lokale Dev) auf Port 6379
+- **MinIO** auf Port 9000 (Console: 9001)
+
+DB-Migrationen anwenden:
+
+```bash
+docker exec -i insilo_pg psql -U insilo -d insilo < supabase/migrations/0001_initial_schema.sql
+docker exec -i insilo_pg psql -U insilo -d insilo < supabase/migrations/0002_rls_policies.sql
+docker exec -i insilo_pg psql -U insilo -d insilo < supabase/seed.sql
 ```
 
 ---
 
-## 4. Frontend starten
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-→ http://localhost:3000
-
----
-
-## 5. Backend (vorerst nur API-Skeleton) starten
+## 4. Backend starten
 
 ```bash
 cd backend
@@ -83,111 +67,91 @@ pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8000
 ```
 
-→ http://localhost:8000/docs
+API erreichbar unter `http://localhost:8000`.
+Swagger-Docs: `http://localhost:8000/docs`.
+
+**Wichtig für lokale Entwicklung:** Da Olares-Envoy-Sidecar lokal nicht existiert, mocken wir den `X-Bfl-User` Header. Im Browser-DevTools oder via Browser-Extension setzen, oder in der API-Doku manuell mitgeben.
 
 ---
 
-## 6. KI-Services (Docker)
+## 5. Frontend starten
 
 ```bash
-docker-compose up whisper ollama embeddings -d
+cd frontend
+npm install
+npm run dev
 ```
 
-Beim ersten Start dauern die Model-Downloads ~10-20 Min:
+Frontend erreichbar unter `http://localhost:3000`.
+
+---
+
+## 6. KI-Services (optional, für Phase 2+)
+
+### Ollama lokal
+
 ```bash
-docker exec -it $(docker ps -qf name=ollama) ollama pull qwen2.5:14b-instruct-q4_K_M
+# macOS
+brew install ollama
+ollama serve
+ollama pull qwen2.5:14b-instruct-q4_K_M
 ```
+
+### faster-whisper lokal
+
+```bash
+pip install faster-whisper
+# Modell wird beim ersten Aufruf automatisch geladen (~3 GB)
+```
+
+Phase 1 nutzt Mocks — diese Services brauchen wir erst ab Phase 2.
 
 ---
 
-## 7. Die ersten Claude-Code-Aufträge
-
-Wenn Setup steht, sind das gute Startaufträge an Claude Code:
-
-### Auftrag 1 — Box-Onboarding-Screen
-> "Baue den Box-Onboarding-Screen gemäß `docs/DESIGN.md`. Der Nutzer gibt eine Server-URL ein oder scannt einen QR-Code. Validiere die URL durch einen GET auf `/health` und speichere bei Erfolg das Box-Profil in IndexedDB. Folge dem Designsystem strikt."
-
-### Auftrag 2 — Aufnahme-Screen
-> "Baue den Aufnahme-Screen. Großer goldener Recording-Button mittig, oben ein Timer in JetBrains Mono. Während aktiver Aufnahme: 1px goldene Pulse-Linie am oberen Bildschirmrand. Audio wird mit MediaRecorder API in 30s-Chunks aufgenommen und in IndexedDB gepuffert. Folge `docs/DESIGN.md` Abschnitt 6 für die Recording-Indicator-Logik."
-
-### Auftrag 3 — Meeting-Liste
-> "Baue den Meeting-Listen-Screen im PLAUD-Stil aus `docs/DESIGN.md` Abschnitt 5. Flache vertikale Liste, dünne Trennlinien, kein Card-Container. Pro Eintrag: Titel + Datum/Zeit + Dauer rechts. Daten kommen aus Supabase Realtime Subscription."
-
-### Auftrag 4 — Backend Audio-Upload
-> "Implementiere `POST /api/v1/recordings` in FastAPI. Chunked Resumable Upload, Validierung gegen Supabase Auth JWT, Schreiben in Supabase Storage Bucket `audio`. Schreibe einen Meeting-Record in der Datenbank mit Status `uploading` → nach erfolgreichem Upload `queued`. Stoße danach Celery-Task `transcribe_meeting` an."
-
----
-
-## 8. Verzeichnis-Übersicht
-
-```
-insilo/
-├── CLAUDE.md                ← Claude Code liest das zuerst
-├── QUICKSTART.md            ← dieses Dokument
-├── README.md
-├── .env.example
-├── .gitignore
-├── docker-compose.yml
-│
-├── docs/
-│   ├── ARCHITECTURE.md      ← Datenfluss, Komponenten
-│   ├── DESIGN.md            ← Komplettes Designsystem
-│   ├── ROADMAP.md           ← Phasen 1-6
-│   ├── SECURITY.md          ← DSGVO, Verschlüsselung, Audit
-│   └── DEPLOYMENT.md        ← Olares-Paketierung
-│
-├── frontend/                ← Next.js 15 PWA
-│   ├── package.json
-│   ├── tailwind.config.ts
-│   └── public/manifest.json
-│
-├── backend/                 ← FastAPI
-│   └── pyproject.toml
-│
-├── supabase/
-│   ├── migrations/
-│   │   ├── 0001_initial_schema.sql
-│   │   └── 0002_rls_policies.sql
-│   └── seed.sql             ← 4 System-Templates
-│
-└── olares/
-    ├── OlaresManifest.yaml
-    └── README.md
-```
-
----
-
-## 9. Wichtige Befehle (Cheat-Sheet)
+## 7. Tests
 
 ```bash
 # Frontend
-cd frontend && npm run dev          # Dev-Server
-cd frontend && npm run build        # Production-Build
-cd frontend && npm run type-check   # TypeScript-Check
+cd frontend && npm test
 
 # Backend
-cd backend && uvicorn app.main:app --reload
-cd backend && celery -A app.workers.celery_app worker -l info
-cd backend && ruff check .          # Linting
-cd backend && pytest                # Tests
-
-# Supabase
-supabase start                       # Lokale Instanz starten
-supabase status                      # Verbindungsinfos
-supabase db reset                    # Schema neu aufsetzen
-supabase migration new <name>        # Neue Migration
-
-# Docker
-docker-compose up -d                 # Alles starten
-docker-compose logs -f backend       # Logs verfolgen
-docker-compose down                  # Alles stoppen
+cd backend && pytest
 ```
 
 ---
 
-## 10. Was wenn ich nicht weiterkomme?
+## 8. Olares-Paket lokal bauen (für Phase 4)
 
-1. **CLAUDE.md** und **ARCHITECTURE.md** zuerst lesen.
-2. Sehr konkret formulieren: "Baue X gemäß DESIGN.md Abschnitt Y."
-3. Bei Unklarheiten: Claude Code direkt fragen statt zu raten.
-4. Bei Architektur-Entscheidungen: lieber einmal mehr rückversichern.
+```bash
+cd olares/..
+cp -r olares insilo
+tar -czf insilo-0.1.0.tgz insilo/
+rm -rf insilo
+```
+
+Das `.tgz`-File kann dann via Olares **Studio → Upload custom chart** getestet werden.
+
+---
+
+## Häufige Probleme
+
+### "Connection refused" beim Backend
+
+PostgreSQL-Container läuft? Prüfen mit `docker ps`.
+
+### "401 Unauthorized" im Frontend
+
+`X-Bfl-User` Header fehlt. Browser-Extension setzen (z.B. ModHeader) oder im Code für Dev mocken.
+
+### Frontend zeigt blanke Seite
+
+Tailwind v4 ist neu — bei Build-Fehlern Cache löschen: `rm -rf .next && npm run dev`.
+
+---
+
+## Tipps für Claude Code
+
+- Lies zuerst `CLAUDE.md` im Projekt-Root.
+- Beachte: Wir bauen KEINE eigene Auth — Olares macht das.
+- Designsystem ist verbindlich (`docs/DESIGN.md`).
+- Bei Olares-Manifest-Fragen: `docs/DEPLOYMENT.md` und `olares/README.md` konsultieren.

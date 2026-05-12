@@ -1,107 +1,77 @@
-version: "3.9"
-
 # ============================================================================
-# Local Development Compose for insilo
-# Runs the entire stack on a developer machine.
-# Production deployment happens via Olares manifest, not this file.
+# docker-compose.yml — lokale Olares-Middleware-Emulation
+#
+# Olares stellt PostgreSQL, KVRocks und MinIO als geteilte System-Middlewares
+# bereit. Lokal emulieren wir das hier.
+#
+# NICHT für Produktion. In Produktion läuft alles auf der Olares-Box.
 # ============================================================================
 
 services:
-  # ----- Frontend ---------------------------------------------------------
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: insilo_pg
+    restart: unless-stopped
     environment:
-      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-    depends_on:
-      - backend
-
-  # ----- Backend API ------------------------------------------------------
-  backend:
-    build: ./backend
+      POSTGRES_USER: insilo
+      POSTGRES_PASSWORD: insilo_dev_only
+      POSTGRES_DB: insilo
     ports:
-      - "8000:8000"
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - REDIS_URL=redis://redis:6379/0
-      - WHISPER_URL=http://whisper:8001
-      - OLLAMA_URL=http://ollama:11434
-      - EMBEDDINGS_URL=http://embeddings:8002
-    depends_on:
-      - redis
-      - whisper
-      - ollama
-      - embeddings
-
-  # ----- Celery Worker ----------------------------------------------------
-  worker:
-    build: ./backend
-    command: celery -A app.workers.celery_app worker -l info --concurrency=2
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - REDIS_URL=redis://redis:6379/0
-      - WHISPER_URL=http://whisper:8001
-      - OLLAMA_URL=http://ollama:11434
-      - EMBEDDINGS_URL=http://embeddings:8002
-    depends_on:
-      - redis
-      - whisper
-      - ollama
-
-  # ----- AI Services ------------------------------------------------------
-  whisper:
-    build: ./backend/services/whisper
-    ports:
-      - "8001:8001"
+      - "5432:5432"
     volumes:
-      - whisper-models:/models
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U insilo -d insilo"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-
-  embeddings:
-    build: ./backend/services/embeddings
-    ports:
-      - "8002:8002"
-    volumes:
-      - embeddings-models:/models
-
-  # ----- Infrastructure ---------------------------------------------------
   redis:
     image: redis:7-alpine
+    container_name: insilo_redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
 
-# Supabase wird separat via supabase CLI (`supabase start`) gestartet,
-# nicht hier — das gibt uns Auth + Storage + Realtime aus einer Hand.
+  minio:
+    image: minio/minio:latest
+    container_name: insilo_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: insilo_dev
+      MINIO_ROOT_PASSWORD: insilo_dev_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  # ---- Optional: Ollama lokal (für Phase 2+) -----------------------------
+  # Erfordert NVIDIA-GPU + nvidia-docker.
+  # Auf macOS: nicht aktivieren, stattdessen Ollama nativ via brew install.
+  #
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: insilo_ollama
+  #   restart: unless-stopped
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
 
 volumes:
-  whisper-models:
-  ollama-data:
-  embeddings-models:
-  redis-data:
+  pg_data:
+  redis_data:
+  minio_data:
+  # ollama_data:

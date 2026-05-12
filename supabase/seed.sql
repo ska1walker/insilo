@@ -2,9 +2,12 @@
 -- seed.sql - System-Templates für die Erst-Inbetriebnahme
 -- ========================================================================
 
--- Allgemeine Besprechung
 insert into public.templates (id, org_id, name, description, category, system_prompt, output_schema, is_system, is_active)
-values (
+values
+-- ============================================================
+-- Allgemeine Besprechung
+-- ============================================================
+(
   '00000000-0000-0000-0000-000000000001',
   null,
   'Allgemeine Besprechung',
@@ -13,9 +16,9 @@ values (
   'Du bist ein professioneller Protokollführer für deutsche Geschäftsmeetings. Analysiere das folgende Meeting-Transkript und erstelle eine strukturierte Zusammenfassung.
 
 Wichtige Regeln:
-- Schreibe in formellem Deutsch (Sie-Form wenn passend, Dritte Person sonst).
-- Halte dich strikt an die im Transkript genannten Fakten — keine Erfindungen.
-- Nenne Personen mit ihren Speaker-Labels (z.B. "Speaker 1", "MÜLLER").
+- Schreibe in formellem Deutsch.
+- Halte dich strikt an die im Transkript genannten Fakten.
+- Nenne Personen mit ihren Speaker-Labels.
 - Sei präzise und prägnant, vermeide Floskeln.
 - Wenn ein Aspekt im Meeting nicht behandelt wurde, lass das entsprechende Feld leer.',
   '{
@@ -51,11 +54,11 @@ Wichtige Regeln:
   }'::jsonb,
   true,
   true
-);
-
--- Mandantengespräch (Kanzleien, Steuerberater)
-insert into public.templates (id, org_id, name, description, category, system_prompt, output_schema, is_system, is_active)
-values (
+),
+-- ============================================================
+-- Mandantengespräch
+-- ============================================================
+(
   '00000000-0000-0000-0000-000000000002',
   null,
   'Mandantengespräch',
@@ -67,8 +70,7 @@ Wichtige Regeln:
 - Wahrung der anwaltlichen/steuerlichen Schweigepflicht in jeder Formulierung.
 - Sachverhalt strikt nach Transkript, keine eigenen rechtlichen Wertungen.
 - Identifiziere klar: was hat der Mandant geschildert, was hat der Berater eingeordnet.
-- Bei Beträgen, Daten und Fristen: exakte Wiedergabe.
-- Notiere ausdrücklich, wenn der Mandant um Verschwiegenheit zu einem Punkt gebeten hat.',
+- Bei Beträgen, Daten und Fristen: exakte Wiedergabe.',
   '{
     "type": "object",
     "properties": {
@@ -88,29 +90,28 @@ Wichtige Regeln:
         }
       },
       "honorarvereinbarung": { "type": "string" },
-      "naechste_schritte_mandat": { "type": "array", "items": { "type": "string" } },
-      "verschwiegenheitsvermerke": { "type": "array", "items": { "type": "string" } }
+      "naechste_schritte_mandat": { "type": "array", "items": { "type": "string" } }
     },
     "required": ["sachverhalt", "vereinbarte_leistungen", "naechste_schritte_mandat"]
   }'::jsonb,
   true,
   true
-);
-
--- Vertriebsgespräch / Discovery Call
-insert into public.templates (id, org_id, name, description, category, system_prompt, output_schema, is_system, is_active)
-values (
+),
+-- ============================================================
+-- Vertriebsgespräch
+-- ============================================================
+(
   '00000000-0000-0000-0000-000000000003',
   null,
   'Vertriebsgespräch',
-  'Discovery Call oder Kundentermin im Vertrieb. Strukturiertes B2B-Sales-Protokoll.',
+  'Discovery Call oder Kundentermin im Vertrieb.',
   'sales',
-  'Du bist ein erfahrener Vertriebsanalyst. Analysiere das folgende Vertriebsgespräch und erstelle eine strukturierte Auswertung im BANT-Stil (Budget, Authority, Need, Timing) plus konkreten nächsten Schritten.
+  'Du bist ein erfahrener Vertriebsanalyst. Analysiere das folgende Vertriebsgespräch und erstelle eine strukturierte Auswertung im BANT-Stil.
 
-Wichtige Regeln:
+Regeln:
 - Sachlich und nüchtern, keine vertriebliche Übertreibung.
 - Wenn Informationen fehlen, dies explizit notieren ("nicht erfragt").
-- Sprecher klar als Kunde vs. Vertrieb identifizieren, wo möglich.',
+- Sprecher klar als Kunde vs. Vertrieb identifizieren.',
   '{
     "type": "object",
     "properties": {
@@ -138,19 +139,19 @@ Wichtige Regeln:
   }'::jsonb,
   true,
   true
-);
-
--- Jahresgespräch (Versicherung / Vertrieb)
-insert into public.templates (id, org_id, name, description, category, system_prompt, output_schema, is_system, is_active)
-values (
+),
+-- ============================================================
+-- Jahresgespräch
+-- ============================================================
+(
   '00000000-0000-0000-0000-000000000004',
   null,
   'Jahresgespräch',
   'Strukturiertes Protokoll für jährliche Kunden- oder Bestandsgespräche.',
   'consulting',
-  'Du bist ein Versicherungs- und Beratungs-Profi. Analysiere das folgende Jahresgespräch und erstelle ein strukturiertes Protokoll für die Kundenakte.
+  'Du bist ein erfahrener Berater. Analysiere das folgende Jahresgespräch und erstelle ein strukturiertes Protokoll für die Kundenakte.
 
-Wichtige Regeln:
+Regeln:
 - Formelles Deutsch.
 - Risikoveränderungen seit dem Vorjahr klar herausarbeiten.
 - Cross-Selling-Potenziale notieren ohne aufdringlich zu wirken.

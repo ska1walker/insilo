@@ -1,0 +1,65 @@
+# ============================================================================
+# Deployment: Insilo Ollama (LLM-Runtime)
+#
+# Qwen 2.5 14B in Q4-Quantisierung. Braucht ~10 GB VRAM.
+# ============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insilo-ollama
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: insilo
+    component: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insilo
+      component: ollama
+  template:
+    metadata:
+      labels:
+        app: insilo
+        component: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: "{{ .Values.images.ollama.repository }}:{{ .Values.images.ollama.tag }}"
+          imagePullPolicy: {{ .Values.images.ollama.pullPolicy }}
+          ports:
+            - containerPort: 11434
+              name: http
+          env:
+            - name: OLLAMA_MODELS
+              value: "/app/cache/ollama"
+            - name: OLLAMA_KEEP_ALIVE
+              value: "30m"
+
+          volumeMounts:
+            - name: app-cache
+              mountPath: /app/cache
+
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 12Gi
+              nvidia.com/gpu: 1
+            limits:
+              cpu: 4000m
+              memory: 24Gi
+              nvidia.com/gpu: 1
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 11434
+            initialDelaySeconds: 120     # Modell-Pull beim Erststart braucht Zeit
+            periodSeconds: 15
+
+      volumes:
+        - name: app-cache
+          hostPath:
+            path: {{ .Values.userspace.appCache }}
+            type: DirectoryOrCreate

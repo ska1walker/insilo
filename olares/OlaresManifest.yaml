@@ -1,226 +1,130 @@
 # ============================================================================
-# Olares App Manifest for insilo
+# OlaresManifest.yaml — Insilo
 #
-# This manifest describes the application that runs on the customer's Olares
-# device. It declares required resources, container topology, persistence
-# volumes, and ingress configuration.
+# Spec: https://docs.olares.com/developer/develop/package/manifest.html
+# Spec-Version: 0.11.0
 #
-# Reference: https://docs.olares.com/developer/develop/
+# Linter-Regeln (kritisch):
+# - metadata.name, metadata.appid, Chart.yaml.name und Folder-Name MÜSSEN
+#   alle exakt "insilo" sein (regex: ^[a-z0-9]{1,30}$, keine Bindestriche!)
+# - metadata.version MUSS Chart.yaml.version matchen
+# - spec.versionName MUSS Chart.yaml.appVersion matchen
+# - requiredDisk MUSS gesetzt sein (regex: ^(?:\d+(?:\.\d+)?)[kKMGTP]?i?$)
 # ============================================================================
 
-apiVersion: app.bytetrade.io/v1alpha1
-kind: OlaresApp
+olaresManifest.version: '0.11.0'
+olaresManifest.type: app
+apiVersion: v1
 
 metadata:
   name: insilo
-  title: insilo
-  version: 0.1.0
-  description: "On-Premise Meeting-Intelligenz für deutsche Mittelständler"
-  publisher: kaivo.studio
+  appid: insilo                # MUSS identisch zu metadata.name sein
+  title: Insilo
+  description: Souveräne Meeting-Intelligenz für den deutschen Mittelstand
+  icon: https://kaivo.studio/insilo/icon-256.png   # TODO: echtes Icon hosten
+  version: 0.1.0               # = Chart.yaml.version
   categories:
-    - Productivity
+    - Productivity_v112
     - AI
-  icon: ./icons/app-icon.png
+
+# ---- Entrances --------------------------------------------------------------
+# Zwei Entrances: PWA (sichtbar) + Backend-API (invisible).
+# Whisper, Ollama, Embeddings sind NICHT als Entrance deklariert — nur
+# namespace-intern erreichbar.
+
+entrances:
+  - name: app
+    host: insilo-frontend       # = Service-Name in templates/service-frontend.yaml
+    port: 3000
+    title: Insilo
+    icon: https://kaivo.studio/insilo/icon-256.png
+    authLevel: private          # Authelia-Token-Pflicht
+    invisible: false
+    openMethod: default
+
+  - name: api
+    host: insilo-backend        # = Service-Name in templates/service-backend.yaml
+    port: 8000
+    title: Insilo API
+    authLevel: private
+    invisible: true             # nicht als Desktop-Icon zeigen
+
+# ---- Berechtigungen ---------------------------------------------------------
+
+permission:
+  appCache: true                # für /app/cache (Whisper-Modelle, temp uploads)
+  appData: true                 # für /app/data (Audio, persistente Daten)
+  # userData: []                # MVP: kein Zugriff auf User-Home-Verzeichnis
+  # provider: []                # MVP: keine Cross-App-Aufrufe (kommt in Phase 5)
+
+# ---- Provider (für zukünftige Cross-App-Integration) -----------------------
+# In Phase 5+ aktivieren, wenn CallList/andere kaivo-Apps auf Insilo zugreifen sollen.
+# provider:
+#   - name: insilo-meetings-api
+#     entrance: insilo-backend
+#     paths: ["/api/v1/meetings"]
+#     verbs: ["GET"]
+
+# ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: "0.1.0"
-
+  versionName: '0.1.0'          # = Chart.yaml.appVersion
   fullDescription: |
-    insilo ist eine vollständig on-premise betriebene Lösung für
-    Meeting-Aufnahme, Transkription und intelligente Zusammenfassung.
+    Insilo zeichnet Geschäftsbesprechungen auf, transkribiert sie lokal mit
+    OpenAI Whisper und erstellt strukturierte Notizen mit einem lokal laufenden
+    Sprachmodell (Qwen 2.5).
 
-    Kernversprechen: Keine Daten verlassen jemals Ihre Olares-Box.
-    Keine Cloud-Dienste, keine Telemetrie, keine externen AI-Calls.
+    Im Unterschied zu PLAUD, Otter und vergleichbaren Diensten verlassen Ihre
+    Audiodaten und Notizen niemals Ihre eigene Olares-Box. Keine Cloud-Dienste,
+    keine externen API-Aufrufe, keine Datenweitergabe an Dritte.
 
-    Die App nutzt das mitgelieferte lokale LLM (Qwen 2.5 14B), Whisper-large-v3
-    für Transkription und BGE-M3 für semantische Suche.
+    Speziell entwickelt für deutsche Kanzleien, Steuerberatungen, Beratungen
+    und Industrieunternehmen mit Compliance-Anforderungen.
 
-  language:
-    - de
-    - en  # planned
+  upgradeDescription: |
+    Erstveröffentlichung.
 
-  # ---- Resource Requirements ------------------------------------------------
-  requiredMemory: 64Gi
-  requiredCPU: 8
-  requiredDisk: 250Gi
-  requiredGPU:
-    nvidia.com/gpu: 1
+  developer: kaivo.studio
+  website: https://kaivo.studio
+  sourceCode: https://github.com/ska1walker/insilo
+  submitter: Kai Böhm
+  locale:
+    - de-DE
+  doc: https://kaivo.studio/insilo/docs
+  supportArch:
+    - amd64
 
-  # ---- Middleware Dependencies ----------------------------------------------
-  middleware:
-    postgres:
-      username: insilo_admin
-      databases:
-        - name: insilo
-          extensions:
-            - vector
-            - pg_trgm
-            - uuid-ossp
-            - pgcrypto
+  # ---- Ressourcen-Anforderungen --------------------------------------------
+  # Werden bei Installation reserviert.
+  # Hinweis: Olares One hat 96 GB RAM und 24 GB VRAM.
+  # Insilo allokiert großzügig, weil mehrere Container parallel arbeiten.
 
-    redis:
-      namespace: insilo
+  requiredCpu: 4000m            # 4 vCPU baseline
+  requiredMemory: 24Gi          # für Backend + Frontend + Worker + Whisper-Container-Basis
+  requiredDisk: 60Gi            # Audio, Modelle, DB-Anteil
 
-  # ---- Storage --------------------------------------------------------------
-  persistence:
-    - name: audio-storage
-      path: /data/audio
-      size: 100Gi
-    - name: models
-      path: /data/models
-      size: 50Gi
-    - name: uploads-temp
-      path: /data/uploads
-      size: 20Gi
+  # ---- Ressourcen-Limits ---------------------------------------------------
+  # Bei Überschreitung wird die App suspendiert.
 
-  # ---- Permissions ----------------------------------------------------------
-  permission:
-    appData: true
-    sysData: false
-    userData:
-      - "*"  # Nur Daten der eigenen Mandanten, RLS geregelt
+  limitedCpu: 8000m
+  limitedMemory: 56Gi           # alles inklusive Ollama
+  limitedDisk: 200Gi
 
-# ---- Containers ------------------------------------------------------------
-containers:
-  - name: frontend
-    image: ghcr.io/kaivo-studio/insilo-frontend:0.1.0
-    ports:
-      - containerPort: 3000
-        protocol: TCP
-    env:
-      - name: NODE_ENV
-        value: production
-      - name: NEXT_PUBLIC_SUPABASE_URL
-        value: $(SUPABASE_URL)
-      - name: NEXT_PUBLIC_API_URL
-        value: "http://backend:8000"
-    resources:
-      requests:
-        memory: 512Mi
-        cpu: 500m
-      limits:
-        memory: 1Gi
-        cpu: "1"
+# ---- Optionen ---------------------------------------------------------------
 
-  - name: backend
-    image: ghcr.io/kaivo-studio/insilo-backend:0.1.0
-    ports:
-      - containerPort: 8000
-        protocol: TCP
-    env:
-      - name: SUPABASE_URL
-        value: $(SUPABASE_URL)
-      - name: REDIS_URL
-        value: "redis://redis:6379/0"
-      - name: WHISPER_URL
-        value: "http://whisper:8001"
-      - name: OLLAMA_URL
-        value: "http://ollama:11434"
-      - name: EMBEDDINGS_URL
-        value: "http://embeddings:8002"
-    resources:
-      requests:
-        memory: 2Gi
-        cpu: "1"
-      limits:
-        memory: 4Gi
-        cpu: "2"
+options:
+  # System-Dependencies: bestimmte Olares-Version mindestens nötig
+  dependencies:
+    - name: olares
+      type: system
+      version: '>=1.12.2'
 
-  - name: worker
-    image: ghcr.io/kaivo-studio/insilo-backend:0.1.0
-    command: ["celery", "-A", "app.workers.celery_app", "worker", "-l", "info"]
-    env:
-      # ... gleich wie backend ...
-    resources:
-      requests:
-        memory: 2Gi
-        cpu: "1"
-      limits:
-        memory: 4Gi
-        cpu: "2"
+  # Erlaubt mehrere isolierte Instanzen (z.B. eine pro Mandant) — MVP: nein
+  allowMultipleInstall: false
 
-  - name: whisper
-    image: ghcr.io/kaivo-studio/insilo-whisper:0.1.0
-    ports:
-      - containerPort: 8001
-        protocol: TCP
-    env:
-      - name: WHISPER_MODEL
-        value: large-v3
-      - name: WHISPER_DEVICE
-        value: cuda
-    volumeMounts:
-      - name: models
-        mountPath: /models
-    resources:
-      requests:
-        memory: 8Gi
-        cpu: "2"
-        nvidia.com/gpu: "1"
-      limits:
-        memory: 16Gi
-        cpu: "4"
-        nvidia.com/gpu: "1"
+  # Erlaubte ausgehende Netzwerkverbindungen — MVP: KEINE
+  # Damit ist garantiert, dass keine Daten zu externen Services fließen.
+  allowedOutboundPorts: []
 
-  - name: ollama
-    image: ollama/ollama:latest
-    ports:
-      - containerPort: 11434
-        protocol: TCP
-    volumeMounts:
-      - name: models
-        mountPath: /root/.ollama
-    resources:
-      requests:
-        memory: 16Gi
-        cpu: "2"
-        nvidia.com/gpu: "1"
-      limits:
-        memory: 32Gi
-        cpu: "4"
-        nvidia.com/gpu: "1"
-
-  - name: embeddings
-    image: ghcr.io/kaivo-studio/insilo-embeddings:0.1.0
-    ports:
-      - containerPort: 8002
-        protocol: TCP
-    volumeMounts:
-      - name: models
-        mountPath: /models
-    resources:
-      requests:
-        memory: 4Gi
-        cpu: "1"
-      limits:
-        memory: 8Gi
-        cpu: "2"
-
-# ---- Public Entrance (User-Facing) -----------------------------------------
-entrances:
-  - name: insilo-app
-    host: insilo
-    port: 3000
-    title: "insilo"
-    icon: ./icons/app-icon.png
-    authLevel: private  # nur eingeloggte Olares-User
-    invisible: false
-
-# ---- Network Policies ------------------------------------------------------
-# Strict: no outbound except optional update channel (controlled separately)
-networkPolicies:
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              name: insilo
-      ports:
-        - protocol: TCP
-          port: 8000
-        - protocol: TCP
-          port: 8001
-        - protocol: TCP
-          port: 8002
-        - protocol: TCP
-          port: 11434
-    # NO general internet egress
+  # Sicherheits-Kontext: niemals als root laufen
+  runAsUser: "1000"

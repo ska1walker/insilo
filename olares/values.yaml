@@ -1,0 +1,56 @@
+# ============================================================================
+# values.yaml — Default Helm Values für Insilo
+#
+# Diese Werte können beim Helm-Install per --set überschrieben werden.
+# Olares injiziert zusätzlich automatisch:
+#   .Values.bfl.username
+#   .Values.user.zone
+#   .Values.userspace.appData / appCache / userData
+#   .Values.postgres.*   (wenn middleware: postgres deklariert)
+#   .Values.redis.*      (wenn middleware: redis deklariert)
+#   .Values.cluster.arch
+# ============================================================================
+
+# ---- Image-Konfiguration ---------------------------------------------------
+
+images:
+  frontend:
+    repository: ghcr.io/ska1walker/insilo-frontend
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+
+  backend:
+    repository: ghcr.io/ska1walker/insilo-backend
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+
+  whisper:
+    repository: ghcr.io/ska1walker/insilo-whisper
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+
+  ollama:
+    repository: ollama/ollama
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  embeddings:
+    repository: ghcr.io/ska1walker/insilo-embeddings
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+
+# ---- KI-Modelle ------------------------------------------------------------
+
+models:
+  whisper: large-v3
+  ollama: qwen2.5:14b-instruct-q4_K_M
+  embeddings: BAAI/bge-m3
+
+# ---- Anwendungskonfiguration -----------------------------------------------
+
+app:
+  language: de
+  defaultTimezone: Europe/Berlin
+  audioRetentionDays: 90
+  softDeleteRetentionDays: 30
+  maxUploadSizeMb: 500

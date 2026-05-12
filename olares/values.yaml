@@ -53,10 +53,10 @@ models:
 
 litellm:
   apiKey: "sk-1234"
-  # Modell-Name MUSS in LiteLLM unter /v1/models auftauchen.
-  # Standardname für die Olares-Qwen-3.6B-Vision-App: "qwen36a3bvisionone".
-  # Per `helm install --set litellm.model=...` anpassen.
-  model: "qwen36a3bvisionone"
+  # Modell-Name wie er in LiteLLM's /v1/models steht.
+  # Auf der aktuellen Olares-Box ist das "qwen3.6" (35B-A3B Vision).
+  # Bei anderer Konfiguration via `helm install --set litellm.model=...` setzen.
+  model: "qwen3.6"
 
 # ---- Anwendungskonfiguration -----------------------------------------------
 

@@ -74,7 +74,15 @@ permission:
   appCache: true                # für /app/cache (Whisper-Modelle, temp uploads)
   appData: true                 # für /app/data (Audio, persistente Daten)
   # userData: []                # MVP: kein Zugriff auf User-Home-Verzeichnis
-  # provider: []                # MVP: keine Cross-App-Aufrufe (kommt in Phase 5)
+
+  # Cross-App-Zugriff: wir konsumieren das LLM aus der Olares-LiteLLM-App
+  # statt ein eigenes Ollama mitzubringen. Spart 4-GB-Image + GPU-Slot.
+  provider:
+    - appName: litellm
+      providerName: api
+      podSelectors:
+        - matchLabels:
+            io.kompose.service: litellm
 
 # ---- Provider (für zukünftige Cross-App-Integration) -----------------------
 # In Phase 5+ aktivieren, wenn CallList/andere kaivo-Apps auf Insilo zugreifen sollen.
@@ -115,19 +123,17 @@ spec:
 
   # ---- Ressourcen-Anforderungen --------------------------------------------
   # Werden bei Installation reserviert.
-  # Hinweis: Olares One hat 96 GB RAM und 24 GB VRAM.
-  # Insilo allokiert großzügig, weil mehrere Container parallel arbeiten.
+  # LLM kommt via LiteLLM aus dem Olares-System (kein eigenes Ollama mehr),
+  # daher deutlich schlanker als die ursprüngliche Schätzung.
 
-  requiredCpu: 4000m            # 4 vCPU baseline
-  requiredMemory: 24Gi          # für Backend + Frontend + Worker + Whisper-Container-Basis
-  requiredDisk: 60Gi            # Audio, Modelle, DB-Anteil
+  requiredCpu: 2000m            # 2 vCPU baseline (Backend + Worker + Whisper)
+  requiredMemory: 12Gi          # Backend + Frontend + Worker + Whisper + Embeddings
+  requiredDisk: 30Gi            # Audio (~10 GB), Whisper-Modelle (~3 GB), DB-Anteil
 
   # ---- Ressourcen-Limits ---------------------------------------------------
-  # Bei Überschreitung wird die App suspendiert.
-
-  limitedCpu: 8000m
-  limitedMemory: 56Gi           # alles inklusive Ollama
-  limitedDisk: 200Gi
+  limitedCpu: 6000m
+  limitedMemory: 24Gi
+  limitedDisk: 100Gi
 
 # ---- Optionen ---------------------------------------------------------------
 

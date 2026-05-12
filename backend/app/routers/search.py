@@ -175,9 +175,9 @@ async def ask(
     system_prompt, user_prompt = _build_rag_prompt(req.question, hits)
 
     payload = {
-        "model": settings.ollama_model,
+        "model": settings.llm_model,
         "stream": False,
-        "options": {"temperature": 0.2, "num_ctx": 8192},
+        "temperature": 0.2,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -186,19 +186,24 @@ async def ask(
 
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 5)) as client:
-            resp = await client.post(f"{settings.ollama_url}/api/chat", json=payload)
+            resp = await client.post(
+                f"{settings.llm_base_url}/chat/completions",
+                json=payload,
+                headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+            )
             resp.raise_for_status()
             data = resp.json()
     except httpx.HTTPError as exc:
         raise HTTPException(503, f"LLM unreachable: {exc}") from exc
 
-    answer = (data.get("message") or {}).get("content") or ""
+    choices = data.get("choices") or []
+    answer = (choices[0].get("message", {}) or {}).get("content", "") if choices else ""
     elapsed_ms = int((_asyncio.get_event_loop().time() - started) * 1000)
 
     return AskResponse(
         question=req.question,
         answer=answer.strip(),
         sources=hits,
-        llm_model=settings.ollama_model,
+        llm_model=settings.llm_model,
         elapsed_ms=elapsed_ms,
     )

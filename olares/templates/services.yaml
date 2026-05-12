@@ -71,26 +71,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: insilo-ollama
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: insilo
-    component: ollama
-spec:
-  type: ClusterIP
-  selector:
-    app: insilo
-    component: ollama
-  ports:
-    - name: http
-      port: 11434
-      targetPort: 11434
-      protocol: TCP
-
----
-apiVersion: v1
-kind: Service
-metadata:
   name: insilo-embeddings
   namespace: {{ .Release.Namespace }}
   labels:

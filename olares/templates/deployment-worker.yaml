@@ -62,8 +62,12 @@ spec:
               value: "{{ .Values.redis.namespace }}"
             - name: WHISPER_URL
               value: "http://insilo-whisper:8001"
-            - name: OLLAMA_URL
-              value: "http://insilo-ollama:11434"
+            - name: LLM_BASE_URL
+              value: "http://litellm-svc.litellm-{{ .Values.bfl.username }}.svc.cluster.local/v1"
+            - name: LLM_API_KEY
+              value: "{{ .Values.litellm.apiKey }}"
+            - name: LLM_MODEL
+              value: "{{ .Values.litellm.model }}"
             - name: EMBEDDINGS_URL
               value: "http://insilo-embeddings:8002"
             - name: APP_DATA_DIR

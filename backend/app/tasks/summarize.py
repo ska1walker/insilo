@@ -96,35 +96,45 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         else json.loads(template["output_schema"])
     )
 
+    # OpenAI-compatible JSON-mode (works for LiteLLM proxy and Ollama's
+    # native /v1 endpoint). Schema enforcement is best-effort via prompt
+    # instructions because not every backend supports structured outputs.
     payload = {
-        "model": settings.ollama_model,
+        "model": settings.llm_model,
         "stream": False,
-        "format": schema,
-        "options": {
-            "temperature": 0.2,  # protocols want determinism, not creativity
-            "num_ctx": 8192,
-        },
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
         "messages": [
-            {"role": "system", "content": template["system_prompt"]},
+            {
+                "role": "system",
+                "content": template["system_prompt"]
+                + "\n\nAntwortformat: ein einziges JSON-Objekt, das diesem Schema entspricht:\n"
+                + json.dumps(schema, ensure_ascii=False),
+            },
             {"role": "user", "content": _wrap_user_prompt(meeting["full_text"])},
         ],
     }
 
     log.info(
         "summarize meeting %s · model=%s · template=%s",
-        meeting_id, settings.ollama_model, template_id,
+        meeting_id, settings.llm_model, template_id,
     )
 
     started = asyncio.get_event_loop().time()
     async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 10)) as client:
-        resp = await client.post(f"{settings.ollama_url}/api/chat", json=payload)
+        resp = await client.post(
+            f"{settings.llm_base_url}/chat/completions",
+            json=payload,
+            headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+        )
         resp.raise_for_status()
         data = resp.json()
     elapsed_ms = int((asyncio.get_event_loop().time() - started) * 1000)
 
-    content = (data.get("message") or {}).get("content") or ""
+    choices = data.get("choices") or []
+    content = (choices[0].get("message", {}) or {}).get("content", "") if choices else ""
     if not content.strip():
-        raise RuntimeError("ollama returned empty content")
+        raise RuntimeError("LLM returned empty content")
 
     try:
         structured = json.loads(content)
@@ -152,7 +162,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
                 template["id"],
                 template["version"],
                 json.dumps(structured),
-                settings.ollama_model,
+                settings.llm_model,
                 elapsed_ms,
             )
             await _set_status(conn, meeting_id, "ready")
@@ -167,7 +177,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     return {
         "status": "ok",
         "elapsed_ms": elapsed_ms,
-        "model": settings.ollama_model,
+        "model": settings.llm_model,
     }
 
 

@@ -38,11 +38,15 @@ class Settings(BaseSettings):
 
     # --- Internal AI services ---
     whisper_url: str = "http://localhost:8001"
-    ollama_url: str = "http://localhost:11434"
     embeddings_url: str = "http://localhost:8002"
 
-    # Local dev defaults to 7B (fits a MacBook); Olares chart sets 14B Q4.
-    ollama_model: str = "qwen2.5:7b-instruct"
+    # LLM is reached via an OpenAI-compatible endpoint. On Olares we point at
+    # the LiteLLM gateway (shared across all kaivo apps so we don't burn an
+    # extra GPU slot). Locally we run Ollama natively on Mac Metal; its
+    # /v1/chat/completions endpoint is OpenAI-compatible too.
+    llm_base_url: str = "http://localhost:11434/v1"
+    llm_api_key: str = "sk-local"     # Ollama doesn't enforce; LiteLLM does
+    llm_model: str = "qwen2.5:7b-instruct"
 
     # The system template used when the user doesn't pick one explicitly.
     default_template_id: str = "00000000-0000-0000-0000-000000000001"

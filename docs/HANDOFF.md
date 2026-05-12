@@ -189,6 +189,15 @@ docker run --rm --network host --entrypoint sh minio/mc \
 6. **Folder-Name = `metadata.name` = `metadata.appid` = `Chart.yaml.name`** — alle vier identisch.
 7. **DB-Connection-Vars werden injiziert** durch Olares wenn `middleware: postgres: {…}` deklariert ist. Lokal mocken wir das in `olares/values-olares-stub.yaml`.
 
+### Wie Olares die Middleware-Values genau injiziert (verifiziert auf der Box)
+
+| Manifest-Deklaration | Was Olares injiziert | Template-Referenz |
+|---|---|---|
+| `redis: { password, namespace }` | `.Values.redis.{host,port,password,namespace}` als **einzelne Strings** | `{{ .Values.redis.namespace }}` |
+| `postgres: { username, databases: [{name, …}] }` | `.Values.postgres.{host,port,username,password}` + `.Values.postgres.databases.<name>` als **Map keyed by db-name** | `{{ .Values.postgres.databases.insilo }}` |
+| `permission: { appData: true }` | `.Values.userspace.appData` als Pfad-String | `mountPath: /app/data` + `hostPath.path: {{ .Values.userspace.appData }}` |
+| automatisch | `.Values.bfl.username`, `.Values.user.zone`, `.Values.cluster.arch`, `.Values.domain.<entranceName>` | siehe Bundle-Templates |
+
 ---
 
 ## 7. Learnings & Stolpersteine (chronologisch durch Phase 4)
@@ -206,6 +215,26 @@ docker run --rm --network host --entrypoint sh minio/mc \
 | `helm template` braucht Olares-injected values lokal | Olares injiziert zur Install-Zeit | `olares/values-olares-stub.yaml` für `helm lint` / `helm template` Dev |
 | Migration 0001 zirkuläre FK | `meetings.template_id references templates(id)` inline, aber templates erst später angelegt | Inline-FK weg, ALTER TABLE nach templates-CREATE |
 | Bundle-Adoption (großer Pivot Mai 2026) | Vorheriger Stand war Supabase-zentriert; Olares ist tatsächlich Plattform | Komplette Adoption des `insilo-projekt-bundle.zip`-Inhalts: Olares-native, Authelia statt Supabase-Auth, asyncpg statt Supabase-Client. Siehe Commit `52c798b`. |
+| **Olares hängt bei `downloadFailed` ohne UI-Detail** — wirkt wie Image-Pull-Timeout, war aber Helm-Template-Render-Fehler | Bundle-Annahme: `.Values.redis.namespaces.<name>` (Plural+Map). Realität: `.Values.redis.namespace` als Single-String. Olares retried den State NICHT, bleibt stur in `downloadFailed`. | `deployment-{backend,worker}.yaml`: `.Values.redis.namespaces.insilo` → `.Values.redis.namespace`. Commit `d38877e`. **Generell: Bundle-Annahmen über injected-value-shape immer gegen `kubectl logs -n os-framework app-service-0` validieren.** |
+
+---
+
+## 7a. Olares-Debug-Cheatsheet — wenn etwas schiefläuft
+
+**Wichtigste Erkenntnis:** Das Olares-Studio-UI zeigt nur `downloadFailed` ohne Details. Der **echte Fehler** steht in den Cluster-Logs. Zugang: **Control Hub → Terminal** im Olares-UI (eingebautes root-shell, kein externes SSH nötig).
+
+| Was du wissen willst | Command |
+|---|---|
+| Wurde überhaupt ein Pod scheduled? | `kubectl get pods -A \| grep insilo` |
+| Insilo's ApplicationManager-State + history | `kubectl get applicationmanagers -A \| grep insilo` |
+| **Der konkrete Fehler-String** (z.B. Template-Render-Error) | `kubectl logs -n os-framework app-service-0 --tail=2000 \| grep -iE "insilo\|ERROR" \| head -60` |
+| Cluster-Events der Box-Apps | `kubectl get events -A --sort-by=.lastTimestamp \| grep insilo \| tail -20` |
+| Welche Images bereits gepullt | `crictl images \| grep -iE "insilo\|ollama"` |
+| Wo Olares hochgeladene Charts speichert | `/olares/userdata/Cache/chartrepo/v2/<user>/upload/<appname>-<version>/` |
+| App-Service Namespace | `os-framework` |
+| Market-Backend Namespace | `os-framework`, deployment `market-deployment` |
+
+**Pattern, das oft zuschlägt:** Olares' Studio reagiert mit „download failed" auf *jeden* Pre-Install-Fehler — Helm-Render, Linter-Reject, Icon-404, Image-Manifest-Resolve. Generic Bucket. Detail nur in `app-service-0` Pod-Log.
 
 ---
 
@@ -231,7 +260,8 @@ docker run --rm --network host --entrypoint sh minio/mc \
 - [x] Helm-Chart paketieren + als GitHub-Release-Asset
 - [x] Embeddings-CUDA-Bloat fixen
 - [x] Repo public schalten (Icon-Fix)
-- [ ] **Olares-Install final durchlaufen** (Stand: 3. Versuch nach Icon-Fix)
+- [x] Helm-Template-Render-Fehler `redis.namespaces.insilo` → `redis.namespace` (Commit `d38877e`)
+- [ ] **Olares-Install final durchlaufen** (Stand: 4. Versuch nach Template-Fix — User soll alte Insilo-App in Studio löschen, neue .tgz downloaden, hochladen)
 - [ ] Falls Ollama-4-GB-Pull-Timeout: `ollama/ollama` pinnen auf älteres Tag oder Olares' bereits installierte Ollama-App teilen
 - [ ] DB-Migrationen auf der Box ausführen (kein Init-Container im Chart — Hotfix nötig)
 - [ ] Erste End-to-End-Aufnahme auf der Box: Mikro → Whisper → Qwen → /ask
@@ -268,13 +298,14 @@ docker run --rm --network host --entrypoint sh minio/mc \
 ## 11. Tipps für eine neue Claude-Session
 
 1. **Lies CLAUDE.md erst** — komplette Architektur in einem File.
-2. **Lies docs/HANDOFF.md** (diese Datei) — Status + Learnings.
+2. **Lies docs/HANDOFF.md** (diese Datei) — Status + Learnings + Debug-Cheatsheet.
 3. **`git log --oneline -20`** zeigt die Phasen-Commits, jeder ist groß und thematisch klar (chronologisch absteigend: phase 3 → phase 2 → phase 1 → bundle pivot → initial scaffold).
 4. **Bei UI-Arbeit:** Skills `frontend-design` + `UI/UX Pro Max` aktivieren. Designsystem strikt aus [`docs/DESIGN.md`](DESIGN.md).
-5. **Bei Olares-Chart-Arbeit:** vor jedem Change `helm lint olares/ -f olares/values-olares-stub.yaml` laufen lassen, dann `helm package olares/ -d dist/`.
+5. **Bei Olares-Chart-Arbeit:** vor jedem Change `helm lint olares/ -f olares/values-olares-stub.yaml` laufen lassen, dann `helm package olares/ -d dist/`. **Wenn du Bundle-Annahmen über `.Values.<x>.<y>` änderst, im Zweifel auf der Olares-Box per `kubectl logs -n os-framework app-service-0` verifizieren** — die Bundle-Templates hatten mehrere falsche Annahmen über die genaue Form der Olares-injected values.
 6. **Bei Backend-Änderungen:** keine Auth-Logik bauen. User-Identität ist via `X-Bfl-User` Header. Lokal mit `NEXT_PUBLIC_USER=devuser` mocken.
 7. **Bei DB-Schema-Änderungen:** neue Migration in `supabase/migrations/0003_*.sql` anlegen, dann `psql` einspielen.
 8. **Sprachregel:** UI deutsch Sie-Form, Code/Commits englisch.
+9. **Olares-Debug:** „download failed" sagt nichts aus. Immer in `kubectl logs -n os-framework app-service-0` schauen — dort steht der echte Render/Validate/Pull-Fehler. Siehe Sektion 7a (Debug-Cheatsheet).
 
 ---
 

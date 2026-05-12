@@ -14,14 +14,13 @@
 
 olaresManifest.version: '0.11.0'
 olaresManifest.type: app
-apiVersion: v1
 
 metadata:
   name: insilo
   appid: insilo                # MUSS identisch zu metadata.name sein
   title: Insilo
   description: Souveräne Meeting-Intelligenz für den deutschen Mittelstand
-  icon: https://kaivo.studio/insilo/icon-256.png   # TODO: echtes Icon hosten
+  icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png   # TODO: echtes Icon hosten
   version: 0.1.0               # = Chart.yaml.version
   categories:
     - Productivity_v112
@@ -37,7 +36,7 @@ entrances:
     host: insilo-frontend       # = Service-Name in templates/service-frontend.yaml
     port: 3000
     title: Insilo
-    icon: https://kaivo.studio/insilo/icon-256.png
+    icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
     authLevel: private          # Authelia-Token-Pflicht
     invisible: false
     openMethod: default
@@ -48,6 +47,26 @@ entrances:
     title: Insilo API
     authLevel: private
     invisible: true             # nicht als Desktop-Icon zeigen
+
+# ---- System-Middlewares ----------------------------------------------------
+# Olares stellt Postgres + Redis (KVRocks) als geteilte System-Services bereit.
+# Diese Block sagt Olares: "Lege mir bitte einen DB-User + Datenbank + Redis-
+# Namespace an und reiche die Connection-Daten als .Values.postgres.* und
+# .Values.redis.* in die Helm-Templates."
+
+middleware:
+  postgres:
+    username: insilo
+    databases:
+      - name: insilo
+        extensions:
+          - vector       # pgvector — für BGE-M3 Embeddings (Phase 3)
+          - pg_trgm      # Trigram-Suche
+          - pgcrypto     # Verschlüsselte Felder
+          - uuid-ossp    # UUID-Generierung
+  redis:
+    password: auto       # Olares generiert ein Secret und injiziert es
+    namespace: insilo
 
 # ---- Berechtigungen ---------------------------------------------------------
 

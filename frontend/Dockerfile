@@ -33,8 +33,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Non-root User anlegen (UID 1000 — entspricht runAsUser in OlaresManifest)
-RUN addgroup -g 1000 -S insilo && \
+# Non-root User anlegen (UID 1000 — entspricht runAsUser in OlaresManifest).
+# node:alpine ships with a "node" user on UID 1000, so we rename instead of
+# adding a second user with the same UID.
+RUN deluser node 2>/dev/null || true && \
+    addgroup -g 1000 -S insilo && \
     adduser -S insilo -u 1000 -G insilo
 
 # Standalone-Build kopieren (next.config.mjs output: "standalone")

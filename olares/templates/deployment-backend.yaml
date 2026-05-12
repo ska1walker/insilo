@@ -57,7 +57,7 @@ spec:
             - name: REDIS_PASSWORD
               value: "{{ .Values.redis.password }}"
             - name: REDIS_NAMESPACE
-              value: "{{ .Values.redis.namespaces.insilo }}"
+              value: "{{ .Values.redis.namespace }}"
 
             # ---- Interne KI-Service-URLs ------------------------------------
             - name: WHISPER_URL

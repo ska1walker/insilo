@@ -25,8 +25,7 @@ redis:
   host: kvrocks-headless.user-system-kaivostudio.svc.cluster.local
   port: "6379"
   password: PLACEHOLDER
-  namespaces:
-    insilo: insilo_kaivostudio
+  namespace: insilo_kaivostudio
 
 cluster:
   arch: amd64

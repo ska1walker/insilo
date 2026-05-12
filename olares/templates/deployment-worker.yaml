@@ -59,7 +59,7 @@ spec:
             - name: REDIS_PASSWORD
               value: "{{ .Values.redis.password }}"
             - name: REDIS_NAMESPACE
-              value: "{{ .Values.redis.namespaces.insilo }}"
+              value: "{{ .Values.redis.namespace }}"
             - name: WHISPER_URL
               value: "http://insilo-whisper:8001"
             - name: OLLAMA_URL

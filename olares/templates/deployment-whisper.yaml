@@ -35,10 +35,13 @@ spec:
           env:
             - name: WHISPER_MODEL
               value: "{{ .Values.models.whisper }}"
+            # CPU on Olares for now — the GPU on the box is already
+            # claimed by other apps (Open WebUI, Qwen Vision). int8
+            # is the speed/accuracy sweet spot on CPU.
             - name: WHISPER_DEVICE
-              value: "cuda"
+              value: "cpu"
             - name: WHISPER_COMPUTE_TYPE
-              value: "float16"
+              value: "int8"
             - name: MODELS_DIR
               value: "/app/cache/models"
 
@@ -46,15 +49,15 @@ spec:
             - name: app-cache
               mountPath: /app/cache
 
+          # CPU-only. Bumps cpu request a bit because Whisper benefits
+          # from threads when not on GPU. No GPU slot reservation.
           resources:
             requests:
-              cpu: 1000m
+              cpu: 2000m
               memory: 4Gi
-              nvidia.com/gpu: 1
             limits:
-              cpu: 4000m
+              cpu: 6000m
               memory: 8Gi
-              nvidia.com/gpu: 1
 
           readinessProbe:
             httpGet:

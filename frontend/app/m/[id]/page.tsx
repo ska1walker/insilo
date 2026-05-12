@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { StatusPill } from "@/components/status-pill";
 import { ApiError } from "@/lib/api/client";
-import { deleteMeeting, getMeeting, type MeetingDto } from "@/lib/api/meetings";
+import {
+  deleteMeeting,
+  getMeeting,
+  type MeetingDto,
+  type Transcript,
+} from "@/lib/api/meetings";
 import { formatBytes, formatDuration, formatMeetingDate } from "@/lib/format";
 
 type Loaded =
@@ -13,18 +19,32 @@ type Loaded =
   | { kind: "not-found" }
   | { kind: "error"; message: string };
 
+const POLLING_STATUS = new Set([
+  "queued",
+  "transcribing",
+  "summarizing",
+  "embedding",
+  "uploading",
+]);
+
 export default function MeetingDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [state, setState] = useState<Loaded>({ kind: "loading" });
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    getMeeting(params.id)
-      .then((meeting) => {
-        if (!cancelled) setState({ kind: "ok", meeting });
-      })
-      .catch((err) => {
+
+    async function tick() {
+      try {
+        const m = await getMeeting(params.id);
+        if (cancelled) return;
+        setState({ kind: "ok", meeting: m });
+        if (POLLING_STATUS.has(m.status) && !cancelled) {
+          timerRef.current = setTimeout(tick, 2000);
+        }
+      } catch (err) {
         if (cancelled) return;
         if (err instanceof ApiError && err.status === 404) {
           setState({ kind: "not-found" });
@@ -33,9 +53,13 @@ export default function MeetingDetail() {
         } else {
           setState({ kind: "error", message: "Backend nicht erreichbar." });
         }
-      });
+      }
+    }
+
+    tick();
     return () => {
       cancelled = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [params.id]);
 
@@ -102,7 +126,10 @@ export default function MeetingDetail() {
         ← Übersicht
       </Link>
 
-      <h1 className="text-3xl font-medium md:text-4xl">{meeting.title}</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h1 className="text-3xl font-medium md:text-4xl">{meeting.title}</h1>
+        <StatusPill status={meeting.status} />
+      </div>
 
       <div className="mono mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-meta">
         <span>{formatMeetingDate(Date.parse(meeting.created_at))}</span>
@@ -112,8 +139,6 @@ export default function MeetingDetail() {
         <span>{formatBytes(meeting.byte_size)}</span>
         <span>·</span>
         <span>{meeting.mime_type}</span>
-        <span>·</span>
-        <span>status: {meeting.status}</span>
       </div>
 
       {meeting.audio_url && (
@@ -122,22 +147,99 @@ export default function MeetingDetail() {
         </div>
       )}
 
-      <section className="mt-12 rounded-lg border border-border-subtle bg-surface-soft p-6">
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-          Phase 2 — folgt
-        </p>
-        <p className="mt-2 text-sm text-text-secondary">
-          In der nächsten Phase erscheint hier das automatisch erzeugte
-          Transkript (Whisper) mit Sprecher-Trennung sowie eine
-          KI-Zusammenfassung über das gewählte Template.
-        </p>
-      </section>
+      {meeting.status === "failed" && (
+        <section className="mt-10 rounded-lg border border-border-subtle bg-white p-6">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-recording">
+            Fehler bei der Transkription
+          </p>
+          <p className="mt-2 text-sm text-text-secondary">
+            {meeting.error_message ?? "Unbekannter Fehler. Bitte prüfen Sie die Logs des Whisper-Services."}
+          </p>
+        </section>
+      )}
 
-      <div className="mt-12 flex justify-end">
+      {POLLING_STATUS.has(meeting.status) && (
+        <section className="mt-10 rounded-lg border border-border-subtle bg-surface-soft p-6">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+            Verarbeitung
+          </p>
+          <p className="mt-2 text-sm text-text-secondary">
+            Die Aufnahme wird transkribiert. Diese Ansicht aktualisiert sich automatisch.
+          </p>
+        </section>
+      )}
+
+      {meeting.transcript && (
+        <TranscriptView transcript={meeting.transcript} />
+      )}
+
+      <div className="mt-16 flex justify-end">
         <button type="button" onClick={onDelete} className="btn-tertiary text-recording">
           Aufnahme löschen
         </button>
       </div>
     </main>
   );
+}
+
+function TranscriptView({ transcript }: { transcript: Transcript }) {
+  return (
+    <section className="mt-12">
+      <div className="mb-6 flex items-baseline justify-between gap-4">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+          Transkript
+        </p>
+        <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+          {transcript.whisper_model} · {transcript.language} · {transcript.word_count} Wörter
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-border-subtle bg-white p-8">
+        {transcript.segments.length === 0 && (
+          <p className="text-sm text-text-meta">
+            Keine Sprache erkannt. Die Aufnahme enthielt nur Stille oder Hintergrundrauschen.
+          </p>
+        )}
+
+        {transcript.segments.map((seg, i) => (
+          <div
+            key={i}
+            className="grid grid-cols-[80px_1fr] gap-4 py-3 md:grid-cols-[100px_1fr] md:gap-6"
+          >
+            <div>
+              <p className="mono text-[0.8125rem] font-medium text-text-meta">
+                [{formatTime(seg.start)}]
+              </p>
+              {seg.speaker && (
+                <p
+                  className="mono mt-1 text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
+                  style={{ color: "var(--gold)" }}
+                >
+                  {seg.speaker}
+                </p>
+              )}
+            </div>
+            <p className="text-base leading-relaxed text-text-primary">{seg.text}</p>
+          </div>
+        ))}
+      </div>
+
+      <section className="mt-12 rounded-lg border border-border-subtle bg-surface-soft p-6">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+          Phase 2 — folgt
+        </p>
+        <p className="mt-2 text-sm text-text-secondary">
+          Als nächstes erscheint hier die KI-Zusammenfassung über das gewählte Template
+          sowie die automatische Sprecher-Trennung (Diarization).
+        </p>
+      </section>
+    </section>
+  );
+}
+
+function formatTime(seconds: number): string {
+  const total = Math.floor(seconds);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }

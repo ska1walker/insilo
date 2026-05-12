@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { StatusPill } from "@/components/status-pill";
 import { ApiError } from "@/lib/api/client";
 import { listMeetings, type MeetingDto } from "@/lib/api/meetings";
 import { formatDuration, formatMeetingDate } from "@/lib/format";
@@ -16,20 +17,34 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    listMeetings()
-      .then((meetings) => {
-        if (!cancelled) setState({ kind: "ok", meetings });
-      })
-      .catch((err) => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function tick() {
+      try {
+        const meetings = await listMeetings();
+        if (cancelled) return;
+        setState({ kind: "ok", meetings });
+        // Poll while anything is mid-pipeline.
+        const stillWorking = meetings.some((m) =>
+          ["queued", "transcribing", "summarizing", "embedding", "uploading"].includes(m.status),
+        );
+        if (stillWorking && !cancelled) {
+          timer = setTimeout(tick, 3000);
+        }
+      } catch (err) {
         if (cancelled) return;
         const msg =
           err instanceof ApiError
             ? `Backend nicht erreichbar (HTTP ${err.status}).`
             : "Backend nicht erreichbar. Läuft `uvicorn` auf Port 8000?";
         setState({ kind: "error", message: msg });
-      });
+      }
+    }
+
+    tick();
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
@@ -61,13 +76,15 @@ export default function Home() {
                     {m.title}
                   </p>
                   <p className="mt-1 text-[0.8125rem] text-text-meta">
-                    {formatMeetingDate(Date.parse(m.created_at))} ·{" "}
-                    <span className="mono">{m.status}</span>
+                    {formatMeetingDate(Date.parse(m.created_at))}
                   </p>
                 </div>
-                <p className="mono shrink-0 text-[0.8125rem] font-medium text-text-meta">
-                  {formatDuration(m.duration_ms)}
-                </p>
+                <div className="flex shrink-0 items-center gap-4">
+                  <StatusPill status={m.status} />
+                  <p className="mono text-[0.8125rem] font-medium text-text-meta">
+                    {formatDuration(m.duration_ms)}
+                  </p>
+                </div>
               </div>
             </Link>
           ))}

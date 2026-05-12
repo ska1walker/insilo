@@ -1,5 +1,6 @@
 """Meeting CRUD + audio upload."""
 
+import json
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -8,6 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire
 from app.storage import delete_object, get_presigned_url, upload_bytes
+from app.tasks.transcribe import transcribe_meeting
 
 router = APIRouter(prefix="/api/v1", tags=["meetings"])
 
@@ -58,17 +60,37 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
         row = await conn.fetchrow(
             """
             select id, title, recorded_at, duration_sec, audio_size_bytes,
-                   audio_path, status, metadata->>'mime_type' as audio_mime
+                   audio_path, status, error_message,
+                   metadata->>'mime_type' as audio_mime
             from public.meetings
             where id = $1 and org_id = $2 and deleted_at is null
             """,
             meeting_id,
             user.org_id,
         )
-    if row is None:
-        raise HTTPException(404, "meeting not found")
+        if row is None:
+            raise HTTPException(404, "meeting not found")
+        transcript_row = await conn.fetchrow(
+            """
+            select segments, full_text, language, whisper_model, word_count
+            from public.transcripts
+            where meeting_id = $1
+            """,
+            meeting_id,
+        )
+
     audio_url = get_presigned_url(row["audio_path"]) if row["audio_path"] else None
-    return _meeting_row_to_dto(row, audio_url=audio_url)
+    dto = _meeting_row_to_dto(row, audio_url=audio_url)
+    dto["error_message"] = row["error_message"]
+    if transcript_row is not None:
+        dto["transcript"] = {
+            "segments": json.loads(transcript_row["segments"]) if isinstance(transcript_row["segments"], str) else transcript_row["segments"],
+            "full_text": transcript_row["full_text"],
+            "language": transcript_row["language"],
+            "whisper_model": transcript_row["whisper_model"],
+            "word_count": transcript_row["word_count"],
+        }
+    return dto
 
 
 @router.post("/recordings", status_code=201)
@@ -97,7 +119,7 @@ async def create_recording(
                 language, metadata
             )
             values (
-                $1, $2, $3, $4, 'ready',
+                $1, $2, $3, $4, 'queued',
                 $5, $6, $7,
                 'de', jsonb_build_object('mime_type', $8::text)
             )
@@ -113,6 +135,10 @@ async def create_recording(
             len(blob),
             mime_type,
         )
+
+    # Hand off transcription to the Celery worker. The HTTP response returns
+    # immediately; the frontend polls status until it flips to "ready".
+    transcribe_meeting.delay(str(meeting_id))
 
     return _meeting_row_to_dto(row, audio_url=get_presigned_url(key))
 

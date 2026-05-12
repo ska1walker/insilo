@@ -1,0 +1,21 @@
+[project]
+name = "insilo-whisper"
+version = "0.1.0"
+description = "Insilo Whisper service — faster-whisper wrapped in a small FastAPI"
+requires-python = ">=3.11"
+
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "python-multipart>=0.0.12",
+  "faster-whisper>=1.0.3",
+  "pydantic>=2.9.0",
+  "pydantic-settings>=2.6.0",
+]
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]

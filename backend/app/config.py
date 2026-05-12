@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     audio_retention_days: int = 90
     max_upload_mb: int = 500
 
+    # --- Internal AI services ---
+    whisper_url: str = "http://localhost:8001"
+    ollama_url: str = "http://localhost:11434"
+    embeddings_url: str = "http://localhost:8002"
+
     # --- Olares context (dev defaults) ---
     olares_user: str = "devuser"
     olares_zone: str = "devuser.olares.local"

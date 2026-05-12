@@ -50,6 +50,24 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
 
+  # ---- Whisper service (Phase 1) -----------------------------------------
+  # Local dev uses faster-whisper on CPU with the "tiny" model so the
+  # transcription pipeline can be exercised end-to-end without a GPU.
+  # On Olares: large-v3 on the GPU node (see olares/templates/deployment-whisper.yaml).
+  whisper:
+    build: ./services/whisper
+    container_name: insilo_whisper
+    restart: unless-stopped
+    environment:
+      MODEL: tiny
+      DEVICE: cpu
+      COMPUTE_TYPE: int8
+      CACHE_DIR: /app/cache/whisper
+    ports:
+      - "8001:8001"
+    volumes:
+      - whisper_cache:/app/cache
+
   # ---- Optional: Ollama lokal (für Phase 2+) -----------------------------
   # Erfordert NVIDIA-GPU + nvidia-docker.
   # Auf macOS: nicht aktivieren, stattdessen Ollama nativ via brew install.
@@ -74,4 +92,5 @@ volumes:
   pg_data:
   redis_data:
   minio_data:
+  whisper_cache:
   # ollama_data:

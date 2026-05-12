@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend_Deca, Inter, JetBrains_Mono } from "next/font/google";
+import Link from "next/link";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import "./globals.css";
 
 const lexend = Lexend_Deca({
@@ -37,8 +39,6 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-import Link from "next/link";
-
 export default function RootLayout({
   children,
 }: {
@@ -69,6 +69,7 @@ export default function RootLayout({
           </div>
         </header>
         {children}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

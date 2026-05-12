@@ -1,5 +1,32 @@
 import { apiDelete, apiGet, apiPost, apiRequest } from "./client";
 
+export type TranscriptSegment = {
+  start: number;
+  end: number;
+  text: string;
+  speaker?: string | null;
+};
+
+export type Transcript = {
+  segments: TranscriptSegment[];
+  full_text: string;
+  language: string;
+  whisper_model: string;
+  word_count: number;
+};
+
+export type MeetingStatus =
+  | "draft"
+  | "uploading"
+  | "queued"
+  | "transcribing"
+  | "transcribed"
+  | "summarizing"
+  | "embedding"
+  | "ready"
+  | "failed"
+  | "archived";
+
 export type MeetingDto = {
   id: string;
   title: string;
@@ -7,8 +34,10 @@ export type MeetingDto = {
   duration_ms: number;
   mime_type: string;
   byte_size: number;
-  status: string;
-  audio_url?: string;     // signed playback URL, only on detail
+  status: MeetingStatus;
+  audio_url?: string | null;
+  error_message?: string | null;
+  transcript?: Transcript | null;
 };
 
 export async function listMeetings(): Promise<MeetingDto[]> {

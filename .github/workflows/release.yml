@@ -1,0 +1,81 @@
+name: release
+
+# Build + push the four container images on every tag like v0.1.0.
+# Images land at ghcr.io/<repo-owner>/insilo-<service>:<version>
+# and are made public so the Olares box pulls them without secrets.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image tag without leading v (e.g. 0.1.0)"
+        required: true
+        default: "0.1.0"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: frontend
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+          - service: backend
+            context: ./backend
+            dockerfile: ./backend/Dockerfile
+          - service: whisper
+            context: ./services/whisper
+            dockerfile: ./services/whisper/Dockerfile
+          - service: embeddings
+            context: ./services/embeddings
+            dockerfile: ./services/embeddings/Dockerfile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive version
+        id: ver
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lowercase owner
+        id: owner
+        run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/${{ steps.owner.outputs.owner }}/insilo-${{ matrix.service }}:${{ steps.ver.outputs.version }}
+            ghcr.io/${{ steps.owner.outputs.owner }}/insilo-${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}

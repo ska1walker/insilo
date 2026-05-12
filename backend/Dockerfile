@@ -20,8 +20,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # pip + uv
 RUN pip install --no-cache-dir --upgrade pip uv
 
-# Dependencies installieren
+# Dependencies installieren (app/ must exist for pyproject's package config)
 COPY pyproject.toml ./
+COPY app ./app
 RUN uv pip install --system --no-cache .
 
 # ===========================================================================

@@ -7,10 +7,12 @@
 # ===========================================================================
 
 # ---- Stage 1: Dependencies -------------------------------------------------
+# Install ALL dependencies (including dev) — tailwind, postcss, typescript
+# are dev deps but the production build needs them.
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # ---- Stage 2: Build --------------------------------------------------------
 FROM node:20-alpine AS builder
@@ -18,6 +20,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_API_URL=https://insilo-api.placeholder/api
+ENV NEXT_PUBLIC_USER=placeholder
 RUN npm run build
 
 # ---- Stage 3: Runner -------------------------------------------------------
@@ -42,8 +46,9 @@ USER insilo
 
 EXPOSE 3000
 
-# Health-Endpoint
+# Liveness: the Next.js server answers at /; full health is enforced by
+# Kubernetes/Olares readinessProbe + the backend's own /health.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
-  CMD wget --quiet --spider http://localhost:3000/api/health || exit 1
+  CMD wget --quiet --spider http://localhost:3000/ || exit 1
 
 CMD ["node", "server.js"]

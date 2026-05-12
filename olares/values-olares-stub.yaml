@@ -1,0 +1,38 @@
+# Stub values that emulate the variables Olares injects at install time.
+# Use ONLY for `helm template / lint` validation locally.
+# Real installs on Olares get these values automatically.
+
+bfl:
+  username: kaivostudio
+
+user:
+  zone: olares.de
+
+userspace:
+  appData: /olares/userspaces/kaivostudio/Data/insilo
+  appCache: /olares/userspaces/kaivostudio/Cache/insilo
+  userData: /olares/userspaces/kaivostudio/Home
+
+postgres:
+  host: citus-headless.user-system-kaivostudio.svc.cluster.local
+  port: "5432"
+  username: insilo_kaivostudio
+  password: PLACEHOLDER
+  databases:
+    insilo: insilo_kaivostudio
+
+redis:
+  host: kvrocks-headless.user-system-kaivostudio.svc.cluster.local
+  port: "6379"
+  password: PLACEHOLDER
+  namespaces:
+    insilo: insilo_kaivostudio
+
+cluster:
+  arch: amd64
+
+# Olares injects one domain entry per declared entrance in OlaresManifest.yaml.
+# Our manifest declares "app" (frontend) and "api" (backend, invisible).
+domain:
+  app: insilo.kaivostudio.olares.de
+  api: insilo-api.kaivostudio.olares.de

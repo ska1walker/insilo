@@ -40,10 +40,16 @@ images:
     pullPolicy: IfNotPresent
 
 # ---- KI-Modelle ------------------------------------------------------------
+# VRAM-Budget auf einer 24 GB-GPU (RTX 5090 Laptop):
+#   whisper large-v3 ≈ 3 GB · qwen 7B ≈ 5 GB · embeddings (CPU) = 0 GB
+#   = ~8 GB Reserve für Insilo. Andere Olares-Apps können parallel laufen.
+#
+# Wenn die Box mehr VRAM hat (Olares One Pro etc.) oder du Insilo allein
+# laufen lässt: `ollama: qwen2.5:14b-instruct-q4_K_M` setzen (~10 GB).
 
 models:
   whisper: large-v3
-  ollama: qwen2.5:14b-instruct-q4_K_M
+  ollama: qwen2.5:7b-instruct
   embeddings: BAAI/bge-m3
 
 # ---- Anwendungskonfiguration -----------------------------------------------

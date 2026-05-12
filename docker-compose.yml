@@ -50,6 +50,21 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
 
+  # ---- Embeddings service (Phase 3) --------------------------------------
+  # BGE-M3 on CPU. Sentence-transformers downloads weights on first start.
+  embeddings:
+    build: ./services/embeddings
+    container_name: insilo_embeddings
+    restart: unless-stopped
+    environment:
+      MODEL: BAAI/bge-m3
+      DEVICE: cpu
+      CACHE_DIR: /app/cache/embeddings
+    ports:
+      - "8002:8002"
+    volumes:
+      - embeddings_cache:/app/cache
+
   # ---- Whisper service (Phase 1) -----------------------------------------
   # Local dev uses faster-whisper on CPU with the "tiny" model so the
   # transcription pipeline can be exercised end-to-end without a GPU.
@@ -93,4 +108,5 @@ volumes:
   redis_data:
   minio_data:
   whisper_cache:
+  embeddings_cache:
   # ollama_data:

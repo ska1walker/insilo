@@ -159,6 +159,11 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     finally:
         await conn.close()
 
+    # Fan out the embedding job. Status stays "ready" — embedding is a
+    # background nice-to-have for RAG; it doesn't gate the user's view.
+    from app.worker import celery_app as _app
+    _app.send_task("embed_meeting", args=[str(meeting_id)])
+
     return {
         "status": "ok",
         "elapsed_ms": elapsed_ms,

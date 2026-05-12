@@ -27,6 +27,16 @@ export type MeetingStatus =
   | "failed"
   | "archived";
 
+export type Summary = {
+  content: Record<string, unknown>;
+  llm_model: string;
+  generation_time_ms: number;
+  created_at: string | null;
+  template_id: string;
+  template_name: string;
+  template_version: number;
+};
+
 export type MeetingDto = {
   id: string;
   title: string;
@@ -37,7 +47,10 @@ export type MeetingDto = {
   status: MeetingStatus;
   audio_url?: string | null;
   error_message?: string | null;
+  template_id?: string | null;
+  template_name?: string | null;
   transcript?: Transcript | null;
+  summary?: Summary | null;
 };
 
 export async function listMeetings(): Promise<MeetingDto[]> {
@@ -53,12 +66,14 @@ export async function createMeeting(args: {
   title: string;
   durationMs: number;
   mimeType: string;
+  templateId?: string;
 }): Promise<MeetingDto> {
   const form = new FormData();
   form.append("audio", args.blob, "recording");
   form.append("title", args.title);
   form.append("duration_ms", String(args.durationMs));
   form.append("mime_type", args.mimeType);
+  if (args.templateId) form.append("template_id", args.templateId);
   return apiRequest<MeetingDto>("/api/v1/recordings", {
     method: "POST",
     body: form,

@@ -112,9 +112,15 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
                 result.get("model") or "unknown",
                 len(full_text.split()),
             )
-            await _set_status(conn, meeting_id, "ready")
+            # Don't mark "ready" yet — chain a summary task. The summarize
+            # task is responsible for the final "ready" transition.
+            await _set_status(conn, meeting_id, "transcribed")
     finally:
         await conn.close()
+
+    # Hand off to the LLM summarizer. Use send_task to avoid a circular import.
+    from app.worker import celery_app as _app
+    _app.send_task("summarize_meeting", args=[str(meeting_id)])
 
     return {
         "status": "ok",

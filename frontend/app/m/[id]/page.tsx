@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
+import { SummaryView } from "@/components/summary-view";
 import { ApiError } from "@/lib/api/client";
 import {
   deleteMeeting,
@@ -169,6 +170,22 @@ export default function MeetingDetail() {
         </section>
       )}
 
+      {meeting.summary && (
+        <section className="mt-12">
+          <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+              Zusammenfassung · {meeting.summary.template_name}
+            </p>
+            <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+              {meeting.summary.llm_model} · {Math.round(meeting.summary.generation_time_ms / 1000)}s
+            </p>
+          </div>
+          <div className="rounded-lg border border-border-subtle bg-white p-8">
+            <SummaryView summary={meeting.summary} />
+          </div>
+        </section>
+      )}
+
       {meeting.transcript && (
         <TranscriptView transcript={meeting.transcript} />
       )}
@@ -224,15 +241,6 @@ function TranscriptView({ transcript }: { transcript: Transcript }) {
         ))}
       </div>
 
-      <section className="mt-12 rounded-lg border border-border-subtle bg-surface-soft p-6">
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-          Phase 2 — folgt
-        </p>
-        <p className="mt-2 text-sm text-text-secondary">
-          Als nächstes erscheint hier die KI-Zusammenfassung über das gewählte Template
-          sowie die automatische Sprecher-Trennung (Diarization).
-        </p>
-      </section>
     </section>
   );
 }

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import CurrentUser, get_current_user
 from app.db import close_pool, init_pool
-from app.routers import meetings
+from app.routers import meetings, templates
 
 
 @asynccontextmanager
@@ -98,3 +98,4 @@ async def root(user: CurrentUser = Depends(get_current_user)) -> dict:
 # ----------------------------------------------------------------------------
 
 app.include_router(meetings.router)
+app.include_router(templates.router)

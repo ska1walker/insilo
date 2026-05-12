@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
 import { ApiError } from "@/lib/api/client";
 import { createMeeting } from "@/lib/api/meetings";
+import { listTemplates, type TemplateDto } from "@/lib/api/templates";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
+
+const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
 
 type Phase = "idle" | "requesting" | "recording" | "saving" | "denied" | "unsupported";
 
@@ -36,6 +39,15 @@ export default function AufnahmePage() {
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef<number>(0);
   const tickRef = useRef<number | null>(null);
+
+  const [templates, setTemplates] = useState<TemplateDto[] | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(DEFAULT_TEMPLATE_ID);
+
+  useEffect(() => {
+    listTemplates()
+      .then(setTemplates)
+      .catch(() => setTemplates([]));   // backend down → just disable picker
+  }, []);
 
   useEffect(() => {
     return () => stopTracksAndTick();
@@ -111,7 +123,13 @@ export default function AufnahmePage() {
     const title = defaultMeetingTitle(now);
 
     try {
-      const meeting = await createMeeting({ blob, title, durationMs, mimeType });
+      const meeting = await createMeeting({
+        blob,
+        title,
+        durationMs,
+        mimeType,
+        templateId: selectedTemplate,
+      });
       router.push(`/m/${meeting.id}`);
     } catch (err) {
       console.error("upload failed", err);
@@ -184,6 +202,41 @@ export default function AufnahmePage() {
               <button type="button" onClick={cancel} className="btn-tertiary">
                 Abbrechen
               </button>
+            </div>
+          )}
+
+          {phase === "idle" && templates && templates.length > 0 && (
+            <div className="mt-16 text-left">
+              <p className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+                Vorlage für die Zusammenfassung
+              </p>
+              <div className="rounded-lg border border-border-subtle bg-white">
+                {templates.map((t, i) => (
+                  <label
+                    key={t.id}
+                    className={`flex cursor-pointer items-start gap-3 p-4 ${
+                      i > 0 ? "border-t border-border-subtle" : ""
+                    } ${selectedTemplate === t.id ? "bg-gold-faint" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name="template"
+                      value={t.id}
+                      checked={selectedTemplate === t.id}
+                      onChange={(e) => setSelectedTemplate(e.target.value)}
+                      className="mt-1 accent-black"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium text-text-primary">{t.name}</p>
+                      {t.description && (
+                        <p className="mt-1 text-sm text-text-secondary">
+                          {t.description}
+                        </p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
             </div>
           )}
 

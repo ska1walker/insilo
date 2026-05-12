@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     embeddings_url: str = "http://localhost:8002"
 
+    # Local dev defaults to 7B (fits a MacBook); Olares chart sets 14B Q4.
+    ollama_model: str = "qwen2.5:7b-instruct"
+
+    # The system template used when the user doesn't pick one explicitly.
+    default_template_id: str = "00000000-0000-0000-0000-000000000001"
+
     # --- Olares context (dev defaults) ---
     olares_user: str = "devuser"
     olares_zone: str = "devuser.olares.local"

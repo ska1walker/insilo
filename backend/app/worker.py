@@ -18,7 +18,7 @@ celery_app = Celery(
     "insilo",
     broker=_redis_url(0),
     backend=_redis_url(1),
-    include=["app.tasks.transcribe"],
+    include=["app.tasks.transcribe", "app.tasks.summarize"],
 )
 
 celery_app.conf.update(

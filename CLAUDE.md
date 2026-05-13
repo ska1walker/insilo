@@ -259,7 +259,7 @@ insilo/
 4. **Bei DB-Schema-Änderungen:** Migration in `supabase/migrations/0NNN_*.sql` anlegen, RLS auf jede neue Tabelle, **dann `python3 scripts/regen-migrations.py` laufen lassen** — das mirroret die SQL in `olares/files/` und regeneriert die inlinete `olares/templates/configmap-migrations.yaml`. CI bricht sonst beim Drift-Check ab.
 5. **Bei Storage:** Nur `/app/data/`, `/app/cache/`, `/app/Home/`. Niemals beliebige Pfade.
 6. **Bei Olares-Manifest- oder Chart-Änderungen:** **Vor dem Commit `bash scripts/check-chart.sh` laufen lassen.** Das Script codiert die Phase-4-Learnings — Version-Sync (Marc's Golden Rule), keine `.Files.Get`, keine Helm-Hooks (chicken-and-egg `ns-owner`-Label), kein `runAsInternal: true`, SQL-Drift, helm lint + template. Vollständiges Detail in `docs/HANDOFF.md §7g`. Selbe Checks laufen in CI (`ci.yml.chart-checks`) und blockieren Image-Builds (`release.yml.preflight`).
-7. **Bei neuem Git-Tag `v*.*.*`:** Tag-Name muss `olares/Chart.yaml.version` matchen — `release.yml` bricht sonst ab.
+7. **Bei neuem Git-Tag `v*.*.*`:** Tag-Name muss `olares/Chart.yaml.version` matchen — `release.yml` bricht sonst ab. Am einfachsten via `scripts/release.sh X.Y.Z` — bumpt alle 4 Versionsstellen + image-tags, regen-Migrationen, check-chart, helm package, commit, tag, push, copy to `~/Downloads/`. Flag `--chart-only` lässt image-tags stehen (spart GH-Actions-Build wenn nur YAML geändert). `--dry-run` zeigt was passieren würde. `--no-push` stoppt lokal nach Tag.
 8. **Sprachregel:** UI-Texte Deutsch (Sie-Form). Code Englisch.
 9. **Tests:** Vitest fürs Frontend, pytest fürs Backend. Kritische Pfade (Audio-Upload, Transkription) immer mit Tests.
 10. **Bei Unsicherheit:** stoppen und Kai fragen.

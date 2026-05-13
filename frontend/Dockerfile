@@ -20,7 +20,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_PUBLIC_API_URL=https://insilo-api.placeholder/api
+# NEXT_PUBLIC_API_URL must be empty at build time so the bundled client uses
+# relative URLs ("/api/...") on the same origin. Next.js rewrites (see
+# next.config.mjs) then proxy /api/* to the backend via cluster DNS.
+# Setting it here to a placeholder bakes the placeholder into the JS bundle
+# and the browser would try to fetch from there — connection broken.
+ENV NEXT_PUBLIC_API_URL=
 ENV NEXT_PUBLIC_USER=placeholder
 RUN npm run build
 

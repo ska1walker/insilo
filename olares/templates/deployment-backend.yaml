@@ -66,6 +66,18 @@ spec:
             - -c
             - |
               import asyncio, asyncpg, glob, os, sys
+              from asyncpg.exceptions import (
+                  DuplicateColumnError, DuplicateObjectError, DuplicateSchemaError,
+                  DuplicateTableError, UniqueViolationError,
+              )
+
+              # Errors that mean "this migration was already applied" — safe to skip
+              # the rest of the file. seed.sql uses ON CONFLICT DO NOTHING so it
+              # never hits these; only schema files do.
+              SKIPPABLE = (
+                  DuplicateColumnError, DuplicateObjectError, DuplicateSchemaError,
+                  DuplicateTableError, UniqueViolationError,
+              )
 
               async def connect_with_retry(attempts: int = 60, delay: float = 5.0):
                   last = None
@@ -96,8 +108,17 @@ spec:
                           print(f"Applying {path}...", flush=True)
                           with open(path) as fp:
                               sql = fp.read()
-                          await conn.execute(sql)
-                          print(f"  ok ({len(sql)} bytes)", flush=True)
+                          try:
+                              await conn.execute(sql)
+                              print(f"  ok ({len(sql)} bytes)", flush=True)
+                          except SKIPPABLE as exc:
+                              # The implicit transaction is already rolled back —
+                              # treat the whole file as "previously applied" and
+                              # move on. (Our migrations are append-only, so this
+                              # is the correct behaviour: a new 0NNN file will
+                              # still hit fresh statements and apply.)
+                              print(f"  skip (already applied): "
+                                    f"{type(exc).__name__}: {exc}", flush=True)
                   finally:
                       await conn.close()
                   print("Migrations complete.", flush=True)

@@ -41,8 +41,16 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            # Empty -> Browser calls /api/* on the same origin as the frontend
+            # (https://insilo.<user>.olares.de). Next.js Server proxies via
+            # cluster DNS to the backend pod. Removes the second Authelia hop
+            # on the invisible api entrance and avoids CORS issues.
             - name: NEXT_PUBLIC_API_URL
-              value: "https://{{ index .Values.domain "api" }}"
+              value: ""
+            # Internal backend URL used by Next.js rewrites (server-side proxy).
+            # Cluster-DNS reachable from the frontend pod.
+            - name: INSILO_BACKEND_INTERNAL
+              value: "http://insilo-backend:8000"
             - name: NEXT_PUBLIC_USER
               value: "{{ .Values.bfl.username }}"
           resources:

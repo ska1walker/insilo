@@ -643,10 +643,18 @@ Ermöglicht:
 
 ### Aktueller Stand & Next Actions (für neue Session)
 
-**Box-State:**
-- Insilo: **uninstalled** (AM gelöscht)
-- Helm-Release: weg (durch AM-Delete)
-- `/tmp/insilo-0.1.12.tgz` auf der Box bereit
+**Box-State (live verifiziert, 13. Mai abends):**
+- Insilo v0.1.12: **running**
+- ApplicationManager state: `running`
+- `insilo` frontend Pod: **2/2 Ready** (mit Envoy-Sidecar)
+- `insilo-backend` Pod: **1/1 Ready** ← KEIN Envoy mehr (api-Entrance entfernt → keine Sidecar-Injection)
+- Andere Pods: insilo-embeddings, insilo-whisper, insilo-worker alle 1/1 Running
+
+**Letzte offene Tests:**
+1. Service-Worker im Browser leeren (DevTools → Application → Clear site data)
+2. PWA neu laden — `Besprechungen` sollte JSON statt 401 zurückgeben
+3. Falls 500 / „relation does not exist": DB-Migrationen einspielen (siehe unten)
+4. End-to-End: Aufnahme → Whisper → LiteLLM-Summary → /ask
 
 **Mac-State:**
 - `~/Downloads/insilo-0.1.12.tgz` bereit

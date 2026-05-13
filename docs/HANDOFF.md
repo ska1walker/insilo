@@ -1,7 +1,15 @@
-# Handoff — Stand & Learnings (Mai 2026)
+# Handoff — Stand & Learnings (Mai 2026, **letzte Aktualisierung: 13. Mai**)
 
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
+>
+> **Stand 13. Mai 2026 (abends):** Phase 4 NICHT gescheitert — wir hatten falsche Annahmen.
+> Marc (aimighty) hat den dritten Olares-Distribution-Pfad dokumentiert: **Custom Market
+> Source via Cloudflare Pages**. Aimighty's bestehende `aimighty-market.pages.dev` wird
+> als unsere Distribution-Plattform genutzt (D1-Piggyback, da wir als Team operieren).
+> Das untenstehende Sackgassen-Doc in §7c bleibt gültig für die „Upload custom chart"-Pfad-
+> Lessons, ist aber strategisch obsolet. Siehe §7d für den neuen Plan und
+> [OLARES_DEEP_DIVE.md §4](OLARES_DEEP_DIVE.md) für die volle Erklärung.
 
 ---
 
@@ -9,21 +17,21 @@
 
 | Phase | Status | Lokal | Auf Olares |
 |---|---|---|---|
-| **1 — Audio-Pipeline** (Aufnahme → Whisper-Transkript) | ✅ live | ✅ läuft | 🟡 chart deployed, scheduling tbd |
-| **2 — LLM-Summary** (Qwen + 4 System-Templates) | ✅ live | ✅ läuft | 🟡 via LiteLLM-Gateway konfiguriert |
-| **3 — RAG / „Ask"** (BGE-M3 + pgvector + grounded answers) | ✅ live | ✅ läuft | 🟡 wartet auf Schedule |
-| **4 — Olares-Paketierung** | 🟡 5. Install-Versuch | n/a | **Whisper jetzt CPU, kein GPU-Slot mehr** |
-| 5 — Pilot-Deployment | not started | | |
+| **1 — Audio-Pipeline** (Aufnahme → Whisper-Transkript) | ✅ live | ✅ läuft | ✅ Pod läuft (1/1 Running getestet 13. Mai) |
+| **2 — LLM-Summary** (Qwen via LiteLLM) | ✅ live | ✅ läuft | ✅ Worker connected sich erfolgreich (Redis-Fix v0.1.2) |
+| **3 — RAG / „Ask"** (BGE-M3 + pgvector + grounded answers) | ✅ live | ✅ läuft | ✅ Embeddings-Pod läuft (1/1 Running) |
+| **4 — Olares-Paketierung** | 🟢 **Plan klar via Custom Market Source (D1)**, siehe §7d | — | Distribution via `aimighty-market.pages.dev` (Marc's CF-Pages) |
+| 5 — Pilot-Deployment | nach Phase-4-Abschluss durchstart-bar, ETA ~1-2 Wochen | | |
 
-**Letzter konkreter Stand (Commit `363e2e9`):**
+**Letzter konkreter Stand (Commit ggf. noch ungepusht, lokal Chart v0.1.5):**
+
 - 4 Container-Images public auf `ghcr.io/ska1walker/insilo-*:0.1.0` (linux/amd64). Ollama-Image **entfernt** — wir nutzen LiteLLM stattdessen.
-- Helm-Chart `dist/insilo-0.1.0.tgz` als GitHub-Release-Asset (8.3 KB).
-- Insilo braucht **0 GPU-Slots** auf der Box. Whisper auf CPU (5× langsamer aber unproblematisch).
-- LLM-Calls gehen an `http://litellm-svc.litellm-{{ .Values.bfl.username }}.svc.cluster.local/v1` — die schon-installierte LiteLLM-App des Users serviert das Modell `qwen36a3bvisionone`.
-- `OlaresManifest.permission.provider` deklariert Cross-App-Zugriff auf LiteLLM (Format: `{appName, providerName, podSelectors}`).
-- Repo `ska1walker/insilo` ist **public** (war privat → Icon-404 → erste downloadFailed-Welle).
+- Helm-Chart-Iterationen: 0.1.0 → 0.1.5 (siehe §7c für Fix-Historie). Aktuell `dist/insilo-0.1.5.tgz` (~34 KB).
+- Auf Olares: 3 von 5 Pods laufen (worker, whisper, embeddings). 2 von 5 hängen permanent am Olares-injected `check-auth` Init-Container.
+- LiteLLM-Cross-App-Calls **architekturell verifiziert** — Worker-Pod erreichbar, hat echtes Redis-Passwort, wartet auf Tasks.
+- Repo `ska1walker/insilo` ist **public**.
 
-**Aktuelle Aufgabe:** User soll die alte Insilo-App in Olares Studio deinstallieren (war auf state=`stopped`, Reason=`Unschedulable` wegen GPU-Konflikt vor Whisper-CPU-Fix), dann neues `.tgz` hochladen.
+**Aktuelle Aufgabe:** Strategische Entscheidung treffen — siehe §7c "Drei Wege ab hier" und §9.
 
 ---
 
@@ -239,6 +247,15 @@ docker run --rm --network host --entrypoint sh minio/mc \
 | `state=stopped, Reason=Unschedulable` (vor Whisper-CPU-Fix) | K8s konnte Pod nicht placen weil GPU-Slot komplett vergeben. Single-Node-Olares, andere Apps (Open WebUI, Qwen Vision, LiteLLM) hatten alle GPU-Slots besetzt. | Whisper-Deployment: `WHISPER_DEVICE=cpu`, `WHISPER_COMPUTE_TYPE=int8`, `nvidia.com/gpu` raus aus resources. Bumped CPU-request auf 2 cores. Commit `363e2e9`. |
 | Safari-Quick-Look entpackt `.tgz` zu nutzlosem `.tar` | macOS-Default: „Sichere Dateien nach Laden öffnen" entpackt gzip. Olares-Linter ablehnt mit „unexpected EOF" | Direkt-Download mit auth: `gh release download v0.1.0 -R ska1walker/insilo -p 'insilo-0.1.0.tgz' --clobber`. Anonymes curl liefert 404 weil Repo damals private war (vor Public-Switch). |
 | Olares blockiert ad-hoc `kubectl run curlpod` mit „cannot get user name from header" | Envoy-Sidecar auf jedem managed-Pod verlangt `X-Bfl-User` Header. Random-Pods aus `default` namespace haben den nicht. | Tests aus schon-managed Pod (`kubectl exec -n openwebui-kaivostudio deployment/openwebui -c openwebui -- curl ...`) oder direkt aus eigenem App-Pod nach Install. |
+| **`Chart.yaml.version` ≠ `OlaresManifest.metadata.version`** → Upload-400 mit „must same" | Bei jedem Chart-Bump müssen BEIDE Felder synchron sein. | In Chart.yaml UND OlaresManifest.yaml gleichzeitig bumpen. |
+| Worker: `ModuleNotFoundError: No module named 'app.workers'` (Bundle-Template) | Bundle hatte `-A app.workers.celery_app` (Plural). Tatsächliches Modul: `backend/app/worker.py` mit Instanz `celery_app`. | `olares/templates/deployment-worker.yaml`: command `-A app.worker:celery_app` (Singular, expliziter Pfad). |
+| Whisper + Embeddings: `PermissionError: '/app/cache/<x>'` als UID 1000 | Olares mountet `/app/cache` per hostPath, host-Pfad ist root-owned. Mount-Overlay schattet das `chown` aus dem Dockerfile. | Init-Container `init-chown` (busybox:1.36) mit `securityContext.runAsUser: 0` chownt den Mount auf 1000 bevor App-Container startet. Pod-Level `runAsNonRoot: true` muss raus, sonst K8s rejected den root-init. |
+| Olares injiziert literal-string „auto" als Redis-Passwort, statt es zu generieren | Bundle-Template hatte `middleware.redis.password: auto` — Olares interpretiert das nicht als Trigger, sondern als Wert. | `password:`-Feld komplett aus `OlaresManifest.middleware.redis` entfernen. Olares generiert dann selbst ein Secret und injiziert via `.Values.redis.password`. **Vorbild: `searxngv2/OlaresManifest.yaml` auf der Box.** |
+| `options.runAsUser: true` (Bool) bricht Olares JSON-Parser | Error: „Installation failed: failed to parse response JSON: invalid character 'i' in literal false (expecting 'l')". | Zurück zu `runAsUser: "1000"` (String). searxng's `true` ist im konditionalen Helm-Template eingewickelt, deshalb funktioniert's dort. |
+| `appScope.clusterScoped: false` triggert NICHT `bytetrade.io/ns-owner` Label-Setting | Dachten das wäre der Hook. Ist es nicht. AM zeigt `App Owner: kaivostudio` und `AppScope: clusterScoped: false` korrekt parsed, aber Namespace bleibt ohne `ns-owner` Label. | Es gibt **keinen bekannten Manifest-Hook** für das Label. Siehe §7c — Sackgasse. |
+| `entrances.authLevel: public` skippt NICHT den Olares-injected `check-auth` Init | Hofften das wäre der Workaround. Olares' Envoy-Sidecar-Webhook ist agnostisch zum authLevel und injiziert IMMER `check-auth` für Pods mit entrances. | Kein Workaround auf Manifest-Ebene. Siehe §7c. |
+| Manuelles `kubectl label namespace … bytetrade.io/ns-owner=kaivostudio` → sofort revertiert | Ein Olares-Webhook strippt alle nicht-explicit-erlaubten `bytetrade.io/*` Labels auf Namespaces. Mehrfach getestet: `ns-owner`, `ns-shared`, `ns-type` — alle weg in <1s. | Geht nicht. Olares-Source-Code-Mod nötig. |
+| Manueller Patch der `user-system-np` NetworkPolicy mit neuer ingress-rule → sofort revertiert | NetworkPolicy-Reconciler in Olares rebuildet die NP aus dem Original-Template. | Geht nicht. |
 
 ---
 
@@ -273,6 +290,153 @@ docker run --rm --network host --entrypoint sh minio/mc \
 | ApplicationManager-State manuell setzen | `kubectl patch applicationmanager insilo-kaivostudio-insilo --type='merge' -p '{"status":{"state":"running"}}'` (wird vom Controller wieder zurückgesetzt wenn die Ressourcen-Realität nicht passt) |
 | Forced Re-Reconcile | App in Studio uninstall + reinstall mit unverändertem `.tgz` (gleiche Version) |
 | `.tgz` direkt zur Box bringen ohne Studio | `gh release download v0.1.0 -R ska1walker/insilo -p 'insilo-0.1.0.tgz' --clobber` auf eigener Workstation, dann via Studio-Upload hochladen |
+
+---
+
+## 7c. Phase-4-Sackgasse: Olares „Upload custom chart" Pfad funktioniert nicht (Stand 13. Mai 2026)
+
+Nach ~10h Debugging und 5 Chart-Iterationen (v0.1.0 → v0.1.5) steht fest:
+**Der „Upload custom chart" Pfad in Olares Market ist fundamental nicht nutzbar für Apps die System-Middlewares brauchen (Authelia, Postgres, Redis).**
+
+### Symptom
+
+- Helm rendert sauber, Pods werden scheduled.
+- Pods OHNE Entrance (worker, whisper, embeddings): ✅ Running 1/1 nach 60s.
+- Pods MIT Entrance (frontend, backend): ❌ Init:Error nach ~20s wegen check-auth.
+- `check-auth` Init-Container (Olares-injected, Image `beclab/wait-for:0.1.0`) pingt `authelia-backend.user-system-kaivostudio:9091`.
+- Connect timeoutet — NetworkPolicy in `user-system-kaivostudio` blockt unsere Pods.
+
+### Root Cause
+
+Aus dem Vergleich mit openwebui (= funktioniert) und searxngv2 (= funktioniert):
+
+| Wo der Pfad bricht | Realität |
+|---|---|
+| Andere Apps haben ein `application.app.bytetrade.io/<app>-<user>-<app>` CR | Wir haben **nur** `applicationmanager` — kein `application` CR. |
+| Das `application` CR triggert den BFL-Layer, das Namespace-Label `bytetrade.io/ns-owner=<user>` zu setzen | Ohne CR → kein Label → kein User-Ownership-Signal. |
+| `user-system-np` NetworkPolicy erlaubt Ingress nur von Namespaces mit `bytetrade.io/ns-owner=<user>` ODER `ns-type=system` ODER `ns-shared=true` | Unser Namespace hat **keines** davon → Authelia/Redis unerreichbar. |
+| Authelia-Block → check-auth Init timeoutet → backend/frontend kommen nie aus Init raus | Pods stoppen, AM-State geht zu `stopped`. |
+
+Olares Market hat einen anderen Code-Pfad für „Submission via beclab/apps PR" als für „Upload custom chart" — Erster erstellt das `application` CR, Zweiter nicht.
+
+### Was nicht funktioniert (alles probiert + dokumentiert in §7)
+
+- ❌ Manuelles Namespace-Labeling — Webhook revertiert in <1s
+- ❌ NetworkPolicy-Patch — Reconciler revertiert
+- ❌ `appScope.clusterScoped: false` im Manifest — kein Effekt
+- ❌ `authLevel: public` auf Entrances — check-auth wird trotzdem injiziert
+- ❌ Studio importiert keine existierenden Charts
+- ❌ `olares-cli` hat keine `app install` Commands (nur user-Management)
+
+### Verifikation der Sackgasse
+
+Aus dem app-service-Pod (`os-framework/app-service-0`) Quell-Logik (impliziert aus den Logs + AM-States): Die "Upload" Source erstellt nur einen `applicationmanager` mit `Source: custom` und löst kein BFL-Provisioning aus. Das BFL wartet auf `application` CRs, die nur von der Market-Pipeline erstellt werden (bei offiziellen Charts mit gültiger `submitter` + `owners` File im `beclab/apps` Repo).
+
+### Drei Wege ab hier — Strategische Entscheidung erforderlich
+
+| Option | Aufwand | Vorteile | Nachteile |
+|---|---|---|---|
+| **A) Olares Market PR** (beclab/apps) | 1-2 Wochen | „richtiger" Pfad. Insilo wird offiziell verfügbar. BFL/Labels/NetworkPolicy automatisch korrekt. | PR-Review-Zyklus. Möglicherweise muss Manifest an Olares-Standards angepasst werden (z.B. weniger restriktive Permissions). |
+| **B) Plain K3s/k3d auf Customer-Box** | 2-3 Tage | Volle Kontrolle. Kein Olares-Vendor-Lock. Kunde nutzt sein eigenes K8s. | Verliert: One-Click-Install, Authelia-SSO-Integration, Backup-Infrastruktur, Cloudflare-Tunnel-Provisioning. Wir müssen Auth selbst bauen oder weglassen. |
+| **C) Demo aus docker-compose lokal** | 0 min (läuft schon) | Sofort sales-ready. Phase 1-3 ist vollständig funktional auf Mac. Pitch „läuft auf Kunden-Box" architekturell weiterhin gültig (alles K8s-native). | Kein Customer-Box-Workflow demonstriert. Phase 4 bleibt offen. |
+
+### Empfehlung
+
+1. **Sofort:** Option C für laufende Sales-Demos sichern. Phase 1-3 lokal ist die Substanz die wir verkaufen.
+2. **Parallel diese Woche:** Option A starten — Insilo zu `beclab/apps` PR'en. Vorab Chart-Compliance mit deren Standards verifizieren (vermutlich: weniger restriktive `allowedOutboundPorts`, `runAsUser: true` statt String, evtl. anderen `categories`-Set).
+3. **Fallback nach 2 Wochen:** Falls A blockt → Option B als Plan B.
+
+### Was wir bei einem Re-Try der Olares-Route NICHT mehr ausprobieren müssen
+
+- ✅ Helm-Render-Fehler — alle gefixt (v0.1.5 rendert sauber)
+- ✅ GPU-Konflikt — Insilo braucht **0** GPU-Slots (Whisper auf CPU, LLM via LiteLLM-Gateway)
+- ✅ Cross-App-Provider — `permission.provider` für LiteLLM funktioniert (architektonisch)
+- ✅ Init-Chown für hostPath-Mounts — gelöst
+- ✅ Redis-Password — gelöst durch Weglassen des `password`-Feldes
+- ✅ Image-Pulls — alle 4 Images public auf GHCR und funktionieren
+
+**Der harte Block ist ausschließlich der „Upload"-vs-„Market"-Pfad-Unterschied im Olares-Application-Lifecycle.**
+
+---
+
+## 7d. AUFLÖSUNG der Phase-4-Sackgasse: Custom Market Source (Stand 13. Mai abends)
+
+**Wir hatten den entscheidenden dritten Pfad übersehen.** Marc (aimighty) hat dokumentiert dass Olares **drei** App-Distribution-Pfade kennt, nicht zwei:
+
+| Pfad | Wie | Wann |
+|---|---|---|
+| **Upload custom chart** | Market UI Upload | Dev-Test nur — bricht für vollwertige Apps (§7c) |
+| **beclab/apps PR** | PR an `beclab/apps`, GitBot mergt | Globale Sichtbarkeit, 1-2 Wochen Prozess |
+| **Custom Market Source** ⭐ | Eigene Cloudflare-Pages-URL die Olares' Market-API spricht. Olares pollt alle 5 min. | **Private Distribution, voller BFL-Flow, 1-2 Tage** |
+
+### Wie es funktioniert
+
+Marc hat unter `aimighty-market.pages.dev` einen Cloudflare-Pages-Service deployed der vier Olares-Market-API-Endpoints serviert:
+
+```
+GET  /api/v1/appstore/hash          → Catalog-Hash für Change-Detection
+GET  /api/v1/appstore/info          → Liste aller Apps (Summary)
+POST /api/v1/applications/info      → Details für IDs (Batch)
+GET  /api/v1/applications/<name>/chart → Helm-Chart als base64-gzip
+```
+
+Eine Olares-Box mit dieser URL als Market Source ruft die Endpoints alle 5 min. Wenn der Catalog-Hash sich ändert (= Version bump), zieht Olares die neuen Apps und behandelt sie **wie offizielle Market-Apps** — also: `application` CR wird erstellt, `bytetrade.io/ns-owner` Label gesetzt, `app-np` NetworkPolicy gerendert. Damit löst sich der ganze check-auth-Block von §7c in Luft auf.
+
+### Unser Plan: D1 (Piggyback auf aimighty-market)
+
+Kai hat Schreibzugriff auf das `aimighty-market` Repo (`/Users/marc/Documents/OpenCode/aimighty`). Insilo wird dort als App eingetragen, parallel zu den anderen aimighty-Apps. Das passt strategisch weil Insilo eh über aimighty.de vertrieben wird.
+
+### Workflow für Insilo-Submission an aimighty-market
+
+1. **Insilo-Chart anpassen** (siehe Liste unten)
+2. **Chart packen + base64-encoden:**
+   ```bash
+   helm package olares/ -d /tmp/
+   base64 -i /tmp/insilo-0.1.6.tgz | tr -d '\n' | pbcopy
+   ```
+3. **In aimighty-Repo** (`/Users/marc/Documents/OpenCode/aimighty`):
+   - `functions/_apps.ts`: neuen Insilo-Eintrag mit Metadata
+   - `functions/_lib.ts`: Insilo's `"insilo-0.1.6.tgz"` Key + base64-String in `CHARTS`-Map
+   - Commit + Push (GitHub Auto-Deploy nach Cloudflare Pages)
+   - Optional: `wrangler pages deploy` für sofortigen Effekt
+4. **Auf Kai's Olares-Box:** Market Source schon konfiguriert (aimighty-market). Insilo erscheint nach ≤ 5 min im Market → Install klicken → vollständiger BFL-Flow → läuft.
+5. **Wenn Insilo nicht erscheint:** Market Source entfernen + neu hinzufügen (Olares' Sync-Button leert den Cache nicht zuverlässig)
+
+### Insilo-Chart-Anpassungen die nötig sind
+
+Aus Marc's Doku herausdestilliert für Insilo-spezifischen Adjustment:
+
+| Anpassung | Datei | Begründung |
+|---|---|---|
+| `entrances[0].name`: `app` → `insilo` | `OlaresManifest.yaml` | Marc's Regel: muss `metadata.name` matchen, sonst „Incompatible with your Olares" |
+| `entrances[0].host`: `insilo-frontend` → `insilo` | dito | dito — und dann muss K8s-Service-Name auch `insilo` werden |
+| `entrances[0].openMethod: window` ergänzen | dito | sonst zeigt Olares „running" aber Click öffnet nichts |
+| Service-Name in `templates/services.yaml` von `insilo-frontend` → `insilo` (für den Frontend-Service) | `templates/services.yaml` | Service-Name muss Entrance-Host matchen |
+| Zweite `OlaresManifest.yaml` im Repo-Root | neu | Marc's „Two-Manifest-Pattern" — Root-Manifest für Store-Metadata, Chart-Manifest für Install |
+| `values.yaml` auf doppelte `olaresEnv:` Keys prüfen | `values.yaml` | Sonst YAML-Parse-Fehler beim chartrepo sync |
+| Version sync 4-fach: `_apps.ts` ↔ `CHARTS` Key ↔ `Chart.yaml` ↔ `OlaresManifest.yaml` | aimighty-Repo + Insilo-Repo | Marc's „Goldene Regel" — diese vier Stellen MÜSSEN identisch sein |
+
+### Was wir bei den Anpassungen behalten (alles richtig aus Phase-4-Marathon)
+
+- ✅ `allowedOutboundPorts: [443]` für HF-Modell-Download
+- ✅ `runAsUser: "1000"` als String
+- ✅ `middleware.redis.namespace` ohne password-Feld
+- ✅ `permission.provider` für LiteLLM Cross-App-Call
+- ✅ `appScope.clusterScoped: false`
+- ✅ Init-Chown-Container für hostPath-Mounts
+- ✅ Worker-Module-Pfad `app.worker:celery_app`
+- ✅ 4 Container-Images public auf GHCR
+
+### Realistisches Timing
+
+| Tag | Aktion |
+|---|---|
+| 1 (heute/morgen, ~4h) | Insilo-Chart-Anpassungen (entrance name/host/openMethod, service-name, two-manifest-pattern), Chart neu packen, lokal lint |
+| 2 (~2h) | aimighty-market Repo: `_apps.ts` + `_lib.ts` einfügen, commit, push, CF-Pages-Deploy, Verifikations-curl |
+| 2 (~1h) | Auf Kai's Box: Market Source entfernen+neu hinzufügen, Insilo installieren, Pods werden Ready, End-to-End-Test |
+| 3 (Optional) | Screenshots + bessere Beschreibungen für Store-Listing aufpolieren, Version bumpen, redeploy |
+
+**Verglichen mit Weg A (beclab/apps PR, 1-2 Wochen) und Weg B (K3s, 2-3 Tage) ist das ein deutlicher Win.**
 
 ---
 
@@ -333,7 +497,7 @@ Falls Olares-Linter diesen Block ablehnt: `providerName` muss möglicherweise de
 
 - **GitHub-Repo:** https://github.com/ska1walker/insilo (public)
 - **GitHub-Release v0.1.0:** https://github.com/ska1walker/insilo/releases/tag/v0.1.0
-- **Aktueller Chart-Stand:** Commit `363e2e9` (Whisper-CPU). Lokal: `dist/insilo-0.1.0.tgz` (8.3 KB, gitignored). Auf Release als Asset.
+- **Aktueller Chart-Stand:** Lokal `dist/insilo-0.1.5.tgz` (~34 KB, gitignored). Auf GitHub-Release v0.1.0 als Asset (insilo-0.1.0.tgz bis insilo-0.1.5.tgz nebeneinander). Commits zu den Chart-Iterationen Mai 13. evtl. noch ungepusht — `git status` checken.
 - **GHCR-Packages (alle public, linux/amd64):**
   - `ghcr.io/ska1walker/insilo-frontend:0.1.0` (~70 MB)
   - `ghcr.io/ska1walker/insilo-backend:0.1.0` (~130 MB) — gleiches Image für Worker
@@ -348,19 +512,68 @@ Falls Olares-Linter diesen Block ablehnt: `providerName` muss möglicherweise de
 
 ---
 
-## 9. Phase-4-Next-Steps
+## 9. Phase-4-Status & Next-Steps (Stand 13. Mai 2026 — strategische Neuausrichtung)
+
+### Was bereits abgeschlossen ist
 
 - [x] Container-Images bauen + pushen (GHCR public, linux/amd64)
-- [x] Helm-Chart paketieren + als GitHub-Release-Asset
-- [x] Embeddings-CUDA-Bloat fixen (2.8 GB → 420 MB, Commit Phase-1c)
+- [x] Helm-Chart paketieren + als GitHub-Release-Asset (aktuell v0.1.5)
+- [x] Embeddings-CUDA-Bloat fixen (2.8 GB → 420 MB)
 - [x] Repo public schalten (Icon-Fix)
-- [x] Helm-Template-Render-Fehler `redis.namespaces.insilo` → `redis.namespace` (Commit `d38877e`)
-- [x] **GPU-Konflikt gelöst:** Ollama-Deployment komplett aus dem Chart (`a446273`), LiteLLM-Gateway als Cross-App-Provider (`a446273` + `b12ed69`), Whisper auf CPU (`363e2e9`). Insilo braucht jetzt **0 GPU-Slots**.
-- [ ] **5. Install-Versuch in Olares Studio durchziehen** — User soll alte App deinstallieren, neues `.tgz` (Stand `363e2e9`) hochladen. Erwartung: keine Unschedulable mehr, Pods kommen hoch.
-- [ ] Verify: LiteLLM-Call vom Insilo-Backend-Pod aus geht durch. `kubectl logs -n insilo-kaivostudio deployment/insilo-backend | grep -i litellm` nach erster Aufnahme.
-- [ ] DB-Migrationen auf der Box ausführen — **kein Init-Container im Chart**. Aktuell muss `psql` manuell aus dem Backend-Pod oder via `kubectl exec` laufen.
-- [ ] Erste End-to-End-Aufnahme: Mikro → Whisper (CPU) → LiteLLM/Qwen-Vision → Summary → /ask.
-- [ ] Falls bestätigt: HANDOFF.md updaten + Phase 4 schließen.
+- [x] Helm-Template-Render-Fehler `redis.namespaces.insilo` → `redis.namespace`
+- [x] GPU-Konflikt gelöst: 0 GPU-Slots durch CPU-Whisper + LiteLLM-Gateway-Cross-Call
+- [x] Worker-Module-Name fixen: `app.workers.celery_app` → `app.worker:celery_app`
+- [x] Init-Chown-Container für hostPath-Mounts (Whisper, Embeddings, Backend, Worker)
+- [x] Redis-Password-Fix: `middleware.redis.password: auto` entfernt
+- [x] Chart-Version-Sync: `Chart.yaml.version` ↔ `OlaresManifest.metadata.version`
+- [x] `appScope.clusterScoped: false` deklariert (kein Effekt, aber Manifest-best-practice)
+- [x] **Olares-Sackgasse identifiziert + dokumentiert** in §7c
+
+### Plan: D1 — Custom Market Source via aimighty-market (gewählt 13. Mai)
+
+Siehe §7d für die volle Erklärung. Konkrete Action-Items:
+
+#### Insilo-Chart Anpassen (auf v0.1.7)
+- [ ] `entrances[0].name`: `app` → `insilo` (in `olares/OlaresManifest.yaml`)
+- [ ] `entrances[0].host`: `insilo-frontend` → `insilo`
+- [ ] `entrances[0].openMethod: window` ergänzen
+- [ ] In `olares/templates/services.yaml`: Frontend-Service-Name auf `insilo` umbenennen (statt `insilo-frontend`)
+- [ ] Root-`OlaresManifest.yaml` im Repo-Root erstellen (Two-Manifest-Pattern für Store-Metadata)
+- [ ] `values.yaml` auf doppelte `olaresEnv`-Keys prüfen
+- [ ] Version-Bump auf 0.1.7 in Chart.yaml UND beiden OlaresManifest.yaml
+- [ ] Lint + package: `helm lint olares/` + `helm package olares/ -d dist/`
+
+#### aimighty-market eintragen
+- [ ] Chart base64-encoden: `base64 -i dist/insilo-0.1.7.tgz | tr -d '\n' | pbcopy`
+- [ ] `aimighty/functions/_apps.ts`: Insilo-Eintrag mit Metadata
+- [ ] `aimighty/functions/_lib.ts`: `"insilo-0.1.7.tgz"` → base64-String in CHARTS-Map
+- [ ] Commit auf aimighty Repo (Branch oder direkt nach Absprache mit Marc)
+- [ ] CF-Pages-Deploy verifizieren: `curl https://aimighty-market.pages.dev/api/v1/appstore/info | jq`
+- [ ] Chart-Endpoint testen: `curl -o /dev/null -w "%{http_code}\n" https://aimighty-market.pages.dev/api/v1/applications/insilo/chart`
+
+#### Auf Kai's Olares-Box installieren
+- [ ] Falls noch nicht: Market Source `https://aimighty-market.pages.dev` zur Box hinzufügen
+- [ ] Wenn schon hinzu: entfernen + neu hinzufügen (forciert Cache-Clear)
+- [ ] Bis zu 5 Min warten bis Insilo im Market erscheint
+- [ ] Install klicken → Pods sollten alle Ready werden
+- [ ] Verify: `kubectl get ns insilo-kaivostudio -o jsonpath='{.metadata.labels}'` → `bytetrade.io/ns-owner: kaivostudio` muss diesmal da sein
+- [ ] Verify: `kubectl get networkpolicy -n insilo-kaivostudio` → `app-np` (nicht mehr `others-np`)
+- [ ] Verify: alle 5 Pods Ready, frontend hat „Open"-Button, Click öffnet PWA
+
+#### End-to-End Test
+- [ ] 30-sec Test-Aufnahme via PWA → Whisper transkribiert → LiteLLM-Summary erscheint
+- [ ] `/ask` funktioniert
+- [ ] DB-Migrationen aus dem Backend-Pod manuell einspielen (Init-Container wäre Phase 4b)
+
+### Bewusst nicht jetzt: andere Wege
+
+- **beclab/apps PR (vorheriger „Weg A")** — nicht nötig, D1 ist schneller und behält Distribution-Hoheit. Falls Insilo global verfügbar werden soll: später.
+- **K3s („Weg B")** — bleibt Fallback wenn aimighty-market irgendwann nicht mehr passt.
+- **Lokal docker-compose („Weg C")** — bleibt für Sales-Demos diese Woche, parallel zum D1-Setup.
+
+### Was im Falle des Re-Try NICHT mehr nötig ist
+
+Alle technischen Hürden außer der „Upload-vs-Market"-Klassifizierung sind gelöst. Bei D1-Submission starten wir effektiv von v0.1.6 mit allen Fixes drin. Der ska1walker/apps Fork mit der vorbereiteten beclab/apps-Submission kann liegen bleiben — falls wir später doch Market-PR machen wollen ist die Vorarbeit da.
 
 ---
 
@@ -393,14 +606,16 @@ Falls Olares-Linter diesen Block ablehnt: `providerName` muss möglicherweise de
 
 1. **Lies CLAUDE.md erst** — komplette Architektur in einem File.
 2. **Lies docs/HANDOFF.md** (diese Datei) — Status + Learnings + Debug-Cheatsheet.
-3. **`git log --oneline -20`** zeigt die Phasen-Commits, jeder ist groß und thematisch klar (chronologisch absteigend: phase 3 → phase 2 → phase 1 → bundle pivot → initial scaffold).
-4. **Bei UI-Arbeit:** Skills `frontend-design` + `UI/UX Pro Max` aktivieren. Designsystem strikt aus [`docs/DESIGN.md`](DESIGN.md).
-5. **Bei Olares-Chart-Arbeit:** vor jedem Change `helm lint olares/ -f olares/values-olares-stub.yaml` laufen lassen, dann `helm package olares/ -d dist/`. **Wenn du Bundle-Annahmen über `.Values.<x>.<y>` änderst, im Zweifel auf der Olares-Box per `kubectl logs -n os-framework app-service-0` verifizieren** — die Bundle-Templates hatten mehrere falsche Annahmen über die genaue Form der Olares-injected values.
-6. **Bei Backend-Änderungen:** keine Auth-Logik bauen. User-Identität ist via `X-Bfl-User` Header. Lokal mit `NEXT_PUBLIC_USER=devuser` mocken.
-7. **Bei DB-Schema-Änderungen:** neue Migration in `supabase/migrations/0003_*.sql` anlegen, dann `psql` einspielen.
-8. **Sprachregel:** UI deutsch Sie-Form, Code/Commits englisch.
-9. **Olares-Debug:** „download failed" sagt nichts aus. Immer in `kubectl logs -n os-framework app-service-0` schauen — dort steht der echte Render/Validate/Pull-Fehler. Siehe Sektion 7a (Debug-Cheatsheet).
+3. **Phase 4 ist BLOCKED auf Upload-Pfad** — siehe §7c. Vor weiteren Olares-Versuchen lesen, sonst läufst du in 10h die selben Sackgassen wie wir.
+4. **`git log --oneline -20`** zeigt die Phasen-Commits, jeder ist groß und thematisch klar (chronologisch absteigend: phase 3 → phase 2 → phase 1 → bundle pivot → initial scaffold).
+5. **Bei UI-Arbeit:** Skills `frontend-design` + `UI/UX Pro Max` aktivieren. Designsystem strikt aus [`docs/DESIGN.md`](DESIGN.md).
+6. **Bei Olares-Chart-Arbeit:** vor jedem Change `helm lint olares/ -f olares/values-olares-stub.yaml`, dann `helm package olares/ -d dist/`. Chart.yaml.version UND OlaresManifest.metadata.version IMMER synchron bumpen. Bei Bundle-Annahmen-Änderungen über `.Values.<x>.<y>`: auf Box per `kubectl logs -n os-framework app-service-0` verifizieren.
+7. **Bei Backend-Änderungen:** keine Auth-Logik bauen. User-Identität ist via `X-Bfl-User` Header. Lokal mit `NEXT_PUBLIC_USER=devuser` mocken.
+8. **Bei DB-Schema-Änderungen:** neue Migration in `supabase/migrations/0003_*.sql` anlegen, dann `psql` einspielen.
+9. **Sprachregel:** UI deutsch Sie-Form, Code/Commits englisch.
+10. **Olares-Debug:** „download failed" sagt nichts aus. Immer in `kubectl logs -n os-framework app-service-0` schauen — dort steht der echte Render/Validate/Pull-Fehler. Siehe §7a (Debug-Cheatsheet).
+11. **Wenn jemand Phase 4 retry'en will:** zuerst §7c (Sackgassen-Analyse) lesen. Bei Olares Market PR (Weg A) als Vorbild den `searxngv2/OlaresManifest.yaml` auf der Box nehmen — die haben das absolute Minimum an Manifest und es funktioniert.
 
 ---
 
-*Letzte Aktualisierung: Mai 2026, mid-Phase-4 (Olares-Install retry nach Icon-Fix). Commit-SHA dieses Stands: siehe `git log`.*
+*Letzte Aktualisierung: 13. Mai 2026 — Phase-4-Sackgasse vollständig dokumentiert (§7c). Commit-SHA dieses Stands: siehe `git log`.*

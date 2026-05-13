@@ -3,6 +3,15 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> **Stand 13. Mai 2026 (späte Abendrunde):** **Phase-4c Storage-Block gelöst.**
+> v0.1.13 bringt einen `LocalStorage`-Backend in `backend/app/storage.py`,
+> der Audio direkt auf hostPath (`/app/data/audio/<org_id>/<meeting_id>.webm`)
+> schreibt — kein MinIO mehr nötig. Default in Olares: `STORAGE_BACKEND=local`,
+> lokal weiter `minio`. Damit ist der End-to-End-Pfad (Aufnahme → Whisper →
+> Summary → /ask) auf der Box jetzt freigeschaltet. Chart `dist/insilo-0.1.13.tgz`
+> + Git-Tag `v0.1.13` gepusht → GH Actions baut die 4 Images.
+> Install via Olares-Market UI ("Upload custom chart") nach Image-Build.
+>
 > **Stand 13. Mai 2026 (Abend, ~16h gearbeitet):** Massiver Fortschritt durch den ganzen Tag.
 > Insilo läuft **technisch erfolgreich** auf der Olares-Box mit vollem BFL-Flow
 > (Application-CR, ns-owner Label, app-np NetworkPolicy, alle Pods Ready). Aber:
@@ -29,7 +38,7 @@
 | **1 — Audio-Pipeline** (Aufnahme → Whisper-Transkript) | ✅ live | ✅ läuft | ✅ Pod läuft (1/1 Running getestet 13. Mai) |
 | **2 — LLM-Summary** (Qwen via LiteLLM) | ✅ live | ✅ läuft | ✅ Worker connected sich erfolgreich (Redis-Fix v0.1.2) |
 | **3 — RAG / „Ask"** (BGE-M3 + pgvector + grounded answers) | ✅ live | ✅ läuft | ✅ Embeddings-Pod läuft (1/1 Running) |
-| **4 — Olares-Paketierung** | 🟡 v0.1.12 chart ready (uninstalled state) — User muss `~/Downloads/insilo-0.1.12.tgz` uploaden, siehe §7f | Install via "Upload custom chart" funktioniert (haben wir verifiziert mit v0.1.9-v0.1.11), Application CR + ns-owner Label kommen automatisch | |
+| **4 — Olares-Paketierung** | ✅ v0.1.13 (mit LocalStorage-Backend) — End-to-End-Pfad jetzt unblocked | Install via "Upload custom chart" (`~/Downloads/insilo-0.1.13.tgz`), Application CR + ns-owner Label kommen automatisch | |
 | 5 — Pilot-Deployment | nach v0.1.12 End-to-End-Test, ETA ~1 Woche | | |
 
 **Letzter konkreter Stand (Commit ggf. noch ungepusht, lokal Chart v0.1.5):**
@@ -657,31 +666,35 @@ Ermöglicht:
 4. ✅ Mikrofon-Recording funktioniert (Browser-MediaRecorder)
 5. ❌ **Audio-Upload kracht (HTTP 500): MinIO nicht erreichbar**
 
-**Phase-4c open issue — Storage-Backend:**
+**Phase-4c — gelöst via LocalStorage in v0.1.13:**
 
-Backend versucht `http://localhost:9000` (lokales MinIO aus docker-compose Dev) für Audio-Upload. Olares hat MinIO unter `tapr-s3-svc.os-platform:4568`, aber:
-- **NetworkPolicy** blockt Cross-Namespace zu `os-platform` (TCP-Timeout aus Backend-Pod)
-- Olares verwendet **kein Standard-`middleware.minio:`-Pattern** (keine bekannte App nutzt es)
-- Credentials für `tapr-s3-svc` sind in Secrets versteckt, undokumentiert
+*Problem (Stand v0.1.12):*
+Backend rief `http://localhost:9000` für MinIO auf. Olares' MinIO sitzt auf `tapr-s3-svc.os-platform:4568`, ist aber per NetworkPolicy cross-namespace blockiert und über kein dokumentiertes `middleware.minio:`-Pattern erreichbar. Credentials liegen in undokumentierten Secrets.
 
-**Pragmatischer Fix für nächste Session — Local-Filesystem Storage:**
+*Lösung (v0.1.13):*
+Zweites Storage-Backend `LocalStorage` neben dem existierenden `S3Storage` in [`backend/app/storage.py`](../backend/app/storage.py). Module-Level-Singleton wählt anhand `settings.storage_backend` (`"minio"` | `"local"`). Bestehende API (`upload_bytes`, `get_bytes`, `delete_object`, `get_presigned_url`) bleibt — Caller in `routers/meetings.py` und `tasks/transcribe.py` unverändert.
 
-Code-Änderung an `backend/app/storage.py`:
-- Neue Klasse `LocalStorage` neben `S3Storage`
-- Schreibt Audio nach `/app/data/audio/<meeting_id>/<file_id>.webm` (hostPath, schon gemounted)
-- Konfig-Schalter: `storage_backend: str = "minio" | "local"` in `config.py`
-- In Olares-Deployment: `STORAGE_BACKEND=local` env var setzen
+Audio landet auf hostPath: `/app/data/audio/<org_id>/<meeting_id>.webm`. Auf der Box also `/olares/userspaces/kaivostudio/Data/insilo/audio/<org_id>/<meeting_id>.webm`. Key-Schema bleibt identisch zur MinIO-Variante (`<org_id>/<filename>`), damit existierende `audio_path`-Werte in der DB kompatibel sind.
 
-Vorteile:
-- Audio bleibt auf der Box (= Datensouveränität-Pitch wörtlich)
+Für den Browser-Audio-Player wird `get_presigned_url(key)` bei `local`-Backend zur relativen URL `/api/v1/audio/<org_id>/<filename>`. Neues File [`backend/app/routers/audio.py`](../backend/app/routers/audio.py) serviert die Datei mit `FileResponse` (Range-Support nativ → `<audio>`-Element kann seeken). Auth wird via `get_current_user` geprüft, plus `org_id`-Match aus dem Pfad.
+
+*Olares-Deployment* (`olares/templates/deployment-backend.yaml` + `deployment-worker.yaml`):
+```yaml
+- name: STORAGE_BACKEND
+  value: "local"
+- name: STORAGE_LOCAL_PATH
+  value: "/app/data/audio"
+```
+
+*Vorteile:*
+- Audio bleibt auf der Box (= Datensouveränitäts-Pitch wörtlich)
 - Kein S3-Auth-Hassle
 - `/app/data` persistiert über Pod-Restarts (hostPath survives)
-- Backup-Strategie: Velero/restic auf `/olares/rootfs/userspace/pvc-userspace-kaivostudio-*/Data/insilo/`
+- Backup-Strategie: Velero/restic auf `/olares/userspaces/kaivostudio/Data/insilo/audio/`
 
-Aufwand: ~30 min Code + Test, ~5 min Image-Build (GH Actions), Chart-Bump auf v0.1.13.
+*Nicht-Ziele in v0.1.13:* Migration alter Meetings (es gibt keine), Object-GC für soft-deleted Meetings (auch S3-Variante hatte das nicht), per-User-Konfiguration des Backends.
 
-Nach diesem Fix dann End-to-End-Test:
-- Aufnahme → Upload → S3-Key in DB → Worker triggert Whisper → Transkript erscheint → LLM-Summary → /ask
+*Lokales Dev bleibt unverändert:* `STORAGE_BACKEND` default `"minio"`, Docker-Compose-MinIO wird weiter verwendet.
 
 **Alternativ (langer Weg):** Olares-Sourcecode lesen wie `tapr-s3-svc` Auth funktioniert + `middleware.minio:` reverse-engineeren. Vermutlich 1-2 Tage Arbeit.
 

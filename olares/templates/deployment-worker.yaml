@@ -88,6 +88,11 @@ spec:
               value: "{{ .Values.userspace.appData }}"
             - name: APP_CACHE_DIR
               value: "{{ .Values.userspace.appCache }}"
+            # Worker liest Audio aus dem gleichen hostPath wie das Backend.
+            - name: STORAGE_BACKEND
+              value: "local"
+            - name: STORAGE_LOCAL_PATH
+              value: "/app/data/audio"
 
           volumeMounts:
             - name: app-data

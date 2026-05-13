@@ -23,7 +23,14 @@ class Settings(BaseSettings):
     redis_password: str = ""
     redis_namespace: str = "insilo"
 
-    # --- MinIO / S3 ---
+    # --- Storage ---
+    # "minio" → S3-API (boto3). "local" → write to a hostPath-mounted folder.
+    # On Olares we default to "local" because cross-namespace S3 is locked
+    # down by NetworkPolicy and the audio never has to leave the box anyway.
+    storage_backend: str = "minio"
+    storage_local_path: str = "/app/data/audio"
+
+    # --- MinIO / S3 (only used when storage_backend == "minio") ---
     minio_endpoint: str = "http://localhost:9000"
     minio_access_key: str = "insilo_dev"
     minio_secret_key: str = "insilo_dev_secret"

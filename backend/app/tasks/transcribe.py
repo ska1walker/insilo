@@ -13,7 +13,7 @@ import httpx
 from celery import shared_task
 
 from app.config import settings
-from app.storage import _client as _s3_client
+from app.storage import get_bytes as _storage_get_bytes
 from app.worker import celery_app  # noqa: F401  -- import side-effect: registers
 
 log = logging.getLogger(__name__)
@@ -65,11 +65,10 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     finally:
         await conn.close()
 
-    # Pull audio out of MinIO. boto3 is sync; the bytes are small enough that
-    # blocking the event loop briefly is fine.
-    s3 = _s3_client()
-    obj = s3.get_object(Bucket=settings.minio_bucket, Key=row["audio_path"])
-    audio_bytes = obj["Body"].read()
+    # Pull audio out of storage (MinIO or local FS depending on backend).
+    # Either path is sync; the bytes are small enough that blocking the event
+    # loop briefly is fine.
+    audio_bytes = _storage_get_bytes(row["audio_path"])
     mime = row["mime"] or "audio/webm"
     log.info("transcribing meeting %s (%d bytes, %s)", meeting_id, len(audio_bytes), mime)
 

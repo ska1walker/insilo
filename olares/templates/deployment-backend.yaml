@@ -92,6 +92,15 @@ spec:
             - name: APP_CACHE_DIR
               value: "{{ .Values.userspace.appCache }}"
 
+            # ---- Storage-Backend --------------------------------------------
+            # "local" → Audio landet auf hostPath unter /app/data/audio/...
+            # "minio" wäre der S3-API-Backend, ist auf Olares aber Cross-NS-
+            # blockiert (siehe HANDOFF.md §Phase-4c).
+            - name: STORAGE_BACKEND
+              value: "local"
+            - name: STORAGE_LOCAL_PATH
+              value: "/app/data/audio"
+
             # ---- App-Konfiguration ------------------------------------------
             - name: APP_LANG
               value: "{{ .Values.app.language }}"

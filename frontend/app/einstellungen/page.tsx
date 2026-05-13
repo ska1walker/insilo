@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { TemplatePrompts } from "@/components/template-prompts";
 import {
   fetchSettings,
   testSettings,
@@ -317,6 +318,23 @@ export default function EinstellungenPage() {
         Hinweis: Bestehende Zusammenfassungen werden nicht neu generiert. Die
         neuen Einstellungen gelten für künftige Aufnahmen und Fragen.
       </p>
+
+      <section className="mt-14">
+        <header className="mb-5">
+          <h2 className="font-display text-xl font-medium">
+            Vorlagen für Zusammenfassungen
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+            Jede Vorlage steuert über einen System-Prompt, wie das Sprachmodell
+            das Transkript strukturiert. Passen Sie die Prompts an Ihre
+            Fachsprache an — z.&nbsp;B. anwaltliche Formulierungen für
+            Mandantengespräche oder Vertriebs-Vokabular für Discovery-Calls.
+            Mit „Auf Standard zurücksetzen" kehren Sie zur Werks-Vorlage zurück.
+          </p>
+        </header>
+
+        <TemplatePrompts />
+      </section>
     </main>
   );
 }

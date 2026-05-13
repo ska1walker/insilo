@@ -71,18 +71,27 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         if not meeting["full_text"]:
             return {"status": "skipped", "reason": "no transcript"}
 
-        # Pick template: explicit on meeting, else the system default.
+        # Pick template: explicit on meeting, else the system default. Apply
+        # the org's prompt customization (from /einstellungen) if present —
+        # otherwise the seeded `system_prompt` is used.
         template_id = meeting["template_id"] or UUID(settings.default_template_id)
         template = await conn.fetchrow(
             """
-            select id, version, system_prompt, output_schema
-            from public.templates
-            where id = $1
+            select t.id, t.version, t.output_schema,
+                   coalesce(c.system_prompt, t.system_prompt) as system_prompt,
+                   (c.template_id is not null) as is_customized
+            from public.templates t
+            left join public.template_customizations c
+                on c.template_id = t.id and c.org_id = $2
+            where t.id = $1
             """,
             template_id,
+            meeting["org_id"],
         )
         if not template:
             return {"status": "skipped", "reason": "template missing"}
+        if template["is_customized"]:
+            log.info("using org-customized system prompt for template %s", template_id)
 
         # Per-org LLM endpoint/key/model (falls back to env defaults).
         llm = await load_llm_config(conn, meeting["org_id"])

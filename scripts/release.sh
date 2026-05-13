@@ -114,13 +114,19 @@ green "  ✓ on main"
 # commit. Most releases ship together with a one-or-two-file code fix
 # that triggered the bump; forcing a separate pre-release commit is
 # annoying.
+#
+# We capture the list at preflight time and only stage exactly these
+# files later. `git add -A` was tried once and swept in a scratch dir
+# (insilo_new/, v0.1.19) — never again. Anything not on this list +
+# anything not auto-bumped (olares/**, supabase/**) stays out.
 PENDING_CHANGES=0
-if ! git diff-index --quiet HEAD --; then
+TRACKED_DIFF_FILES="$(git diff --name-only HEAD || true)"
+if [[ -n "$TRACKED_DIFF_FILES" ]]; then
   PENDING_CHANGES=1
   yellow "  ! tracked files have uncommitted changes (will be folded into the release commit):"
   git diff --stat | sed 's/^/      /'
 fi
-UNTRACKED="$(git ls-files --others --exclude-standard | grep -v '^insilo_new/' || true)"
+UNTRACKED="$(git ls-files --others --exclude-standard || true)"
 if [[ -n "$UNTRACKED" ]]; then
   PENDING_CHANGES=1
   yellow "  ! untracked files (will be staged into the release commit):"
@@ -254,9 +260,19 @@ fi
 step "git commit + tag"
 COMMIT_MSG="${MESSAGE:-release: v$NEW_VERSION}"
 
+# Always stage the auto-bumped chart + migration files.
 git add olares/ supabase/ 2>/dev/null || true
-# Anything else changed (eg. backend code) the user staged earlier? Re-add to be safe.
-git add -A
+
+# Stage exactly the changes the preflight surfaced — and nothing more.
+# (No `git add -A` here — it would also pick up scratch dirs.)
+if [[ -n "$TRACKED_DIFF_FILES" ]]; then
+  # shellcheck disable=SC2086
+  echo "$TRACKED_DIFF_FILES" | xargs -r git add -- 2>/dev/null || true
+fi
+if [[ -n "$UNTRACKED" ]]; then
+  # shellcheck disable=SC2086
+  echo "$UNTRACKED" | xargs -r git add -- 2>/dev/null || true
+fi
 
 git commit -m "$COMMIT_MSG"
 git tag "v$NEW_VERSION" -m "Insilo v$NEW_VERSION"

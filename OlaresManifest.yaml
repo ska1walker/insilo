@@ -21,7 +21,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
-  version: 0.1.7               # = Chart.yaml.version
+  version: 0.1.8               # = Chart.yaml.version
   categories:
     - Productivity_v112
     - Utilities_v112
@@ -38,7 +38,7 @@ entrances:
     port: 3000
     title: Insilo
     icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
-    authLevel: private          # Authelia-Schutz aktiv (Market-Pfad setzt NetworkPolicy korrekt)
+    authLevel: internal         # LAN-User: kein Authelia-Prompt. Authelia nur bei Remote-Access (Tailscale/Cloudflare-Tunnel). Matches Marc's aimighty-apps pattern.
     invisible: false
     openMethod: window          # erlaubt Click → öffnet PWA in neuem Tab (sonst nur "running" State)
 
@@ -46,7 +46,7 @@ entrances:
     host: insilo-backend        # = Service-Name in services.yaml (interner API-Endpoint)
     port: 8000
     title: Insilo API
-    authLevel: private          # Backend nur via Frontend erreichbar
+    authLevel: internal         # Backend internal — Frontend ruft via LAN-DNS, kein Auth-Hop
     invisible: true             # nicht als Desktop-Icon zeigen
 
 # ---- System-Middlewares ----------------------------------------------------
@@ -95,7 +95,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.0'          # = Chart.yaml.appVersion
+  versionName: '0.1.8'          # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png

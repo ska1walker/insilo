@@ -458,12 +458,22 @@ Olares ist **ein** Distribution-Channel — über Custom Market Source aber unte
 
 ## 10. Was wir bei Insilo gelernt haben (TL;DR)
 
-1. **6 Chart-Iterationen v0.1.0 → v0.1.6** für die offensichtlichen Bugs (Module-Name, hostPath-Chown, Redis-Password, Version-Sync, runAsUser-Format, authLevel-Test).
+1. **8 Chart-Iterationen v0.1.0 → v0.1.8** für die offensichtlichen Bugs:
+   - v0.1.1 Module-Name `app.worker:celery_app`
+   - v0.1.2 hostPath init-chown, Redis-Password ohne `password: auto`
+   - v0.1.3 Version-Sync zwischen Chart.yaml und OlaresManifest
+   - v0.1.4 runAsUser zurück auf `"1000"` String (Bool bricht JSON-Parser)
+   - v0.1.5 authLevel public-Test (failed)
+   - v0.1.6 Categories konform mit Olares, allowedOutboundPorts: [443]
+   - v0.1.7 Entrance.name+host = metadata.name, openMethod: window, Service+Deployment rename
+   - v0.1.8 Marc's Golden Rule Version-Sync 4-fach, authLevel: internal (statt private)
 2. **Der „Upload-Pfad-bricht"-Block ist nicht ein Bug, sondern Olares' Design**: Upload-Pfad triggert nicht den BFL-Provisioning-Flow.
 3. **Drei Pods (worker, whisper, embeddings)** laufen problemlos auf Olares — die OHNE Entrance und ohne Envoy-Sidecar.
 4. **Zwei Pods (frontend, backend)** blockieren im check-auth Init, weil ohne `ns-owner` Label keine Authelia-Verbindung.
 5. **Die Lösung ist Custom Market Source** — den dritten Distribution-Pfad hatten wir 12h lang übersehen. Marc (aimighty) hat das schon eingerichtet. Wir piggybacken auf `aimighty-market.pages.dev`.
 6. **Strategische Insight:** Custom Market Source ist der **echte Sweet-Spot** für proprietäre Apps in Olares — privacy + speed + voller Olares-Feature-Stack ohne dependency auf beclab Approval.
+7. **Cloudflare-Auto-Deploy bewusst AUS** auf dem aimighty-Repo — sonst würde ein LLM unter Umständen die Website aimighty.de überschreiben mit Market-Source-API. Deploy IMMER manuell via `wrangler pages deploy`.
+8. **Marc's Golden Rule:** Version-Sync in 4 Stellen (`_apps.ts.metadata.version`, `_lib.ts` Key, `Chart.yaml.version + appVersion`, `OlaresManifest.metadata.version + spec.versionName`). Bei jedem Bump alle 4 anfassen.
 
 ---
 

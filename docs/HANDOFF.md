@@ -3,13 +3,19 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> **Stand 13. Mai 2026 (abends):** Phase 4 NICHT gescheitert — wir hatten falsche Annahmen.
-> Marc (aimighty) hat den dritten Olares-Distribution-Pfad dokumentiert: **Custom Market
-> Source via Cloudflare Pages**. Aimighty's bestehende `aimighty-market.pages.dev` wird
-> als unsere Distribution-Plattform genutzt (D1-Piggyback, da wir als Team operieren).
-> Das untenstehende Sackgassen-Doc in §7c bleibt gültig für die „Upload custom chart"-Pfad-
-> Lessons, ist aber strategisch obsolet. Siehe §7d für den neuen Plan und
-> [OLARES_DEEP_DIVE.md §4](OLARES_DEEP_DIVE.md) für die volle Erklärung.
+> **Stand 13. Mai 2026 (Abend, ~14h gearbeitet):** Phase 4 NICHT gescheitert — wir hatten
+> falsche Annahmen. Marc (aimighty) hat den dritten Olares-Distribution-Pfad dokumentiert:
+> **Custom Market Source via Cloudflare Pages**. Aimighty's bestehende
+> `aimighty-market.pages.dev` wird als unsere Distribution-Plattform genutzt
+> (D1-Piggyback, da wir als Team operieren). Insilo v0.1.8 ist:
+>
+> 1. Bei `bayerhazard/aimighty` (Marc's Repo) als Eintrag eingebaut + gepusht
+> 2. Lokal gepackt als `dist/insilo-0.1.8.tgz` + auf GitHub-Release als Asset
+> 3. SSH-Key auf Olares-Box `olares@192.168.112.125` hinterlegt für direkten Zugriff
+> 4. Wartet nur noch auf `wrangler pages deploy` (manuell, Auto-Deploy bewusst aus)
+>
+> Das Sackgassen-Doc in §7c bleibt für die „Upload custom chart"-Pfad-Lessons,
+> ist aber strategisch obsolet. Siehe §7d für Plan und §7e für die Marc-Playbook-Learnings.
 
 ---
 
@@ -20,7 +26,7 @@
 | **1 — Audio-Pipeline** (Aufnahme → Whisper-Transkript) | ✅ live | ✅ läuft | ✅ Pod läuft (1/1 Running getestet 13. Mai) |
 | **2 — LLM-Summary** (Qwen via LiteLLM) | ✅ live | ✅ läuft | ✅ Worker connected sich erfolgreich (Redis-Fix v0.1.2) |
 | **3 — RAG / „Ask"** (BGE-M3 + pgvector + grounded answers) | ✅ live | ✅ läuft | ✅ Embeddings-Pod läuft (1/1 Running) |
-| **4 — Olares-Paketierung** | 🟢 **Plan klar via Custom Market Source (D1)**, siehe §7d | — | Distribution via `aimighty-market.pages.dev` (Marc's CF-Pages) |
+| **4 — Olares-Paketierung** | 🟢 v0.1.8 ready, wartet auf CF-Deploy (§7d, §7e) | — | aimighty-market.pages.dev (Marc's CF-Pages) |
 | 5 — Pilot-Deployment | nach Phase-4-Abschluss durchstart-bar, ETA ~1-2 Wochen | | |
 
 **Letzter konkreter Stand (Commit ggf. noch ungepusht, lokal Chart v0.1.5):**
@@ -440,6 +446,111 @@ Aus Marc's Doku herausdestilliert für Insilo-spezifischen Adjustment:
 
 ---
 
+## 7e. Marc's Gold-Standard-Playbook — destillierte Regeln
+
+Marc (aimighty) hat ein detailliertes Playbook gemacht für seinen Custom-Market-Source-Workflow.
+Volltext in [`docs/MARKET_SOURCE_PLAYBOOK.md`](MARKET_SOURCE_PLAYBOOK.md). Hier die destillierten
+Regeln die wir auf Insilo angewendet haben:
+
+### Golden Rule: Version-Konsistenz an 4 Stellen
+
+Die Version MUSS identisch sein in:
+
+| Stelle | Datei | Feld |
+|---|---|---|
+| Market Source App-Definition | `aimighty/functions/_apps.ts` | `metadata.version` |
+| Chart-Dict Key | `aimighty/functions/_lib.ts` | `"<name>-<version>.tgz"` |
+| Helm Chart | `insilo/olares/Chart.yaml` | `version` UND `appVersion` |
+| Olares Manifest (BEIDE) | `OlaresManifest.yaml` (root + chart) | `metadata.version` UND `spec.versionName` |
+
+Bei v0.1.7 hatten wir noch `Chart.appVersion: "0.1.0"` und `spec.versionName: '0.1.0'` —
+weicht von Marc's Rule ab. **In v0.1.8 alles auf `0.1.8` synchron.** Beim nächsten Bump alle
+4 Stellen anfassen.
+
+### Naming-Regeln (Marc's strikte Linie)
+
+| Was | Beispiel Insilo | Warum |
+|---|---|---|
+| `metadata.name` (App-Name) | `insilo` | lowercase, no hyphens, regex `^[a-z0-9]{1,30}$` |
+| `entrance[0].name` | `insilo` | MUSS metadata.name matchen — sonst „Incompatible with your Olares" |
+| `entrance[0].host` | `insilo` | MUSS metadata.name matchen — ist der K8s-Service-Name |
+| `Service.metadata.name` (in services.yaml) | `insilo` | MUSS entrance host matchen |
+| `Deployment.metadata.name` (frontend) | `insilo` | MUSS Service-Name matchen |
+| Folder-Name beim Packen | `insilo/` | Chart.yaml.name dictates dies, in unserem Repo aber `olares/` weil wir Helm aus `olares/` packen — der Tarball-Inhalt ist trotzdem `insilo/` (Helm setzt's anhand Chart.name) |
+
+### Entrance-Konfiguration
+
+```yaml
+entrances:
+- name: insilo                  # MUSS metadata.name matchen
+  host: insilo                  # = K8s-Service-Name
+  port: 3000
+  authLevel: internal           # **internal** (nicht private!) für LAN-friendly UX
+  invisible: false
+  openMethod: window            # REQUIRED für Apps mit Web-UI, sonst Click → nichts
+```
+
+**`authLevel` Unterschiede** (wir hatten v0.1.7 auf `private`, gefixt in v0.1.8):
+- `internal` — LAN-Access ohne Authelia, externer Access mit Auth. Empfohlen für User-facing Apps.
+- `private` — IMMER Auth (auch LAN). Zu strict für normale Use-Cases.
+- `public` — keine Auth (Open Web). Nur für unauthenticated Public-Endpoints.
+
+### Two-Manifest-Pattern
+
+App-Repo braucht **zwei** OlaresManifest.yaml mit **identischen** version + upgradeDescription:
+- `<repo-root>/OlaresManifest.yaml` — Store-Metadata (was Olares im Market UI zeigt)
+- `<repo-root>/<appname>/OlaresManifest.yaml` — Install-Config (was Olares zum Installieren nutzt)
+
+In unserem Insilo-Repo: root-Manifest + `olares/OlaresManifest.yaml`. Beim Anfassen IMMER beide
+gleichzeitig anpassen (oder root als symlink/copy der chart-Version pflegen).
+
+### Cloudflare-Auto-Deploy bewusst AUS
+
+Marc hat Auto-Deploy deaktiviert auf dem `aimighty` CF-Pages-Projekt — sonst kann ein LLM
+versehentlich `aimighty.de` Website durch Market-Source-API ersetzen (ist Marc 1x passiert).
+**Deploy IMMER manuell:**
+
+```bash
+cd ~/Documents/apps/aimighty
+npx wrangler login                                                  # einmalig, browser-based
+npx wrangler pages deploy functions/ --project-name=aimighty-market
+```
+
+Team-Convention: am Ende einer Session zu Claude sagen „release auf market" → Claude führt
+den Deploy aus. **Niemals `git push` Auto-Deploy aktivieren.**
+
+### Base64-Hygiene
+
+- **NIE alten Base64-String wiederverwenden** — durch Cloudflare-Encoding kann er korrupt werden
+  (HTTP 500 / error 1101). Jedes Mal frisch: `base64 -i <name>-<version>.tgz | tr -d '\n'`.
+- Wenn Chart-Download 500 zurückgibt: Chart neu packen, neu base64-encoden, neu deployen.
+
+### Helm-Chart YAML-Gotchas (von Marc gelernt)
+
+- **Doppelte Keys in `values.yaml`** (z.B. `olaresEnv:` zweimal) brechen chartrepo-sync
+- **Block-Skalar `|` Indentation**: Alle Zeilen müssen ≥ initial-Einzug haben — sonst bricht YAML-Parser
+- **vLLM `--task score` Trap**: `api_server.py` versteht das nicht, nur `vllm serve` CLI. Bei uns irrelevant (kein vLLM).
+
+### Olares-Cache Invalidierung (auf der Box)
+
+Wenn neue Chart-Version nicht erscheint im Market-UI:
+- **Sync-Button im Market UI reicht NICHT** — Olares Cache invalidiert nur bei Market-Source-Re-Add
+- **Anleitung:** Settings → Market Sources → `aimighty-market.pages.dev` → **Remove** → 5 sec → **Add** wieder
+
+### Häufige Failure-Modes & Fixes
+
+| Fehler | Ursache | Fix |
+|---|---|---|
+| `Incompatible with your Olares` | entrance.name ≠ metadata.name | beide auf App-Namen setzen |
+| App zeigt „running" statt „open" | `openMethod: window` fehlt | zum entrance hinzufügen |
+| Chart 404 | CHARTS-Key passt nicht zu `<name>-<version>.tgz` | Key korrigieren |
+| Chart 500 (error 1101) | korruptes Base64 | frisch encoden |
+| Alte Version trotz Bump | Catalog-Hash unchanged ODER Olares-Cache | Version bumpen ODER Market-Source remove+add |
+| envs nicht editierbar in UI | `editable: true` fehlt | in beiden OlaresManifest setzen |
+| Build hängt bei chartrepo timeout | chartrepo 3s deadline | Version bumpen → fresh re-fetch |
+
+---
+
 ## 7b. LLM-Architektur — wie Insilo das Sprachmodell aufruft
 
 **Entscheidung (Commit `a446273`):** Kein eigenes Ollama im Chart. Statt dessen Cross-App-Call zur LiteLLM-App des Olares-Users.
@@ -529,36 +640,47 @@ Falls Olares-Linter diesen Block ablehnt: `providerName` muss möglicherweise de
 - [x] `appScope.clusterScoped: false` deklariert (kein Effekt, aber Manifest-best-practice)
 - [x] **Olares-Sackgasse identifiziert + dokumentiert** in §7c
 
-### Plan: D1 — Custom Market Source via aimighty-market (gewählt 13. Mai)
+### Plan: D1 — Custom Market Source via aimighty-market (Stand v0.1.8, 13. Mai abends)
 
-Siehe §7d für die volle Erklärung. Konkrete Action-Items:
+Siehe §7d für Architektur, §7e für Marc's Gold-Standard-Playbook-Regeln. Action-State:
 
-#### Insilo-Chart Anpassen (auf v0.1.7)
-- [ ] `entrances[0].name`: `app` → `insilo` (in `olares/OlaresManifest.yaml`)
-- [ ] `entrances[0].host`: `insilo-frontend` → `insilo`
-- [ ] `entrances[0].openMethod: window` ergänzen
-- [ ] In `olares/templates/services.yaml`: Frontend-Service-Name auf `insilo` umbenennen (statt `insilo-frontend`)
-- [ ] Root-`OlaresManifest.yaml` im Repo-Root erstellen (Two-Manifest-Pattern für Store-Metadata)
-- [ ] `values.yaml` auf doppelte `olaresEnv`-Keys prüfen
-- [ ] Version-Bump auf 0.1.7 in Chart.yaml UND beiden OlaresManifest.yaml
-- [ ] Lint + package: `helm lint olares/` + `helm package olares/ -d dist/`
+#### Insilo-Chart auf v0.1.8 — ✅ DONE
+- [x] entrance name+host = `insilo` (matched metadata.name)
+- [x] `openMethod: window` gesetzt
+- [x] Service.metadata.name + Deployment.metadata.name (frontend) = `insilo`
+- [x] Root + Chart OlaresManifest synced (Two-Manifest-Pattern)
+- [x] `values.yaml` ohne doppelte `olaresEnv`-Keys
+- [x] Version-Sync (Marc's Golden Rule) auf 0.1.8 in **allen 4** Stellen: Chart.version, Chart.appVersion, manifest.metadata.version, manifest.spec.versionName
+- [x] `authLevel: internal` (statt private — LAN-friendly, matches Marc's aimighty-apps)
+- [x] Lint + package: `dist/insilo-0.1.8.tgz` (34.7 KB)
+- [x] GitHub-Push: `ska1walker/insilo` HEAD = chart v0.1.8
 
-#### aimighty-market eintragen
-- [ ] Chart base64-encoden: `base64 -i dist/insilo-0.1.7.tgz | tr -d '\n' | pbcopy`
-- [ ] `aimighty/functions/_apps.ts`: Insilo-Eintrag mit Metadata
-- [ ] `aimighty/functions/_lib.ts`: `"insilo-0.1.7.tgz"` → base64-String in CHARTS-Map
-- [ ] Commit auf aimighty Repo (Branch oder direkt nach Absprache mit Marc)
-- [ ] CF-Pages-Deploy verifizieren: `curl https://aimighty-market.pages.dev/api/v1/appstore/info | jq`
-- [ ] Chart-Endpoint testen: `curl -o /dev/null -w "%{http_code}\n" https://aimighty-market.pages.dev/api/v1/applications/insilo/chart`
+#### aimighty-market eingetragen — ✅ DONE
+- [x] base64 vom v0.1.8 Chart (46.2 KB) generiert
+- [x] `aimighty/functions/_apps.ts`: Insilo-Eintrag mit Metadata + `authLevel: internal`
+- [x] `aimighty/functions/_lib.ts`: `"insilo-0.1.8.tgz"` Key + base64-String in CHARTS-Map
+- [x] TypeScript-Sanity: keine **neuen** Errors (5 pre-existing in Marc's envs-Block)
+- [x] Commit + Push auf `bayerhazard/aimighty` main
 
-#### Auf Kai's Olares-Box installieren
-- [ ] Falls noch nicht: Market Source `https://aimighty-market.pages.dev` zur Box hinzufügen
-- [ ] Wenn schon hinzu: entfernen + neu hinzufügen (forciert Cache-Clear)
+#### Cloudflare-Pages Deploy — ⏸ wartet auf Auth
+- [ ] `npx wrangler login` (Browser-basiert, einmalig — Marc muss Kai vorher zum CF-Team einladen)
+- [ ] `npx wrangler pages deploy functions/ --project-name=aimighty-market`
+- [ ] Verify: `curl https://aimighty-market.pages.dev/api/v1/appstore/info` zeigt insilo
+- [ ] Verify: `curl -o /dev/null -w "%{http_code}\n" https://aimighty-market.pages.dev/api/v1/applications/insilo/chart` = 200
+
+#### Auf Olares-Box installieren — ⏸ nach Deploy
+- [ ] SSH-Zugang verifiziert: `ssh olares@192.168.112.125 "kubectl get nodes"` ✅
+- [ ] Market Source `aimighty-market.pages.dev` ist als Source konfiguriert (Marc's Doku: in Olares Market → Settings → Market Sources)
+- [ ] **Sync-Force:** Source entfernen + neu hinzufügen (Cache-Invalidierung)
 - [ ] Bis zu 5 Min warten bis Insilo im Market erscheint
-- [ ] Install klicken → Pods sollten alle Ready werden
-- [ ] Verify: `kubectl get ns insilo-kaivostudio -o jsonpath='{.metadata.labels}'` → `bytetrade.io/ns-owner: kaivostudio` muss diesmal da sein
-- [ ] Verify: `kubectl get networkpolicy -n insilo-kaivostudio` → `app-np` (nicht mehr `others-np`)
-- [ ] Verify: alle 5 Pods Ready, frontend hat „Open"-Button, Click öffnet PWA
+- [ ] Install klicken → Olares Pipeline läuft
+
+#### Verification bei laufender Installation
+- [ ] `application.app.bytetrade.io/insilo-kaivostudio-insilo` wird erstellt (vorher nie passiert)
+- [ ] `kubectl get ns insilo-kaivostudio -o jsonpath='{.metadata.labels}'` → `bytetrade.io/ns-owner: kaivostudio` automatisch da
+- [ ] `kubectl get networkpolicy -n insilo-kaivostudio` → `app-np` (nicht mehr `others-np`)
+- [ ] Alle 5 Pods werden Ready, frontend hat „Open"-Button
+- [ ] Click → PWA öffnet sich im Browser-Tab
 
 #### End-to-End Test
 - [ ] 30-sec Test-Aufnahme via PWA → Whisper transkribiert → LiteLLM-Summary erscheint

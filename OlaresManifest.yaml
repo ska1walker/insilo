@@ -21,7 +21,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.11              # = Chart.yaml.version
+  version: 0.1.12              # = Chart.yaml.version
   categories:
     - Productivity_v112
     - Utilities_v112
@@ -42,12 +42,13 @@ entrances:
     invisible: false
     openMethod: window          # erlaubt Click → öffnet PWA in neuem Tab (sonst nur "running" State)
 
-  - name: api
-    host: insilo-backend        # = Service-Name in services.yaml (interner API-Endpoint)
-    port: 8000
-    title: Insilo API
-    authLevel: internal         # Backend internal — Frontend ruft via LAN-DNS, kein Auth-Hop
-    invisible: true             # nicht als Desktop-Icon zeigen
+# Hinweis: api-Entrance wurde in v0.1.12 entfernt.
+# Grund: Mit Entrance + Envoy-Sidecar interzepiert das Backend-Sidecar
+# ALLE TCP-Inbounds und macht Authelia-Check. Interne Calls von Next.js
+# (proxy via rewrites()) hatten dabei keine Authelia-Cookies und kriegten 401.
+# Ohne api-Entrance läuft das Backend ohne Envoy-Sidecar (1/1 statt 2/2),
+# Next.js Server-Proxy ruft direkt http://insilo-backend:8000, Backend
+# liest X-Bfl-User-Header das Next.js aus der Frontend-Request weiterreicht.
 
 # ---- System-Middlewares ----------------------------------------------------
 # Olares stellt Postgres + Redis (KVRocks) als geteilte System-Services bereit.
@@ -95,7 +96,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.11'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.12'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png

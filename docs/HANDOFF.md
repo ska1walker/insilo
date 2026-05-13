@@ -650,11 +650,26 @@ Ermöglicht:
 - `insilo-backend` Pod: **1/1 Ready** ← KEIN Envoy mehr (api-Entrance entfernt → keine Sidecar-Injection)
 - Andere Pods: insilo-embeddings, insilo-whisper, insilo-worker alle 1/1 Running
 
-**Letzte offene Tests:**
-1. Service-Worker im Browser leeren (DevTools → Application → Clear site data)
-2. PWA neu laden — `Besprechungen` sollte JSON statt 401 zurückgeben
-3. Falls 500 / „relation does not exist": DB-Migrationen einspielen (siehe unten)
-4. End-to-End: Aufnahme → Whisper → LiteLLM-Summary → /ask
+**Letzte offene Tests (Stand 13. Mai abends):**
+1. ✅ DB-Migrationen eingespielt (0001_initial_schema, 0002_rls_policies, seed.sql) — 11 Tabellen + 4 System-Templates
+2. ✅ Backend API verifiziert: `/api/v1/meetings` returns `200 []` mit `X-Bfl-User: kaivostudio` Header
+3. ⏸ Browser-Test: Hard-Refresh + Service-Worker leeren → PWA sollte leere Liste zeigen
+4. ⏸ End-to-End: Aufnahme → Whisper → LiteLLM-Summary → /ask
+
+**Wie DB-Migrationen eingespielt wurden** (für Doku falls Box mal neu aufgesetzt wird):
+```bash
+# Migrations + seed auf Box bringen
+scp supabase/migrations/0001_initial_schema.sql supabase/migrations/0002_rls_policies.sql supabase/seed.sql olares@192.168.112.125:/tmp/
+
+# In Backend-Pod kopieren + ausführen
+ssh olares@192.168.112.125 "BPOD=\$(kubectl get pod -n insilo-kaivostudio -l component=backend -o jsonpath='{.items[0].metadata.name}'); for f in 0001_initial_schema.sql 0002_rls_policies.sql seed.sql; do kubectl cp /tmp/\$f insilo-kaivostudio/\$BPOD:/tmp/\$f -c backend; done; kubectl exec -n insilo-kaivostudio \$BPOD -c backend -- python3 -c 'import asyncio,asyncpg,os; async def m():
+ c=await asyncpg.connect(host=os.environ[\"DB_HOST\"],port=int(os.environ[\"DB_PORT\"]),user=os.environ[\"DB_USER\"],password=os.environ[\"DB_PASSWORD\"],database=os.environ[\"DB_NAME\"])
+ for f in [\"/tmp/0001_initial_schema.sql\",\"/tmp/0002_rls_policies.sql\",\"/tmp/seed.sql\"]:
+  await c.execute(open(f).read())
+asyncio.run(m())'"
+```
+
+Ein Init-Container im Chart wäre eleganter — Phase-4b-Item.
 
 **Mac-State:**
 - `~/Downloads/insilo-0.1.12.tgz` bereit

@@ -90,3 +90,4 @@ desktop.ini
 *.pt
 *.safetensors
 models/
+insilo_new/

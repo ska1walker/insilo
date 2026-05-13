@@ -1,6 +1,0 @@
-apiVersion: v2
-name: insilo
-description: Datensouveräne Meeting-Intelligenz für deutschen Mittelstand
-type: application
-version: 0.1.0           # Chart-Version (Semver) — bei jeder Chart-Änderung erhöhen
-appVersion: "0.1.0"      # Upstream-Software-Version (= spec.versionName im OlaresManifest)

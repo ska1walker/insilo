@@ -110,15 +110,30 @@ if [[ "$CURRENT_BRANCH" != "main" ]]; then
 fi
 green "  ✓ on main"
 
-# Working tree must be clean (don't mix our edits with theirs).
+# Working-tree changes are allowed — we'll fold them into the release
+# commit. Most releases ship together with a one-or-two-file code fix
+# that triggered the bump; forcing a separate pre-release commit is
+# annoying.
+PENDING_CHANGES=0
 if ! git diff-index --quiet HEAD --; then
-  red "  ✗ working tree has uncommitted changes — commit or stash first"; exit 1
+  PENDING_CHANGES=1
+  yellow "  ! tracked files have uncommitted changes (will be folded into the release commit):"
+  git diff --stat | sed 's/^/      /'
 fi
-if [[ -n "$(git ls-files --others --exclude-standard | grep -v '^insilo_new/' || true)" ]]; then
-  yellow "  ! untracked files present (allowed, will be ignored):"
-  git ls-files --others --exclude-standard | grep -v '^insilo_new/' | sed 's/^/      /'
+UNTRACKED="$(git ls-files --others --exclude-standard | grep -v '^insilo_new/' || true)"
+if [[ -n "$UNTRACKED" ]]; then
+  PENDING_CHANGES=1
+  yellow "  ! untracked files (will be staged into the release commit):"
+  echo "$UNTRACKED" | sed 's/^/      /'
 fi
-green "  ✓ working tree clean"
+if (( PENDING_CHANGES )); then
+  if (( ! ASSUME_YES )); then
+    printf "    fold these into v%s? [y/N] " "$NEW_VERSION"
+    read -r ans; [[ "$ans" == "y" ]] || exit 1
+  fi
+else
+  green "  ✓ working tree clean"
+fi
 
 # Versions must match expectation.
 CURRENT_VERSION="$(grep -E '^version:' "$CHART_FILE" | awk '{print $2}')"

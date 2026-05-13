@@ -1,11 +1,17 @@
 # ============================================================================
-# ConfigMap: SQL migration & seed files for the Helm-hook Job below.
+# ConfigMap: SQL migration & seed files.
 #
-# The SQL is inlined here (rather than loaded via {{ "{{ .Files.Get }}" }})
-# because Olares' chart-repo renderer doesn't expose `.Files`. When the
-# SQL changes:
+# Mounted into the backend Deployment's `migrate` init-container, which
+# runs them via asyncpg with a retry loop. We can't use Helm hooks here
+# because the `bytetrade.io/ns-owner` namespace label that the DB's
+# NetworkPolicy keys on is only set AFTER `helm install` completes — so
+# a post-install hook can never reach the DB. The init-container pattern
+# sidesteps that: the pod just keeps restarting until the label is set.
+#
+# The SQL is inlined (rather than via {{ "{{ .Files.Get }}" }}) because
+# Olares' chart-repo renderer doesn't expose `.Files`. When the SQL changes:
 #   cp supabase/migrations/*.sql supabase/seed.sql olares/files/
-#   ./olares/regen-migrations-configmap.sh   (or re-run the generator)
+#   # then re-run the inline generator (see git history for the snippet)
 # Then commit both olares/files/ and this template.
 # ============================================================================
 
@@ -17,10 +23,6 @@ metadata:
   labels:
     app: insilo
     component: migrations
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation
 data:
   0001_initial_schema.sql: |
     -- ========================================================================

@@ -19,12 +19,13 @@ metadata:
   name: insilo
   appid: insilo                # MUSS identisch zu metadata.name sein
   title: Insilo
-  description: Souveräne Meeting-Intelligenz für den deutschen Mittelstand
-  icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png   # TODO: echtes Icon hosten
-  version: 0.1.0               # = Chart.yaml.version
+  description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
+  icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
+  version: 0.1.6               # = Chart.yaml.version
   categories:
     - Productivity_v112
-    - AI
+    - Utilities_v112
+    - Productivity
 
 # ---- Entrances --------------------------------------------------------------
 # Zwei Entrances: PWA (sichtbar) + Backend-API (invisible).
@@ -37,7 +38,7 @@ entrances:
     port: 3000
     title: Insilo
     icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
-    authLevel: private          # Authelia-Token-Pflicht
+    authLevel: private          # Authelia-Schutz aktiv (Market-Pfad setzt NetworkPolicy korrekt)
     invisible: false
     openMethod: default
 
@@ -45,7 +46,7 @@ entrances:
     host: insilo-backend        # = Service-Name in templates/service-backend.yaml
     port: 8000
     title: Insilo API
-    authLevel: private
+    authLevel: private          # Backend nur via Frontend erreichbar
     invisible: true             # nicht als Desktop-Icon zeigen
 
 # ---- System-Middlewares ----------------------------------------------------
@@ -65,8 +66,7 @@ middleware:
           - pgcrypto     # Verschlüsselte Felder
           - uuid-ossp    # UUID-Generierung
   redis:
-    password: auto       # Olares generiert ein Secret und injiziert es
-    namespace: insilo
+    namespace: insilo    # Olares generiert das Passwort selbst und injiziert es als .Values.redis.password — KEIN `password:` Feld hier!
 
 # ---- Berechtigungen ---------------------------------------------------------
 
@@ -96,28 +96,51 @@ permission:
 
 spec:
   versionName: '0.1.0'          # = Chart.yaml.appVersion
+
+  # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
+  featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
+  promoteImage:
+    - https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
+
   fullDescription: |
-    Insilo zeichnet Geschäftsbesprechungen auf, transkribiert sie lokal mit
-    OpenAI Whisper und erstellt strukturierte Notizen mit einem lokal laufenden
-    Sprachmodell (Qwen 2.5).
+    **Insilo** is on-premise meeting intelligence for compliance-driven organizations.
 
-    Im Unterschied zu PLAUD, Otter und vergleichbaren Diensten verlassen Ihre
-    Audiodaten und Notizen niemals Ihre eigene Olares-Box. Keine Cloud-Dienste,
-    keine externen API-Aufrufe, keine Datenweitergabe an Dritte.
+    **What it does**
+    - Records business meetings via a PWA (push-to-record or upload)
+    - Transcribes audio locally with OpenAI Whisper (speaker diarization upcoming)
+    - Generates structured summaries using a local LLM via the Olares LiteLLM gateway
+    - Lets you ask follow-up questions across your entire meeting archive (RAG over pgvector embeddings)
 
-    Speziell entwickelt für deutsche Kanzleien, Steuerberatungen, Beratungen
-    und Industrieunternehmen mit Compliance-Anforderungen.
+    **The promise**
+    Unlike PLAUD, Otter, Fireflies or similar services, **no audio, transcript, or search index ever leaves your Olares box**. No cloud calls, no third-party AI APIs, no telemetry.
+
+    **Designed for**
+    Law firms, tax consultancies, management consultants and German Mittelstand companies with strict compliance requirements (GDPR, BSI Grundschutz, attorney-client privilege).
+
+    **Tech stack**
+    - Frontend: Next.js 15 PWA
+    - Backend: FastAPI + Celery
+    - Transcription: faster-whisper (CPU-optimized)
+    - LLM: routed through Olares LiteLLM gateway (Qwen, Llama, etc.)
+    - Embeddings: BGE-M3 (multilingual)
+    - Storage: PostgreSQL with pgvector + MinIO (provided by Olares)
+
+    **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    Erstveröffentlichung.
+    First public release.
 
   developer: kaivo.studio
   website: https://kaivo.studio
   sourceCode: https://github.com/ska1walker/insilo
-  submitter: Kai Böhm
+  submitter: ska1walker
   locale:
+    - en-US
     - de-DE
-  doc: https://kaivo.studio/insilo/docs
+  doc: https://github.com/ska1walker/insilo#readme
+  license:
+    - text: Proprietary — kaivo.studio Commercial License
+      url: https://kaivo.studio
   supportArch:
     - amd64
 
@@ -147,9 +170,21 @@ options:
   # Erlaubt mehrere isolierte Instanzen (z.B. eine pro Mandant) — MVP: nein
   allowMultipleInstall: false
 
-  # Erlaubte ausgehende Netzwerkverbindungen — MVP: KEINE
-  # Damit ist garantiert, dass keine Daten zu externen Services fließen.
-  allowedOutboundPorts: []
+  # Erlaubte ausgehende Netzwerkverbindungen: nur HTTPS (443) für den
+  # einmaligen HuggingFace-Modell-Download beim Erst-Start (Whisper + BGE-M3).
+  # Nach dem Cache-Warm-up läuft die App vollständig offline. Audio, Transkripte
+  # und Embeddings verlassen nie die Box — der einzige Outbound ist der Modell-Pull.
+  allowedOutboundPorts:
+    - 443
 
   # Sicherheits-Kontext: niemals als root laufen
   runAsUser: "1000"
+
+  # Scope: per-user installiert (nicht cluster-shared). Olares setzt damit
+  # automatisch das bytetrade.io/ns-owner=<username> Label auf den Namespace,
+  # wodurch die NetworkPolicy-Selektoren in user-system-* unsere Pods
+  # zur Authelia/IAM/Redis-/Postgres-Kommunikation zulassen. Ohne diesen
+  # Block kriegen wir nur die generische `others-np` NetworkPolicy und
+  # check-auth findet die System-Services nicht.
+  appScope:
+    clusterScoped: false

@@ -25,17 +25,31 @@ spec:
         app: insilo
         component: worker
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
+      initContainers:
+        # hostPath mounts at /app/{cache,data} are owned by root on the host;
+        # the main container runs as uid 1000 and the Dockerfile-chown gets
+        # shadowed by the mount overlay. Chown the mount before the app starts.
+        - name: init-chown
+          image: busybox:1.36
+          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data']
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: app-cache
+              mountPath: /app/cache
+            - name: app-data
+              mountPath: /app/data
       containers:
         - name: worker
           image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag }}"
           imagePullPolicy: {{ .Values.images.backend.pullPolicy }}
+          securityContext:
+            runAsUser: 1000
+            runAsNonRoot: true
           command:
             - "celery"
             - "-A"
-            - "app.workers.celery_app"
+            - "app.worker:celery_app"
             - "worker"
             - "-l"
             - "info"

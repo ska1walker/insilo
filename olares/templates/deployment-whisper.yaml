@@ -25,6 +25,16 @@ spec:
         app: insilo
         component: whisper
     spec:
+      initContainers:
+        # See deployment-worker.yaml for why this is needed.
+        - name: init-chown
+          image: busybox:1.36
+          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache']
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: app-cache
+              mountPath: /app/cache
       containers:
         - name: whisper
           image: "{{ .Values.images.whisper.repository }}:{{ .Values.images.whisper.tag }}"

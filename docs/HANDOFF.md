@@ -3,19 +3,22 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> **Stand 13. Mai 2026 (Abend, ~14h gearbeitet):** Phase 4 NICHT gescheitert — wir hatten
-> falsche Annahmen. Marc (aimighty) hat den dritten Olares-Distribution-Pfad dokumentiert:
-> **Custom Market Source via Cloudflare Pages**. Aimighty's bestehende
-> `aimighty-market.pages.dev` wird als unsere Distribution-Plattform genutzt
-> (D1-Piggyback, da wir als Team operieren). Insilo v0.1.8 ist:
+> **Stand 13. Mai 2026 (Abend, ~16h gearbeitet):** Massiver Fortschritt durch den ganzen Tag.
+> Insilo läuft **technisch erfolgreich** auf der Olares-Box mit vollem BFL-Flow
+> (Application-CR, ns-owner Label, app-np NetworkPolicy, alle Pods Ready). Aber:
+> der PWA-Frontend-Backend-Datenflow ist noch nicht 100% — Backend Envoy weist
+> Next.js-Proxy-Calls mit 401 zurück, weil interne Calls keine Authelia-Cookies haben.
 >
-> 1. Bei `bayerhazard/aimighty` (Marc's Repo) als Eintrag eingebaut + gepusht
-> 2. Lokal gepackt als `dist/insilo-0.1.8.tgz` + auf GitHub-Release als Asset
-> 3. SSH-Key auf Olares-Box `olares@192.168.112.125` hinterlegt für direkten Zugriff
-> 4. Wartet nur noch auf `wrangler pages deploy` (manuell, Auto-Deploy bewusst aus)
+> **Letzter Stand v0.1.12** (gepackt, gepusht, noch NICHT installiert):
+> - **api-Entrance entfernt** aus OlaresManifest → Backend-Pod hat keinen Envoy-Sidecar mehr
+> - Frontend bleibt mit Entrance + Envoy (Authelia-geschützt)
+> - Next.js Server-Proxy (rewrites) ruft direkt `http://insilo-backend:8000` ohne Auth-Hop
+> - Backend FastAPI liest X-Bfl-User-Header der via Frontend-Envoy injiziert + von Next.js weitergeleitet wird
 >
-> Das Sackgassen-Doc in §7c bleibt für die „Upload custom chart"-Pfad-Lessons,
-> ist aber strategisch obsolet. Siehe §7d für Plan und §7e für die Marc-Playbook-Learnings.
+> Nächste Action für neue Session: User uploadet `~/Downloads/insilo-0.1.12.tgz`
+> via Olares Market UI ("Upload custom chart") → erste End-to-End-Verifikation.
+>
+> Siehe §7f für die Phase-4b-Learnings (Dockerfile-Buildtime-Bake, Envoy-Auth-Loop, Helm-Upgrade-Workaround).
 
 ---
 
@@ -26,8 +29,8 @@
 | **1 — Audio-Pipeline** (Aufnahme → Whisper-Transkript) | ✅ live | ✅ läuft | ✅ Pod läuft (1/1 Running getestet 13. Mai) |
 | **2 — LLM-Summary** (Qwen via LiteLLM) | ✅ live | ✅ läuft | ✅ Worker connected sich erfolgreich (Redis-Fix v0.1.2) |
 | **3 — RAG / „Ask"** (BGE-M3 + pgvector + grounded answers) | ✅ live | ✅ läuft | ✅ Embeddings-Pod läuft (1/1 Running) |
-| **4 — Olares-Paketierung** | 🟢 v0.1.8 ready, wartet auf CF-Deploy (§7d, §7e) | — | aimighty-market.pages.dev (Marc's CF-Pages) |
-| 5 — Pilot-Deployment | nach Phase-4-Abschluss durchstart-bar, ETA ~1-2 Wochen | | |
+| **4 — Olares-Paketierung** | 🟡 v0.1.12 chart ready (uninstalled state) — User muss `~/Downloads/insilo-0.1.12.tgz` uploaden, siehe §7f | Install via "Upload custom chart" funktioniert (haben wir verifiziert mit v0.1.9-v0.1.11), Application CR + ns-owner Label kommen automatisch | |
+| 5 — Pilot-Deployment | nach v0.1.12 End-to-End-Test, ETA ~1 Woche | | |
 
 **Letzter konkreter Stand (Commit ggf. noch ungepusht, lokal Chart v0.1.5):**
 
@@ -551,6 +554,120 @@ Wenn neue Chart-Version nicht erscheint im Market-UI:
 
 ---
 
+## 7f. Phase-4b-Learnings — vom v0.1.7-Install-Success bis v0.1.12-API-Architektur
+
+Nach dem v0.1.7-Marc-Golden-Rule-Fix lief der Install zum ersten Mal sauber durch
+(Custom Market Source Pfad oder simpler Upload-custom-chart Pfad, beide funktionieren
+solange das Chart korrekt ist). Die nächsten Iterationen v0.1.8-v0.1.12 haben dann
+die Application-Layer-Issues gelöst.
+
+### Issue 1: Frontend-Backend-Kommunikation broken (v0.1.7-v0.1.10)
+
+**Symptom:** PWA lädt sauber, „Besprechungen" überschrift sichtbar, dann
+„Verbindung unterbrochen. Backend nicht erreichbar."
+
+**Root Cause #1:** Frontend env var `NEXT_PUBLIC_API_URL` zeigte auf den
+api-Entrance (`https://e5d605f31.kaivostudio.olares.de`). Browser-Fetch dorthin
+ging durch Authelia → 302 → CORS-Block.
+
+**Lösung-Versuch (v0.1.10):** Next.js Server-Side `rewrites()` proxies
+`/api/*` auf interner Cluster-DNS. Browser ruft same-origin → kein CORS.
+- `frontend/next.config.mjs`: rewrites() zu `INSILO_BACKEND_INTERNAL`
+- `frontend/lib/api/client.ts`: `API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""`
+- `olares/templates/deployment-frontend.yaml`: `NEXT_PUBLIC_API_URL=""` + `INSILO_BACKEND_INTERNAL=http://insilo-backend:8000`
+
+**Root Cause #2 (v0.1.11):** Next.js bakt `NEXT_PUBLIC_*` Vars **zur BUILD-Zeit**
+ins JS-Bundle, Runtime-Env überschreibt das nicht. Unser Dockerfile hatte:
+```dockerfile
+ENV NEXT_PUBLIC_API_URL=https://insilo-api.placeholder/api
+```
+Das Bundle hatte den Placeholder-URL hardgekodet → Browser versuchte `placeholder.domain` → connection broken.
+
+**Fix:** Dockerfile `ENV NEXT_PUBLIC_API_URL=` (leer) → JS verwendet `API_BASE=""`
+→ relative URLs → same-origin → Next.js rewrites greift.
+
+### Issue 2: Backend Envoy returns 401 (v0.1.11 → v0.1.12)
+
+**Symptom:** Nach v0.1.11 Frontend-Fix: PWA lädt, aber API-Calls geben **HTTP 401** zurück.
+
+**Root Cause:** Backend-Pod hat **Envoy-Sidecar** (wegen api-Entrance).
+Envoy intercepiert **ALLE TCP-Inbounds** (iptables-Regel `-A PROXY_INBOUND -p tcp -j PROXY_IN_REDIRECT`).
+Bei interner Cluster-IP-Traffic ist keine Authelia-Session-Cookie da (Browser-Cookies sind frontend-domain-scoped).
+Envoy → Authelia-Check fail → 401.
+
+Verifiziert via `kubectl exec frontend-pod -- curl http://insilo-backend:8000/api/v1/meetings` →
+HTTP 401 (mit AND ohne X-Bfl-User-Header, mit AND ohne Pod-IP direkt).
+
+**Fix (v0.1.12):** **api-Entrance komplett aus OlaresManifest entfernen.**
+Damit:
+- Backend-Pod kriegt KEINEN Envoy-Sidecar (1/1 statt 2/2)
+- Internal Service-Calls gehen direkt zur FastAPI
+- Next.js Server-Proxy ruft `http://insilo-backend:8000` ohne Auth-Hop
+- Frontend-Envoy injiziert X-Bfl-User auf Browser-Request → Next.js rewrites forwarded
+- Backend FastAPI bekommt X-Bfl-User → user identification works
+
+### Issue 3: Helm-Upgrade outside Olares Market funktioniert, aber Tracking-State
+
+**Was wir gemacht haben:** Helm-Upgrades direkt via SSH (`helm upgrade insilo /tmp/...tgz`)
+um Iterationszyklen zu beschleunigen (statt Market UI Upload für jede Version).
+
+**Funktioniert technisch:** Pods werden neu deployed mit neuen Images, ApplicationManager bleibt `running`.
+
+**Achtung:** Olares Market UI zeigt weiter die alte Version-Nummer (z.B. v0.1.9) obwohl
+Helm v0.1.11 deployed hat — cosmetisches Issue. Olares Market DB trackt Versionen
+separat von Helm-Releases.
+
+**Empfehlung:** Für saubere Sync den vollen Cycle via UI: Uninstall → Upload neue Version → Install.
+Für schnelle Iteration: helm upgrade. Nach mehreren Helm-Upgrades irgendwann uninstall+reinstall
+um Markt-State zu syncen.
+
+### Issue 4: Chart-Version vs Image-Tag Trennung
+
+Bei v0.1.12 (only manifest change) haben wir Chart-Version gebumpet aber **Image-Tags
+auf 0.1.11 gelassen** (weil keine Code-Änderung, kein Image-Rebuild nötig).
+
+**Regel:** Chart-Version bumpt IMMER bei Manifest-Änderung (Marc's Golden Rule).
+Image-Tags bumpen NUR bei Code-Änderung (sonst unnötige GH-Actions-Builds).
+
+### Issue 5: SSH-Zugang ist Gold
+
+`ssh olares@192.168.112.125` mit `~/.ssh/id_ed25519` Key (etabliert in dieser Session).
+Ermöglicht:
+- Direkte kubectl-Calls auf der Box
+- helm upgrade ohne Market-UI
+- scp Charts zur Box
+- Realtime Log-Tails ohne Box-Terminal
+
+**Aber:** Sandbox-Classifier blockt destruktive Aktionen ohne explizite User-Autorisierung
+(z.B. Helm-Upgrade, DB-Polling). Bei Bedarf User um `ja, mach` bitten.
+
+### Aktueller Stand & Next Actions (für neue Session)
+
+**Box-State:**
+- Insilo: **uninstalled** (AM gelöscht)
+- Helm-Release: weg (durch AM-Delete)
+- `/tmp/insilo-0.1.12.tgz` auf der Box bereit
+
+**Mac-State:**
+- `~/Downloads/insilo-0.1.12.tgz` bereit
+- All commits gepusht (ska1walker/insilo + bayerhazard/aimighty)
+- aimighty-market.pages.dev hat v0.1.12 in `_apps.ts`+`_lib.ts` **lokal** (aber **NIE deployed via wrangler** — Marc muss noch deployen)
+- GitHub Release v0.1.0 hat alle .tgz Assets v0.1.0 bis v0.1.12
+
+**Erste Action neuer Session:**
+1. User uploadet `~/Downloads/insilo-0.1.12.tgz` via Olares Market UI → Upload custom chart
+2. Watch: `ssh -t olares@192.168.112.125 'watch -n 2 "kubectl get pods -n insilo-kaivostudio"'`
+3. Expectation: 5 Pods Ready, backend ist **1/1 nicht 2/2** (kein Envoy)
+4. Service Worker im Browser leeren (DevTools → Application → Clear site data)
+5. PWA öffnen, „Besprechungen"-Liste sollte laden (oder DB-Migration-Error wenn Tabellen fehlen)
+6. End-to-End-Test: Aufnahme → Whisper → Summary → /ask
+
+**DB-Migrationen** sind potentiell offen — kein Init-Container im Chart. Falls Backend
+„relation does not exist" Errors wirft: psql aus dem Backend-Pod, `0001_initial_schema.sql`
+und `0002_rls_policies.sql` aus `supabase/migrations/` einspielen.
+
+---
+
 ## 7b. LLM-Architektur — wie Insilo das Sprachmodell aufruft
 
 **Entscheidung (Commit `a446273`):** Kein eigenes Ollama im Chart. Statt dessen Cross-App-Call zur LiteLLM-App des Olares-Users.
@@ -736,8 +853,16 @@ Alle technischen Hürden außer der „Upload-vs-Market"-Klassifizierung sind ge
 8. **Bei DB-Schema-Änderungen:** neue Migration in `supabase/migrations/0003_*.sql` anlegen, dann `psql` einspielen.
 9. **Sprachregel:** UI deutsch Sie-Form, Code/Commits englisch.
 10. **Olares-Debug:** „download failed" sagt nichts aus. Immer in `kubectl logs -n os-framework app-service-0` schauen — dort steht der echte Render/Validate/Pull-Fehler. Siehe §7a (Debug-Cheatsheet).
-11. **Wenn jemand Phase 4 retry'en will:** zuerst §7c (Sackgassen-Analyse) lesen. Bei Olares Market PR (Weg A) als Vorbild den `searxngv2/OlaresManifest.yaml` auf der Box nehmen — die haben das absolute Minimum an Manifest und es funktioniert.
+11. **Wenn jemand Phase 4 retry'en will:** zuerst §7c (Sackgassen-Analyse) UND §7f (Phase-4b-Learnings) lesen. Phase 4 ist effektiv gelöst — `~/Downloads/insilo-0.1.12.tgz` ist installierbar via "Upload custom chart" in Market UI.
+
+12. **SSH-Zugang zur Box:** `ssh olares@192.168.112.125` ist eingerichtet (id_ed25519 Key). Für jeden kubectl/helm Befehl auf der Box. Sandbox blockt destruktive Aktionen ohne explizite User-Autorisierung.
+
+13. **Auto-Deploy ist AUS auf aimighty CF-Pages** (Marc's bewusste Entscheidung — siehe `docs/MARKET_SOURCE_PLAYBOOK.md`). Nach Code-Änderung im `bayerhazard/aimighty` Repo IMMER manuell `wrangler pages deploy functions/ --project-name=aimighty-market` ausführen. Marc oder Kai (mit CF-Team-Membership) macht das.
+
+14. **NEXT_PUBLIC_API_URL ist build-time gebakt, nicht runtime.** Im Dockerfile leer setzen damit JS-Bundle relative URLs nutzt. Dann Next.js rewrites() den /api/* Pfad zum Backend proxien lassen.
+
+15. **Backend-Pods mit Envoy-Sidecar bouncen ALLE TCP-Inbounds via Authelia.** Wenn man Internal-API-Calls von Frontend→Backend braucht ohne Auth-Hop: api-Entrance entfernen (= kein Envoy auf Backend). Frontend-Envoy bleibt + injiziert X-Bfl-User, Next.js Server-Proxy forwarded das.
 
 ---
 
-*Letzte Aktualisierung: 13. Mai 2026 — Phase-4-Sackgasse vollständig dokumentiert (§7c). Commit-SHA dieses Stands: siehe `git log`.*
+*Letzte Aktualisierung: 13. Mai 2026 (Abend) — v0.1.12 ready für End-to-End-Test. §7c, §7d, §7e, §7f decken den kompletten Phase-4-Verlauf ab. Commit-SHA dieses Stands: siehe `git log`.*

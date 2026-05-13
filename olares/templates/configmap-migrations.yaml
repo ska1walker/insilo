@@ -1,11 +1,12 @@
 # ============================================================================
 # ConfigMap: SQL migration & seed files for the Helm-hook Job below.
 #
-# These files are baked into the chart from olares/files/ at package time.
-# When supabase/migrations/ changes, sync them via:
+# The SQL is inlined here (rather than loaded via {{ "{{ .Files.Get }}" }})
+# because Olares' chart-repo renderer doesn't expose `.Files`. When the
+# SQL changes:
 #   cp supabase/migrations/*.sql supabase/seed.sql olares/files/
-#
-# psql sees each entry as a separate file in /sql/ inside the job pod.
+#   ./olares/regen-migrations-configmap.sh   (or re-run the generator)
+# Then commit both olares/files/ and this template.
 # ============================================================================
 
 apiVersion: v1
@@ -17,16 +18,744 @@ metadata:
     app: insilo
     component: migrations
   annotations:
-    # Created before the Job so the Job can mount it.
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation
 data:
   0001_initial_schema.sql: |
-{{ .Files.Get "files/0001_initial_schema.sql" | indent 4 }}
+    -- ========================================================================
+    -- 0001_initial_schema.sql
+    -- Initial database schema for Insilo on Olares
+    --
+    -- Hinweis: Keine auth.users-Tabelle (wie bei Supabase) — User-Identität
+    -- kommt vom Olares-Authelia-Header X-Bfl-User. Wir mappen den Olares-
+    -- Username auf eine interne UUID in unserer users-Tabelle.
+    -- ========================================================================
+    
+    -- Extensions
+    create extension if not exists "uuid-ossp";
+    create extension if not exists "pgcrypto";
+    create extension if not exists "vector";
+    create extension if not exists "pg_trgm";
+    
+    -- ========================================================================
+    -- USERS (Mapping zwischen Olares-Username und interner UUID)
+    -- ========================================================================
+    
+    create table public.users (
+      id              uuid primary key default uuid_generate_v4(),
+      olares_username text not null unique,         -- aus X-Bfl-User Header
+      email           text,
+      display_name    text,
+      created_at      timestamptz not null default now(),
+      last_seen_at    timestamptz not null default now(),
+      deleted_at      timestamptz
+    );
+    
+    create index users_olares_idx on public.users (olares_username) where deleted_at is null;
+    
+    -- ========================================================================
+    -- ORGANIZATIONS (Mandanten)
+    -- ========================================================================
+    
+    create table public.orgs (
+      id              uuid primary key default uuid_generate_v4(),
+      name            text not null,
+      slug            text unique not null,
+      industry        text,                                  -- "law", "tax", "consulting", "industry"
+      settings        jsonb not null default '{}'::jsonb,
+      audio_retention_days integer not null default 90,
+      created_at      timestamptz not null default now(),
+      updated_at      timestamptz not null default now(),
+      deleted_at      timestamptz
+    );
+    
+    create index orgs_slug_idx on public.orgs (slug) where deleted_at is null;
+    
+    -- ========================================================================
+    -- USER ↔ ORG MAPPING (Multi-Tenancy)
+    -- ========================================================================
+    
+    create type public.user_role as enum ('owner', 'admin', 'member', 'viewer');
+    
+    create table public.user_org_roles (
+      user_id         uuid not null references public.users(id) on delete cascade,
+      org_id          uuid not null references public.orgs(id) on delete cascade,
+      role            public.user_role not null default 'member',
+      joined_at       timestamptz not null default now(),
+      primary key (user_id, org_id)
+    );
+    
+    create index user_org_roles_user_idx on public.user_org_roles (user_id);
+    create index user_org_roles_org_idx on public.user_org_roles (org_id);
+    
+    -- ========================================================================
+    -- TEMPLATES
+    -- ========================================================================
+    
+    create table public.templates (
+      id              uuid primary key default uuid_generate_v4(),
+      org_id          uuid references public.orgs(id) on delete cascade,
+      name            text not null,
+      description     text,
+      category        text,
+      system_prompt   text not null,
+      output_schema   jsonb not null,
+      is_system       boolean not null default false,
+      is_active       boolean not null default true,
+      version         integer not null default 1,
+      created_by      uuid references public.users(id),
+      created_at      timestamptz not null default now(),
+      updated_at      timestamptz not null default now()
+    );
+    
+    create index templates_org_idx on public.templates (org_id) where is_active = true;
+    create index templates_system_idx on public.templates (is_system) where is_active = true;
+    
+    -- ========================================================================
+    -- MEETINGS
+    -- ========================================================================
+    
+    create type public.meeting_status as enum (
+      'draft',
+      'uploading',
+      'queued',
+      'transcribing',
+      'transcribed',
+      'summarizing',
+      'embedding',
+      'ready',
+      'failed',
+      'archived'
+    );
+    
+    create table public.meetings (
+      id              uuid primary key default uuid_generate_v4(),
+      org_id          uuid not null references public.orgs(id) on delete cascade,
+      created_by      uuid not null references public.users(id),
+      title           text not null default 'Unbenanntes Meeting',
+      description     text,
+      status          public.meeting_status not null default 'draft',
+      recorded_at     timestamptz not null default now(),
+      duration_sec    integer,
+      audio_path      text,                                 -- Pfad in MinIO oder /app/data
+      audio_size_bytes bigint,
+      speaker_count   smallint,
+      language        text default 'de',
+      template_id     uuid references public.templates(id),
+      metadata        jsonb not null default '{}'::jsonb,
+      error_message   text,
+      created_at      timestamptz not null default now(),
+      updated_at      timestamptz not null default now(),
+      deleted_at      timestamptz
+    );
+    
+    create index meetings_org_idx on public.meetings (org_id) where deleted_at is null;
+    create index meetings_status_idx on public.meetings (status) where deleted_at is null;
+    create index meetings_recorded_idx on public.meetings (recorded_at desc) where deleted_at is null;
+    create index meetings_title_trgm on public.meetings using gin (title gin_trgm_ops);
+    
+    -- ========================================================================
+    -- TRANSCRIPTS
+    -- ========================================================================
+    
+    create table public.transcripts (
+      id              uuid primary key default uuid_generate_v4(),
+      meeting_id      uuid not null unique references public.meetings(id) on delete cascade,
+      segments        jsonb not null,
+      speakers        jsonb not null default '[]'::jsonb,
+      full_text       text not null,
+      language        text not null default 'de',
+      whisper_model   text not null,
+      diarization_model text,
+      word_count      integer,
+      created_at      timestamptz not null default now()
+    );
+    
+    create index transcripts_fulltext_idx on public.transcripts using gin (to_tsvector('german', full_text));
+    
+    -- ========================================================================
+    -- SUMMARIES
+    -- ========================================================================
+    
+    create table public.summaries (
+      id              uuid primary key default uuid_generate_v4(),
+      meeting_id      uuid not null references public.meetings(id) on delete cascade,
+      template_id     uuid not null references public.templates(id),
+      template_version integer not null,
+      content         jsonb not null,
+      llm_model       text not null,
+      generation_time_ms integer,
+      is_current      boolean not null default true,
+      created_at      timestamptz not null default now()
+    );
+    
+    create index summaries_meeting_idx on public.summaries (meeting_id) where is_current = true;
+    
+    -- ========================================================================
+    -- MEETING CHUNKS (für RAG)
+    -- ========================================================================
+    
+    create table public.meeting_chunks (
+      id              uuid primary key default uuid_generate_v4(),
+      meeting_id      uuid not null references public.meetings(id) on delete cascade,
+      chunk_index     integer not null,
+      content         text not null,
+      start_time_sec  integer,
+      end_time_sec    integer,
+      speaker_ids     text[],
+      embedding       vector(1024),
+      token_count     integer,
+      created_at      timestamptz not null default now()
+    );
+    
+    create index meeting_chunks_meeting_idx on public.meeting_chunks (meeting_id);
+    create index meeting_chunks_embedding_idx on public.meeting_chunks
+      using hnsw (embedding vector_cosine_ops);
+    
+    -- ========================================================================
+    -- TAGS
+    -- ========================================================================
+    
+    create table public.tags (
+      id              uuid primary key default uuid_generate_v4(),
+      org_id          uuid not null references public.orgs(id) on delete cascade,
+      name            text not null,
+      color           text default '#737065',
+      created_at      timestamptz not null default now(),
+      unique (org_id, name)
+    );
+    
+    create table public.meeting_tags (
+      meeting_id      uuid not null references public.meetings(id) on delete cascade,
+      tag_id          uuid not null references public.tags(id) on delete cascade,
+      added_at        timestamptz not null default now(),
+      primary key (meeting_id, tag_id)
+    );
+    
+    -- ========================================================================
+    -- AUDIT LOG
+    -- ========================================================================
+    
+    create table public.audit_log (
+      id              uuid primary key default uuid_generate_v4(),
+      timestamp       timestamptz not null default now(),
+      user_id         uuid references public.users(id),
+      olares_user     text,                                -- aus X-Bfl-User
+      org_id          uuid references public.orgs(id),
+      action          text not null,
+      resource_type   text,
+      resource_id     uuid,
+      ip_address      inet,
+      user_agent      text,
+      changes         jsonb,
+      success         boolean not null default true,
+      metadata        jsonb default '{}'::jsonb
+    );
+    
+    create index audit_log_user_idx on public.audit_log (user_id, timestamp desc);
+    create index audit_log_org_idx on public.audit_log (org_id, timestamp desc);
+    create index audit_log_action_idx on public.audit_log (action, timestamp desc);
+    create index audit_log_resource_idx on public.audit_log (resource_type, resource_id);
+    
+    -- ========================================================================
+    -- UPDATED_AT TRIGGER
+    -- ========================================================================
+    
+    create or replace function public.set_updated_at()
+    returns trigger as $$
+    begin
+      new.updated_at = now();
+      return new;
+    end;
+    $$ language plpgsql;
+    
+    create trigger orgs_updated_at before update on public.orgs
+      for each row execute procedure public.set_updated_at();
+    
+    create trigger meetings_updated_at before update on public.meetings
+      for each row execute procedure public.set_updated_at();
+    
+    create trigger templates_updated_at before update on public.templates
+      for each row execute procedure public.set_updated_at();
+    
   0002_rls_policies.sql: |
-{{ .Files.Get "files/0002_rls_policies.sql" | indent 4 }}
+    -- ========================================================================
+    -- 0002_rls_policies.sql
+    -- Row Level Security für alle Org-gebundenen Tabellen.
+    --
+    -- Wichtig: Bei Olares haben wir keine auth.users-Tabelle (kein Supabase Auth).
+    -- Stattdessen setzen wir bei jedem DB-Connection-Open per
+    --   SET LOCAL app.current_user_id = '<uuid>';
+    -- den User-Kontext, basierend auf dem X-Bfl-User Header.
+    -- Die RLS-Policies lesen diesen Wert.
+    -- ========================================================================
+    
+    -- ========================================================================
+    -- Helper Functions
+    -- ========================================================================
+    
+    -- Aktuelle User-ID aus Session-Variable lesen
+    create or replace function public.current_user_id()
+    returns uuid
+    language sql
+    stable
+    as $$
+      select nullif(current_setting('app.current_user_id', true), '')::uuid;
+    $$;
+    
+    -- Welche Orgs gehören zum aktuellen User?
+    create or replace function public.current_user_orgs()
+    returns setof uuid
+    language sql
+    stable
+    as $$
+      select org_id from public.user_org_roles
+      where user_id = public.current_user_id();
+    $$;
+    
+    -- Welche Rolle hat der aktuelle User in einer Org?
+    create or replace function public.current_user_role_in_org(target_org uuid)
+    returns public.user_role
+    language sql
+    stable
+    as $$
+      select role from public.user_org_roles
+      where user_id = public.current_user_id() and org_id = target_org;
+    $$;
+    
+    -- ========================================================================
+    -- RLS aktivieren
+    -- ========================================================================
+    
+    alter table public.orgs enable row level security;
+    alter table public.user_org_roles enable row level security;
+    alter table public.users enable row level security;
+    alter table public.meetings enable row level security;
+    alter table public.transcripts enable row level security;
+    alter table public.summaries enable row level security;
+    alter table public.templates enable row level security;
+    alter table public.meeting_chunks enable row level security;
+    alter table public.tags enable row level security;
+    alter table public.meeting_tags enable row level security;
+    alter table public.audit_log enable row level security;
+    
+    -- ========================================================================
+    -- USERS
+    -- ========================================================================
+    
+    -- User sieht nur sich selbst und User, mit denen er eine Org teilt
+    create policy users_select on public.users
+      for select
+      using (
+        id = public.current_user_id()
+        or id in (
+          select user_id from public.user_org_roles
+          where org_id in (select public.current_user_orgs())
+        )
+      );
+    
+    -- ========================================================================
+    -- ORGS
+    -- ========================================================================
+    
+    create policy orgs_select on public.orgs
+      for select
+      using (id in (select public.current_user_orgs()));
+    
+    create policy orgs_update on public.orgs
+      for update
+      using (public.current_user_role_in_org(id) in ('owner', 'admin'));
+    
+    -- ========================================================================
+    -- USER_ORG_ROLES
+    -- ========================================================================
+    
+    create policy user_org_roles_select on public.user_org_roles
+      for select
+      using (
+        user_id = public.current_user_id()
+        or org_id in (select public.current_user_orgs())
+      );
+    
+    create policy user_org_roles_modify on public.user_org_roles
+      for all
+      using (public.current_user_role_in_org(org_id) in ('owner', 'admin'));
+    
+    -- ========================================================================
+    -- MEETINGS
+    -- ========================================================================
+    
+    create policy meetings_select on public.meetings
+      for select
+      using (
+        org_id in (select public.current_user_orgs())
+        and deleted_at is null
+      );
+    
+    create policy meetings_insert on public.meetings
+      for insert
+      with check (
+        org_id in (select public.current_user_orgs())
+        and created_by = public.current_user_id()
+      );
+    
+    create policy meetings_update on public.meetings
+      for update
+      using (
+        org_id in (select public.current_user_orgs())
+        and (
+          created_by = public.current_user_id()
+          or public.current_user_role_in_org(org_id) in ('owner', 'admin')
+        )
+      );
+    
+    create policy meetings_delete on public.meetings
+      for delete
+      using (public.current_user_role_in_org(org_id) in ('owner', 'admin'));
+    
+    -- ========================================================================
+    -- TRANSCRIPTS
+    -- ========================================================================
+    
+    create policy transcripts_select on public.transcripts
+      for select
+      using (
+        meeting_id in (
+          select id from public.meetings
+          where org_id in (select public.current_user_orgs())
+          and deleted_at is null
+        )
+      );
+    
+    -- Inserts kommen vom Worker mit Bypass-Role, kein RLS-Eintrag nötig
+    
+    -- ========================================================================
+    -- SUMMARIES
+    -- ========================================================================
+    
+    create policy summaries_select on public.summaries
+      for select
+      using (
+        meeting_id in (
+          select id from public.meetings
+          where org_id in (select public.current_user_orgs())
+          and deleted_at is null
+        )
+      );
+    
+    -- ========================================================================
+    -- TEMPLATES
+    -- ========================================================================
+    
+    create policy templates_select on public.templates
+      for select
+      using (
+        is_active = true
+        and (
+          is_system = true
+          or org_id in (select public.current_user_orgs())
+        )
+      );
+    
+    create policy templates_insert on public.templates
+      for insert
+      with check (
+        org_id in (select public.current_user_orgs())
+        and public.current_user_role_in_org(org_id) in ('owner', 'admin')
+        and is_system = false
+      );
+    
+    create policy templates_update on public.templates
+      for update
+      using (
+        org_id in (select public.current_user_orgs())
+        and public.current_user_role_in_org(org_id) in ('owner', 'admin')
+        and is_system = false
+      );
+    
+    -- ========================================================================
+    -- MEETING CHUNKS
+    -- ========================================================================
+    
+    create policy meeting_chunks_select on public.meeting_chunks
+      for select
+      using (
+        meeting_id in (
+          select id from public.meetings
+          where org_id in (select public.current_user_orgs())
+          and deleted_at is null
+        )
+      );
+    
+    -- ========================================================================
+    -- TAGS
+    -- ========================================================================
+    
+    create policy tags_all on public.tags
+      for all
+      using (org_id in (select public.current_user_orgs()));
+    
+    create policy meeting_tags_all on public.meeting_tags
+      for all
+      using (
+        meeting_id in (
+          select id from public.meetings
+          where org_id in (select public.current_user_orgs())
+        )
+      );
+    
+    -- ========================================================================
+    -- AUDIT LOG (Append-only)
+    -- ========================================================================
+    
+    create policy audit_log_select on public.audit_log
+      for select
+      using (
+        user_id = public.current_user_id()
+        or (
+          org_id in (select public.current_user_orgs())
+          and public.current_user_role_in_org(org_id) in ('owner', 'admin')
+        )
+      );
+    
+    -- Append-only Enforcement
+    create policy audit_log_no_update on public.audit_log for update using (false);
+    create policy audit_log_no_delete on public.audit_log for delete using (false);
+    
   0003_org_settings.sql: |
-{{ .Files.Get "files/0003_org_settings.sql" | indent 4 }}
+    -- ========================================================================
+    -- 0003_org_settings.sql
+    -- Per-org LLM configuration.
+    --
+    -- Lets each Olares-box owner point Insilo at any OpenAI-compatible
+    -- endpoint (their own LiteLLM gateway, a local Ollama, an external API,
+    -- ...) without touching the Helm chart. Empty values mean "fall back to
+    -- the env defaults baked into the deployment."
+    -- ========================================================================
+    
+    create table if not exists public.org_settings (
+      org_id        uuid primary key references public.orgs(id) on delete cascade,
+      llm_base_url  text not null default '',
+      llm_api_key   text not null default '',
+      llm_model     text not null default '',
+      updated_at    timestamptz not null default now(),
+      updated_by    uuid references public.users(id)
+    );
+    
+    create or replace function public.touch_org_settings_updated_at()
+    returns trigger
+    language plpgsql
+    as $$
+    begin
+      new.updated_at := now();
+      return new;
+    end;
+    $$;
+    
+    drop trigger if exists trg_org_settings_updated_at on public.org_settings;
+    create trigger trg_org_settings_updated_at
+      before update on public.org_settings
+      for each row execute function public.touch_org_settings_updated_at();
+    
+    -- RLS: every org sees its own row, owner/admin may write.
+    alter table public.org_settings enable row level security;
+    
+    drop policy if exists org_settings_select on public.org_settings;
+    create policy org_settings_select on public.org_settings
+      for select
+      using (org_id in (select public.current_user_orgs()));
+    
+    drop policy if exists org_settings_upsert on public.org_settings;
+    create policy org_settings_upsert on public.org_settings
+      for all
+      using (org_id in (select public.current_user_orgs()))
+      with check (org_id in (select public.current_user_orgs()));
+    
   0099_seed.sql: |
-{{ .Files.Get "files/seed.sql" | indent 4 }}
+    -- ========================================================================
+    -- seed.sql - System-Templates für die Erst-Inbetriebnahme
+    -- ========================================================================
+    
+    insert into public.templates (id, org_id, name, description, category, system_prompt, output_schema, is_system, is_active)
+    values
+    -- ============================================================
+    -- Allgemeine Besprechung
+    -- ============================================================
+    (
+      '00000000-0000-0000-0000-000000000001',
+      null,
+      'Allgemeine Besprechung',
+      'Standard-Zusammenfassung für interne und externe Meetings.',
+      'general',
+      'Du bist ein professioneller Protokollführer für deutsche Geschäftsmeetings. Analysiere das folgende Meeting-Transkript und erstelle eine strukturierte Zusammenfassung.
+    
+    Wichtige Regeln:
+    - Schreibe in formellem Deutsch.
+    - Halte dich strikt an die im Transkript genannten Fakten.
+    - Nenne Personen mit ihren Speaker-Labels.
+    - Sei präzise und prägnant, vermeide Floskeln.
+    - Wenn ein Aspekt im Meeting nicht behandelt wurde, lass das entsprechende Feld leer.',
+      '{
+        "type": "object",
+        "properties": {
+          "anwesende": { "type": "array", "items": { "type": "string" } },
+          "kernthemen": { "type": "array", "items": { "type": "string" } },
+          "wichtige_aussagen": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sprecher": { "type": "string" },
+                "aussage": { "type": "string" }
+              }
+            }
+          },
+          "beschluesse": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "beschluss": { "type": "string" },
+                "verantwortlich": { "type": "string" },
+                "frist": { "type": "string" }
+              }
+            }
+          },
+          "offene_fragen": { "type": "array", "items": { "type": "string" } },
+          "naechste_schritte": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["kernthemen", "beschluesse", "naechste_schritte"]
+      }'::jsonb,
+      true,
+      true
+    ),
+    -- ============================================================
+    -- Mandantengespräch
+    -- ============================================================
+    (
+      '00000000-0000-0000-0000-000000000002',
+      null,
+      'Mandantengespräch',
+      'Strukturiertes Protokoll für anwaltliche und steuerliche Mandantengespräche.',
+      'legal',
+      'Du bist ein erfahrener Protokollführer für anwaltliche und steuerliche Mandantengespräche. Analysiere das folgende Transkript und erstelle ein strukturiertes Aktenprotokoll.
+    
+    Wichtige Regeln:
+    - Wahrung der anwaltlichen/steuerlichen Schweigepflicht in jeder Formulierung.
+    - Sachverhalt strikt nach Transkript, keine eigenen rechtlichen Wertungen.
+    - Identifiziere klar: was hat der Mandant geschildert, was hat der Berater eingeordnet.
+    - Bei Beträgen, Daten und Fristen: exakte Wiedergabe.',
+      '{
+        "type": "object",
+        "properties": {
+          "mandantenname": { "type": "string" },
+          "sachverhalt": { "type": "string" },
+          "rechtsfragen": { "type": "array", "items": { "type": "string" } },
+          "eingebrachte_unterlagen": { "type": "array", "items": { "type": "string" } },
+          "vereinbarte_leistungen": { "type": "array", "items": { "type": "string" } },
+          "wichtige_termine_fristen": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "termin": { "type": "string" },
+                "frist": { "type": "string" }
+              }
+            }
+          },
+          "honorarvereinbarung": { "type": "string" },
+          "naechste_schritte_mandat": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["sachverhalt", "vereinbarte_leistungen", "naechste_schritte_mandat"]
+      }'::jsonb,
+      true,
+      true
+    ),
+    -- ============================================================
+    -- Vertriebsgespräch
+    -- ============================================================
+    (
+      '00000000-0000-0000-0000-000000000003',
+      null,
+      'Vertriebsgespräch',
+      'Discovery Call oder Kundentermin im Vertrieb.',
+      'sales',
+      'Du bist ein erfahrener Vertriebsanalyst. Analysiere das folgende Vertriebsgespräch und erstelle eine strukturierte Auswertung im BANT-Stil.
+    
+    Regeln:
+    - Sachlich und nüchtern, keine vertriebliche Übertreibung.
+    - Wenn Informationen fehlen, dies explizit notieren ("nicht erfragt").
+    - Sprecher klar als Kunde vs. Vertrieb identifizieren.',
+      '{
+        "type": "object",
+        "properties": {
+          "kunde": { "type": "string" },
+          "schmerzpunkte": { "type": "array", "items": { "type": "string" } },
+          "aktuelle_loesung": { "type": "string" },
+          "bant": {
+            "type": "object",
+            "properties": {
+              "budget": { "type": "string" },
+              "entscheider": { "type": "string" },
+              "need": { "type": "string" },
+              "timing": { "type": "string" }
+            }
+          },
+          "einwaende": { "type": "array", "items": { "type": "string" } },
+          "vereinbarte_naechste_schritte": { "type": "array", "items": { "type": "string" } },
+          "follow_up_datum": { "type": "string" },
+          "verkaufschance_einschaetzung": {
+            "type": "string",
+            "enum": ["hoch", "mittel", "niedrig", "unklar"]
+          }
+        },
+        "required": ["schmerzpunkte", "vereinbarte_naechste_schritte"]
+      }'::jsonb,
+      true,
+      true
+    ),
+    -- ============================================================
+    -- Jahresgespräch
+    -- ============================================================
+    (
+      '00000000-0000-0000-0000-000000000004',
+      null,
+      'Jahresgespräch',
+      'Strukturiertes Protokoll für jährliche Kunden- oder Bestandsgespräche.',
+      'consulting',
+      'Du bist ein erfahrener Berater. Analysiere das folgende Jahresgespräch und erstelle ein strukturiertes Protokoll für die Kundenakte.
+    
+    Regeln:
+    - Formelles Deutsch.
+    - Risikoveränderungen seit dem Vorjahr klar herausarbeiten.
+    - Cross-Selling-Potenziale notieren ohne aufdringlich zu wirken.
+    - Wiedervorlage-Datum sinnvoll setzen.',
+      '{
+        "type": "object",
+        "properties": {
+          "kunde": { "type": "string" },
+          "anwesende": { "type": "array", "items": { "type": "string" } },
+          "bestandsuebersicht": { "type": "array", "items": { "type": "string" } },
+          "risikoveraenderungen": { "type": "array", "items": { "type": "string" } },
+          "cross_selling_potenziale": { "type": "array", "items": { "type": "string" } },
+          "kundenwuensche": { "type": "array", "items": { "type": "string" } },
+          "beschluesse": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "beschluss": { "type": "string" },
+                "verantwortlich": { "type": "string" },
+                "frist": { "type": "string" }
+              }
+            }
+          },
+          "wiedervorlage": { "type": "string" }
+        },
+        "required": ["bestandsuebersicht", "beschluesse", "wiedervorlage"]
+      }'::jsonb,
+      true,
+      true
+    );
+    

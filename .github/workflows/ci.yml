@@ -11,6 +11,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  chart-checks:
+    name: olares chart · sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v3.16.2"
+
+      - name: codified Phase-4 lessons (scripts/check-chart.sh)
+        run: bash scripts/check-chart.sh
+
   frontend:
     name: frontend · typecheck + lint
     runs-on: ubuntu-latest

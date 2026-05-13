@@ -253,15 +253,16 @@ insilo/
 
 ## Wie Claude Code in diesem Repo arbeitet
 
-1. **Vor jeder Code-Entscheidung:** `docs/ARCHITECTURE.md` und Olares-Constraints aus dieser CLAUDE.md lesen.
+1. **Vor jeder Code-Entscheidung:** `docs/ARCHITECTURE.md` und Olares-Constraints aus dieser CLAUDE.md lesen. Bei Olares-Themen zusätzlich `docs/HANDOFF.md §7g` — codifiziert die teuren Lessons aus v0.1.7→v0.1.17.
 2. **Bei UI-Arbeit:** Skills `frontend-design` + `UI/UX Pro Max` aktivieren. Designsystem strikt aus `docs/DESIGN.md`.
 3. **Bei Backend-Änderungen:** Wir bauen *keine* Auth-Logik. Eingehende Requests sind authentifiziert via Envoy. User-ID kommt aus `X-Bfl-User` Header.
-4. **Bei DB-Änderungen:** Erst Migration in `supabase/migrations/`, dann Frontend/Backend. RLS auf jede neue Tabelle.
+4. **Bei DB-Schema-Änderungen:** Migration in `supabase/migrations/0NNN_*.sql` anlegen, RLS auf jede neue Tabelle, **dann `python3 scripts/regen-migrations.py` laufen lassen** — das mirroret die SQL in `olares/files/` und regeneriert die inlinete `olares/templates/configmap-migrations.yaml`. CI bricht sonst beim Drift-Check ab.
 5. **Bei Storage:** Nur `/app/data/`, `/app/cache/`, `/app/Home/`. Niemals beliebige Pfade.
-6. **Bei Olares-Manifest-Änderungen:** Lese vollständigen Olares Deployment Guide (in Projekt-Root). Linter-Regeln strikt befolgen.
-7. **Sprachregel:** UI-Texte Deutsch (Sie-Form). Code Englisch.
-8. **Tests:** Vitest fürs Frontend, pytest fürs Backend. Kritische Pfade (Audio-Upload, Transkription) immer mit Tests.
-9. **Bei Unsicherheit:** stoppen und Kai fragen.
+6. **Bei Olares-Manifest- oder Chart-Änderungen:** **Vor dem Commit `bash scripts/check-chart.sh` laufen lassen.** Das Script codiert die Phase-4-Learnings — Version-Sync (Marc's Golden Rule), keine `.Files.Get`, keine Helm-Hooks (chicken-and-egg `ns-owner`-Label), kein `runAsInternal: true`, SQL-Drift, helm lint + template. Vollständiges Detail in `docs/HANDOFF.md §7g`. Selbe Checks laufen in CI (`ci.yml.chart-checks`) und blockieren Image-Builds (`release.yml.preflight`).
+7. **Bei neuem Git-Tag `v*.*.*`:** Tag-Name muss `olares/Chart.yaml.version` matchen — `release.yml` bricht sonst ab.
+8. **Sprachregel:** UI-Texte Deutsch (Sie-Form). Code Englisch.
+9. **Tests:** Vitest fürs Frontend, pytest fürs Backend. Kritische Pfade (Audio-Upload, Transkription) immer mit Tests.
+10. **Bei Unsicherheit:** stoppen und Kai fragen.
 
 ---
 

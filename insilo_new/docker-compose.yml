@@ -1,0 +1,77 @@
+# ============================================================================
+# docker-compose.yml — lokale Olares-Middleware-Emulation
+#
+# Olares stellt PostgreSQL, KVRocks und MinIO als geteilte System-Middlewares
+# bereit. Lokal emulieren wir das hier.
+#
+# NICHT für Produktion. In Produktion läuft alles auf der Olares-Box.
+# ============================================================================
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: insilo_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: insilo
+      POSTGRES_PASSWORD: insilo_dev_only
+      POSTGRES_DB: insilo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U insilo -d insilo"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: insilo_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  minio:
+    image: minio/minio:latest
+    container_name: insilo_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: insilo_dev
+      MINIO_ROOT_PASSWORD: insilo_dev_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  # ---- Optional: Ollama lokal (für Phase 2+) -----------------------------
+  # Erfordert NVIDIA-GPU + nvidia-docker.
+  # Auf macOS: nicht aktivieren, stattdessen Ollama nativ via brew install.
+  #
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: insilo_ollama
+  #   restart: unless-stopped
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+
+volumes:
+  pg_data:
+  redis_data:
+  minio_data:
+  # ollama_data:

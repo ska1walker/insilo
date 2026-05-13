@@ -16,47 +16,35 @@
 images:
   frontend:
     repository: ghcr.io/ska1walker/insilo-frontend
-    tag: 0.1.19
+    tag: 0.1.0
     pullPolicy: IfNotPresent
 
   backend:
     repository: ghcr.io/ska1walker/insilo-backend
-    tag: 0.1.19
+    tag: 0.1.0
     pullPolicy: IfNotPresent
 
   whisper:
     repository: ghcr.io/ska1walker/insilo-whisper
-    tag: 0.1.19
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+
+  ollama:
+    repository: ollama/ollama
+    tag: latest
     pullPolicy: IfNotPresent
 
   embeddings:
     repository: ghcr.io/ska1walker/insilo-embeddings
-    tag: 0.1.19
+    tag: 0.1.0
     pullPolicy: IfNotPresent
 
 # ---- KI-Modelle ------------------------------------------------------------
-# Insilo bringt nur Whisper + BGE-M3 selbst mit. Das LLM nutzen wir aus
-# der LiteLLM-Gateway-App von Olares (siehe `litellm:` unten). Damit kommt
-# die Insilo-VRAM-Anforderung auf ~3 GB (nur Whisper auf GPU).
 
 models:
   whisper: large-v3
+  ollama: qwen2.5:14b-instruct-q4_K_M
   embeddings: BAAI/bge-m3
-
-# ---- LLM-Gateway (LiteLLM auf Olares) ---------------------------------------
-# Adresse wird zur Install-Zeit als
-#   http://litellm-svc.litellm-<bfl-username>.svc.cluster.local/v1
-# in die backend/worker Deployments injiziert.
-#
-# Default-API-Key entspricht LiteLLM's `sk-1234`-Master-Key der Olares-App.
-# Bei eigener LiteLLM-Konfiguration `--set litellm.apiKey=...` überschreiben.
-
-litellm:
-  apiKey: "sk-1234"
-  # Modell-Name wie er in LiteLLM's /v1/models steht.
-  # Auf der aktuellen Olares-Box ist das "qwen3.6" (35B-A3B Vision).
-  # Bei anderer Konfiguration via `helm install --set litellm.model=...` setzen.
-  model: "qwen36a3bvisionone"
 
 # ---- Anwendungskonfiguration -----------------------------------------------
 

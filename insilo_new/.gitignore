@@ -1,0 +1,92 @@
+# ============================================================================
+# Insilo - .gitignore
+# ============================================================================
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+.yarn/install-state.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+.turbo/
+
+# Vercel (nicht relevant für Insilo, aber Vorsicht)
+.vercel
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Lokale Daten (Audio etc. niemals committen!)
+data/
+cache/
+uploads/
+*.wav
+*.mp3
+*.webm
+*.m4a
+*.ogg
+
+# Datenbank-Dumps
+*.sql.gz
+*.dump
+*.backup
+
+# Olares-Pakete (werden gebaut, nicht committed)
+*.tgz
+olares-build/
+insilo-build/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS
+.DS_Store
+desktop.ini
+
+# Models (gross, werden nicht committed)
+*.gguf
+*.bin
+*.pt
+*.safetensors
+models/

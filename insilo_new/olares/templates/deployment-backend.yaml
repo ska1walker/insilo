@@ -1,0 +1,121 @@
+# ============================================================================
+# Deployment: Insilo Backend (FastAPI)
+#
+# Wichtig: Backend nutzt Olares-System-PostgreSQL und -KVRocks.
+# Die Variablen .Values.postgres.* und .Values.redis.* werden automatisch
+# injiziert, sobald middleware: postgres / redis im OlaresManifest deklariert ist.
+# ============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insilo-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: insilo
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insilo
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: insilo
+        component: backend
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+      containers:
+        - name: backend
+          image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag }}"
+          imagePullPolicy: {{ .Values.images.backend.pullPolicy }}
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            # ---- PostgreSQL (Olares-System-Middleware) ----------------------
+            - name: DB_HOST
+              value: "{{ .Values.postgres.host }}"
+            - name: DB_PORT
+              value: "{{ .Values.postgres.port }}"
+            - name: DB_USER
+              value: "{{ .Values.postgres.username }}"
+            - name: DB_PASSWORD
+              value: "{{ .Values.postgres.password }}"
+            - name: DB_NAME
+              value: "{{ .Values.postgres.databases.insilo }}"
+
+            # ---- KVRocks/Redis (Olares-System-Middleware) -------------------
+            - name: REDIS_HOST
+              value: "{{ .Values.redis.host }}"
+            - name: REDIS_PORT
+              value: "{{ .Values.redis.port }}"
+            - name: REDIS_PASSWORD
+              value: "{{ .Values.redis.password }}"
+            - name: REDIS_NAMESPACE
+              value: "{{ .Values.redis.namespaces.insilo }}"
+
+            # ---- Interne KI-Service-URLs ------------------------------------
+            - name: WHISPER_URL
+              value: "http://insilo-whisper:8001"
+            - name: OLLAMA_URL
+              value: "http://insilo-ollama:11434"
+            - name: EMBEDDINGS_URL
+              value: "http://insilo-embeddings:8002"
+
+            # ---- Storage-Pfade ----------------------------------------------
+            - name: APP_DATA_DIR
+              value: "{{ .Values.userspace.appData }}"
+            - name: APP_CACHE_DIR
+              value: "{{ .Values.userspace.appCache }}"
+
+            # ---- App-Konfiguration ------------------------------------------
+            - name: APP_LANG
+              value: "{{ .Values.app.language }}"
+            - name: APP_TIMEZONE
+              value: "{{ .Values.app.defaultTimezone }}"
+            - name: AUDIO_RETENTION_DAYS
+              value: "{{ .Values.app.audioRetentionDays }}"
+            - name: MAX_UPLOAD_MB
+              value: "{{ .Values.app.maxUploadSizeMb }}"
+
+            # ---- Olares-Kontext (für User-Identifikation) -------------------
+            - name: OLARES_USER
+              value: "{{ .Values.bfl.username }}"
+            - name: OLARES_ZONE
+              value: "{{ .Values.user.zone }}"
+
+          volumeMounts:
+            - name: app-data
+              mountPath: /app/data
+            - name: app-cache
+              mountPath: /app/cache
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+      volumes:
+        - name: app-data
+          hostPath:
+            path: {{ .Values.userspace.appData }}
+            type: DirectoryOrCreate
+        - name: app-cache
+          hostPath:
+            path: {{ .Values.userspace.appCache }}
+            type: DirectoryOrCreate

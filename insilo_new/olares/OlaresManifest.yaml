@@ -1,0 +1,130 @@
+# ============================================================================
+# OlaresManifest.yaml — Insilo
+#
+# Spec: https://docs.olares.com/developer/develop/package/manifest.html
+# Spec-Version: 0.11.0
+#
+# Linter-Regeln (kritisch):
+# - metadata.name, metadata.appid, Chart.yaml.name und Folder-Name MÜSSEN
+#   alle exakt "insilo" sein (regex: ^[a-z0-9]{1,30}$, keine Bindestriche!)
+# - metadata.version MUSS Chart.yaml.version matchen
+# - spec.versionName MUSS Chart.yaml.appVersion matchen
+# - requiredDisk MUSS gesetzt sein (regex: ^(?:\d+(?:\.\d+)?)[kKMGTP]?i?$)
+# ============================================================================
+
+olaresManifest.version: '0.11.0'
+olaresManifest.type: app
+apiVersion: v1
+
+metadata:
+  name: insilo
+  appid: insilo                # MUSS identisch zu metadata.name sein
+  title: Insilo
+  description: Souveräne Meeting-Intelligenz für den deutschen Mittelstand
+  icon: https://kaivo.studio/insilo/icon-256.png   # TODO: echtes Icon hosten
+  version: 0.1.0               # = Chart.yaml.version
+  categories:
+    - Productivity_v112
+    - AI
+
+# ---- Entrances --------------------------------------------------------------
+# Zwei Entrances: PWA (sichtbar) + Backend-API (invisible).
+# Whisper, Ollama, Embeddings sind NICHT als Entrance deklariert — nur
+# namespace-intern erreichbar.
+
+entrances:
+  - name: app
+    host: insilo-frontend       # = Service-Name in templates/service-frontend.yaml
+    port: 3000
+    title: Insilo
+    icon: https://kaivo.studio/insilo/icon-256.png
+    authLevel: private          # Authelia-Token-Pflicht
+    invisible: false
+    openMethod: default
+
+  - name: api
+    host: insilo-backend        # = Service-Name in templates/service-backend.yaml
+    port: 8000
+    title: Insilo API
+    authLevel: private
+    invisible: true             # nicht als Desktop-Icon zeigen
+
+# ---- Berechtigungen ---------------------------------------------------------
+
+permission:
+  appCache: true                # für /app/cache (Whisper-Modelle, temp uploads)
+  appData: true                 # für /app/data (Audio, persistente Daten)
+  # userData: []                # MVP: kein Zugriff auf User-Home-Verzeichnis
+  # provider: []                # MVP: keine Cross-App-Aufrufe (kommt in Phase 5)
+
+# ---- Provider (für zukünftige Cross-App-Integration) -----------------------
+# In Phase 5+ aktivieren, wenn CallList/andere kaivo-Apps auf Insilo zugreifen sollen.
+# provider:
+#   - name: insilo-meetings-api
+#     entrance: insilo-backend
+#     paths: ["/api/v1/meetings"]
+#     verbs: ["GET"]
+
+# ---- Spec ------------------------------------------------------------------
+
+spec:
+  versionName: '0.1.0'          # = Chart.yaml.appVersion
+  fullDescription: |
+    Insilo zeichnet Geschäftsbesprechungen auf, transkribiert sie lokal mit
+    OpenAI Whisper und erstellt strukturierte Notizen mit einem lokal laufenden
+    Sprachmodell (Qwen 2.5).
+
+    Im Unterschied zu PLAUD, Otter und vergleichbaren Diensten verlassen Ihre
+    Audiodaten und Notizen niemals Ihre eigene Olares-Box. Keine Cloud-Dienste,
+    keine externen API-Aufrufe, keine Datenweitergabe an Dritte.
+
+    Speziell entwickelt für deutsche Kanzleien, Steuerberatungen, Beratungen
+    und Industrieunternehmen mit Compliance-Anforderungen.
+
+  upgradeDescription: |
+    Erstveröffentlichung.
+
+  developer: kaivo.studio
+  website: https://kaivo.studio
+  sourceCode: https://github.com/ska1walker/insilo
+  submitter: Kai Böhm
+  locale:
+    - de-DE
+  doc: https://kaivo.studio/insilo/docs
+  supportArch:
+    - amd64
+
+  # ---- Ressourcen-Anforderungen --------------------------------------------
+  # Werden bei Installation reserviert.
+  # Hinweis: Olares One hat 96 GB RAM und 24 GB VRAM.
+  # Insilo allokiert großzügig, weil mehrere Container parallel arbeiten.
+
+  requiredCpu: 4000m            # 4 vCPU baseline
+  requiredMemory: 24Gi          # für Backend + Frontend + Worker + Whisper-Container-Basis
+  requiredDisk: 60Gi            # Audio, Modelle, DB-Anteil
+
+  # ---- Ressourcen-Limits ---------------------------------------------------
+  # Bei Überschreitung wird die App suspendiert.
+
+  limitedCpu: 8000m
+  limitedMemory: 56Gi           # alles inklusive Ollama
+  limitedDisk: 200Gi
+
+# ---- Optionen ---------------------------------------------------------------
+
+options:
+  # System-Dependencies: bestimmte Olares-Version mindestens nötig
+  dependencies:
+    - name: olares
+      type: system
+      version: '>=1.12.2'
+
+  # Erlaubt mehrere isolierte Instanzen (z.B. eine pro Mandant) — MVP: nein
+  allowMultipleInstall: false
+
+  # Erlaubte ausgehende Netzwerkverbindungen — MVP: KEINE
+  # Damit ist garantiert, dass keine Daten zu externen Services fließen.
+  allowedOutboundPorts: []
+
+  # Sicherheits-Kontext: niemals als root laufen
+  runAsUser: "1000"

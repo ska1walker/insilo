@@ -202,6 +202,49 @@ async def create_recording(
     return _meeting_row_to_dto(row, audio_url=get_presigned_url(key))
 
 
+@router.post("/meetings/{meeting_id}/retry-summary", status_code=202)
+async def retry_summary(
+    meeting_id: UUID, user: CurrentUser = Depends(get_current_user)
+) -> dict:
+    """Re-queue summarization for a meeting whose summary failed or is stale.
+
+    Useful after the user has configured a reachable LLM endpoint in
+    Einstellungen — they don't want to re-record the meeting, just retry
+    the summary step against the freshly-configured endpoint.
+    """
+    async with acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            select m.id, m.status, t.full_text
+            from public.meetings m
+            left join public.transcripts t on t.meeting_id = m.id
+            where m.id = $1 and m.org_id = $2 and m.deleted_at is null
+            """,
+            meeting_id,
+            user.org_id,
+        )
+        if row is None:
+            raise HTTPException(404, "meeting not found")
+        if not row["full_text"]:
+            raise HTTPException(
+                409, "no transcript yet — cannot summarize"
+            )
+        await conn.execute(
+            """
+            update public.meetings
+            set status = 'summarizing', error_message = null, updated_at = now()
+            where id = $1
+            """,
+            meeting_id,
+        )
+
+    # Send the task directly to Celery — `transcribe_meeting` would re-do
+    # transcription, which is wasteful when only the summary needs retrying.
+    from app.worker import celery_app
+    celery_app.send_task("summarize_meeting", args=[str(meeting_id)])
+    return {"status": "queued", "meeting_id": str(meeting_id)}
+
+
 @router.delete("/meetings/{meeting_id}", status_code=204)
 async def delete_meeting(
     meeting_id: UUID, user: CurrentUser = Depends(get_current_user)

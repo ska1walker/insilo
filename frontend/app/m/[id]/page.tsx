@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api/client";
 import {
   deleteMeeting,
   getMeeting,
+  retrySummary,
   type MeetingDto,
   type Transcript,
 } from "@/lib/api/meetings";
@@ -63,6 +64,33 @@ export default function MeetingDetail() {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [params.id]);
+
+  const [retrying, setRetrying] = useState(false);
+
+  async function onRetrySummary() {
+    if (state.kind !== "ok") return;
+    setRetrying(true);
+    try {
+      await retrySummary(state.meeting.id);
+      // Optimistically flip to summarizing so the poll picks it up.
+      setState({
+        kind: "ok",
+        meeting: { ...state.meeting, status: "summarizing", error_message: null },
+      });
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(async () => {
+        try {
+          const m = await getMeeting(state.meeting.id);
+          setState({ kind: "ok", meeting: m });
+        } catch {/* poll loop handles errors */}
+      }, 1500);
+    } catch (err) {
+      console.error("retry-summary failed", err);
+      window.alert("Erneutes Zusammenfassen fehlgeschlagen. Bitte später erneut versuchen.");
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   async function onDelete() {
     if (state.kind !== "ok") return;
@@ -151,11 +179,31 @@ export default function MeetingDetail() {
       {meeting.status === "failed" && (
         <section className="mt-10 rounded-lg border border-border-subtle bg-white p-6">
           <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-recording">
-            Fehler bei der Transkription
+            Verarbeitung fehlgeschlagen
           </p>
           <p className="mt-2 text-sm text-text-secondary">
-            {meeting.error_message ?? "Unbekannter Fehler. Bitte prüfen Sie die Logs des Whisper-Services."}
+            {meeting.error_message ?? "Unbekannter Fehler."}
           </p>
+          {meeting.transcript && (
+            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4">
+              <p className="text-xs text-text-secondary">
+                Transkript ist vorhanden. Sie können die Zusammenfassung
+                erneut anstoßen — z.&nbsp;B. nachdem Sie unter{" "}
+                <Link href="/einstellungen" className="underline">
+                  Einstellungen
+                </Link>{" "}
+                einen erreichbaren LLM-Endpunkt eingetragen haben.
+              </p>
+              <button
+                type="button"
+                onClick={onRetrySummary}
+                disabled={retrying}
+                className="btn-secondary"
+              >
+                {retrying ? "Wird angestoßen…" : "Erneut zusammenfassen"}
+              </button>
+            </div>
+          )}
         </section>
       )}
 

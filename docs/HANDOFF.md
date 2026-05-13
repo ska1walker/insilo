@@ -3,14 +3,35 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🎯 v0.1.16 — End-to-End-Meilenstein erreicht (13. Mai 2026, später Abend)
+>
+> **Status: Insilo läuft komplett auf der Olares-Box.** Aufnahme im Browser →
+> Audio-Upload zu hostPath → Whisper-Transkript → LLM-Summary → grounded
+> Q&A über /ask. Alle 5 Pods Ready, DB-Migrations laufen automatisch via
+> Backend-Init-Container, User kann den LLM-Endpoint über die neue
+> Einstellungen-Seite frei wählen.
+>
+> **Was in v0.1.14–v0.1.16 dazukam (siehe §7g für die volle Story):**
+> 1. **LocalStorage-Backend** (v0.1.13) — Audio auf hostPath statt MinIO,
+>    löst den `tapr-s3-svc`-Cross-NS-Block.
+> 2. **Per-Org `Einstellungen`-Seite** (v0.1.14) — User trägt eigene
+>    OpenAI-kompatible LLM-URL + Key + Modell ein. DB-Tabelle
+>    `public.org_settings` mit RLS. Umgeht den LiteLLM-NetworkPolicy-Block
+>    eleganter als jeder Plattform-Hack.
+> 3. **Auto-Migration via Backend-Init-Container** (v0.1.16) — Schema +
+>    RLS + Seed läuft beim Pod-Start mit Retry-Loop. Kein manuelles
+>    `kubectl exec` mehr nach Reinstall.
+>
+> **Nächste Phase:** UI/UX-Polish, dann Pilot-Setup.
+>
+> ---
+>
 > **Stand 13. Mai 2026 (späte Abendrunde):** **Phase-4c Storage-Block gelöst.**
 > v0.1.13 bringt einen `LocalStorage`-Backend in `backend/app/storage.py`,
 > der Audio direkt auf hostPath (`/app/data/audio/<org_id>/<meeting_id>.webm`)
 > schreibt — kein MinIO mehr nötig. Default in Olares: `STORAGE_BACKEND=local`,
 > lokal weiter `minio`. Damit ist der End-to-End-Pfad (Aufnahme → Whisper →
-> Summary → /ask) auf der Box jetzt freigeschaltet. Chart `dist/insilo-0.1.13.tgz`
-> + Git-Tag `v0.1.13` gepusht → GH Actions baut die 4 Images.
-> Install via Olares-Market UI ("Upload custom chart") nach Image-Build.
+> Summary → /ask) auf der Box jetzt freigeschaltet.
 >
 > **Stand 13. Mai 2026 (Abend, ~16h gearbeitet):** Massiver Fortschritt durch den ganzen Tag.
 > Insilo läuft **technisch erfolgreich** auf der Olares-Box mit vollem BFL-Flow
@@ -38,7 +59,7 @@
 | **1 — Audio-Pipeline** (Aufnahme → Whisper-Transkript) | ✅ live | ✅ läuft | ✅ Pod läuft (1/1 Running getestet 13. Mai) |
 | **2 — LLM-Summary** (Qwen via LiteLLM) | ✅ live | ✅ läuft | ✅ Worker connected sich erfolgreich (Redis-Fix v0.1.2) |
 | **3 — RAG / „Ask"** (BGE-M3 + pgvector + grounded answers) | ✅ live | ✅ läuft | ✅ Embeddings-Pod läuft (1/1 Running) |
-| **4 — Olares-Paketierung** | ✅ v0.1.13 (mit LocalStorage-Backend) — End-to-End-Pfad jetzt unblocked | Install via "Upload custom chart" (`~/Downloads/insilo-0.1.13.tgz`), Application CR + ns-owner Label kommen automatisch | |
+| **4 — Olares-Paketierung** | ✅ **v0.1.16 läuft End-to-End** — Aufnahme → Transkript → Summary → /ask alles grün | Install via "Upload custom chart" (`~/Downloads/insilo-0.1.16.tgz`), Application CR + ns-owner Label automatisch, DB-Migration via Init-Container | |
 | 5 — Pilot-Deployment | nach v0.1.12 End-to-End-Test, ETA ~1 Woche | | |
 
 **Letzter konkreter Stand (Commit ggf. noch ungepusht, lokal Chart v0.1.5):**
@@ -730,6 +751,197 @@ Ein Init-Container im Chart wäre eleganter — Phase-4b-Item.
 **DB-Migrationen** sind potentiell offen — kein Init-Container im Chart. Falls Backend
 „relation does not exist" Errors wirft: psql aus dem Backend-Pod, `0001_initial_schema.sql`
 und `0002_rls_policies.sql` aus `supabase/migrations/` einspielen.
+
+---
+
+## 7g. v0.1.14 → v0.1.16 — der Weg zum End-to-End-Meilenstein
+
+Diese Sektion dokumentiert eine Stunde intensiver Olares-Investigation. Die
+Lessons hier sind teilweise sehr Olares-spezifisch und überleben hoffentlich
+zukünftige Insilo-Sessions, in denen die gleichen Fallen wieder auftauchen.
+
+### 1. Chicken-and-egg: Olares' NS-Labels werden NACH `helm install` gesetzt
+
+**Symptom:** v0.1.14 + v0.1.15 schlugen beim Install fehl mit
+`failed post-install: 1 error occurred: * timed out waiting for the condition`.
+Der Migration-Job hing am DB-Connect, Backend-Pod hing am Lifespan-`init_pool()`.
+
+**Wurzel:**
+- Olares' `app-service-0` Controller setzt das Label
+  `bytetrade.io/ns-owner=kaivostudio` auf den App-Namespace **erst nachdem
+  `helm install` (inkl. aller Hooks) erfolgreich durchgelaufen ist**.
+- Die NetworkPolicy in `user-system-kaivostudio` (Postgres, KVRocks) keyt
+  auf genau dieses Label, um Ingress aus App-NS zu erlauben.
+- → Helm-`post-install`-Hooks, die DB brauchen, **können nie funktionieren**:
+  sie warten auf DB → DB blockt weil Label fehlt → Hook timeoutet → Helm
+  Install fails → Olares cleant alles auf → Label wird nie gesetzt.
+
+**Beweis im YAML:**
+```bash
+# Frischer (gescheiterter) Install:
+kubectl get ns insilo-kaivostudio --show-labels
+# → bytetrade.io/namespace=insilo-kaivostudio,kubernetes.io/metadata.name=…
+#   (KEIN bytetrade.io/ns-owner!)
+
+# Erfolgreicher v0.1.13-Install (zuvor):
+# → …,bytetrade.io/ns-owner=kaivostudio,kubesphere.io/workspace=system-workspace,…
+```
+
+**Warum v0.1.13 funktioniert hat:** Hatte gar keinen Helm-Hook. Backend-Pod
+crashloopt 1–2× bis Olares fertig mit dem Labeln war, dann starteten alle
+Pods sauber. Die natürliche Pod-Restart-Logik überbrückte den Label-Window.
+
+**Lösung (v0.1.16):** Migrations als **Init-Container im Backend-Deployment**
+mit Retry-Loop (60×5s = 5 min). Pod-Restart-Mechanismus übernimmt den Job.
+Backend-Container startet erst, wenn Migration erfolgreich war.
+
+**Regel für die Zukunft:** Niemals Helm-Hooks verwenden, die System-Middleware
+brauchen. Init-Container oder normale Pods sind robuster.
+
+### 2. `.Files.Get` funktioniert NICHT im Olares-Chart-Repo-Renderer
+
+**Symptom:** Beim Upload via Market UI:
+> chart repo service returned error status 500: can't evaluate field Files
+> in type *hydrationfn.TemplateData
+
+**Ursache:** Olares' Chart-Renderer (`hydrationfn`) implementiert nur einen
+Subset von Helms Template-Context. `.Files.*` ist nicht dabei. `.Values.*`
+und `.Release.*` funktionieren.
+
+**Lösung:** SQL-Files direkt als YAML-Literal-Blocks in den ConfigMap-Template
+einbetten (siehe `olares/templates/configmap-migrations.yaml`). Generator-
+Snippet steht im Template-Header.
+
+**Sync-Workflow:** Bei Schema-Änderung in `supabase/migrations/`:
+```bash
+cp supabase/migrations/*.sql supabase/seed.sql olares/files/
+# Dann die SQL-Files in configmap-migrations.yaml re-inlinen
+```
+
+### 3. `runAsInternal: true` ist ein Studio-spezifisches Feature, nicht copy-paste-tauglich
+
+**Versuch:** v0.1.14 setzte `spec.runAsInternal: true` im OlaresManifest,
+weil die Studio-App das tut und Cross-NS-Zugriff zu LiteLLM hat (= das
+LiteLLM-NetworkPolicy verlangt `ns-type=user-internal`).
+
+**Folge:** Das Frontend's `check-auth`-Init-Container (Olares-injected
+Envoy-Sidecar Pre-Flight) ging in `Init:CrashLoopBackOff` mit
+`services aren't ready in 20s`. Unklar warum genau — Vermutung: das Setting
+verändert die Sidecar-Wiring-Erwartungen.
+
+**Lektion:** Olares-Features aus dem Studio-Manifest sind NICHT generisch.
+Studio ist Admin-only und läuft auf höherem Trust-Level. Für Standard-User-
+Apps: Finger weg.
+
+**Workaround:** Die Per-Org-Einstellungen-Seite löst das LLM-Cross-NS-
+Problem eleganter — User trägt eigenen LLM-Endpoint ein, kein
+Plattform-Hack nötig.
+
+### 4. `psql -f` hängt bei Multi-Statement-SQL gegen Olares-Citus
+
+**Beobachtung:** Migration-Job mit `postgres:16-alpine` + `psql -v ON_ERROR_STOP=1
+-f file.sql` blieb stundenlang bei "Applying /sql/0001_initial_schema.sql..."
+hängen, ohne Fehler oder Output.
+
+**Funktionierender Pfad:** Python+asyncpg mit `await conn.execute(sql_inhalt)`
+schickt den gesamten File-Inhalt als einen Query-Block. Wir hatten das in
+dieser Session manuell verifiziert (Backend-Pod-Exec) — lief in <2 s durch.
+
+**Vermutung:** psql parsed Statements einzeln und sendet pro Statement; bei
+unserer DDL (CREATE EXTENSION + viele CREATE TABLE) gibt's irgendwo einen
+impliziten Lock-Wait. asyncpg.execute() umgeht das.
+
+**Konsequenz:** Migration-Container nutzt Backend-Image (asyncpg ist eh
+drin) statt postgres:16-alpine. Ein File = ein execute() = ein implicit
+transaction.
+
+### 5. Per-Org-`Einstellungen` als Cross-NS-LLM-Workaround
+
+**Architektur:**
+- DB: `public.org_settings (org_id PK, llm_base_url, llm_api_key, llm_model, updated_at, updated_by)` mit RLS auf `current_user_orgs()`
+- Backend: `app/llm_config.py` → `load_llm_config(conn, org_id) → LLMConfig`. Leere DB-Werte fallen auf Env-Defaults zurück.
+- API: `GET/PUT /api/v1/settings`. API-Key wird beim GET **nie** im Klartext zurückgegeben — nur `…last-4` Hint. PUT-Semantik: `null`=keep, `""`=clear, anderes=overwrite.
+- Frontend: `app/einstellungen/page.tsx` — Form mit URL/Key/Modell, „Aktiv beim Speichern"-Preview-Block der zeigt was tatsächlich greift (DB-Wert oder Env-Fallback).
+- Worker (`summarize.py`) + `/ask` (`routers/search.py`) laden Settings via `load_llm_config(conn, org_id)` und nutzen `cfg.base_url` / `cfg.api_key` / `cfg.model` statt direkter `settings.*`.
+
+**Vorteil:** Box-Owner kann Insilo gegen jeden OpenAI-kompatiblen Endpoint
+fahren — eigene LiteLLM-Instanz, lokales Ollama, Cloud-API — ohne das Chart
+anzufassen. Datensouveränitäts-Pitch bleibt erhalten weil die Wahl beim
+Kunden liegt.
+
+### 6. Image-Tags ↔ Chart-Version Trennung sparte 4 GH-Actions-Runs
+
+**Regel (Marc's Golden Rule):**
+- **Chart-Version bumpt IMMER** bei OlaresManifest- oder Template-Änderung
+- **Image-Tags bumpen NUR** bei tatsächlicher Code-Änderung
+
+In dieser Session sind die Chart-Versionen 0.1.13 → 0.1.14 → 0.1.15 → 0.1.16
+gegangen, aber Image-Tags nur 0.1.13 → 0.1.14 (Backend+Frontend für
+Einstellungen). v0.1.15 + v0.1.16 nutzen weiterhin `:0.1.14`-Images. Spart
+~5 min pro Iteration.
+
+### 7. Olares-Box-Debug-Recipes (für nächste Session)
+
+```bash
+# Pods + Job + Migration-Status auf einen Blick:
+ssh -t olares@192.168.112.125 'watch -n 2 "kubectl get pods,job -n insilo-kaivostudio"'
+
+# Migration-Init-Container-Logs (während Backend noch Init:0/2):
+kubectl logs -n insilo-kaivostudio <backend-pod> -c migrate -f
+
+# Application-CR Status:
+kubectl describe applicationmanagers.app.bytetrade.io insilo-kaivostudio-insilo \
+  | grep -A 5 -i "reason\|message\|state:"
+
+# NS-Labels (Smoke-Test: ist ns-owner gesetzt?):
+kubectl get ns insilo-kaivostudio --show-labels
+
+# Olares-app-service-Logs (wenn Manifest-Render scheitert):
+kubectl logs -n os-framework app-service-0 --tail=200 | grep -i insilo
+
+# DB-Check ohne Migration-Pod:
+BPOD=$(kubectl get pod -n insilo-kaivostudio -l component=backend -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n insilo-kaivostudio $BPOD -c backend -- python3 -c "
+import asyncio, asyncpg, os
+async def t():
+    c = await asyncpg.connect(host=os.environ['DB_HOST'], port=int(os.environ['DB_PORT']),
+                              user=os.environ['DB_USER'], password=os.environ['DB_PASSWORD'],
+                              database=os.environ['DB_NAME'])
+    print(await c.fetch(\"select tablename from pg_tables where schemaname='public'\"))
+    await c.close()
+asyncio.run(t())"
+```
+
+### 8. Backend-Auth-Flow (X-Bfl-User) — wie die Auth-Kette wirklich funktioniert
+
+1. Browser → `https://insilo<routeID>.kaivostudio.olares.de/...`
+2. **Frontend-Pod's Envoy-Sidecar** checkt Authelia-Cookie. OK → injiziert `X-Bfl-User: kaivostudio` Header.
+3. Next.js (im Frontend-Pod) sieht den Request. Wenn Path `/api/*` → `rewrites()` proxied an `http://insilo-backend:8000` und forwarded **alle** Headers inkl. X-Bfl-User.
+4. **Backend-Pod hat KEINEN Envoy-Sidecar** (api-Entrance wurde in v0.1.12 entfernt). FastAPI sieht den Request roh.
+5. `get_current_user()` liest `X-Bfl-User` → mappt auf `users.id` + `orgs.id` via auto-provisioning.
+
+**Warum kein api-Entrance:** Mit Envoy am Backend gingen Next.js→Backend-Calls
+durch zweiten Authelia-Hop, der ohne Cookies failed → 401. Ohne api-Entrance
+fließen Calls direkt.
+
+**Sicherheitskonsequenz:** Backend ist *innerhalb des Cluster-NS* offen.
+Authentifizierung passiert beim Frontend-Envoy. Solange niemand Pods außerhalb
+unseres NS unter denen wir vertrauen reaching kann (NetworkPolicy schützt),
+ist das ok.
+
+### 9. State der Box nach v0.1.16-Install
+
+```
+NAME                                 READY   STATUS      RESTARTS
+insilo-<hash>                        2/2     Running     0
+insilo-backend-<hash>                1/1     Running     0   (1/1, kein Envoy!)
+insilo-embeddings-<hash>             1/1     Running     0
+insilo-whisper-<hash>                1/1     Running     0
+insilo-worker-<hash>                 1/1     Running     0
+```
+
+ApplicationManager `running`. DB hat 12 Tabellen (incl. neue
+`org_settings`) + 4 System-Templates aus Seed.
 
 ---
 

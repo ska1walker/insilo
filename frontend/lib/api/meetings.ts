@@ -83,3 +83,7 @@ export async function createMeeting(args: {
 export async function deleteMeeting(id: string): Promise<void> {
   await apiDelete<void>(`/api/v1/meetings/${id}`);
 }
+
+export async function retrySummary(id: string): Promise<void> {
+  await apiPost<{ status: string }>(`/api/v1/meetings/${id}/retry-summary`);
+}

@@ -261,8 +261,7 @@ export default function AufnahmePage() {
           )}
 
           <p className="mt-16 max-w-[420px] text-center text-sm text-text-meta">
-            Audio wird auf der Olares-Box gespeichert. Lokal in der Dev-Umgebung:
-            MinIO unter <span className="mono">localhost:9000</span>.
+            Audio bleibt auf Ihrer Olares-Box. Kein Cloud-Upload, keine Drittanbieter.
           </p>
         </div>
       </main>

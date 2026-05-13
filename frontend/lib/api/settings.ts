@@ -1,4 +1,4 @@
-import { apiGet, apiPut } from "./client";
+import { apiGet, apiPost, apiPut } from "./client";
 
 export type SettingsRead = {
   llm_base_url: string;
@@ -24,4 +24,15 @@ export function fetchSettings(): Promise<SettingsRead> {
 
 export function updateSettings(payload: SettingsWrite): Promise<SettingsRead> {
   return apiPut<SettingsRead>("/api/v1/settings", payload);
+}
+
+export type TestResult = {
+  ok: boolean;
+  detail: string;
+  model?: string | null;
+  elapsed_ms?: number | null;
+};
+
+export function testSettings(): Promise<TestResult> {
+  return apiPost<TestResult>("/api/v1/settings/test");
 }

@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   fetchSettings,
+  testSettings,
   updateSettings,
   type SettingsRead,
+  type TestResult,
 } from "@/lib/api/settings";
 
 type Phase = "loading" | "ready" | "saving" | "error";
@@ -33,6 +35,8 @@ export default function EinstellungenPage() {
   const [settings, setSettings] = useState<SettingsRead | null>(null);
   const [form, setForm] = useState<FormState>(initialForm);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +63,23 @@ export default function EinstellungenPage() {
       cancelled = true;
     };
   }, []);
+
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await testSettings();
+      setTestResult(r);
+    } catch (err: unknown) {
+      console.error("settings test failed", err);
+      setTestResult({
+        ok: false,
+        detail: "Test fehlgeschlagen — Backend nicht erreichbar.",
+      });
+    } finally {
+      setTesting(false);
+    }
+  }
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault();
@@ -234,19 +255,61 @@ export default function EinstellungenPage() {
           </p>
         </div>
 
+        {testResult && (
+          <div
+            className="rounded-md border px-4 py-3 text-sm"
+            style={
+              testResult.ok
+                ? {
+                    borderColor: "var(--success)",
+                    color: "var(--success)",
+                    background: "rgba(74,124,89,0.06)",
+                  }
+                : {
+                    borderColor: "var(--error)",
+                    color: "var(--error)",
+                    background: "rgba(163,58,47,0.06)",
+                  }
+            }
+          >
+            <p className="font-medium">
+              {testResult.ok ? "Verbindung erfolgreich" : "Verbindung fehlgeschlagen"}
+            </p>
+            <p className="mt-1 text-xs opacity-90">
+              {testResult.detail}
+              {testResult.ok && testResult.elapsed_ms != null && (
+                <>
+                  {" · "}{testResult.elapsed_ms} ms
+                  {testResult.model && <> · {testResult.model}</>}
+                </>
+              )}
+            </p>
+          </div>
+        )}
+
         {error && <p className="text-sm text-error">{error}</p>}
 
-        <div className="flex items-center justify-between border-t border-border-subtle pt-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-5">
           <p className="text-xs text-text-secondary">
             {savedAt && phase === "ready" ? "Gespeichert." : " "}
           </p>
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={phase === "saving"}
-          >
-            {phase === "saving" ? "Wird gespeichert…" : "Speichern"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleTest}
+              className="btn-secondary"
+              disabled={testing || phase === "saving"}
+            >
+              {testing ? "Teste…" : "Verbindung testen"}
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={phase === "saving"}
+            >
+              {phase === "saving" ? "Wird gespeichert…" : "Speichern"}
+            </button>
+          </div>
         </div>
       </form>
 

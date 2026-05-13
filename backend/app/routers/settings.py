@@ -10,14 +10,17 @@ fields, it sends `llm_api_key: null` (or omits the field).
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.config import settings as env_settings
 from app.db import acquire
+from app.llm_config import load_llm_config
 
 router = APIRouter(prefix="/api/v1", tags=["settings"])
 
@@ -76,6 +79,90 @@ async def get_settings(user: CurrentUser = Depends(get_current_user)) -> Setting
             user.org_id,
         )
     return _row_to_read(dict(row) if row else None)
+
+
+class TestResult(BaseModel):
+    ok: bool
+    detail: str
+    model: str | None = None
+    elapsed_ms: int | None = None
+
+
+@router.post("/settings/test", response_model=TestResult)
+async def test_settings(user: CurrentUser = Depends(get_current_user)) -> TestResult:
+    """Send a tiny chat-completion ping to the currently-configured LLM.
+
+    Uses whatever's in the DB (or the env fallback). Returns ok=False with
+    a human-readable detail if the endpoint is unreachable, returns an
+    error, or behaves incompatibly. Keep total time bounded — the UI is
+    blocking on this.
+    """
+    async with acquire() as conn:
+        cfg = await load_llm_config(conn, user.org_id)
+
+    if not cfg.base_url:
+        return TestResult(ok=False, detail="Keine Endpunkt-URL konfiguriert.")
+
+    payload = {
+        "model": cfg.model or "test",
+        "messages": [{"role": "user", "content": "Antworte mit OK."}],
+        "max_tokens": 4,
+        "stream": False,
+    }
+    started = asyncio.get_event_loop().time()
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+            resp = await client.post(
+                f"{cfg.base_url}/chat/completions",
+                json=payload,
+                headers={"Authorization": f"Bearer {cfg.api_key}"},
+            )
+    except httpx.ConnectError as exc:
+        return TestResult(
+            ok=False,
+            detail=f"Endpunkt nicht erreichbar: {exc.__class__.__name__}.",
+        )
+    except httpx.TimeoutException:
+        return TestResult(
+            ok=False,
+            detail="Zeitüberschreitung — Endpunkt antwortet nicht in 10 Sekunden.",
+        )
+    except Exception as exc:  # noqa: BLE001
+        return TestResult(ok=False, detail=f"Unerwarteter Fehler: {exc}")
+
+    elapsed_ms = int((asyncio.get_event_loop().time() - started) * 1000)
+
+    if resp.status_code != 200:
+        body = resp.text[:300]
+        return TestResult(
+            ok=False,
+            detail=f"HTTP {resp.status_code}: {body}",
+            elapsed_ms=elapsed_ms,
+        )
+
+    try:
+        data = resp.json()
+        used_model = data.get("model") or cfg.model
+        # Any choices present = compatible OpenAI shape.
+        if not data.get("choices"):
+            return TestResult(
+                ok=False,
+                detail="Antwort hat kein `choices`-Feld (nicht OpenAI-kompatibel?).",
+                elapsed_ms=elapsed_ms,
+            )
+    except ValueError:
+        return TestResult(
+            ok=False,
+            detail="Antwort war kein gültiges JSON.",
+            elapsed_ms=elapsed_ms,
+        )
+
+    return TestResult(
+        ok=True,
+        detail="Verbindung erfolgreich.",
+        model=used_model,
+        elapsed_ms=elapsed_ms,
+    )
 
 
 @router.put("/settings", response_model=SettingsRead)

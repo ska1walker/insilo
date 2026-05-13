@@ -176,7 +176,7 @@ function SourceItem({ index, source }: { index: number; source: AskSource }) {
           </Link>
         </div>
         <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
-          score {source.score.toFixed(3)}
+          Relevanz {Math.max(0, Math.round(source.score * 100))}%
         </p>
       </div>
       <p className="mt-1 text-[0.8125rem] text-text-meta">

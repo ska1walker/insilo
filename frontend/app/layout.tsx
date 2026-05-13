@@ -62,6 +62,9 @@ export default function RootLayout({
               <Link href="/ask" className="btn-tertiary">
                 Fragen
               </Link>
+              <Link href="/einstellungen" className="btn-tertiary">
+                Einstellungen
+              </Link>
               <Link href="/style" className="btn-tertiary hidden md:inline-flex">
                 Design
               </Link>

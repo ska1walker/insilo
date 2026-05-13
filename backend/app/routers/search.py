@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
 from app.db import acquire
+from app.llm_config import load_llm_config
 
 log = logging.getLogger(__name__)
 
@@ -172,10 +173,13 @@ async def ask(
 
     hits = await _retrieve(user.org_id, qvec, req.limit)
 
+    async with acquire() as conn:
+        llm = await load_llm_config(conn, user.org_id)
+
     system_prompt, user_prompt = _build_rag_prompt(req.question, hits)
 
     payload = {
-        "model": settings.llm_model,
+        "model": llm.model,
         "stream": False,
         "temperature": 0.2,
         "messages": [
@@ -187,9 +191,9 @@ async def ask(
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 5)) as client:
             resp = await client.post(
-                f"{settings.llm_base_url}/chat/completions",
+                f"{llm.base_url}/chat/completions",
                 json=payload,
-                headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+                headers={"Authorization": f"Bearer {llm.api_key}"},
             )
             resp.raise_for_status()
             data = resp.json()
@@ -204,6 +208,6 @@ async def ask(
         question=req.question,
         answer=answer.strip(),
         sources=hits,
-        llm_model=settings.llm_model,
+        llm_model=llm.model,
         elapsed_ms=elapsed_ms,
     )

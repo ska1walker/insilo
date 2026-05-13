@@ -13,6 +13,7 @@ import httpx
 from celery import shared_task
 
 from app.config import settings
+from app.llm_config import load_llm_config
 from app.worker import celery_app  # noqa: F401 -- side-effect: registers worker
 
 log = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     try:
         meeting = await conn.fetchrow(
             """
-            select m.id, m.template_id,
+            select m.id, m.org_id, m.template_id,
                    t.full_text, t.word_count
             from public.meetings m
             left join public.transcripts t on t.meeting_id = m.id
@@ -83,6 +84,9 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         if not template:
             return {"status": "skipped", "reason": "template missing"}
 
+        # Per-org LLM endpoint/key/model (falls back to env defaults).
+        llm = await load_llm_config(conn, meeting["org_id"])
+
         await _set_status(conn, meeting_id, "summarizing")
     finally:
         await conn.close()
@@ -100,7 +104,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     # native /v1 endpoint). Schema enforcement is best-effort via prompt
     # instructions because not every backend supports structured outputs.
     payload = {
-        "model": settings.llm_model,
+        "model": llm.model,
         "stream": False,
         "temperature": 0.2,
         "response_format": {"type": "json_object"},
@@ -117,15 +121,15 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
 
     log.info(
         "summarize meeting %s · model=%s · template=%s",
-        meeting_id, settings.llm_model, template_id,
+        meeting_id, llm.model, template_id,
     )
 
     started = asyncio.get_event_loop().time()
     async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 10)) as client:
         resp = await client.post(
-            f"{settings.llm_base_url}/chat/completions",
+            f"{llm.base_url}/chat/completions",
             json=payload,
-            headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+            headers={"Authorization": f"Bearer {llm.api_key}"},
         )
         resp.raise_for_status()
         data = resp.json()
@@ -162,7 +166,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
                 template["id"],
                 template["version"],
                 json.dumps(structured),
-                settings.llm_model,
+                llm.model,
                 elapsed_ms,
             )
             await _set_status(conn, meeting_id, "ready")
@@ -177,7 +181,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     return {
         "status": "ok",
         "elapsed_ms": elapsed_ms,
-        "model": settings.llm_model,
+        "model": llm.model,
     }
 
 

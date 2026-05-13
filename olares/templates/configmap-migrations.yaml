@@ -1,0 +1,32 @@
+# ============================================================================
+# ConfigMap: SQL migration & seed files for the Helm-hook Job below.
+#
+# These files are baked into the chart from olares/files/ at package time.
+# When supabase/migrations/ changes, sync them via:
+#   cp supabase/migrations/*.sql supabase/seed.sql olares/files/
+#
+# psql sees each entry as a separate file in /sql/ inside the job pod.
+# ============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: insilo-migrations
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: insilo
+    component: migrations
+  annotations:
+    # Created before the Job so the Job can mount it.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+data:
+  0001_initial_schema.sql: |
+{{ .Files.Get "files/0001_initial_schema.sql" | indent 4 }}
+  0002_rls_policies.sql: |
+{{ .Files.Get "files/0002_rls_policies.sql" | indent 4 }}
+  0003_org_settings.sql: |
+{{ .Files.Get "files/0003_org_settings.sql" | indent 4 }}
+  0099_seed.sql: |
+{{ .Files.Get "files/seed.sql" | indent 4 }}

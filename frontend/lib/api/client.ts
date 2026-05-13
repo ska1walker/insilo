@@ -89,3 +89,7 @@ export function apiPost<T>(path: string, body?: BodyInit | object): Promise<T> {
 export function apiDelete<T = void>(path: string): Promise<T> {
   return apiRequest<T>(path, { method: "DELETE" });
 }
+
+export function apiPut<T>(path: string, body?: BodyInit | object): Promise<T> {
+  return apiRequest<T>(path, { method: "PUT", body });
+}

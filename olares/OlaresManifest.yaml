@@ -20,8 +20,8 @@ metadata:
   appid: insilo                # MUSS identisch zu metadata.name sein
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
-  icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
-  version: 0.1.8               # = Chart.yaml.version
+  icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
+  version: 0.1.9               # = Chart.yaml.version
   categories:
     - Productivity_v112
     - Utilities_v112
@@ -37,7 +37,7 @@ entrances:
     host: insilo                # = K8s-Service-Name (services.yaml + deployment.metadata.name)
     port: 3000
     title: Insilo
-    icon: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
+    icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
     authLevel: internal         # LAN-User: kein Authelia-Prompt. Authelia nur bei Remote-Access (Tailscale/Cloudflare-Tunnel). Matches Marc's aimighty-apps pattern.
     invisible: false
     openMethod: window          # erlaubt Click → öffnet PWA in neuem Tab (sonst nur "running" State)
@@ -95,12 +95,12 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.8'          # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.9'          # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
-  featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
+  featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
   promoteImage:
-    - https://raw.githubusercontent.com/ska1walker/insilo/main/olares/icon-256.png
+    - https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
 
   fullDescription: |
     **Insilo** is on-premise meeting intelligence for compliance-driven organizations.

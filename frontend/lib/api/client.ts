@@ -6,7 +6,12 @@
  * NEXT_PUBLIC_USER so the FastAPI dependency `get_current_user` succeeds.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Production (Olares): empty string -> requests go to the same origin (e.g.
+// https://insilo.kaivostudio.olares.de), Next.js rewrites `/api/*` to the
+// backend via cluster DNS. Avoids CORS + a second Authelia hop on the
+// invisible api entrance.
+// Local dev: NEXT_PUBLIC_API_URL=http://localhost:8000 in .env.local.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 const DEV_USER = process.env.NEXT_PUBLIC_USER ?? "devuser";
 
 export class ApiError extends Error {

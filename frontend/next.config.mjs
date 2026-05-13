@@ -36,6 +36,18 @@ const nextConfig = {
       bodySizeLimit: "500mb",
     },
   },
+
+  // Browser ruft /api/* auf derselben Domain wie das Frontend.
+  // Next.js Server (im Pod) proxied über Cluster-DNS zum Backend.
+  // Vorteile: kein CORS, kein zweiter Authelia-Hop, kein separater api-Entrance nötig.
+  // INSILO_BACKEND_INTERNAL kann im Deployment überschrieben werden; default = K8s-DNS.
+  async rewrites() {
+    const backend =
+      process.env.INSILO_BACKEND_INTERNAL ?? "http://insilo-backend:8000";
+    return [
+      { source: "/api/:path*", destination: `${backend}/api/:path*` },
+    ];
+  },
 };
 
 export default nextConfig;

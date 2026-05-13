@@ -10,7 +10,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: insilo-frontend
+  name: insilo                  # MUSS Service.metadata.name + entrance[0].host matchen (Marc's Regel)
   namespace: {{ .Release.Namespace }}
   labels:
     app: insilo

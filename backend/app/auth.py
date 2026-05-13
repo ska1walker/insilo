@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Header, HTTPException
 from pydantic import BaseModel
 
 from app.db import acquire

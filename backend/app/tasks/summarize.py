@@ -197,11 +197,12 @@ def summarize_meeting(self, meeting_id: str) -> dict[str, Any]:  # noqa: ARG001
         return asyncio.run(_do_summarize(mid))
     except Exception as exc:
         log.exception("summarize_meeting failed for %s", meeting_id)
+        err_msg = f"summarize: {exc}"
         try:
             async def _mark_failed() -> None:
                 conn = await _connect()
                 try:
-                    await _set_status(conn, mid, "failed", f"summarize: {exc}")
+                    await _set_status(conn, mid, "failed", err_msg)
                 finally:
                     await conn.close()
 

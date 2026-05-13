@@ -67,7 +67,10 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "B", "W", "C4", "UP", "ASYNC"]
-ignore = ["E501"]
+# B008: `Depends(...)`, `File(...)`, `Form(...)`, `Header(...)` in default
+# arguments is the FastAPI standard pattern, not a bug.
+# E501: long lines are fine, we keep some in templates and SQL strings.
+ignore = ["E501", "B008"]
 
 [tool.mypy]
 python_version = "3.11"

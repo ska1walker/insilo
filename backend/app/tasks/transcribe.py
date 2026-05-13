@@ -143,11 +143,12 @@ def transcribe_meeting(self, meeting_id: str) -> dict[str, Any]:  # noqa: ARG001
     except Exception as exc:
         log.exception("transcribe_meeting failed for %s", meeting_id)
         # Best-effort: mark the meeting as failed so the UI can show it.
+        err_msg = str(exc)
         try:
             async def _mark_failed() -> None:
                 conn = await _connect()
                 try:
-                    await _set_status(conn, mid, "failed", str(exc))
+                    await _set_status(conn, mid, "failed", err_msg)
                 finally:
                     await conn.close()
 

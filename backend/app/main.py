@@ -13,7 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import CurrentUser, get_current_user
 from app.db import close_pool, init_pool
-from app.routers import audio, meetings, search, settings as settings_router, templates
+from app.routers import audio, meetings, search, templates
+from app.routers import settings as settings_router
 
 
 @asynccontextmanager

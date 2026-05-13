@@ -650,11 +650,40 @@ Ermöglicht:
 - `insilo-backend` Pod: **1/1 Ready** ← KEIN Envoy mehr (api-Entrance entfernt → keine Sidecar-Injection)
 - Andere Pods: insilo-embeddings, insilo-whisper, insilo-worker alle 1/1 Running
 
-**Letzte offene Tests (Stand 13. Mai abends):**
-1. ✅ DB-Migrationen eingespielt (0001_initial_schema, 0002_rls_policies, seed.sql) — 11 Tabellen + 4 System-Templates
-2. ✅ Backend API verifiziert: `/api/v1/meetings` returns `200 []` mit `X-Bfl-User: kaivostudio` Header
-3. ⏸ Browser-Test: Hard-Refresh + Service-Worker leeren → PWA sollte leere Liste zeigen
-4. ⏸ End-to-End: Aufnahme → Whisper → LiteLLM-Summary → /ask
+**Stand 13. Mai abends — funktionierende Pfade ABGENOMMEN:**
+1. ✅ DB-Migrationen (11 Tabellen + 4 System-Templates aus seed.sql)
+2. ✅ Backend API `/api/v1/meetings` → `200 []`
+3. ✅ PWA-Frontend lädt komplett: Aufnahme-Screen + Template-Picker zeigt alle 4 DB-Templates
+4. ✅ Mikrofon-Recording funktioniert (Browser-MediaRecorder)
+5. ❌ **Audio-Upload kracht (HTTP 500): MinIO nicht erreichbar**
+
+**Phase-4c open issue — Storage-Backend:**
+
+Backend versucht `http://localhost:9000` (lokales MinIO aus docker-compose Dev) für Audio-Upload. Olares hat MinIO unter `tapr-s3-svc.os-platform:4568`, aber:
+- **NetworkPolicy** blockt Cross-Namespace zu `os-platform` (TCP-Timeout aus Backend-Pod)
+- Olares verwendet **kein Standard-`middleware.minio:`-Pattern** (keine bekannte App nutzt es)
+- Credentials für `tapr-s3-svc` sind in Secrets versteckt, undokumentiert
+
+**Pragmatischer Fix für nächste Session — Local-Filesystem Storage:**
+
+Code-Änderung an `backend/app/storage.py`:
+- Neue Klasse `LocalStorage` neben `S3Storage`
+- Schreibt Audio nach `/app/data/audio/<meeting_id>/<file_id>.webm` (hostPath, schon gemounted)
+- Konfig-Schalter: `storage_backend: str = "minio" | "local"` in `config.py`
+- In Olares-Deployment: `STORAGE_BACKEND=local` env var setzen
+
+Vorteile:
+- Audio bleibt auf der Box (= Datensouveränität-Pitch wörtlich)
+- Kein S3-Auth-Hassle
+- `/app/data` persistiert über Pod-Restarts (hostPath survives)
+- Backup-Strategie: Velero/restic auf `/olares/rootfs/userspace/pvc-userspace-kaivostudio-*/Data/insilo/`
+
+Aufwand: ~30 min Code + Test, ~5 min Image-Build (GH Actions), Chart-Bump auf v0.1.13.
+
+Nach diesem Fix dann End-to-End-Test:
+- Aufnahme → Upload → S3-Key in DB → Worker triggert Whisper → Transkript erscheint → LLM-Summary → /ask
+
+**Alternativ (langer Weg):** Olares-Sourcecode lesen wie `tapr-s3-svc` Auth funktioniert + `middleware.minio:` reverse-engineeren. Vermutlich 1-2 Tage Arbeit.
 
 **Wie DB-Migrationen eingespielt wurden** (für Doku falls Box mal neu aufgesetzt wird):
 ```bash

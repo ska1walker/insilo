@@ -21,7 +21,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.14              # = Chart.yaml.version
+  version: 0.1.15              # = Chart.yaml.version
   categories:
     - Productivity_v112
     - Utilities_v112
@@ -96,7 +96,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.14'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.15'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
@@ -129,15 +129,15 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.14 — Einstellungen-Seite + automatische DB-Migrationen.
+    v0.1.15 — Einstellungen-Seite + automatische DB-Migrationen (gehärtet).
 
     Neu: Unter „Einstellungen" können Sie jeden OpenAI-kompatiblen LLM-
     Endpunkt eintragen (URL, API-Schlüssel, Modell-Name). Damit lassen sich
     eigene LiteLLM-Instanzen, lokale Ollama-Server oder externe Anbieter
     nutzen — ohne das Chart anzufassen. Felder leer lassen = Olares-Defaults.
 
-    Außerdem: ein Helm-Hook-Job spielt Schema + Templates bei jedem
-    Install/Upgrade automatisch ein. Manuelles kubectl-exec entfällt.
+    Der Migrations-Hook nutzt jetzt das Backend-Image mit asyncpg statt psql,
+    was die in v0.1.14 beobachteten Hänger im Post-Install vermeidet.
 
   developer: kaivo.studio
   website: https://kaivo.studio
@@ -153,12 +153,11 @@ spec:
   supportArch:
     - amd64
 
-  # runAsInternal sets the namespace label `bytetrade.io/ns-type=user-internal`,
-  # which is what other Olares apps' NetworkPolicies key on when they allow
-  # ingress (e.g. the LiteLLM gateway's app-np). Without this label our worker
-  # cannot reach litellm-svc.litellm-<username>.svc.cluster.local. The Studio
-  # app uses the same flag for the same reason.
-  runAsInternal: true
+  # Note: `runAsInternal: true` was tried in v0.1.14 to grant cross-NS access
+  # to the Olares LiteLLM gateway, but turned out to interact badly with the
+  # frontend Envoy sidecar's check-auth init container. Sticking with normal
+  # app scope — users who want a non-default LLM endpoint configure it via
+  # the Einstellungen UI instead.
 
   # ---- Ressourcen-Anforderungen --------------------------------------------
   # Werden bei Installation reserviert.

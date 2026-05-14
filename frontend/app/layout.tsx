@@ -61,8 +61,8 @@ export default function RootLayout({
                 insilo
               </Link>
               <nav className="flex items-center gap-2">
-                <Link href="/ask" className="btn-tertiary">
-                  Fragen
+                <Link href="/archiv" className="btn-tertiary">
+                  Archiv
                 </Link>
                 <Link href="/einstellungen" className="btn-tertiary">
                   Einstellungen

@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire
+from app.tasks.notify import enqueue as enqueue_webhook
 
 router = APIRouter(prefix="/api/v1", tags=["tags"])
 
@@ -201,6 +202,7 @@ async def attach_tag_to_meeting(
             meeting_id,
             payload.tag_id,
         )
+    enqueue_webhook(meeting_id, "meeting.updated")
     return {"status": "ok"}
 
 
@@ -220,3 +222,4 @@ async def detach_tag_from_meeting(
             meeting_id,
             tag_id,
         )
+    enqueue_webhook(meeting_id, "meeting.updated")

@@ -187,6 +187,9 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     from app.worker import celery_app as _app
     _app.send_task("embed_meeting", args=[str(meeting_id)])
 
+    # Notify subscribers (Duo, OpenWebUI, …) that the meeting is ready.
+    _app.send_task("notify_webhook", args=[str(meeting_id), "meeting.ready"])
+
     return {
         "status": "ok",
         "elapsed_ms": elapsed_ms,
@@ -216,6 +219,8 @@ def summarize_meeting(self, meeting_id: str) -> dict[str, Any]:  # noqa: ARG001
                     await conn.close()
 
             asyncio.run(_mark_failed())
+            from app.worker import celery_app as _app
+            _app.send_task("notify_webhook", args=[meeting_id, "meeting.failed"])
         except Exception:
             log.exception("could not flag meeting %s as failed", meeting_id)
         raise

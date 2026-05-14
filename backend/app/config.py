@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     olares_user: str = "devuser"
     olares_zone: str = "devuser.olares.local"
 
+    # --- Webhooks ---
+    webhook_default_timeout_sec: int = 10
+    webhook_max_retries: int = 2
+
     # --- Dev ---
     log_level: str = "info"
     debug: bool = True

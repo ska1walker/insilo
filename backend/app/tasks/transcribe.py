@@ -153,6 +153,8 @@ def transcribe_meeting(self, meeting_id: str) -> dict[str, Any]:  # noqa: ARG001
                     await conn.close()
 
             asyncio.run(_mark_failed())
+            from app.worker import celery_app as _app
+            _app.send_task("notify_webhook", args=[meeting_id, "meeting.failed"])
         except Exception:
             log.exception("could not flag meeting %s as failed", meeting_id)
         raise

@@ -13,7 +13,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import CurrentUser, get_current_user
 from app.db import close_pool, init_pool
-from app.routers import audio, meetings, search, tags, templates
+from app.routers import (
+    api_keys,
+    audio,
+    external_api,
+    meetings,
+    search,
+    tags,
+    templates,
+    webhooks,
+)
 from app.routers import settings as settings_router
 
 
@@ -104,3 +113,6 @@ app.include_router(search.router)
 app.include_router(audio.router)
 app.include_router(settings_router.router)
 app.include_router(tags.router)
+app.include_router(webhooks.router)
+app.include_router(api_keys.router)
+app.include_router(external_api.router)

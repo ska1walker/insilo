@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ApiKeyManager } from "@/components/api-key-manager";
 import { TagManager } from "@/components/tag-manager";
 import { TemplatePrompts } from "@/components/template-prompts";
+import { WebhookManager } from "@/components/webhook-manager";
 import {
   fetchSettings,
   testSettings,
@@ -349,6 +351,38 @@ export default function EinstellungenPage() {
         </header>
 
         <TagManager />
+      </section>
+
+      <section className="mt-14">
+        <header className="mb-5">
+          <h2 className="font-display text-xl font-medium">Webhooks</h2>
+          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+            Lassen Sie sich von Insilo benachrichtigen, wenn sich der
+            Status einer Besprechung ändert — z.&nbsp;B. wenn eine
+            Zusammenfassung fertig ist. Insilo schickt dann einen
+            signierten POST-Request an die hinterlegte URL. Bei
+            <code className="mx-1 rounded bg-surface-soft px-1 font-mono">meeting.ready</code>
+            enthält der Payload zusätzlich das vollständige Meeting-Markdown.
+          </p>
+        </header>
+
+        <WebhookManager />
+      </section>
+
+      <section className="mt-14 pb-12">
+        <header className="mb-5">
+          <h2 className="font-display text-xl font-medium">API-Schlüssel</h2>
+          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+            Schlüssel erlauben externen Systemen, Besprechungen lesend
+            über die REST-API abzurufen
+            (<code className="mx-1 rounded bg-surface-soft px-1 font-mono">/api/external/v1/meetings</code>).
+            Jeder Schlüssel ist auf Ihre Organisation beschränkt — die
+            Daten verlassen Ihre Box nur dorthin, wohin Sie den Schlüssel
+            aushändigen.
+          </p>
+        </header>
+
+        <ApiKeyManager />
       </section>
     </main>
   );

@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire
 from app.storage import delete_object, get_presigned_url, upload_bytes
+from app.tasks.notify import enqueue as enqueue_webhook
 from app.tasks.transcribe import transcribe_meeting
 
 _SPEAKER_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,32}$")
@@ -290,6 +291,7 @@ async def create_recording(
     # Hand off transcription to the Celery worker. The HTTP response returns
     # immediately; the frontend polls status until it flips to "ready".
     transcribe_meeting.delay(str(meeting_id))
+    enqueue_webhook(meeting_id, "meeting.created")
 
     return _meeting_row_to_dto(row, audio_url=get_presigned_url(key))
 
@@ -379,6 +381,7 @@ async def update_transcript_speakers(
             json.dumps(speakers_payload),
         )
 
+    enqueue_webhook(meeting_id, "meeting.updated")
     return {"status": "ok", "speakers": speakers_payload, "segments": segs}
 
 
@@ -449,3 +452,4 @@ async def delete_meeting(
         except Exception:
             # If object is already gone, don't fail the request.
             pass
+    enqueue_webhook(meeting_id, "meeting.deleted")

@@ -41,6 +41,9 @@ dist/
 # Vercel (nicht relevant für Insilo, aber Vorsicht)
 .vercel
 
+# Claude Code — local-only settings (machine-specific permissions, etc.)
+.claude/settings.local.json
+
 # IDE & Editor
 .vscode/
 .idea/

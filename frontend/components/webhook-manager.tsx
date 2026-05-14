@@ -69,7 +69,8 @@ export function WebhookManager() {
         />
       )}
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3">
+        <ContractDisclosure />
         {!adding && (
           <button
             type="button"
@@ -636,5 +637,49 @@ function SecretReveal({
         </button>
       </div>
     </div>
+  );
+}
+
+// ─── Contract Disclosure ───────────────────────────────────────────────
+
+function ContractDisclosure() {
+  return (
+    <details className="group text-xs text-text-secondary">
+      <summary className="cursor-pointer select-none hover:text-text-primary">
+        Vertrag &amp; Empfänger-Beispiel anzeigen
+      </summary>
+      <div className="mt-3 space-y-3 rounded-md border border-border-subtle bg-surface-soft p-3 leading-relaxed">
+        <div>
+          <p className="font-medium text-text-primary">Header</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 font-mono text-[11px]">
+            <li>X-Insilo-Event: meeting.ready</li>
+            <li>X-Insilo-Delivery-ID: &lt;uuid-hex, stabil über Retries&gt;</li>
+            <li>X-Insilo-Signature: sha256=&lt;HMAC-SHA256(secret, raw body)&gt;</li>
+          </ul>
+        </div>
+        <div>
+          <p className="font-medium text-text-primary">Empfänger-Pseudocode (Python)</p>
+          <pre className="mt-1 overflow-x-auto rounded bg-white p-2 font-mono text-[11px] text-text-primary">{`raw = request.body
+sig = request.headers["x-insilo-signature"]
+expected = "sha256=" + hmac_sha256(secret, raw).hexdigest()
+if not hmac.compare_digest(sig, expected):
+    return 401
+if already_processed(request.headers["x-insilo-delivery-id"]):
+    return 200
+# ... upsert anhand payload["meeting"]["id"] ...
+return 200`}</pre>
+        </div>
+        <p>
+          Retry-Verhalten: max. 2 Wiederholungen bei 5xx/Timeout (30 s, 90 s
+          Backoff), keine Wiederholung bei 4xx. Idempotenz über
+          <code className="mx-1 rounded bg-white px-1 font-mono">X-Insilo-Delivery-ID</code>.
+          Antworten Sie schnell mit 2xx.
+        </p>
+        <p>
+          Vollständige Spec mit allen Events, Feld-Garantien und Beispielen:
+          <span className="ml-1 font-mono">docs/WEBHOOKS.md</span> im Insilo-Repository.
+        </p>
+      </div>
+    </details>
   );
 }

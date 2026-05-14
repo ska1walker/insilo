@@ -1,14 +1,27 @@
-"""Celery task: dispatch webhook deliveries for meeting lifecycle events.
+"""Celery tasks: dispatch webhook deliveries for meeting lifecycle events.
 
-Fires when a meeting transitions state (created / ready / failed / updated
-/ deleted). Loads every active webhook subscribed to the given event for
-the meeting's org, signs the payload with HMAC-SHA256(secret), POSTs with
-a tight timeout, and records the outcome in `webhook_deliveries`.
+Fires when a meeting transitions state (created / ready / failed /
+updated / deleted). For `meeting.ready` events the payload includes the
+full rendered Markdown — that's the moment downstream consumers (Duo,
+OpenWebUI, custom integrations) actually want to file the meeting. For
+every other event the payload is a minimal status update.
 
-For `meeting.ready` events the payload includes the full rendered
-Markdown — that's the moment downstream consumers (Duo, OpenWebUI,
-custom integrations) actually want to file the meeting. For every other
-event the payload is a minimal status update.
+Task layout:
+
+    notify_webhook(meeting_id, event)
+        Orchestrator. Loads the payload once and fans out a
+        per-subscriber `deliver_webhook` task. Each subscriber gets its
+        own stable delivery_id.
+
+    deliver_webhook(webhook_id, meeting_id, event, delivery_id, payload)
+        Single-recipient dispatcher with retry. 5xx / timeout /
+        connect-error trigger Celery retry with exponential backoff (max
+        retries from settings). 4xx does NOT retry — that signals a
+        client-side problem (wrong signature, bad URL handler) where
+        retrying will only repeat the failure.
+
+The `delivery_id` is identical across all retry attempts of the same
+delivery so the receiver can deduplicate via `X-Insilo-Delivery-ID`.
 """
 
 from __future__ import annotations
@@ -18,7 +31,7 @@ import hashlib
 import hmac
 import json
 import logging
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -53,14 +66,34 @@ async def _connect() -> asyncpg.Connection:
     )
 
 
+def _iso_now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _iso_or_none(v: Any) -> str | None:
+    if v is None:
+        return None
+    return v.isoformat() if hasattr(v, "isoformat") else str(v)
+
+
+def _sign(secret: str, body: bytes) -> str:
+    mac = hmac.new(secret.encode("utf-8"), body, hashlib.sha256)
+    return "sha256=" + mac.hexdigest()
+
+
+# ─── Payload assembly ─────────────────────────────────────────────────
+
+
 async def _load_meeting_payload(
     conn: asyncpg.Connection, meeting_id: UUID, event: str
 ) -> dict[str, Any] | None:
-    """Fetch everything we need to render the meeting for a webhook.
+    """Build the payload for a meeting event.
 
-    Returns None if the meeting row doesn't exist at all (hard-deleted or
-    never existed). Soft-deleted meetings are still returned — the
-    `meeting.deleted` event needs them.
+    Returns the payload dict **without** an `id` field — the orchestrator
+    assigns a per-subscriber delivery_id before dispatch so receivers can
+    deduplicate. Returns None if the meeting row doesn't exist (hard-
+    deleted or never existed). Soft-deleted meetings are still returned —
+    the `meeting.deleted` event needs them.
     """
     meeting_row = await conn.fetchrow(
         """
@@ -154,7 +187,6 @@ async def _load_meeting_payload(
         )
 
     payload: dict[str, Any] = {
-        "id": str(uuid4()),  # delivery id, also sent as X-Insilo-Delivery-ID
         "event": event,
         "occurred_at": _iso_now(),
         "meeting": {
@@ -179,100 +211,187 @@ async def _load_meeting_payload(
     return payload
 
 
-def _iso_now() -> str:
-    from datetime import datetime
-    return datetime.now(UTC).isoformat()
+# ─── deliver_webhook — single-recipient dispatcher with retry ──────────
 
 
-def _iso_or_none(v: Any) -> str | None:
-    if v is None:
-        return None
-    return v.isoformat() if hasattr(v, "isoformat") else str(v)
-
-
-def _sign(secret: str, body: bytes) -> str:
-    mac = hmac.new(secret.encode("utf-8"), body, hashlib.sha256)
-    return "sha256=" + mac.hexdigest()
-
-
-async def _dispatch_one(
-    conn: asyncpg.Connection,
-    webhook: dict[str, Any],
-    event: str,
+async def _do_deliver(
+    webhook_id: UUID,
     meeting_id: UUID,
+    event: str,
+    delivery_id: str,
     payload: dict[str, Any],
-) -> None:
-    body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    signature = _sign(webhook["secret"], body_bytes)
-    headers = {
-        "Content-Type": "application/json; charset=utf-8",
-        "User-Agent": "Insilo-Webhook/1.0",
-        "X-Insilo-Event": event,
-        "X-Insilo-Delivery-ID": payload["id"],
-        "X-Insilo-Signature": signature,
-    }
+    attempt: int,
+) -> tuple[bool, bool, int | None, str | None]:
+    """Send one POST and record the result.
 
-    status_code: int | None = None
-    response_body: str | None = None
-    error_message: str | None = None
+    Returns `(ok, should_retry, status_code, error_message)`.
+    """
+    conn = await _connect()
     try:
-        async with httpx.AsyncClient(
-            timeout=httpx.Timeout(settings.webhook_default_timeout_sec)
-        ) as client:
-            resp = await client.post(webhook["url"], content=body_bytes, headers=headers)
-        status_code = resp.status_code
-        response_body = resp.text[:_RESPONSE_BODY_CHARS]
-    except httpx.TimeoutException:
-        error_message = "timeout"
-    except httpx.ConnectError as exc:
-        error_message = f"connect: {exc.__class__.__name__}"
-    except Exception as exc:  # noqa: BLE001
-        error_message = f"{exc.__class__.__name__}: {exc}"
-
-    ok = status_code is not None and 200 <= status_code < 300
-
-    async with conn.transaction():
-        await conn.execute(
+        wh = await conn.fetchrow(
             """
-            insert into public.webhook_deliveries (
-                webhook_id, meeting_id, event, status_code,
-                response_body, error_message, attempt
-            )
-            values ($1, $2, $3, $4, $5, $6, 1)
+            select url, secret
+            from public.org_webhooks
+            where id = $1 and is_active = true
             """,
-            webhook["id"],
-            meeting_id,
-            event,
-            status_code,
-            response_body,
-            error_message,
+            webhook_id,
         )
-        if ok:
-            await conn.execute(
-                """
-                update public.org_webhooks
-                set last_success_at = now(),
-                    last_failure_msg = null
-                where id = $1
-                """,
-                webhook["id"],
-            )
-        else:
-            await conn.execute(
-                """
-                update public.org_webhooks
-                set last_failure_at = now(),
-                    last_failure_msg = $2
-                where id = $1
-                """,
-                webhook["id"],
-                error_message or f"HTTP {status_code}",
-            )
+        if wh is None:
+            return False, False, None, "webhook gone or disabled"
 
-    log.info(
-        "webhook dispatch · webhook=%s · event=%s · status=%s · err=%s",
-        webhook["id"], event, status_code, error_message,
-    )
+        body_payload = {"id": delivery_id, **payload}
+        body_bytes = json.dumps(body_payload, ensure_ascii=False).encode("utf-8")
+        signature = _sign(wh["secret"], body_bytes)
+        headers = {
+            "Content-Type": "application/json; charset=utf-8",
+            "User-Agent": "Insilo-Webhook/1.0",
+            "X-Insilo-Event": event,
+            "X-Insilo-Delivery-ID": delivery_id,
+            "X-Insilo-Signature": signature,
+        }
+
+        status_code: int | None = None
+        response_body: str | None = None
+        error_message: str | None = None
+        try:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(settings.webhook_default_timeout_sec)
+            ) as client:
+                resp = await client.post(wh["url"], content=body_bytes, headers=headers)
+            status_code = resp.status_code
+            response_body = resp.text[:_RESPONSE_BODY_CHARS]
+        except httpx.TimeoutException:
+            error_message = "timeout"
+        except httpx.ConnectError as exc:
+            error_message = f"connect: {exc.__class__.__name__}"
+        except Exception as exc:  # noqa: BLE001
+            error_message = f"{exc.__class__.__name__}: {exc}"
+
+        ok = status_code is not None and 200 <= status_code < 300
+        is_4xx = status_code is not None and 400 <= status_code < 500
+        should_retry = (not ok) and (not is_4xx)
+
+        async with conn.transaction():
+            await conn.execute(
+                """
+                insert into public.webhook_deliveries (
+                    webhook_id, meeting_id, event, status_code,
+                    response_body, error_message, attempt
+                )
+                values ($1, $2, $3, $4, $5, $6, $7)
+                """,
+                webhook_id,
+                meeting_id,
+                event,
+                status_code,
+                response_body,
+                error_message,
+                attempt,
+            )
+            if ok:
+                await conn.execute(
+                    """
+                    update public.org_webhooks
+                    set last_success_at = now(),
+                        last_failure_msg = null
+                    where id = $1
+                    """,
+                    webhook_id,
+                )
+            else:
+                await conn.execute(
+                    """
+                    update public.org_webhooks
+                    set last_failure_at = now(),
+                        last_failure_msg = $2
+                    where id = $1
+                    """,
+                    webhook_id,
+                    error_message or f"HTTP {status_code}",
+                )
+
+        log.info(
+            "webhook dispatch · webhook=%s · event=%s · attempt=%s · status=%s · err=%s",
+            webhook_id, event, attempt, status_code, error_message,
+        )
+        return ok, should_retry, status_code, error_message
+    finally:
+        await conn.close()
+
+
+@shared_task(
+    name="deliver_webhook",
+    bind=True,
+    max_retries=settings.webhook_max_retries,
+)
+def deliver_webhook(
+    self,
+    webhook_id: str,
+    meeting_id: str,
+    event: str,
+    delivery_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    """Send one webhook payload to a single subscriber, with retry.
+
+    Retries on 5xx / timeout / connect-error using exponential backoff
+    (base * 3^retries). 4xx responses skip retry — they signal a
+    client-side problem (wrong signature, bad URL handler) where retry
+    will not help. `delivery_id` is stable across all retries so the
+    receiver can deduplicate.
+    """
+    attempt = self.request.retries + 1
+    try:
+        ok, should_retry, status_code, error = asyncio.run(
+            _do_deliver(
+                UUID(webhook_id),
+                UUID(meeting_id),
+                event,
+                delivery_id,
+                payload,
+                attempt,
+            )
+        )
+    except Exception:
+        log.exception("deliver_webhook crashed for webhook %s", webhook_id)
+        raise
+
+    if ok:
+        return {
+            "status": "ok",
+            "webhook_id": webhook_id,
+            "attempt": attempt,
+            "status_code": status_code,
+        }
+
+    if not should_retry:
+        return {
+            "status": "failed",
+            "webhook_id": webhook_id,
+            "attempt": attempt,
+            "status_code": status_code,
+            "error": error,
+            "retried": False,
+        }
+
+    if self.request.retries >= self.max_retries:
+        log.warning(
+            "webhook %s exhausted %s retries (last status=%s, err=%s)",
+            webhook_id, self.max_retries, status_code, error,
+        )
+        return {
+            "status": "exhausted",
+            "webhook_id": webhook_id,
+            "attempt": attempt,
+            "status_code": status_code,
+            "error": error,
+        }
+
+    countdown = settings.webhook_retry_base_delay_sec * (3 ** self.request.retries)
+    raise self.retry(countdown=countdown)
+
+
+# ─── notify_webhook — orchestrator ─────────────────────────────────────
 
 
 async def _do_notify(meeting_id: UUID, event: str) -> dict[str, Any]:
@@ -281,7 +400,6 @@ async def _do_notify(meeting_id: UUID, event: str) -> dict[str, Any]:
 
     conn = await _connect()
     try:
-        # 1. Find the org
         org_row = await conn.fetchrow(
             "select org_id from public.meetings where id = $1",
             meeting_id,
@@ -290,10 +408,9 @@ async def _do_notify(meeting_id: UUID, event: str) -> dict[str, Any]:
             return {"status": "skipped", "reason": "no meeting"}
         org_id = org_row["org_id"]
 
-        # 2. Find subscribed webhooks for this org
         webhook_rows = await conn.fetch(
             """
-            select id, url, secret, events
+            select id
             from public.org_webhooks
             where org_id = $1
               and is_active = true
@@ -303,33 +420,35 @@ async def _do_notify(meeting_id: UUID, event: str) -> dict[str, Any]:
             event,
         )
         if not webhook_rows:
-            return {"status": "ok", "delivered": 0, "reason": "no subscribers"}
+            return {"status": "ok", "fanout": 0, "reason": "no subscribers"}
 
-        # 3. Build the payload once (it's identical across recipients)
         payload = await _load_meeting_payload(conn, meeting_id, event)
         if payload is None:
             return {"status": "skipped", "reason": "meeting vanished"}
-
-        delivered = 0
-        for wh in webhook_rows:
-            try:
-                await _dispatch_one(conn, dict(wh), event, meeting_id, payload)
-                delivered += 1
-            except Exception:
-                log.exception("dispatch failed for webhook %s", wh["id"])
-        return {"status": "ok", "delivered": delivered, "candidates": len(webhook_rows)}
     finally:
         await conn.close()
 
+    from app.worker import celery_app as _app
+    for wh in webhook_rows:
+        delivery_id = uuid4().hex
+        _app.send_task(
+            "deliver_webhook",
+            args=[
+                str(wh["id"]),
+                str(meeting_id),
+                event,
+                delivery_id,
+                payload,
+            ],
+        )
+    return {"status": "ok", "fanout": len(webhook_rows)}
 
-@shared_task(
-    name="notify_webhook",
-    bind=True,
-    max_retries=settings.webhook_max_retries,
-    default_retry_delay=30,
-)
-def notify_webhook(self, meeting_id: str, event: str) -> dict[str, Any]:  # noqa: ARG001
-    """Sync Celery wrapper for the async notify pipeline."""
+
+@shared_task(name="notify_webhook")
+def notify_webhook(meeting_id: str, event: str) -> dict[str, Any]:
+    """Orchestrator: load payload once and fan out a `deliver_webhook`
+    task per subscribed subscriber.
+    """
     try:
         return asyncio.run(_do_notify(UUID(meeting_id), event))
     except Exception:
@@ -338,6 +457,7 @@ def notify_webhook(self, meeting_id: str, event: str) -> dict[str, Any]:  # noqa
 
 
 # ─── Public helper ─────────────────────────────────────────────────────
+
 
 def enqueue(meeting_id: UUID | str, event: str) -> None:
     """Fire-and-forget enqueue from inside the FastAPI process.

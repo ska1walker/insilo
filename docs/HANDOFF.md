@@ -3,7 +3,74 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # 🚀 v0.1.34 — Tag-System gelandet (14. Mai 2026, später Nachmittag)
+> # 🚀 v0.1.36 — Webhooks + API-Keys + Markdown-Export (14. Mai 2026, Abend)
+>
+> **Aktueller Stand:** Box läuft auf v0.1.36, alle 5 Pods Ready. Insilo
+> hat jetzt **Outbound-Integration**: ausgehende Webhooks mit
+> HMAC-Signatur + Fan-Out + Retry/Backoff, externe REST-API mit
+> Bearer-Token-Auth (read-only), Markdown-Export-Renderer.
+>
+> **Was v0.1.35 + v0.1.36 gebracht haben (Duo-Vorstufe):**
+>
+> - **Migration 0005** (`supabase/migrations/0005_webhooks_api_keys.sql`):
+>   neue Tabellen `org_webhooks` (URL + Secret + Event-Filter +
+>   last_success/failure), `webhook_deliveries` (Audit-Log mit Status,
+>   Body, Attempt), `api_keys` (bcrypt-Hash + Prefix-Index +
+>   Soft-Revoke). RLS via `current_user_orgs()`-Gating analog zu 0003.
+>
+> - **Webhook-Dispatcher** (`backend/app/tasks/notify.py`): zwei
+>   Celery-Tasks — `notify_webhook` ist der Orchestrator (lädt Payload
+>   einmal, fan-out per Subscriber), `deliver_webhook` ist
+>   Single-Recipient mit Retry. **4xx kein Retry** (Empfänger-Bug),
+>   **5xx/Timeout/ConnectError exponentielles Backoff** (`base * 3^retries`,
+>   `webhook_retry_base_delay_sec` = 30 → 30 s, 90 s, 270 s).
+>   `X-Insilo-Delivery-ID` ist stabil über Retries → Empfänger
+>   dedupliziert.
+>
+> - **5 Lifecycle-Events** verkabelt: `meeting.created` (POST /recordings),
+>   `meeting.ready` (summarize.py:185), `meeting.failed`
+>   (summarize+transcribe Exception-Handler), `meeting.deleted` (DELETE
+>   /meetings), `meeting.updated` (Speaker-Edit + Tag-Attach/Detach).
+>
+> - **Markdown-Renderer** (`backend/app/exports/markdown.py`):
+>   generische Funktion, walkt Summary-JSON, erkennt Task-Listen
+>   (`beschluss`/`verantwortlich`/`frist`) und rendert sie als GFM
+>   Checklisten (`- [ ] Aufgabe — Wer, fällig Wann`). 5 pytest-Snapshots
+>   in `backend/tests/exports/test_markdown.py`.
+>
+> - **REST-API** (`/api/external/v1/*`): `GET /meetings`, `GET /meetings/{id}`,
+>   `GET /meetings/{id}/markdown` (`text/markdown` Output). Auth via
+>   `Authorization: Bearer inskey_…`, Scope `read:meetings`. Token-Format
+>   `inskey_<24-byte-base32>`, bcrypt-gehasht, Roh-Token nur einmal
+>   beim POST. Auth-Dependency in `backend/app/auth_api.py`.
+>
+> - **UI** (`/einstellungen`): drei neue Sektionen — Webhooks (mit
+>   `ContractDisclosure`-Box, die das Vertragsformat erklärt), API-Keys
+>   (One-Time-Token-Reveal mit Gold-Akzent). Komponenten:
+>   `frontend/components/webhook-manager.tsx`, `api-key-manager.tsx`.
+>   API-Client-Module: `frontend/lib/api/webhooks.ts`, `api-keys.ts`.
+>
+> - **Doku**: `docs/WEBHOOKS.md` — vollständiger Contract (Events, Header,
+>   Signatur-Verifikation, Retry-Verhalten, Pseudocode für Receiver).
+>
+> # 🎯 Nächste Story: Duo-Integration (konkret)
+>
+> Duo ist **die eigene Cloud-App des Users** (duo.aimighty.de) —
+> Notizen-/Wissens-Hub mit Folders + Tasks. Da User Duo selbst baut,
+> hat er die Wahl zwischen Webhook-Empfänger oder Pull-API. Empfehlung:
+> **Webhook-Empfänger in Duo**. Die Integration läuft dann nur als
+> Konfiguration (Insilo-Webhook anlegen → Secret in Duo eintragen), kein
+> weiterer Insilo-Code nötig.
+>
+> Konkrete Aufgaben für die nächste Session:
+> 1. Duo bekommt einen `POST /api/integrations/insilo`-Endpoint (HMAC-Verify,
+>    `external_source` / `external_id` Upsert via `meeting.id`).
+> 2. Optional: Checkbox-Parser zur Übernahme der `## Offene Aufgaben`-Items
+>    in Duo's Task-System.
+> 3. End-to-End-Test: Meeting in Insilo aufnehmen → Webhook landet
+>    automatisch in Duo's Olares-Ordner.
+>
+> # 📚 v0.1.34 — Tag-System gelandet (14. Mai 2026, später Nachmittag)
 >
 > **Aktueller Stand:** Insilo ist eine **vollständig funktionierende
 > Meeting-Intelligenz-PWA** auf der Olares-Box. Alle Kern-Pfade laufen:
@@ -35,9 +102,19 @@
 > - **v0.1.34** — **Tag-System:** Tags am Meeting, Filter im Archiv,
 >   CRUD in Einstellungen, Pills in der Liste. Nutzt bestehende
 >   `public.tags`-Tabelle aus 0001-Schema.
+> - **v0.1.35** — **Webhooks + API-Keys + Markdown-Export** (Duo-Vorstufe).
+>   Migration 0005, 3 neue Backend-Router (`webhooks`, `api_keys`,
+>   `external_api`), 2 neue UI-Sektionen in `/einstellungen`. Volles
+>   Event-Set (5 Events), single-secret pro Webhook, bcrypt-API-Keys
+>   mit Prefix-Index.
+> - **v0.1.36** — **Webhook-Hardening + Doku**: Dispatcher refaktoriert
+>   (notify→deliver Fan-Out, 4xx/5xx-Differenzierung, exp. Backoff via
+>   `webhook_retry_base_delay_sec`), `ContractDisclosure`-Hilfe in der
+>   UI, `docs/WEBHOOKS.md` als vollständige Contract-Spec.
 >
-> **Box-State (Stand 14. Mai):** alle 5 Pods Ready auf v0.1.34
-> (frontend/backend/worker/whisper/embeddings). System-PostgreSQL +
+> **Box-State (Stand 14. Mai, Abend):** alle 5 Pods Ready auf v0.1.35
+> (das war die erste Wave). v0.1.36 ist eine zusätzliche Rolling-Update
+> (notify.py-Refactor + ContractDisclosure + Doku). System-PostgreSQL +
 > KVRocks-Redis via Olares-Middleware. LLM via per-Org-Einstellungen
 > (Default: Olares-LiteLLM, aber jeder OpenAI-kompatible Endpoint geht).
 >

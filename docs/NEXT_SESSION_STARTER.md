@@ -13,32 +13,50 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als v0.1.34 auf der Olares-Box
+**Stand:** Insilo läuft als **v0.1.36** auf der Olares-Box
 `olares@192.168.112.125` (Olares-User `kaivostudio`,
 Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready.
 Feature-Set komplett: Aufnahme + Diarization + Transkript + Summary +
-Q&A + Templates + Speaker-Editing + Tags + Filter.
+Q&A + Templates + Speaker-Editing + Tags + Filter + **Outbound-Webhooks
++ externe REST-API + Markdown-Export**.
 
-**Nächste geplante Iteration: v0.1.35 — Webhooks + API-Keys +
-Duo-Integration.**
+**Was in v0.1.35/v0.1.36 dazukam:** Migration 0005 (`org_webhooks`,
+`webhook_deliveries`, `api_keys`), Celery-Dispatcher mit Fan-Out + Retry
+(`backend/app/tasks/notify.py`), Markdown-Renderer
+(`backend/app/exports/markdown.py`), REST-API `/api/external/v1/*` mit
+Bearer-Token, UI-Sektionen in `/einstellungen` (Webhook-Manager + API-Key-
+Manager + ContractDisclosure-Hilfe), Doku `docs/WEBHOOKS.md`.
+
+**Nächste geplante Iteration: Duo-Empfänger-Endpoint in Duo
+(duo.aimighty.de) bauen.** Insilo-Seite ist fertig — Integration läuft
+nur noch als Konfiguration.
 
 Die Vision (vom User):
 > Insilo schreibt nach jeder Transkription Meeting-Minutes als Markdown
-> in einen **Duo-Ordner**. OpenWebUI greift auf Duo zu und beantwortet
-> Fragen wie „Sind noch Aufgaben offen?", „Mach einen One-Pager zur
-> Sitzung von letzter Woche". Aufgaben aus Insilo-Meetings landen als
-> Checklist-Items in Duo → über alle Meetings aggregierbar.
+> nach Duo (Cloud-Knowledge-Hub). OpenWebUI greift auf Duo zu und
+> beantwortet Fragen wie „Sind noch Aufgaben offen?", „Mach einen
+> One-Pager zur Sitzung von letzter Woche". Aufgaben aus Insilo-Meetings
+> landen als Checklist-Items in Duo → über alle Meetings aggregierbar.
 
-**Erste Fragen die du dem User stellen musst, bevor du baust:**
+**Was wir bereits wissen (Stand v0.1.36):**
 
-1. **Was genau ist Duo?** Eigene Olares-App? Standalone-Tool auf
-   der Box? Cloud-Service? Wie liest Duo Files (File-Watcher? API?)?
-2. **Wo ist Duo's Storage-Pfad?** Welchen hostPath kann Insilo
-   schreiben, der von Duo gelesen wird?
-3. **Hat Duo eine API?** Falls ja: Auth-Mechanismus,
-   POST-/tasks-Endpoint, etc.
-4. **Format-Wünsche?** Frontmatter-Felder, Datei-Naming-Konvention,
-   Aufgaben als `- [ ]` Checklist oder eigenes Format?
+- **Duo ist eine Cloud-App des Users** (`duo.aimighty.de`). Notizen +
+  Folders + Tasks, Multi-User. User baut Duo selbst und kann
+  Webhook-Empfänger einbauen.
+- **Empfohlene Integration:** Webhook-Push von Insilo nach Duo,
+  HMAC-Signatur. Insilo-Seite ist **fertig** — fehlt nur der Empfänger
+  in Duo. Voller Vertrag in `docs/WEBHOOKS.md`.
+
+**Erste Aufgabe in der nächsten Session:**
+
+1. Mit User abklären, welcher Stack in Duo läuft (Node/Python/Go?).
+2. Empfänger-Endpoint `POST /api/integrations/insilo` in Duo bauen:
+   - HMAC-SHA256-Verify mit `hmac.compare_digest`
+   - Idempotenz via `X-Insilo-Delivery-ID` (Tabelle
+     `processed_webhook_deliveries`)
+   - Upsert `notes` über `(external_source='insilo', external_id=meeting.id)`
+3. Optional: Checkbox-Parser für `## Offene Aufgaben` → Duo-Tasks.
+4. End-to-End-Test gegen die Box.
 
 **Architektur-Skizze (in HANDOFF.md Header detaillierter):**
 
@@ -130,11 +148,11 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | v0.1.34 (alle 5 Pods Ready) |
+| Version | v0.1.36 (alle 5 Pods Ready) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.34` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.36` |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn) |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |

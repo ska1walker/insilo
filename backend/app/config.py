@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     # --- Webhooks ---
     webhook_default_timeout_sec: int = 10
     webhook_max_retries: int = 2
+    webhook_retry_base_delay_sec: int = 30
 
     # --- Dev ---
     log_level: str = "info"

@@ -15,13 +15,16 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY app ./app
 
-# Force CPU-only torch wheel — otherwise pip would pull CUDA libs (~2 GB extra).
-# Order matters: torch first, then the rest can use the already-installed
-# torch as a satisfied dependency.
+# Force CPU-only torch + torchaudio wheels — otherwise pip would pull CUDA
+# libs (~2 GB extra). Critical: torch AND torchaudio aus demselben Index,
+# sonst gibt's ABI-Mismatch beim Laden von SpeechBrain (`_torchaudio.so`
+# kann nicht gegen torch geladen werden).
+# Order matters: native deps first, then the rest can use the
+# already-installed torch+torchaudio as satisfied dependencies.
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir \
       --index-url https://download.pytorch.org/whl/cpu \
-      "torch>=2.2.0" \
+      "torch>=2.2.0" "torchaudio>=2.2.0" \
  && pip install --no-cache-dir .
 
 # Cache for downloaded model weights — Olares mounts /app/cache here

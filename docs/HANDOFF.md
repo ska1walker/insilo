@@ -1,9 +1,79 @@
-# Handoff — Stand & Learnings (Mai 2026, **letzte Aktualisierung: 13. Mai**)
+# Handoff — Stand & Learnings (Mai 2026, **letzte Aktualisierung: 14. Mai**)
 
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # 🎯 v0.1.16 — End-to-End-Meilenstein erreicht (13. Mai 2026, später Abend)
+> # 🚀 v0.1.34 — Tag-System gelandet (14. Mai 2026, später Nachmittag)
+>
+> **Aktueller Stand:** Insilo ist eine **vollständig funktionierende
+> Meeting-Intelligenz-PWA** auf der Olares-Box. Alle Kern-Pfade laufen:
+> Aufnahme (mit Speaker-Diarization), Transkription (faster-whisper),
+> LLM-Summary mit user-konfigurierbarem Endpoint, Q&A im Archiv,
+> Tag-System mit Filtern, Custom Templates, eigene Stimm-Pipeline.
+>
+> **Was seit v0.1.17 dazukam (chronologisch):**
+> - **v0.1.17** — UI/UX-Polish (Verbindung testen, Retry-Summary, Score-%)
+> - **v0.1.19** — Trust-Badge mit ShieldCheck-Icon auf Aufnahme-Seite
+> - **v0.1.20** — Template-CRUD: User legt eigene Vorlagen an
+> - **v0.1.21** — `/style` raus, `/ueber` Landing-Page rein
+> - **v0.1.22** — Speaker-Manual-Assign (Roster + Picker pro Meeting)
+> - **v0.1.23** — Toast-Notifications + Undo-Delete für Meetings
+> - **v0.1.24** — `/ask`-Polish: Hero, Beispiel-Cards, ⌘↵-Shortcut
+> - **v0.1.25** — Template-CRUD voll (Org-eigene Templates anlegen)
+> - **v0.1.26** — Nav-Rename: "Fragen" → "Archiv", `/ask` → `/archiv`
+> - **v0.1.27** — Aufnahme-Page Polish: Mic-Icon, Breathing, Status-Dot
+> - **v0.1.28** — SVG-Logo statt Wortmarke im Header
+> - **v0.1.29** — **Home-Refactor:** `/` = Recording-First-Hybrid +
+>   neue Route `/besprechungen` für die volle Liste
+> - **v0.1.30** — Motion-Polish: page-transitions, stagger-reveals,
+>   button-press-feedback, respect-prefers-reduced-motion
+> - **v0.1.31/0.1.33** — **Speaker-Diarization (Phase A):** Whisper-Service
+>   bekommt 3-Stage-Pipeline (Silero-VAD → SpeechBrain ECAPA-TDNN →
+>   sklearn AgglomerativeClustering). Anonyme `SPEAKER_00`-Labels werden
+>   automatisch erkannt; User benennt sie via existierender Speaker-UI um.
+>   **Token-frei**, keine HuggingFace-Anmeldung nötig.
+> - **v0.1.34** — **Tag-System:** Tags am Meeting, Filter im Archiv,
+>   CRUD in Einstellungen, Pills in der Liste. Nutzt bestehende
+>   `public.tags`-Tabelle aus 0001-Schema.
+>
+> **Box-State (Stand 14. Mai):** alle 5 Pods Ready auf v0.1.34
+> (frontend/backend/worker/whisper/embeddings). System-PostgreSQL +
+> KVRocks-Redis via Olares-Middleware. LLM via per-Org-Einstellungen
+> (Default: Olares-LiteLLM, aber jeder OpenAI-kompatible Endpoint geht).
+>
+> # 🎯 Vision für die nächste Phase: Duo-Integration (v0.1.35+)
+>
+> User will Insilo als **Knowledge-Layer-Quelle** fürs gesamte
+> AI-Setup. Konkret: Meeting-Minutes landen automatisch als Markdown
+> in einem „Duo-Ordner" (Duo = eigenes Knowledge-Hub-Projekt des
+> Users). OpenWebUI greift auf diesen Ordner zu und beantwortet Fragen
+> wie „Welche Aufgaben aus letztem Mandantengespräch sind offen?".
+>
+> **Architektur-Skizze:**
+> 1. Status-Trigger im Worker: nach `meeting.ready` einen Hook auslösen
+> 2. **Webhook-Mechanismus** (Insilo-Seite) — POST an konfigurierbare
+>    URLs bei Status-Wechsel (`meeting.ready`, `meeting.failed`)
+> 3. **File-Export-Adapter** — schreibt strukturiertes Markdown in einen
+>    hostPath-Ordner (Frontmatter mit Tags/Datum/Speakers + Sektionen
+>    Zusammenfassung / Beschlüsse / Aufgaben / Volltranskript)
+> 4. **API-Keys + REST-API** für Pull-basierte Integrationen (Duo
+>    holt Meeting-Daten auf Anfrage)
+>
+> **Aufgaben-Listing** als zentraler Use-Case: jedes Meeting-Markdown
+> hat eine `## Offene Aufgaben`-Sektion mit Checklist-Items. Duo
+> aggregiert alle Items über alle Meetings → Antwort auf
+> „Was steht für mich noch offen?".
+>
+> Ehrlich-Hinweis für neue Sessions: **Duo ist noch nicht bekannt im
+> Detail.** Bei Start dieser Story zuerst klären: ist Duo eine eigene
+> Olares-App? Wo liegen Duo's Dateien (Pfad)? Hat Duo eine API zum
+> Aufnehmen von Tasks, oder ist Markdown-File-Watch der primäre
+> Mechanismus? Erst nach diesen Antworten den Webhook + File-Export
+> bauen.
+>
+> ---
+>
+> # 📦 v0.1.16 — End-to-End-Meilenstein erreicht (13. Mai 2026, später Abend)
 >
 > **Status: Insilo läuft komplett auf der Olares-Box.** Aufnahme im Browser →
 > Audio-Upload zu hostPath → Whisper-Transkript → LLM-Summary → grounded

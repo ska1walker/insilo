@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, MessageSquareQuote, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ApiError } from "@/lib/api/client";
@@ -34,7 +35,9 @@ export default function AskPage() {
       console.error("ask failed", err);
       if (err instanceof ApiError) {
         if (err.status === 503) {
-          setError("Die KI-Dienste sind gerade nicht erreichbar. Bitte gleich erneut versuchen.");
+          setError(
+            "Die KI-Dienste sind gerade nicht erreichbar. Bitte gleich erneut versuchen.",
+          );
         } else {
           setError(`Anfrage fehlgeschlagen (HTTP ${err.status}).`);
         }
@@ -47,13 +50,20 @@ export default function AskPage() {
 
   return (
     <main className="mx-auto max-w-[860px] px-6 py-12 md:px-12 md:py-16">
-      <h1 className="text-3xl font-medium md:text-4xl">Frag dein Meeting-Archiv</h1>
-      <p className="mt-3 max-w-[640px] text-text-secondary">
+      {/* ── Hero ──────────────────────────────────────────────────── */}
+      <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-meta">
+        Archiv-Suche · Grounded Q&amp;A
+      </p>
+      <h1 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+        Fragen Sie Ihr Meeting-Archiv.
+      </h1>
+      <p className="mt-4 max-w-[640px] text-text-secondary">
         Stellen Sie eine Frage in natürlicher Sprache. Insilo durchsucht die
-        Transkripte und Zusammenfassungen aller Besprechungen Ihrer Organisation
-        und antwortet mit Quellenangaben.
+        Transkripte und Zusammenfassungen aller Besprechungen Ihrer
+        Organisation und antwortet mit Quellenangaben.
       </p>
 
+      {/* ── Form ──────────────────────────────────────────────────── */}
       <form
         className="mt-10"
         onSubmit={(e) => {
@@ -61,29 +71,60 @@ export default function AskPage() {
           submit(question);
         }}
       >
-        <div className="flex flex-col gap-3 md:flex-row">
+        <div className="rounded-lg border border-border-subtle bg-white p-2 transition focus-within:border-text-primary">
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="z. B. Welche Beschlüsse sind in der letzten Beirats-Besprechung gefasst worden?"
-            rows={2}
-            className="input min-h-[88px] flex-1 resize-none"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                submit(question);
+              }
+            }}
+            placeholder="Worüber möchten Sie etwas wissen?"
+            rows={3}
+            className="block w-full resize-none bg-transparent px-3 py-2 text-base leading-relaxed text-text-primary outline-none placeholder:text-text-disabled"
             disabled={phase === "asking"}
           />
-          <button
-            type="submit"
-            className="btn-primary self-start md:self-stretch md:min-w-[140px]"
-            disabled={phase === "asking" || question.trim().length < 4}
-          >
-            {phase === "asking" ? "Suche …" : "Fragen"}
-          </button>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle px-2 pt-2">
+            <p className="text-xs text-text-meta">
+              <span className="mono">⌘ ↵</span> zum Absenden · Antwort
+              dauert je nach Modell 5–20 Sekunden
+            </p>
+            <button
+              type="submit"
+              className="btn-primary inline-flex items-center gap-1.5"
+              disabled={phase === "asking" || question.trim().length < 4}
+            >
+              {phase === "asking" ? (
+                <>
+                  <Sparkles className="h-3.5 w-3.5 animate-pulse" strokeWidth={1.75} />
+                  Sucht …
+                </>
+              ) : (
+                <>
+                  Frage stellen
+                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+                </>
+              )}
+            </button>
+          </div>
         </div>
+      </form>
 
-        {phase === "idle" && (
-          <div className="mt-6 flex flex-wrap gap-2">
-            <span className="mono mr-1 text-xs uppercase tracking-[0.08em] text-text-meta">
-              Beispiele:
-            </span>
+      {/* ── Examples (only in idle state) ─────────────────────────── */}
+      {phase === "idle" && !result && (
+        <section className="mt-12">
+          <div className="mb-4 flex items-baseline gap-2">
+            <MessageSquareQuote
+              className="h-3.5 w-3.5 text-text-meta"
+              strokeWidth={1.75}
+            />
+            <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+              Beispiel-Fragen
+            </p>
+          </div>
+          <div className="grid gap-2">
             {EXAMPLES.map((ex) => (
               <button
                 key={ex}
@@ -92,28 +133,47 @@ export default function AskPage() {
                   setQuestion(ex);
                   submit(ex);
                 }}
-                className="btn-tertiary text-sm"
+                className="group flex items-center justify-between gap-4 rounded-lg border border-border-subtle bg-white px-5 py-4 text-left transition hover:border-text-primary hover:bg-surface-soft"
               >
-                {ex}
+                <span className="text-sm leading-relaxed text-text-primary">
+                  {ex}
+                </span>
+                <ArrowRight
+                  className="h-4 w-4 shrink-0 text-text-meta transition group-hover:translate-x-0.5 group-hover:text-text-primary"
+                  strokeWidth={1.75}
+                />
               </button>
             ))}
           </div>
-        )}
-      </form>
+        </section>
+      )}
 
+      {/* ── Error ─────────────────────────────────────────────────── */}
       {error && (
-        <div className="mt-10 rounded-lg border border-border-subtle bg-white p-6">
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-recording">
+        <div
+          className="mt-10 rounded-lg border bg-white p-6"
+          style={{
+            borderColor: "var(--error)",
+            background: "rgba(163, 58, 47, 0.04)",
+          }}
+        >
+          <p
+            className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--error)" }}
+          >
             Fehler
           </p>
           <p className="mt-2 text-sm text-text-secondary">{error}</p>
         </div>
       )}
 
+      {/* ── Loading skeleton ─────────────────────────────────────── */}
       {phase === "asking" && (
-        <div className="mt-10 space-y-3">
-          <div className="h-6 w-1/3 animate-pulse rounded bg-surface-soft" />
-          <div className="h-32 w-full animate-pulse rounded-lg bg-surface-soft" />
+        <div className="mt-10 space-y-3" aria-busy="true">
+          <div className="h-4 w-1/3 animate-pulse rounded bg-surface-soft" />
+          <div className="h-40 w-full animate-pulse rounded-lg bg-surface-soft" />
+          <div className="h-4 w-1/4 animate-pulse rounded bg-surface-soft" />
+          <div className="h-24 w-full animate-pulse rounded-lg bg-surface-soft" />
         </div>
       )}
 
@@ -127,7 +187,7 @@ function AnswerCard({ result }: { result: AskResponse }) {
     <section className="mt-12 space-y-10">
       <div>
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+          <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
             Antwort
           </p>
           <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
@@ -143,12 +203,16 @@ function AnswerCard({ result }: { result: AskResponse }) {
 
       {result.sources.length > 0 && (
         <div>
-          <p className="mb-4 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-            Quellen ({result.sources.length})
+          <p className="mb-4 mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+            Quellen · {result.sources.length}
           </p>
           <ol className="space-y-3">
             {result.sources.map((s, i) => (
-              <SourceItem key={`${s.meeting_id}-${s.chunk_index}`} index={i + 1} source={s} />
+              <SourceItem
+                key={`${s.meeting_id}-${s.chunk_index}`}
+                index={i + 1}
+                source={s}
+              />
             ))}
           </ol>
         </div>
@@ -159,12 +223,12 @@ function AnswerCard({ result }: { result: AskResponse }) {
 
 function SourceItem({ index, source }: { index: number; source: AskSource }) {
   return (
-    <li className="rounded-lg border border-border-subtle bg-white p-6">
+    <li className="rounded-lg border border-border-subtle bg-white p-6 transition hover:border-border-strong">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div className="flex items-baseline gap-3">
           <span
             className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em]"
-            style={{ color: "var(--gold)" }}
+            style={{ color: "var(--gold-deep)" }}
           >
             [#{index}]
           </span>
@@ -180,7 +244,8 @@ function SourceItem({ index, source }: { index: number; source: AskSource }) {
         </p>
       </div>
       <p className="mt-1 text-[0.8125rem] text-text-meta">
-        {formatMeetingDate(Date.parse(source.meeting_date))} · Abschnitt {source.chunk_index + 1}
+        {formatMeetingDate(Date.parse(source.meeting_date))} · Abschnitt{" "}
+        {source.chunk_index + 1}
       </p>
       <p className="mt-3 text-sm leading-relaxed text-text-secondary">
         {source.content.length > 320

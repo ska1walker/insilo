@@ -21,6 +21,8 @@ from faster_whisper import WhisperModel
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.diarize import diarize, load_embedder
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -38,6 +40,11 @@ class Settings(BaseSettings):
 
     # Where downloaded model weights are cached (/app/cache on Olares).
     cache_dir: str = "/app/cache/whisper"
+
+    # Diarization (Phase A) — anonyme Sprecher-Labels per ECAPA-TDNN.
+    # Beim Erst-Start lädt SpeechBrain ~60 MB Modell-Gewichte.
+    diarization_enabled: bool = True
+    diarization_cache_dir: str = "/app/cache/spkrec-ecapa"
 
     host: str = "0.0.0.0"
     port: int = 8001
@@ -91,6 +98,14 @@ def _load_model() -> WhisperModel:
 async def lifespan(app: FastAPI):
     # Eagerly load so the first request doesn't pay the download cost
     _load_model()
+    if settings.diarization_enabled:
+        try:
+            os.makedirs(settings.diarization_cache_dir, exist_ok=True)
+            load_embedder(settings.diarization_cache_dir)
+        except Exception as exc:
+            # Diarization ist nice-to-have — wenn der Embedder nicht laden
+            # will, fallen wir auf "keine Sprecher-Labels" zurück.
+            log.exception("speaker embedder failed to load: %s", exc)
     yield
 
 
@@ -147,6 +162,20 @@ async def transcribe(
             Segment(start=float(s.start), end=float(s.end), text=s.text.strip())
             for s in segments_iter
         ]
+
+        # Phase A: speaker diarization über die jetzt vorliegenden
+        # Segmente. Bei Fehler oder deaktivierter Diarization lassen wir
+        # speaker=None — Frontend zeigt dann generische Labels.
+        if settings.diarization_enabled and segments:
+            try:
+                labels = diarize(
+                    tmp.name,
+                    [(s.start, s.end) for s in segments],
+                )
+                for seg, label in zip(segments, labels, strict=False):
+                    seg.speaker = label
+            except Exception as exc:
+                log.exception("diarization failed: %s", exc)
 
     return TranscribeResponse(
         language=info.language,

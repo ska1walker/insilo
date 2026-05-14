@@ -14,11 +14,21 @@ WORKDIR /app
 # Install deps first (better layer cache) — only pyproject.toml + a tiny shim
 COPY pyproject.toml ./
 COPY app ./app
+
+# Force CPU-only torch wheel — otherwise pip would pull CUDA libs (~2 GB extra).
+# Order matters: torch first, then the rest can use the already-installed
+# torch as a satisfied dependency.
 RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir \
+      --index-url https://download.pytorch.org/whl/cpu \
+      "torch>=2.2.0" \
  && pip install --no-cache-dir .
 
 # Cache for downloaded model weights — Olares mounts /app/cache here
-RUN mkdir -p /app/cache/whisper && chown -R insilo:insilo /app/cache /app
+# whisper/ — faster-whisper model
+# spkrec-ecapa/ — SpeechBrain speaker-embedding model (Phase A diarization)
+RUN mkdir -p /app/cache/whisper /app/cache/spkrec-ecapa \
+ && chown -R insilo:insilo /app/cache /app
 
 USER insilo
 ENV PYTHONPATH=/app

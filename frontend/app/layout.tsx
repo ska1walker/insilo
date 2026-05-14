@@ -65,8 +65,8 @@ export default function RootLayout({
               <Link href="/einstellungen" className="btn-tertiary">
                 Einstellungen
               </Link>
-              <Link href="/style" className="btn-tertiary hidden md:inline-flex">
-                Design
+              <Link href="/ueber" className="btn-tertiary hidden md:inline-flex">
+                Über Insilo
               </Link>
               <Link href="/aufnahme" className="btn-primary">
                 Aufnahme

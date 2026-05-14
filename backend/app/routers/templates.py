@@ -1,4 +1,15 @@
-"""Templates: read-only system templates + per-org system-prompt overrides."""
+"""Templates: system templates (read-only) + per-org templates (full CRUD).
+
+The 4 seed system templates ship with fixed schemas tied to specific use
+cases (Mandantengespräch, Vertriebsgespräch, …). Orgs can customize their
+system_prompt via the /prompt endpoints below — name/description/schema
+stay frozen.
+
+Org templates are fully editable: name, description, system_prompt — they
+all use a default flexible schema (DEFAULT_USER_SCHEMA) so the
+SummaryView's generic renderer can display them without per-template
+knowledge.
+"""
 
 from __future__ import annotations
 
@@ -12,6 +23,31 @@ from app.auth import CurrentUser, get_current_user
 from app.db import acquire
 
 router = APIRouter(prefix="/api/v1", tags=["templates"])
+
+
+# Sensible default schema for user-created templates. Flexible enough to
+# cover most meeting shapes; SummaryView already knows the field names
+# via LABEL_OVERRIDES.
+DEFAULT_USER_SCHEMA: dict = {
+    "type": "object",
+    "properties": {
+        "zusammenfassung": {"type": "string"},
+        "kernpunkte": {"type": "array", "items": {"type": "string"}},
+        "entscheidungen": {"type": "array", "items": {"type": "string"}},
+        "aufgaben": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "was": {"type": "string"},
+                    "wer": {"type": "string"},
+                    "wann": {"type": "string"},
+                },
+            },
+        },
+        "offene_fragen": {"type": "array", "items": {"type": "string"}},
+    },
+}
 
 
 def _base_dto(row) -> dict:
@@ -157,4 +193,125 @@ async def reset_template_prompt(
             """,
             user.org_id,
             template_id,
+        )
+
+
+# ─── Org-Template CRUD ────────────────────────────────────────────────
+
+
+class TemplateCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    description: str = Field(default="", max_length=500)
+    system_prompt: str = Field(..., min_length=10, max_length=20_000)
+
+
+class TemplateUpdate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    description: str = Field(default="", max_length=500)
+    system_prompt: str = Field(..., min_length=10, max_length=20_000)
+
+
+@router.post("/templates", status_code=201)
+async def create_template(
+    payload: TemplateCreate,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """Create a new org-owned template with the flexible default schema."""
+    async with acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            insert into public.templates (
+                org_id, name, description, category,
+                system_prompt, output_schema,
+                is_system, is_active, version, created_by
+            )
+            values ($1, $2, $3, 'custom', $4, $5::jsonb, false, true, 1, $6)
+            returning id, name, description, category, is_system, version, output_schema
+            """,
+            user.org_id,
+            payload.name.strip(),
+            payload.description.strip(),
+            payload.system_prompt.strip(),
+            json.dumps(DEFAULT_USER_SCHEMA),
+            user.user_id,
+        )
+    dto = _base_dto(row)
+    dto["is_customized"] = False
+    return dto
+
+
+@router.put("/templates/{template_id}")
+async def update_template(
+    template_id: UUID,
+    payload: TemplateUpdate,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """Update an org-owned template's name, description and system_prompt.
+
+    System templates are read-only here — use PUT /templates/{id}/prompt
+    for the customization override.
+    """
+    async with acquire() as conn:
+        tpl = await conn.fetchrow(
+            """
+            select id, is_system from public.templates
+            where id = $1 and is_active = true
+            """,
+            template_id,
+        )
+        if not tpl:
+            raise HTTPException(404, "template not found")
+        if tpl["is_system"]:
+            raise HTTPException(
+                403,
+                "system templates can only be customized via /prompt — name and "
+                "description are fixed",
+            )
+
+        row = await conn.fetchrow(
+            """
+            update public.templates
+            set name = $2, description = $3, system_prompt = $4,
+                version = version + 1, updated_at = now()
+            where id = $1 and org_id = $5 and is_active = true
+            returning id, name, description, category, is_system, version, output_schema
+            """,
+            template_id,
+            payload.name.strip(),
+            payload.description.strip(),
+            payload.system_prompt.strip(),
+            user.org_id,
+        )
+        if not row:
+            raise HTTPException(404, "template not found in your organisation")
+    dto = _base_dto(row)
+    dto["is_customized"] = False
+    return dto
+
+
+@router.delete("/templates/{template_id}", status_code=204)
+async def delete_template(
+    template_id: UUID,
+    user: CurrentUser = Depends(get_current_user),
+) -> None:
+    """Soft-delete an org-owned template. System templates are protected."""
+    async with acquire() as conn:
+        tpl = await conn.fetchrow(
+            "select is_system, org_id from public.templates where id = $1 and is_active = true",
+            template_id,
+        )
+        if not tpl:
+            raise HTTPException(404, "template not found")
+        if tpl["is_system"]:
+            raise HTTPException(403, "system templates cannot be deleted")
+        if tpl["org_id"] != user.org_id:
+            raise HTTPException(404, "template not found in your organisation")
+
+        await conn.execute(
+            """
+            update public.templates set is_active = false, updated_at = now()
+            where id = $1 and org_id = $2
+            """,
+            template_id,
+            user.org_id,
         )

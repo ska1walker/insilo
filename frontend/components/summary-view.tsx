@@ -8,6 +8,15 @@ import type { Summary } from "@/lib/api/meetings";
  */
 
 const LABEL_OVERRIDES: Record<string, string> = {
+  // Default schema for user-created templates (since v0.1.25)
+  zusammenfassung: "Zusammenfassung",
+  kernpunkte: "Kernpunkte",
+  entscheidungen: "Entscheidungen",
+  aufgaben: "Aufgaben",
+  was: "Was",
+  wer: "Wer",
+  wann: "Wann",
+  // Existing seed templates
   anwesende: "Anwesende",
   kernthemen: "Kernthemen",
   wichtige_aussagen: "Wichtige Aussagen",

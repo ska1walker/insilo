@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPut } from "./client";
+import { apiDelete, apiGet, apiPost, apiPut } from "./client";
 
 export type TemplateDto = {
   id: string;
@@ -35,4 +35,27 @@ export async function updateTemplatePrompt(
 
 export async function resetTemplatePrompt(id: string): Promise<void> {
   await apiDelete(`/api/v1/templates/${id}/prompt`);
+}
+
+export type TemplatePayload = {
+  name: string;
+  description: string;
+  system_prompt: string;
+};
+
+export async function createTemplate(
+  payload: TemplatePayload,
+): Promise<TemplateDto> {
+  return apiPost<TemplateDto>("/api/v1/templates", payload);
+}
+
+export async function updateTemplate(
+  id: string,
+  payload: TemplatePayload,
+): Promise<TemplateDto> {
+  return apiPut<TemplateDto>(`/api/v1/templates/${id}`, payload);
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  await apiDelete(`/api/v1/templates/${id}`);
 }

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { SummaryView } from "@/components/summary-view";
+import { useToast } from "@/components/toast";
 import { TranscriptView } from "@/components/transcript-view";
 import { ApiError } from "@/lib/api/client";
 import {
@@ -32,6 +33,7 @@ const POLLING_STATUS = new Set([
 export default function MeetingDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const toast = useToast();
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -86,25 +88,53 @@ export default function MeetingDetail() {
       }, 1500);
     } catch (err) {
       console.error("retry-summary failed", err);
-      window.alert("Erneutes Zusammenfassen fehlgeschlagen. Bitte später erneut versuchen.");
+      toast.show({
+        message: "Erneutes Zusammenfassen fehlgeschlagen. Bitte später erneut versuchen.",
+        variant: "error",
+      });
     } finally {
       setRetrying(false);
     }
   }
 
-  async function onDelete() {
+  function onDelete() {
     if (state.kind !== "ok") return;
-    const ok = window.confirm(
-      `„${state.meeting.title}" endgültig löschen? Dieser Schritt kann nicht rückgängig gemacht werden.`,
-    );
-    if (!ok) return;
-    try {
-      await deleteMeeting(state.meeting.id);
-      router.push("/");
-    } catch (err) {
-      console.error("delete failed", err);
-      window.alert("Löschen fehlgeschlagen. Bitte erneut versuchen.");
-    }
+    const meeting = state.meeting;
+    let cancelled = false;
+
+    // Optimistic UX: hide the detail view immediately by routing back to
+    // the list, but defer the actual DELETE call. The toast holds a 5-second
+    // undo window — if the user clicks "Rückgängig" within that, we never
+    // hit the API.
+    router.push("/");
+
+    toast.show({
+      message: `„${meeting.title}" wird gelöscht`,
+      variant: "undo",
+      duration: 5000,
+      action: {
+        label: "Rückgängig",
+        onClick: () => {
+          cancelled = true;
+          // Send the user back to the detail page they came from.
+          router.push(`/m/${meeting.id}`);
+        },
+      },
+      onTimeout: async () => {
+        if (cancelled) return;
+        try {
+          await deleteMeeting(meeting.id);
+        } catch (err) {
+          console.error("delete failed", err);
+          toast.show({
+            message: "Löschen fehlgeschlagen. Bitte erneut versuchen.",
+            variant: "error",
+          });
+          // Bring the user back to the meeting so they can retry.
+          router.push(`/m/${meeting.id}`);
+        }
+      },
+    });
   }
 
   if (state.kind === "loading") {

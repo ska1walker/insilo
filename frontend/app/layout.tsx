@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Lexend_Deca, Inter, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { ToastProvider } from "@/components/toast";
 import "./globals.css";
 
 const lexend = Lexend_Deca({
@@ -50,32 +51,34 @@ export default function RootLayout({
       className={`${lexend.variable} ${inter.variable} ${jetbrains.variable}`}
     >
       <body>
-        <header className="sticky top-0 z-40 border-b border-border-subtle bg-white/90 backdrop-blur">
-          <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 md:px-12">
-            <Link
-              href="/"
-              className="font-display text-lg font-medium tracking-tight"
-            >
-              insilo
-            </Link>
-            <nav className="flex items-center gap-2">
-              <Link href="/ask" className="btn-tertiary">
-                Fragen
+        <ToastProvider>
+          <header className="sticky top-0 z-40 border-b border-border-subtle bg-white/90 backdrop-blur">
+            <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 md:px-12">
+              <Link
+                href="/"
+                className="font-display text-lg font-medium tracking-tight"
+              >
+                insilo
               </Link>
-              <Link href="/einstellungen" className="btn-tertiary">
-                Einstellungen
-              </Link>
-              <Link href="/ueber" className="btn-tertiary hidden md:inline-flex">
-                Über Insilo
-              </Link>
-              <Link href="/aufnahme" className="btn-primary">
-                Aufnahme
-              </Link>
-            </nav>
-          </div>
-        </header>
-        {children}
-        <ServiceWorkerRegister />
+              <nav className="flex items-center gap-2">
+                <Link href="/ask" className="btn-tertiary">
+                  Fragen
+                </Link>
+                <Link href="/einstellungen" className="btn-tertiary">
+                  Einstellungen
+                </Link>
+                <Link href="/ueber" className="btn-tertiary hidden md:inline-flex">
+                  Über Insilo
+                </Link>
+                <Link href="/aufnahme" className="btn-primary">
+                  Aufnahme
+                </Link>
+              </nav>
+            </div>
+          </header>
+          {children}
+          <ServiceWorkerRegister />
+        </ToastProvider>
       </body>
     </html>
   );

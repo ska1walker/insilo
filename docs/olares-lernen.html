@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Olares verstehen — Insilo-Lernpfad</title>
+  <meta name="description" content="Wie funktioniert Olares? Was sind Pods, Namespaces, NetworkPolicies? Und wo lebt Insilo darin? Ein verständliches Lerndokument im Insilo-Design.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Design-Tokens (1:1 aus frontend/app/globals.css) ─────────────── */
+    :root {
+      --white: #FFFFFF;
+      --black: #0A0A0A;
+
+      --gold: #C9A961;
+      --gold-light: #E6D4A3;
+      --gold-deep: #9C8147;
+      --gold-faint: #F5EDD9;
+
+      --surface-soft: #FAFAF7;
+      --surface-warm: #F5F3EE;
+
+      --border-subtle: #E8E6E1;
+      --border-strong: #D4D1CA;
+
+      --text-primary: #0A0A0A;
+      --text-secondary: #4A4842;
+      --text-meta: #737065;
+      --text-disabled: #A8A599;
+
+      --recording: #C84A3F;
+      --success: #4A7C59;
+      --warning: #B8893C;
+      --error: #A33A2F;
+
+      --font-display: "Lexend Deca", system-ui, -apple-system, sans-serif;
+      --font-body: "Inter", system-ui, -apple-system, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      background: var(--white);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a { color: inherit; }
+
+    /* ── Brand bar ─────────────────────────────────────────────────────── */
+    .brand-bar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .brand-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-meta);
+    }
+
+    /* ── Layout ────────────────────────────────────────────────────────── */
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+      padding: 0 24px;
+    }
+    @media (min-width: 960px) {
+      .layout {
+        grid-template-columns: 240px minmax(0, 1fr);
+        gap: 56px;
+        padding: 0 32px;
+      }
+    }
+
+    /* ── TOC ───────────────────────────────────────────────────────────── */
+    .toc {
+      position: sticky;
+      top: 73px;
+      align-self: start;
+      max-height: calc(100vh - 73px);
+      overflow-y: auto;
+      padding: 32px 0 32px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    @media (min-width: 960px) {
+      .toc {
+        padding: 48px 0;
+        border-bottom: 0;
+      }
+    }
+    .toc-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-meta);
+      margin: 0 0 12px;
+    }
+    .toc-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .toc-link {
+      display: block;
+      padding: 6px 10px;
+      border-left: 2px solid transparent;
+      color: var(--text-meta);
+      font-size: 14px;
+      text-decoration: none;
+      transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+    }
+    .toc-link:hover {
+      color: var(--text-primary);
+      background: var(--surface-soft);
+    }
+    .toc-link.is-active {
+      color: var(--text-primary);
+      border-left-color: var(--gold);
+      font-weight: 500;
+    }
+
+    /* ── Main content ──────────────────────────────────────────────────── */
+    main { padding: 32px 0 96px; }
+    @media (min-width: 960px) { main { padding: 48px 0 120px; } }
+
+    section { margin: 0 0 96px; scroll-margin-top: 96px; }
+    section:last-of-type { margin-bottom: 0; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-meta);
+      margin: 0 0 16px;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin: 0 0 24px;
+    }
+    h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.015em;
+      margin: 0 0 16px;
+    }
+    h3 {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin: 24px 0 8px;
+    }
+
+    p { margin: 0 0 16px; color: var(--text-secondary); max-width: 64ch; }
+    p.lead {
+      font-size: 1.0625rem;
+      color: var(--text-secondary);
+      max-width: 56ch;
+    }
+
+    ul, ol { color: var(--text-secondary); max-width: 64ch; padding-left: 1.4em; }
+    li { margin: 4px 0; }
+    li strong { color: var(--text-primary); font-weight: 500; }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.875em;
+      background: var(--surface-soft);
+      border: 1px solid var(--border-subtle);
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: var(--text-primary);
+    }
+
+    pre {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      line-height: 1.55;
+      background: var(--surface-soft);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 16px 20px;
+      overflow-x: auto;
+      margin: 16px 0;
+      color: var(--text-primary);
+    }
+    pre code { background: transparent; border: 0; padding: 0; }
+
+    .card {
+      background: var(--surface-soft);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin: 24px 0;
+    }
+    .card.warm { background: var(--surface-warm); }
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      margin: 0 0 8px;
+      color: var(--text-primary);
+    }
+    .card p:last-child { margin-bottom: 0; }
+
+    details {
+      margin: 16px 0;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+    }
+    summary {
+      cursor: pointer;
+      font-size: 0.8125rem;
+      color: var(--text-meta);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: var(--font-mono);
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    summary::before { content: "▸"; transition: transform 150ms ease; }
+    details[open] summary::before { transform: rotate(90deg); }
+    summary::-webkit-details-marker { display: none; }
+    details > *:not(summary) { margin-top: 12px; }
+
+    /* ── Jargon-Tooltips ────────────────────────────────────────────── */
+    .jargon {
+      position: relative;
+      border-bottom: 1px dashed var(--gold-deep);
+      cursor: help;
+    }
+    .jargon:hover::after,
+    .jargon:focus::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-primary);
+      color: var(--white);
+      font-size: 0.75rem;
+      font-family: var(--font-body);
+      font-weight: 400;
+      line-height: 1.4;
+      padding: 8px 12px;
+      border-radius: 6px;
+      width: max-content;
+      max-width: 320px;
+      white-space: normal;
+      z-index: 5;
+      box-shadow: 0 4px 16px rgba(10, 10, 10, 0.15);
+      pointer-events: none;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.875rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 150ms ease, color 150ms ease;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: var(--text-primary);
+      color: var(--white);
+    }
+    .btn-primary:hover { background: #1f1f1f; }
+    .btn-tertiary {
+      background: transparent;
+      color: var(--text-secondary);
+      border-color: var(--border-subtle);
+    }
+    .btn-tertiary:hover { background: var(--surface-soft); color: var(--text-primary); }
+
+    /* ── Hero ────────────────────────────────────────────────────────── */
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: baseline;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-subtle);
+      color: var(--text-meta);
+      font-size: 0.8125rem;
+    }
+    .hero-meta .pip {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* ── Analogie-Grid ────────────────────────────────────────────────── */
+    .analogie-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin: 24px 0;
+    }
+    @media (min-width: 640px) {
+      .analogie-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .analogie-row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      background: var(--white);
+    }
+    .analogie-real {
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .analogie-tech {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-meta);
+      text-transform: lowercase;
+    }
+    .analogie-arrow { color: var(--gold-deep); font-weight: 500; }
+
+    /* ── Mini-SVGs ────────────────────────────────────────────────────── */
+    .mini-svg {
+      width: 100%;
+      max-width: 560px;
+      height: auto;
+      margin: 24px 0;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--white);
+      padding: 16px;
+    }
+
+    /* ── Architektur-Diagramm ─────────────────────────────────────────── */
+    .arch-wrap {
+      margin: 24px 0;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--white);
+      overflow: hidden;
+    }
+    .arch-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      background:
+        linear-gradient(to right, var(--border-subtle) 1px, transparent 1px) 0 0 / 40px 40px,
+        linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px) 0 0 / 40px 40px,
+        var(--white);
+      opacity: 1;
+    }
+    .arch-svg .ns-box {
+      fill: var(--surface-soft);
+      stroke: var(--gold);
+      stroke-width: 1;
+      stroke-dasharray: 6 4;
+    }
+    .arch-svg .ns-box.ext { stroke: var(--border-strong); stroke-dasharray: 4 4; }
+    .arch-svg .ns-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      fill: var(--text-meta);
+    }
+    .arch-svg .pod {
+      fill: var(--white);
+      stroke: var(--text-primary);
+      stroke-width: 1.5;
+      cursor: pointer;
+      transition: fill 150ms ease, stroke 150ms ease;
+    }
+    .arch-svg .pod:hover { fill: var(--surface-soft); }
+    .arch-svg .pod.active {
+      fill: var(--gold-faint);
+      stroke: var(--gold-deep);
+      stroke-width: 2;
+    }
+    .arch-svg .pod-label {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 500;
+      fill: var(--text-primary);
+      pointer-events: none;
+    }
+    .arch-svg .pod-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      fill: var(--text-meta);
+      pointer-events: none;
+    }
+    .arch-svg .arrow {
+      stroke: var(--text-meta);
+      stroke-width: 1.5;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+    .arch-svg .arrow.gold {
+      stroke: var(--gold-deep);
+      stroke-dasharray: 4 3;
+      marker-end: url(#arrowhead-gold);
+    }
+    .arch-svg .arrow-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      fill: var(--text-meta);
+    }
+    .arch-svg .ext-node {
+      fill: var(--white);
+      stroke: var(--border-strong);
+      stroke-width: 1.5;
+      stroke-dasharray: 0;
+      cursor: pointer;
+    }
+    .arch-svg .ext-node.active {
+      fill: var(--gold-faint);
+      stroke: var(--gold-deep);
+      stroke-width: 2;
+    }
+
+    .arch-detail {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--surface-soft);
+      min-height: 120px;
+    }
+    .arch-detail-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 500;
+      margin: 0 0 6px;
+    }
+    .arch-detail-key {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold-deep);
+      margin: 0 0 12px;
+    }
+    .arch-detail dl {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 6px 16px;
+      margin: 0;
+      font-size: 0.875rem;
+    }
+    .arch-detail dt {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-meta);
+      align-self: baseline;
+    }
+    .arch-detail dd { margin: 0; color: var(--text-secondary); }
+    .arch-detail-hint {
+      font-size: 0.8125rem;
+      color: var(--text-meta);
+      margin: 0;
+    }
+
+    /* ── Stepper ──────────────────────────────────────────────────────── */
+    .stepper {
+      margin: 24px 0;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--white);
+      overflow: hidden;
+    }
+    .stepper-tabs {
+      display: flex;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--surface-soft);
+    }
+    .stepper-tab {
+      flex: 1 0 auto;
+      padding: 14px 16px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: 0.8125rem;
+      color: var(--text-meta);
+      text-align: left;
+      border-bottom: 2px solid transparent;
+      transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+      white-space: nowrap;
+    }
+    .stepper-tab:hover { color: var(--text-primary); background: var(--white); }
+    .stepper-tab.is-active {
+      color: var(--text-primary);
+      background: var(--white);
+      border-bottom-color: var(--gold);
+      font-weight: 500;
+    }
+    .stepper-tab-num {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--text-meta);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .stepper-tab.is-active .stepper-tab-num { color: var(--gold-deep); }
+    .stepper-panel { padding: 24px 28px; display: none; }
+    .stepper-panel.is-active { display: block; }
+    .stepper-panel p { max-width: 60ch; }
+    .stepper-panel .micro {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .stepper-panel .micro-box {
+      padding: 8px 12px;
+      background: var(--surface-soft);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-primary);
+    }
+    .stepper-panel .micro-arrow { color: var(--gold-deep); }
+
+    /* ── Lessons ──────────────────────────────────────────────────────── */
+    .lessons { list-style: none; padding: 0; counter-reset: lesson; }
+    .lesson {
+      padding: 20px 24px 20px 64px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--white);
+      position: relative;
+      margin: 12px 0;
+      counter-increment: lesson;
+    }
+    .lesson::before {
+      content: counter(lesson, decimal-leading-zero);
+      position: absolute;
+      left: 20px;
+      top: 22px;
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--gold-deep);
+      letter-spacing: 0.04em;
+    }
+    .lesson-title {
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      margin: 0 0 6px;
+    }
+    .lesson-sym, .lesson-fix {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin: 2px 0;
+    }
+    .lesson-sym strong, .lesson-fix strong {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-meta);
+      font-weight: 500;
+      display: inline-block;
+      min-width: 76px;
+    }
+
+    /* ── Glossary ─────────────────────────────────────────────────────── */
+    .glossary {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px 24px;
+      margin: 24px 0 0;
+    }
+    @media (min-width: 720px) {
+      .glossary { grid-template-columns: 180px 1fr; }
+    }
+    .glossary dt {
+      font-family: var(--font-display);
+      font-weight: 500;
+      color: var(--text-primary);
+      padding: 12px 0 0;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .glossary dd {
+      margin: 0;
+      padding: 12px 0;
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    @media (max-width: 719px) {
+      .glossary dd { border-top: 0; padding-top: 4px; padding-bottom: 16px; }
+    }
+
+    /* ── Footer ───────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 32px 24px;
+      margin-top: 64px;
+      font-size: 0.8125rem;
+      color: var(--text-meta);
+    }
+    footer .footer-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    footer a { color: var(--text-secondary); text-decoration: underline; text-underline-offset: 3px; }
+    footer .mono { font-family: var(--font-mono); }
+  </style>
+</head>
+
+<body>
+
+<header class="brand-bar">
+  <div class="brand-inner">
+    <span class="brand-name">insilo</span>
+    <span class="brand-tag">Lernpfad · Olares verstehen</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Table of contents ─────────────────────────────────────────── -->
+  <nav class="toc" aria-label="Inhaltsverzeichnis">
+    <p class="toc-eyebrow">Kapitel</p>
+    <ul class="toc-list">
+      <li><a class="toc-link" href="#intro">Worum geht es?</a></li>
+      <li><a class="toc-link" href="#buero">Die Bürohaus-Analogie</a></li>
+      <li><a class="toc-link" href="#namespaces">1 · Namespaces</a></li>
+      <li><a class="toc-link" href="#pods">2 · Pods &amp; Container</a></li>
+      <li><a class="toc-link" href="#services">3 · Services &amp; DNS</a></li>
+      <li><a class="toc-link" href="#networkpolicies">4 · NetworkPolicies</a></li>
+      <li><a class="toc-link" href="#volumes">5 · Volumes &amp; hostPath</a></li>
+      <li><a class="toc-link" href="#insilo">Insilo-Architektur</a></li>
+      <li><a class="toc-link" href="#lifecycle">Lifecycle einer Aufnahme</a></li>
+      <li><a class="toc-link" href="#stolpersteine">Stolpersteine</a></li>
+      <li><a class="toc-link" href="#glossar">Glossar</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Main ──────────────────────────────────────────────────────── -->
+  <main>
+
+    <!-- ─────────── Intro ─────────── -->
+    <section id="intro">
+      <p class="eyebrow">Lernpfad · Olares verstehen</p>
+      <h1>Wie funktioniert eigentlich Insilo?</h1>
+      <p class="lead">
+        Insilo lebt in einer kleinen Box im Serverraum. Diese Box heißt
+        <span class="jargon" data-tip="Olares ist ein selbst-hostbares Cluster-Betriebssystem auf Basis von k3s — eine sehr schlanke Kubernetes-Variante.">Olares</span>.
+        Auf den nächsten Seiten erklären wir Ihnen, wie diese Box im Inneren
+        aufgebaut ist — Schritt für Schritt, mit Bildern und ohne unnötige
+        Fachwörter. Wenn Sie eine Aufnahme aus der App heraus starten,
+        wandert sie durch viele kleine Zimmer und über viele kurze Wege.
+        Wir zeigen Ihnen, wo sie überall vorbeimuss.
+      </p>
+      <div class="hero-meta">
+        <span><span class="pip"></span>Lesedauer ≈ 12 Minuten</span>
+        <span>Keine Vorkenntnisse nötig</span>
+        <span>Schreibstil: Sie-Form, ruhig, sachlich</span>
+      </div>
+    </section>
+
+    <!-- ─────────── Bürohaus-Analogie ─────────── -->
+    <section id="buero">
+      <p class="eyebrow">Modell · Die Bürohaus-Analogie</p>
+      <h2>Olares ist ein digitales Bürogebäude.</h2>
+      <p>
+        Stellen Sie sich Olares vor wie ein Bürohaus, das bei Ihnen im
+        Serverraum steht. Im Inneren wohnen verschiedene Mieter — jeder
+        Mieter ist eine App. Insilo ist einer dieser Mieter, andere wären
+        beispielsweise die Sprachmodell-Gateway <code>LiteLLM</code> oder
+        ein Notiz-Tool.
+      </p>
+      <p>
+        Jeder Mieter hat sein eigenes Stockwerk. Im Stockwerk gibt es
+        Räume. In jedem Raum stehen Geräte. Und es gibt eine
+        Telefonzentrale, die alle Räume miteinander verbindet — sowohl
+        innerhalb desselben Stockwerks als auch zwischen den Stockwerken.
+      </p>
+
+      <div class="analogie-grid">
+        <div class="analogie-row">
+          <span class="analogie-real">Stockwerk</span>
+          <span class="analogie-arrow">→</span>
+          <span class="analogie-tech">Namespace</span>
+        </div>
+        <div class="analogie-row">
+          <span class="analogie-real">Raum</span>
+          <span class="analogie-arrow">→</span>
+          <span class="analogie-tech">Pod</span>
+        </div>
+        <div class="analogie-row">
+          <span class="analogie-real">Gerät im Raum</span>
+          <span class="analogie-arrow">→</span>
+          <span class="analogie-tech">Container</span>
+        </div>
+        <div class="analogie-row">
+          <span class="analogie-real">Telefonzentrale</span>
+          <span class="analogie-arrow">→</span>
+          <span class="analogie-tech">Service · Cluster-DNS</span>
+        </div>
+        <div class="analogie-row">
+          <span class="analogie-real">Schlüsselkarten an Türen</span>
+          <span class="analogie-arrow">→</span>
+          <span class="analogie-tech">NetworkPolicy</span>
+        </div>
+        <div class="analogie-row">
+          <span class="analogie-real">Lagerraum neben dem Stockwerk</span>
+          <span class="analogie-arrow">→</span>
+          <span class="analogie-tech">Volume · hostPath</span>
+        </div>
+      </div>
+
+      <p>
+        Diese sechs Bilder begleiten Sie durch das ganze Dokument. Wenn
+        ein Begriff Sie kalt erwischt — die Tooltips beim Hovern sind Ihre
+        Eselsbrücke.
+      </p>
+    </section>
+
+    <!-- ─────────── Namespaces ─────────── -->
+    <section id="namespaces">
+      <p class="eyebrow">Konzept 01 · Namespaces</p>
+      <h2>Stockwerke: eine pro App.</h2>
+      <p>
+        Wenn Sie eine App auf Olares installieren, legt Olares automatisch
+        ein neues Stockwerk an — einen
+        <span class="jargon" data-tip="Ein Namespace ist eine logische Untergliederung des Kubernetes-Clusters. Pods, Services, NetworkPolicies und ConfigMaps gehören jeweils zu genau einem Namespace.">Namespace</span>.
+        Insilos Stockwerk heißt zum Beispiel <code>insilo-kaivostudio</code>.
+        Der zweite Teil <code>kaivostudio</code> ist Ihr Olares-Username —
+        so weiß die Box, wem das Stockwerk gehört.
+      </p>
+
+      <div class="card">
+        <p class="card-title">Warum getrennte Stockwerke?</p>
+        <ul>
+          <li>Damit eine App nicht versehentlich auf die Sachen einer anderen zugreift.</li>
+          <li>Damit Sie einen Mieter rauswerfen können (App uninstall), ohne dass die anderen davon etwas merken.</li>
+          <li>Damit Olares pro Stockwerk eigene Sicherheitsregeln vergeben kann.</li>
+        </ul>
+      </div>
+
+      <h3>So sieht das auf einer typischen Box aus</h3>
+      <ul>
+        <li><code>insilo-kaivostudio</code> — unsere App</li>
+        <li><code>litellm-kaivostudio</code> — die Sprachmodell-Gateway</li>
+        <li><code>user-system-kaivostudio</code> — die geteilten System-Datenbanken (Postgres, Redis)</li>
+        <li><code>user-space-kaivostudio</code> — der Olares-Hauptbenutzer und seine Files</li>
+        <li><code>os-platform</code> — Olares' eigene Plattform-Dienste</li>
+      </ul>
+
+      <details>
+        <summary>Im Terminal nachschauen</summary>
+        <pre><code>$ kubectl get ns
+NAME                       STATUS   AGE
+insilo-kaivostudio         Active   2d
+litellm-kaivostudio        Active   3d
+user-system-kaivostudio    Active   4d
+os-platform                Active   4d</code></pre>
+        <p>
+          Jede Zeile ist ein Stockwerk. Olares hat dazu noch zusätzliche
+          Stockwerke für interne Aufgaben — die meisten davon brauchen Sie
+          nicht zu kennen.
+        </p>
+      </details>
+    </section>
+
+    <!-- ─────────── Pods + Container ─────────── -->
+    <section id="pods">
+      <p class="eyebrow">Konzept 02 · Pods &amp; Container</p>
+      <h2>Räume und Geräte: was wirklich läuft.</h2>
+      <p>
+        Ein <span class="jargon" data-tip="Ein Pod ist die kleinste deploybare Einheit in Kubernetes. Er bündelt einen oder mehrere Container, die sich Netzwerk und Volumes teilen.">Pod</span>
+        ist ein Raum im Stockwerk. In diesem Raum steht meistens genau ein
+        Gerät — der <span class="jargon" data-tip="Ein Container ist ein verpacktes Programm samt allen Bibliotheken, das in einem isolierten Prozess läuft.">Container</span>.
+        Manchmal stehen aber auch zwei oder drei Geräte zusammen in einem
+        Raum, wenn sie eng zusammenarbeiten sollen. Das nennt man dann
+        einen Multi-Container-Pod.
+      </p>
+
+      <h3>Die fünf Räume von Insilo</h3>
+      <ul>
+        <li><strong>Frontend-Raum.</strong> Hier steht die Web-Oberfläche (PWA). Zusätzlich steht ein <em>Türsteher</em> in diesem Raum — der <span class="jargon" data-tip="Envoy ist ein Proxy-Server, den Olares automatisch als Sidecar vor das Frontend stellt. Er validiert das Authelia-Cookie, bevor eine Anfrage zur App durchgelassen wird.">Envoy-Sidecar</span>, der prüft, ob ein Besucher reinkommen darf.</li>
+        <li><strong>Backend-Raum.</strong> Hier rechnet der API-Server (FastAPI). Er hat <em>keinen</em> Envoy davor — interne Anfragen vom Frontend sollen direkt durch.</li>
+        <li><strong>Worker-Raum.</strong> Hier laufen Hintergrund-Jobs (Celery): Transkription, Zusammenfassung, Embedding.</li>
+        <li><strong>Whisper-Raum.</strong> Hier transkribiert OpenAIs Sprachmodell <code>large-v3</code> die Aufnahmen.</li>
+        <li><strong>Embeddings-Raum.</strong> Hier wandelt das BGE-M3-Modell Text in Vektoren um — die Grundlage für die „Fragen"-Funktion.</li>
+      </ul>
+
+      <svg class="mini-svg" viewBox="0 0 560 220" role="img" aria-label="Stockwerk-Insilo mit fünf Pod-Räumen.">
+        <rect x="10" y="10" width="540" height="200" rx="8" fill="var(--surface-soft)" stroke="var(--gold)" stroke-width="1" stroke-dasharray="6 4"/>
+        <text x="20" y="28" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)" letter-spacing="1">INSILO-KAIVOSTUDIO</text>
+        <!-- Frontend (2 container) -->
+        <rect x="30" y="50" width="140" height="60" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="100" y="78" text-anchor="middle" font-family="var(--font-display)" font-size="13" font-weight="500" fill="var(--text-primary)">Frontend</text>
+        <text x="100" y="96" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)">PWA + Envoy · 2/2</text>
+        <!-- Backend -->
+        <rect x="190" y="50" width="140" height="60" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="260" y="78" text-anchor="middle" font-family="var(--font-display)" font-size="13" font-weight="500" fill="var(--text-primary)">Backend</text>
+        <text x="260" y="96" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)">FastAPI · 1/1</text>
+        <!-- Worker -->
+        <rect x="350" y="50" width="140" height="60" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="420" y="78" text-anchor="middle" font-family="var(--font-display)" font-size="13" font-weight="500" fill="var(--text-primary)">Worker</text>
+        <text x="420" y="96" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)">Celery · 1/1</text>
+        <!-- Whisper -->
+        <rect x="110" y="130" width="140" height="60" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="180" y="158" text-anchor="middle" font-family="var(--font-display)" font-size="13" font-weight="500" fill="var(--text-primary)">Whisper</text>
+        <text x="180" y="176" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)">faster-whisper · 1/1</text>
+        <!-- Embeddings -->
+        <rect x="270" y="130" width="160" height="60" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="350" y="158" text-anchor="middle" font-family="var(--font-display)" font-size="13" font-weight="500" fill="var(--text-primary)">Embeddings</text>
+        <text x="350" y="176" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)">BGE-M3 · 1/1</text>
+      </svg>
+
+      <p>
+        Wenn ein Container abstürzt, baut Olares automatisch einen neuen —
+        der Raum bleibt, das Gerät wird ersetzt. Wenn das ganze Stockwerk
+        neu gebaut wird (also die App neu installiert), kann der Pod an
+        einer anderen physischen Stelle landen — aber das merken Sie nie,
+        weil die Telefonzentrale den Pod trotzdem findet. Das ist
+        Kapitel 3.
+      </p>
+    </section>
+
+    <!-- ─────────── Services + DNS ─────────── -->
+    <section id="services">
+      <p class="eyebrow">Konzept 03 · Services &amp; Cluster-DNS</p>
+      <h2>Die Telefonzentrale: wie zwei Pods sich finden.</h2>
+      <p>
+        Damit zwei Pods miteinander reden können, brauchen sie eine
+        Adresse. Pods bewegen sich aber von Zeit zu Zeit (Restarts,
+        Updates, Knotenausfälle). Deshalb gibt Olares jedem Pod eine
+        <strong>Service-Adresse</strong>, die bleibt — wie eine interne
+        Telefonnummer, die einen Mitarbeiter erreicht, egal an welchem
+        Schreibtisch er gerade sitzt.
+      </p>
+
+      <p>Die volle Form einer Service-Adresse lautet:</p>
+      <pre><code>&lt;service-name&gt;.&lt;namespace&gt;.svc.cluster.local</code></pre>
+
+      <p>
+        Konkret bei uns: das Backend ist im Stockwerk
+        <code>insilo-kaivostudio</code> als Service <code>insilo-backend</code>
+        registriert. Seine volle Adresse ist also:
+      </p>
+      <pre><code>insilo-backend.insilo-kaivostudio.svc.cluster.local</code></pre>
+
+      <p>
+        Innerhalb desselben Stockwerks reicht der Kurzname:
+        <code>http://insilo-backend:8000</code>. Das ist es, was Insilos
+        Frontend benutzt, wenn es eine Browser-Anfrage an das Backend
+        weiterleitet.
+      </p>
+
+      <svg class="mini-svg" viewBox="0 0 560 140" role="img" aria-label="Frontend-Pod ruft Backend-Pod über die Service-Adresse.">
+        <rect x="20" y="40" width="180" height="60" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="110" y="68" text-anchor="middle" font-family="var(--font-display)" font-size="13" font-weight="500">Frontend-Pod</text>
+        <text x="110" y="86" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)">10.233.98.74</text>
+
+        <rect x="360" y="40" width="180" height="60" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="450" y="68" text-anchor="middle" font-family="var(--font-display)" font-size="13" font-weight="500">Backend-Pod</text>
+        <text x="450" y="86" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)">10.233.98.58</text>
+
+        <defs>
+          <marker id="arr1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#737065"/>
+          </marker>
+        </defs>
+        <path d="M 200 70 L 360 70" stroke="#737065" stroke-width="1.5" fill="none" marker-end="url(#arr1)"/>
+        <text x="280" y="58" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)">http://insilo-backend:8000</text>
+        <text x="280" y="118" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--text-disabled)">Service löst auf zur Pod-IP</text>
+      </svg>
+
+      <details>
+        <summary>Im Terminal nachschauen</summary>
+        <pre><code>$ kubectl get svc -n insilo-kaivostudio
+NAME                TYPE        CLUSTER-IP       PORT(S)    AGE
+insilo              ClusterIP   10.233.36.12     3000/TCP   2d
+insilo-backend      ClusterIP   10.233.36.45     8000/TCP   2d
+insilo-whisper      ClusterIP   10.233.36.51     8001/TCP   2d
+insilo-embeddings   ClusterIP   10.233.36.79     8002/TCP   2d</code></pre>
+      </details>
+    </section>
+
+    <!-- ─────────── NetworkPolicies ─────────── -->
+    <section id="networkpolicies">
+      <p class="eyebrow">Konzept 04 · NetworkPolicies</p>
+      <h2>Schlüsselkarten: wer darf wo hin.</h2>
+      <p>
+        Nur weil zwei Pods sich theoretisch finden könnten, dürfen sie
+        noch lange nicht miteinander reden. Das regeln die
+        <span class="jargon" data-tip="Eine NetworkPolicy ist eine Firewall-Regel, die auf der Ebene von Pod-Labels arbeitet. Sie definiert, welche Pods aus welchen Namespaces eingehende oder ausgehende Verbindungen aufbauen dürfen.">NetworkPolicies</span>
+        — eine Art Schlüsselkarten an den Türen jedes Stockwerks. Olares
+        legt davon ziemlich strenge an: standardmäßig darf <em>nichts</em>
+        rein, und es muss explizit erlaubt werden.
+      </p>
+
+      <p>
+        Konkretes Beispiel: das System-Datenbank-Stockwerk
+        <code>user-system-kaivostudio</code> lässt nur Stockwerke rein,
+        die das Label <code>bytetrade.io/ns-owner=kaivostudio</code>
+        tragen. Olares setzt dieses Label automatisch, sobald eine App
+        Ihnen gehört.
+      </p>
+
+      <svg class="mini-svg" viewBox="0 0 560 180" role="img" aria-label="NetworkPolicy zwischen zwei Namespaces.">
+        <rect x="20" y="30" width="220" height="120" rx="8" fill="var(--surface-soft)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="34" y="52" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)" letter-spacing="1">INSILO-KAIVOSTUDIO</text>
+        <text x="34" y="68" font-family="var(--font-mono)" font-size="9" fill="var(--text-disabled)">label: ns-owner=kaivostudio</text>
+        <rect x="60" y="85" width="140" height="40" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="130" y="110" text-anchor="middle" font-family="var(--font-display)" font-size="12" font-weight="500">Backend-Pod</text>
+
+        <rect x="320" y="30" width="220" height="120" rx="8" fill="var(--surface-soft)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="334" y="52" font-family="var(--font-mono)" font-size="10" fill="var(--text-meta)" letter-spacing="1">USER-SYSTEM-KAIVOSTUDIO</text>
+        <text x="334" y="68" font-family="var(--font-mono)" font-size="9" fill="var(--text-disabled)">erlaubt: ns-owner=kaivostudio</text>
+        <rect x="360" y="85" width="140" height="40" rx="4" fill="var(--white)" stroke="var(--text-primary)" stroke-width="1.5"/>
+        <text x="430" y="110" text-anchor="middle" font-family="var(--font-display)" font-size="12" font-weight="500">Postgres</text>
+
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--gold-deep)"/>
+          </marker>
+        </defs>
+        <path d="M 200 105 L 360 105" stroke="var(--gold-deep)" stroke-width="2" fill="none" marker-end="url(#arr2)" stroke-dasharray="4 3"/>
+        <text x="280" y="170" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--text-meta)">erlaubt — Labels passen</text>
+      </svg>
+
+      <div class="card warm">
+        <p class="card-title">Die Henne-Ei-Falle, die uns zwei Tage gekostet hat</p>
+        <p>
+          Olares setzt das <code>ns-owner</code>-Label
+          <strong>erst nachdem</strong> der Install komplett durchgelaufen
+          ist. Aber unser Backend möchte beim ersten Start direkt mit der
+          Datenbank reden — ohne Label kein Zugriff. Die ersten Versuche,
+          die DB-Migration als
+          <span class="jargon" data-tip="Ein Helm-Hook ist ein Job, der zu definierten Zeitpunkten im Install-Lifecycle läuft (pre-install, post-install, …). Solche Hooks blockieren den Install, bis sie fertig sind.">Helm-Hook</span>
+          laufen zu lassen, sind genau daran gescheitert.
+        </p>
+        <p>
+          <strong>Lösung:</strong> die Migration läuft jetzt als
+          Init-Container <em>im Backend-Pod selbst</em>, mit einem Retry
+          von 60×5 Sekunden. Pod-Restarts überbrücken einfach den
+          Label-Window — wenn das Label da ist, kommt der Connect durch
+          und die Migrationen werden eingespielt.
+        </p>
+      </div>
+    </section>
+
+    <!-- ─────────── Volumes + hostPath ─────────── -->
+    <section id="volumes">
+      <p class="eyebrow">Konzept 05 · Volumes &amp; hostPath</p>
+      <h2>Lagerräume: damit Daten überleben.</h2>
+      <p>
+        Ein Container ist von Natur aus vergesslich. Wenn er stirbt und
+        neu startet, sind alle Dateien weg, die er zwischendurch
+        geschrieben hat — als hätten Sie einen Laptop in den
+        Werkszustand zurückgesetzt. Damit Daten überleben, gibt es
+        <span class="jargon" data-tip="Ein Volume ist ein Speicherbereich, der unabhängig vom Pod-Lifecycle existiert. Verschiedene Volume-Typen liegen auf der Host-Disk, im Netzwerk-Storage oder in ConfigMaps.">Volumes</span> —
+        Lagerräume außerhalb des Containers.
+      </p>
+
+      <h3>Drei Typen, die für uns wichtig sind</h3>
+      <ul>
+        <li>
+          <strong>hostPath.</strong> Ein Ordner auf der Olares-Box selbst.
+          Olares legt für jede App einen festen Pfad an, z. B.
+          <code>/olares/userspaces/kaivostudio/Data/insilo</code>. Egal
+          wie oft der Pod stirbt, der Ordner bleibt.
+        </li>
+        <li>
+          <strong>ConfigMap.</strong> Eine kleine Textdatei, die Olares
+          aus unseren <span class="jargon" data-tip="Helm ist der Paketmanager für Kubernetes. Ein Helm-Chart beschreibt eine App als Sammlung von YAML-Templates mit Variablen.">Helm-Templates</span>
+          erzeugt und in den Pod hängt. Wir benutzen das z. B. für die
+          SQL-Migrations-Dateien.
+        </li>
+        <li>
+          <strong>PersistentVolumeClaim.</strong> Ein vom Cluster
+          zugeteilter Speicherblock. Olares macht das für seine
+          System-Dienste automatisch; wir nutzen ihn aktuell nicht direkt.
+        </li>
+      </ul>
+
+      <div class="card">
+        <p class="card-title">Wo Insilos Audio konkret landet</p>
+        <p>
+          Audio-Dateien landen in einem hostPath. Die App schreibt
+          intern auf <code>/app/data/audio/&lt;org_id&gt;/&lt;meeting_id&gt;.webm</code>.
+          Olares mappet das transparent auf
+          <code>/olares/userspaces/kaivostudio/Data/insilo/audio/…</code>
+          auf der physischen Box. Jedes Pod-Restart, jedes Upgrade —
+          das Audio bleibt liegen. Es verlässt diese Festplatte niemals.
+        </p>
+      </div>
+    </section>
+
+    <!-- ─────────── Insilo-Architektur ─────────── -->
+    <section id="insilo">
+      <p class="eyebrow">Architektur · Klickbares Diagramm</p>
+      <h2>Insilo auf der Box, vollständig.</h2>
+      <p>
+        Hier sehen Sie alle Pods, die zu Insilo gehören, plus die externen
+        Stockwerke, die wir benutzen. <strong>Klick auf eine Box</strong>
+        zeigt unten, was darin lebt und worauf sie zugreift. Gestrichelte
+        goldene Linien sind Cross-Namespace-Verbindungen, die durch die
+        NetworkPolicy explizit erlaubt sein müssen.
+      </p>
+
+      <div class="arch-wrap">
+        <svg class="arch-svg" viewBox="0 0 900 540" role="img" aria-label="Interaktives Architektur-Diagramm von Insilo auf einer Olares-Box.">
+          <defs>
+            <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#737065"/>
+            </marker>
+            <marker id="arrowhead-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#9C8147"/>
+            </marker>
+          </defs>
+
+          <!-- Insilo NS box -->
+          <rect class="ns-box" x="170" y="40" width="600" height="420" rx="10"/>
+          <text class="ns-label" x="184" y="62">NAMESPACE · insilo-kaivostudio</text>
+
+          <!-- Frontend Pod (with Envoy sidecar) -->
+          <g data-node="frontend">
+            <rect class="pod" x="200" y="90" width="180" height="80" rx="6"/>
+            <text class="pod-label" x="290" y="124" text-anchor="middle">Frontend</text>
+            <text class="pod-sub" x="290" y="144" text-anchor="middle">Next.js + Envoy · 2/2</text>
+          </g>
+
+          <!-- Backend Pod -->
+          <g data-node="backend">
+            <rect class="pod" x="420" y="90" width="180" height="80" rx="6"/>
+            <text class="pod-label" x="510" y="124" text-anchor="middle">Backend</text>
+            <text class="pod-sub" x="510" y="144" text-anchor="middle">FastAPI · 1/1</text>
+          </g>
+
+          <!-- Worker Pod -->
+          <g data-node="worker">
+            <rect class="pod" x="420" y="220" width="180" height="80" rx="6"/>
+            <text class="pod-label" x="510" y="254" text-anchor="middle">Worker</text>
+            <text class="pod-sub" x="510" y="274" text-anchor="middle">Celery · 1/1</text>
+          </g>
+
+          <!-- Whisper Pod -->
+          <g data-node="whisper">
+            <rect class="pod" x="640" y="170" width="120" height="70" rx="6"/>
+            <text class="pod-label" x="700" y="200" text-anchor="middle">Whisper</text>
+            <text class="pod-sub" x="700" y="218" text-anchor="middle">large-v3</text>
+          </g>
+
+          <!-- Embeddings Pod -->
+          <g data-node="embeddings">
+            <rect class="pod" x="640" y="260" width="120" height="70" rx="6"/>
+            <text class="pod-label" x="700" y="290" text-anchor="middle">Embeddings</text>
+            <text class="pod-sub" x="700" y="308" text-anchor="middle">BGE-M3</text>
+          </g>
+
+          <!-- hostPath -->
+          <g data-node="hostpath">
+            <rect class="pod" x="200" y="220" width="180" height="70" rx="6" stroke-dasharray="6 4"/>
+            <text class="pod-label" x="290" y="248" text-anchor="middle">hostPath</text>
+            <text class="pod-sub" x="290" y="266" text-anchor="middle">/app/data/audio/</text>
+          </g>
+
+          <!-- ConfigMap (Migrations) -->
+          <g data-node="configmap">
+            <rect class="pod" x="200" y="320" width="180" height="60" rx="6" stroke-dasharray="6 4"/>
+            <text class="pod-label" x="290" y="346" text-anchor="middle">ConfigMap</text>
+            <text class="pod-sub" x="290" y="364" text-anchor="middle">SQL-Migrationen</text>
+          </g>
+
+          <!-- Outside: Browser -->
+          <g data-node="browser">
+            <rect class="ext-node" x="30" y="105" width="120" height="60" rx="6"/>
+            <text class="pod-label" x="90" y="132" text-anchor="middle">Browser</text>
+            <text class="pod-sub" x="90" y="150" text-anchor="middle">PWA-Client</text>
+          </g>
+
+          <!-- Outside: Postgres -->
+          <g data-node="postgres">
+            <rect class="ns-box ext" x="20" y="400" width="220" height="100" rx="8"/>
+            <text class="ns-label" x="32" y="420">USER-SYSTEM-KAIVOSTUDIO</text>
+            <rect class="ext-node" x="42" y="430" width="180" height="60" rx="6"/>
+            <text class="pod-label" x="132" y="456" text-anchor="middle">PostgreSQL</text>
+            <text class="pod-sub" x="132" y="474" text-anchor="middle">+ pgvector · Citus</text>
+          </g>
+
+          <!-- Outside: LiteLLM -->
+          <g data-node="litellm">
+            <rect class="ns-box ext" x="660" y="400" width="220" height="100" rx="8"/>
+            <text class="ns-label" x="672" y="420">LITELLM-KAIVOSTUDIO</text>
+            <rect class="ext-node" x="682" y="430" width="180" height="60" rx="6"/>
+            <text class="pod-label" x="772" y="456" text-anchor="middle">LiteLLM-Gateway</text>
+            <text class="pod-sub" x="772" y="474" text-anchor="middle">→ Qwen-Vision</text>
+          </g>
+
+          <!-- Arrows -->
+          <!-- Browser → Frontend -->
+          <path class="arrow" d="M 150 135 L 200 130"/>
+          <text class="arrow-label" x="155" y="125">HTTPS</text>
+          <!-- Frontend → Backend -->
+          <path class="arrow" d="M 380 130 L 420 130"/>
+          <text class="arrow-label" x="382" y="122">/api/* rewrite</text>
+          <!-- Backend → hostPath -->
+          <path class="arrow" d="M 480 170 L 320 220"/>
+          <!-- Backend → ConfigMap (init: migrate reads SQL) -->
+          <!-- skipped to keep diagram clean; ConfigMap connection is via volume mount, not a service call -->
+          <!-- Backend → Worker (Celery via Redis) -->
+          <path class="arrow" d="M 510 170 L 510 220"/>
+          <text class="arrow-label" x="520" y="200">Redis-Queue</text>
+          <!-- Worker → Whisper -->
+          <path class="arrow" d="M 600 245 L 640 215"/>
+          <!-- Worker → Embeddings -->
+          <path class="arrow" d="M 600 275 L 640 285"/>
+          <!-- Worker → Postgres (down-left) -->
+          <path class="arrow" d="M 460 300 L 200 430"/>
+          <text class="arrow-label" x="290" y="385">DB-Writes</text>
+          <!-- Backend → Postgres -->
+          <path class="arrow" d="M 480 170 L 200 430"/>
+          <!-- Worker → LiteLLM (cross-NS, gold dashed) -->
+          <path class="arrow gold" d="M 600 290 L 700 400"/>
+          <text class="arrow-label" x="660" y="350" fill="var(--gold-deep)">Cross-NS</text>
+        </svg>
+
+        <div class="arch-detail" id="arch-detail">
+          <p class="arch-detail-key" id="arch-detail-key">▸ Wählen Sie einen Knoten im Diagramm</p>
+          <p class="arch-detail-title" id="arch-detail-title">Diagramm-Überblick</p>
+          <p class="arch-detail-hint" id="arch-detail-hint">
+            Insilo besteht aus fünf Pods im eigenen Namespace plus einem
+            hostPath für Audio und einer ConfigMap mit den SQL-Migrationen.
+            Wir reden über zwei Wege nach außen: zur System-PostgreSQL
+            (Standard-Pfad, durch Labels erlaubt) und zur LiteLLM-Gateway
+            im Nachbar-Stockwerk (Cross-Namespace, golden gestrichelt).
+          </p>
+          <dl id="arch-detail-dl" hidden></dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Lifecycle ─────────── -->
+    <section id="lifecycle">
+      <p class="eyebrow">Lifecycle · Schritt-für-Schritt</p>
+      <h2>Was passiert, wenn Sie auf „Aufnahme starten" drücken?</h2>
+      <p>
+        Eine Aufnahme reist durch sechs Stationen. Klicken Sie auf eine
+        Stufe, um zu sehen, was an dieser Station geschieht.
+      </p>
+
+      <div class="stepper" id="stepper">
+        <div class="stepper-tabs" role="tablist">
+          <button class="stepper-tab is-active" data-step="1" role="tab"><span class="stepper-tab-num">SCHRITT 01</span>Browser nimmt auf</button>
+          <button class="stepper-tab" data-step="2" role="tab"><span class="stepper-tab-num">SCHRITT 02</span>Upload zum Backend</button>
+          <button class="stepper-tab" data-step="3" role="tab"><span class="stepper-tab-num">SCHRITT 03</span>Backend speichert</button>
+          <button class="stepper-tab" data-step="4" role="tab"><span class="stepper-tab-num">SCHRITT 04</span>Worker transkribiert</button>
+          <button class="stepper-tab" data-step="5" role="tab"><span class="stepper-tab-num">SCHRITT 05</span>LLM fasst zusammen</button>
+          <button class="stepper-tab" data-step="6" role="tab"><span class="stepper-tab-num">SCHRITT 06</span>Embeddings + fertig</button>
+        </div>
+
+        <div class="stepper-panel is-active" data-panel="1">
+          <h3>Browser nimmt auf</h3>
+          <p>
+            Sie klicken in der PWA auf <strong>Start</strong>. Der Browser
+            fragt das Mikrofon an
+            (<code>navigator.mediaDevices.getUserMedia</code>), öffnet einen
+            <span class="jargon" data-tip="Die MediaRecorder-Web-API ermöglicht es, Audio oder Video direkt im Browser aufzunehmen, ohne Plugin oder externes Tool.">MediaRecorder</span>
+            und sammelt Audio-Chunks im Speicher. Die goldene
+            Pulse-Linie am oberen Bildschirmrand zeigt, dass die Aufnahme
+            läuft. Bis zu diesem Punkt ist <em>noch nichts</em> auf der Box.
+          </p>
+          <div class="micro">
+            <span class="micro-box">Mikrofon</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">MediaRecorder</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">Audio-Blob im Browser</span>
+          </div>
+        </div>
+
+        <div class="stepper-panel" data-panel="2">
+          <h3>Upload zum Backend</h3>
+          <p>
+            Sie klicken auf <strong>Stopp</strong>. Der Browser baut ein
+            FormData-Paket aus dem Audio-Blob und schickt es an
+            <code>POST /api/v1/recordings</code>. Die Anfrage geht zuerst
+            an den Frontend-Pod (Same-Origin), trifft dort den Envoy-
+            Sidecar, der Ihr Authelia-Cookie prüft, und wird dann von
+            Next.js' <code>rewrites()</code> intern an den Backend-Pod
+            weitergeleitet — über die Service-Adresse
+            <code>http://insilo-backend:8000</code>. Ihr Browser sieht
+            davon nichts; aus seiner Sicht ist alles eine HTTP-Anfrage an
+            die gleiche Domain.
+          </p>
+          <div class="micro">
+            <span class="micro-box">Browser</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">Frontend + Envoy</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">Backend-Pod</span>
+          </div>
+        </div>
+
+        <div class="stepper-panel" data-panel="3">
+          <h3>Backend speichert</h3>
+          <p>
+            Das Backend liest den X-Bfl-User-Header (von Envoy injiziert),
+            erzeugt eine UUID für das Meeting, schreibt das Audio in den
+            hostPath unter
+            <code>/app/data/audio/&lt;org&gt;/&lt;id&gt;.webm</code> und
+            legt einen Eintrag in der Postgres-Tabelle
+            <code>public.meetings</code> mit Status <code>queued</code> an.
+            Anschließend stellt es eine Celery-Aufgabe in die Redis-Queue
+            und antwortet dem Browser sofort mit <code>201 Created</code>.
+          </p>
+          <div class="micro">
+            <span class="micro-box">hostPath /app/data</span>
+            <span class="micro-box">Postgres meetings</span>
+            <span class="micro-box">Redis-Queue</span>
+          </div>
+        </div>
+
+        <div class="stepper-panel" data-panel="4">
+          <h3>Worker transkribiert</h3>
+          <p>
+            Der Worker-Pod horcht permanent an der Redis-Queue. Er nimmt
+            die Aufgabe an, liest das Audio aus dem hostPath, POSTet es
+            an den Whisper-Service (<code>http://insilo-whisper:8001/transcribe</code>)
+            und wartet auf das Transkript zurück. Der Status des Meetings
+            wird unterwegs von <code>queued</code> auf <code>transcribing</code>
+            auf <code>transcribed</code> hochgezogen. Das Frontend pollt
+            alle 2 Sekunden, um den Fortschritt anzuzeigen.
+          </p>
+          <div class="micro">
+            <span class="micro-box">Worker</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">Whisper-Pod</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">Postgres transcripts</span>
+          </div>
+        </div>
+
+        <div class="stepper-panel" data-panel="5">
+          <h3>LLM fasst zusammen</h3>
+          <p>
+            Sobald das Transkript steht, lädt der Worker die konfigurierte
+            Vorlage (System-Prompt + JSON-Schema), fügt das Transkript an
+            und schickt eine
+            <span class="jargon" data-tip="Eine OpenAI-kompatible /v1/chat/completions Anfrage funktioniert mit vielen verschiedenen Sprachmodell-Anbietern und lokalen Servern wie Ollama oder LiteLLM.">OpenAI-kompatible Chat-Completion-Anfrage</span>
+            an den konfigurierten LLM-Endpunkt. Standardmäßig ist das die
+            Olares-LiteLLM-Gateway im Nachbar-Stockwerk; Sie können in den
+            Einstellungen aber jeden anderen Endpunkt eintragen (eigenes
+            Ollama, OpenAI-API, …). Die strukturierte JSON-Antwort landet
+            in <code>public.summaries</code>.
+          </p>
+          <div class="micro">
+            <span class="micro-box">Worker</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">LiteLLM (oder externer LLM)</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">Postgres summaries</span>
+          </div>
+        </div>
+
+        <div class="stepper-panel" data-panel="6">
+          <h3>Embeddings + fertig</h3>
+          <p>
+            Als letzte Stufe zerlegt der Worker das Transkript in kurze
+            Abschnitte (Chunks), schickt jeden an den BGE-M3-Embedding-
+            Service und speichert die Vektoren in
+            <code>public.meeting_chunks</code>. Damit ist das Meeting für
+            die „Fragen"-Funktion durchsuchbar. Der Status springt auf
+            <code>ready</code>, das Frontend hört auf zu pollen, und Sie
+            sehen Transkript und Zusammenfassung.
+          </p>
+          <div class="micro">
+            <span class="micro-box">Worker</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">Embeddings-Pod</span>
+            <span class="micro-arrow">→</span>
+            <span class="micro-box">pgvector</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Stolpersteine ─────────── -->
+    <section id="stolpersteine">
+      <p class="eyebrow">Erfahrung · Was wir bezahlt haben</p>
+      <h2>Sechs Stolpersteine, die uns Tage gekostet haben.</h2>
+      <p>
+        Diese Liste ist die Quintessenz aus den Versionen v0.1.7 bis
+        v0.1.21. Wenn Sie eine eigene App auf Olares bringen, beachten
+        Sie diese sechs Punkte — sonst zahlen Sie das gleiche Lehrgeld.
+      </p>
+
+      <ol class="lessons">
+        <li class="lesson">
+          <p class="lesson-title">Henne und Ei beim Install</p>
+          <p class="lesson-sym"><strong>Symptom</strong>Helm-Post-Install-Hook scheitert mit Timeout — Pod kommt nie an die Datenbank.</p>
+          <p class="lesson-fix"><strong>Lösung</strong>Migrationen als Init-Container der App selbst laufen lassen, nicht als Helm-Hook. Olares setzt das benötigte <code>ns-owner</code>-Label erst <em>nach</em> erfolgreichem Install.</p>
+        </li>
+        <li class="lesson">
+          <p class="lesson-title"><code>.Files.Get</code> ist nicht erlaubt</p>
+          <p class="lesson-sym"><strong>Symptom</strong>Chart-Upload an Olares' Market-Renderer schlägt fehl: „can't evaluate field Files".</p>
+          <p class="lesson-fix"><strong>Lösung</strong>SQL inline in den ConfigMap-Template baken. Generator-Script <code>scripts/regen-migrations.py</code> automatisiert das, Drift-Check im CI verhindert vergessene Updates.</p>
+        </li>
+        <li class="lesson">
+          <p class="lesson-title"><code>runAsInternal: true</code> ist Studio-Only</p>
+          <p class="lesson-sym"><strong>Symptom</strong>Frontend Init:CrashLoopBackOff („services aren't ready in 20s") nach harmlos klingender Manifest-Änderung.</p>
+          <p class="lesson-fix"><strong>Lösung</strong>Finger weg von <code>runAsInternal</code>. Per-Org Settings (User wählt LLM-Endpoint selbst) lösen das ursprüngliche Cross-NS-Problem viel sauberer.</p>
+        </li>
+        <li class="lesson">
+          <p class="lesson-title"><code>psql -f</code> hängt</p>
+          <p class="lesson-sym"><strong>Symptom</strong>Migration-Job läuft, druckt „Applying file.sql..." und hängt unendlich, ohne Fehler.</p>
+          <p class="lesson-fix"><strong>Lösung</strong>Python + asyncpg statt psql. Jeder File als ein <code>conn.execute(sql)</code> — eine implicit transaction, keine Splitting-Logik.</p>
+        </li>
+        <li class="lesson">
+          <p class="lesson-title">MinIO ist nicht erreichbar</p>
+          <p class="lesson-sym"><strong>Symptom</strong>Audio-Upload kracht mit HTTP 500, S3-Client kommt nicht zur Olares-eigenen MinIO durch.</p>
+          <p class="lesson-fix"><strong>Lösung</strong>Local-Filesystem-Storage-Backend, Audio in hostPath. Audio-Dateien bleiben auf der Box — passt zum Datensouveränitäts-Pitch sogar besser als jeder S3.</p>
+        </li>
+        <li class="lesson">
+          <p class="lesson-title">Vier Version-Stellen müssen synchron sein</p>
+          <p class="lesson-sym"><strong>Symptom</strong>Olares' Market-Manager beschwert sich beim Upload mit unklarer Version-Mismatch-Fehlermeldung.</p>
+          <p class="lesson-fix"><strong>Lösung</strong>Marc's Golden Rule: <code>Chart.yaml.version</code> = <code>appVersion</code> = <code>OlaresManifest.metadata.version</code> = <code>spec.versionName</code>. Bei uns automatisiert via <code>scripts/release.sh</code> + Pre-flight-Check in CI.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ─────────── Glossar ─────────── -->
+    <section id="glossar">
+      <p class="eyebrow">Nachschlagen · Glossar</p>
+      <h2>Begriffe, die in diesem Dokument vorkommen.</h2>
+
+      <dl class="glossary">
+        <dt>App</dt>
+        <dd>Mieter im Olares-Bürogebäude. Bringt eigene Pods, Services und Templates mit.</dd>
+
+        <dt>Authelia</dt>
+        <dd>Der Türsteher von Olares. Validiert Login-Cookies, bevor jemand zur App durchgelassen wird.</dd>
+
+        <dt>Backend</dt>
+        <dd>Der Server, der die App-Logik hat. Bei Insilo: FastAPI.</dd>
+
+        <dt>Celery</dt>
+        <dd>Python-Bibliothek für Hintergrund-Jobs. Holt sich Aufgaben aus einer Warteschlange (Redis bei uns) und arbeitet sie ab.</dd>
+
+        <dt>Citus</dt>
+        <dd>Die Postgres-Variante, die Olares als System-DB benutzt. Unterstützt verteilte Tabellen.</dd>
+
+        <dt>Cluster-DNS</dt>
+        <dd>Die interne Telefonzentrale. Übersetzt Service-Namen wie <code>insilo-backend</code> in tatsächliche Pod-IPs.</dd>
+
+        <dt>ConfigMap</dt>
+        <dd>Eine kleine Konfigurationsdatei, die Olares aus Helm-Templates erzeugt und in einen Pod hängt.</dd>
+
+        <dt>Container</dt>
+        <dd>Ein verpacktes Programm, das in einem Pod läuft. Bringt seine eigene Bibliothek mit.</dd>
+
+        <dt>DSGVO</dt>
+        <dd>EU-Datenschutz-Grundverordnung. Unser Hauptgrund, dass nichts in die Cloud darf.</dd>
+
+        <dt>Envoy</dt>
+        <dd>Der Türsteher-Container, den Olares automatisch vor manche Pods stellt. Prüft das Authelia-Cookie.</dd>
+
+        <dt>GHCR</dt>
+        <dd>GitHub Container Registry. Dort liegen die Docker-Images von Insilo, öffentlich zugänglich.</dd>
+
+        <dt>Helm</dt>
+        <dd>Der Paketmanager für Kubernetes. Beschreibt eine App als Sammlung von Templates mit Variablen.</dd>
+
+        <dt>hostPath</dt>
+        <dd>Ein Ordner auf der Olares-Maschine selbst, in den Pods schreiben dürfen. Überlebt Pod-Restarts.</dd>
+
+        <dt>k3s</dt>
+        <dd>Die schlanke Kubernetes-Variante, auf der Olares aufbaut. Ein Single-Binary, ~50 MB.</dd>
+
+        <dt>Kubernetes</dt>
+        <dd>Das Betriebssystem für Container-Cluster. Plant, startet und überwacht Pods.</dd>
+
+        <dt>LiteLLM</dt>
+        <dd>Ein Gateway, das viele Sprachmodelle hinter einer OpenAI-kompatiblen API zugänglich macht.</dd>
+
+        <dt>Manifest</dt>
+        <dd>Die <code>OlaresManifest.yaml</code> — beschreibt einen App-Eintrag im Olares-Markt.</dd>
+
+        <dt>Namespace</dt>
+        <dd>Ein Stockwerk im Olares-Gebäude. Pods, Services und Policies sind jeweils einem Namespace zugeordnet.</dd>
+
+        <dt>NetworkPolicy</dt>
+        <dd>Die Schlüsselkarten-Regel. Sagt, welche Pods in welchen Namespaces eingehende Verbindungen erlauben.</dd>
+
+        <dt>Olares</dt>
+        <dd>Das selbst-hostbare Cluster-Betriebssystem, auf dem Insilo läuft.</dd>
+
+        <dt>pgvector</dt>
+        <dd>Postgres-Erweiterung für Vektor-Suche. Brauchen wir für die „Fragen"-Funktion.</dd>
+
+        <dt>Pod</dt>
+        <dd>Ein Raum im Stockwerk. Enthält einen oder mehrere Container, die sich Netzwerk und Volumes teilen.</dd>
+
+        <dt>PWA</dt>
+        <dd>Progressive Web App. Eine Website, die sich wie eine App anfühlt — installierbar, offline-fähig.</dd>
+
+        <dt>Service</dt>
+        <dd>Die feste Adresse, unter der ein Pod im Cluster erreichbar ist. Bleibt stabil, auch wenn Pods restarten.</dd>
+
+        <dt>Sidecar</dt>
+        <dd>Ein zusätzlicher Container im selben Pod (z. B. der Envoy-Sidecar vor dem Frontend).</dd>
+
+        <dt>Whisper</dt>
+        <dd>Das Open-Source-Spracherkennungsmodell von OpenAI. Läuft bei uns lokal auf der Box.</dd>
+      </dl>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <p>
+      Insilo · Datensouveräne Meeting-Intelligenz · © kaivo.studio.
+      Weiterführende Quellen:
+      <a href="../CLAUDE.md">CLAUDE.md</a> ·
+      <a href="DESIGN.md">DESIGN.md</a> ·
+      <a href="HANDOFF.md">HANDOFF.md</a>.
+    </p>
+    <p class="mono">v0.1.21 · Made in Germany</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // ── Sticky-TOC active-state ─────────────────────────────────────────
+  const tocLinks = document.querySelectorAll('.toc-link');
+  const sections = Array.from(document.querySelectorAll('main section[id]'));
+  const linkById = new Map();
+  tocLinks.forEach(a => {
+    const id = a.getAttribute('href').slice(1);
+    linkById.set(id, a);
+  });
+
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          tocLinks.forEach(a => a.classList.remove('is-active'));
+          const a = linkById.get(id);
+          if (a) a.classList.add('is-active');
+        }
+      });
+    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+    sections.forEach(s => io.observe(s));
+  }
+
+  // ── Architektur-Diagramm: klickbare Knoten ──────────────────────────
+  const NODE_INFO = {
+    frontend: {
+      key: 'POD · insilo (Frontend)',
+      title: 'Frontend — die Web-Oberfläche',
+      details: [
+        ['Image', 'ghcr.io/ska1walker/insilo-frontend'],
+        ['Container', 'Next.js + Envoy-Sidecar (2/2)'],
+        ['Port', '3000'],
+        ['Ruft auf', 'Backend (interner Proxy via Next.js rewrites)'],
+        ['Schreibt', 'Nichts dauerhaft'],
+      ],
+      hint: 'Der Envoy-Sidecar prüft das Authelia-Cookie, bevor eine Anfrage durchgelassen wird, und injiziert den X-Bfl-User-Header — so weiß das Backend, wer Sie sind.'
+    },
+    backend: {
+      key: 'POD · insilo-backend',
+      title: 'Backend — die API',
+      details: [
+        ['Image', 'ghcr.io/ska1walker/insilo-backend'],
+        ['Container', 'FastAPI (1/1, kein Envoy)'],
+        ['Port', '8000'],
+        ['Ruft auf', 'PostgreSQL, Redis, Whisper (über Worker)'],
+        ['Schreibt', 'Audio → hostPath, Meta → DB'],
+      ],
+      hint: 'Hat absichtlich keinen Envoy davor. Authentifizierung ist schon im Frontend passiert; das Backend vertraut dem X-Bfl-User-Header.'
+    },
+    worker: {
+      key: 'POD · insilo-worker',
+      title: 'Worker — Hintergrund-Jobs',
+      details: [
+        ['Image', 'ghcr.io/ska1walker/insilo-backend (gleiches Image, anderer Befehl)'],
+        ['Container', 'Celery (1/1)'],
+        ['Ruft auf', 'Whisper, Embeddings, LLM'],
+        ['Schreibt', 'Transcript / Summary / Chunks → DB'],
+      ],
+      hint: 'Holt Aufgaben aus der Redis-Queue. Drei Tasks: transcribe_meeting, summarize_meeting, embed_meeting.'
+    },
+    whisper: {
+      key: 'POD · insilo-whisper',
+      title: 'Whisper — Spracherkennung',
+      details: [
+        ['Image', 'ghcr.io/ska1walker/insilo-whisper'],
+        ['Modell', 'faster-whisper large-v3'],
+        ['Port', '8001 /transcribe'],
+        ['Ruft auf', 'Nichts'],
+      ],
+      hint: 'Läuft auf CPU. Verarbeitet ~30 Sekunden Audio pro Sekunde Rechenzeit auf moderner Hardware.'
+    },
+    embeddings: {
+      key: 'POD · insilo-embeddings',
+      title: 'Embeddings — Vektor-Index',
+      details: [
+        ['Image', 'ghcr.io/ska1walker/insilo-embeddings'],
+        ['Modell', 'BGE-M3 multilingual'],
+        ['Port', '8002 /embed'],
+        ['Ruft auf', 'Nichts'],
+      ],
+      hint: 'Wandelt Text-Abschnitte in Vektoren. pgvector indexiert sie, die Fragen-Funktion sucht über Cosinus-Distanz.'
+    },
+    hostpath: {
+      key: 'VOLUME · hostPath',
+      title: 'Audio-Speicher auf der Box',
+      details: [
+        ['Pfad im Pod', '/app/data/audio/<org_id>/<id>.webm'],
+        ['Pfad auf Box', '/olares/userspaces/kaivostudio/Data/insilo/audio/'],
+        ['Überlebt', 'Pod-Restart · App-Upgrade · App-Reinstall'],
+      ],
+      hint: 'Audio verlässt diese Festplatte nie. Das ist der konkrete Ort, an dem das Datensouveränitäts-Versprechen lebt.'
+    },
+    configmap: {
+      key: 'CONFIGMAP · insilo-migrations',
+      title: 'SQL-Migrationen',
+      details: [
+        ['Inhalt', '0001-Schema, 0002-RLS, 0003-Settings, 0004-Templates, 0099-Seed'],
+        ['Gemountet in', 'Backend-Pod, Init-Container `migrate`'],
+        ['Generiert von', 'scripts/regen-migrations.py (auto bei Schema-Änderung)'],
+      ],
+      hint: 'Inline-YAML statt {{ .Files.Get }} — Olares’ Renderer unterstützt .Files nicht. Die Datei wird per Generator-Script idempotent neu erzeugt.'
+    },
+    browser: {
+      key: 'EXTERN · Browser',
+      title: 'Ihr Browser',
+      details: [
+        ['Technik', 'PWA-Client (Next.js gebaut, läuft als statisches Bundle)'],
+        ['API', 'MediaRecorder · Service Worker · IndexedDB'],
+        ['Verbindung', 'HTTPS über Cloudflare-Tunnel oder Tailscale zur Olares-Box'],
+      ],
+      hint: 'Vom Browser aus sieht Insilo aus wie eine ganz normale Web-Seite — alle Komplexität dahinter ist unsichtbar.'
+    },
+    postgres: {
+      key: 'EXTERN · System-PostgreSQL',
+      title: 'Die Box-Datenbank',
+      details: [
+        ['Namespace', 'user-system-kaivostudio'],
+        ['Engine', 'Citus (Postgres-Distribution)'],
+        ['Erweiterungen', 'pgvector · pg_trgm · pgcrypto · uuid-ossp'],
+        ['Erlaubt von', 'NetworkPolicy: nur Namespaces mit ns-owner=kaivostudio'],
+      ],
+      hint: 'Olares legt uns eine eigene Datenbank in seiner System-PostgreSQL an. Username + Passwort werden zur Install-Zeit als Helm-Values injiziert.'
+    },
+    litellm: {
+      key: 'EXTERN · LiteLLM-Gateway',
+      title: 'Sprachmodell-Hub',
+      details: [
+        ['Namespace', 'litellm-kaivostudio'],
+        ['Adresse', 'litellm-svc.litellm-kaivostudio.svc.cluster.local'],
+        ['Cross-NS-Zugriff', 'erfordert spezielle Konfiguration (siehe Einstellungen)'],
+        ['Alternative', 'jeder OpenAI-kompatible Endpunkt im Internet'],
+      ],
+      hint: 'In den Insilo-Einstellungen können Sie einen beliebigen OpenAI-kompatiblen Endpunkt eintragen. Das löst die Cross-Namespace-Falle eleganter als jeder Plattform-Hack.'
+    },
+  };
+
+  const archDetailKey = document.getElementById('arch-detail-key');
+  const archDetailTitle = document.getElementById('arch-detail-title');
+  const archDetailHint = document.getElementById('arch-detail-hint');
+  const archDetailDl = document.getElementById('arch-detail-dl');
+
+  function showNode(id) {
+    // Highlight
+    document.querySelectorAll('.arch-svg [data-node]').forEach(g => {
+      const rect = g.querySelector('rect');
+      if (rect) rect.classList.remove('active');
+    });
+    const target = document.querySelector(`.arch-svg [data-node="${id}"] rect`);
+    if (target) target.classList.add('active');
+
+    // Render details
+    const info = NODE_INFO[id];
+    if (!info) return;
+    archDetailKey.textContent = '▸ ' + info.key;
+    archDetailTitle.textContent = info.title;
+    archDetailHint.textContent = info.hint;
+    archDetailDl.hidden = false;
+    archDetailDl.innerHTML = info.details
+      .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
+      .join('');
+  }
+
+  document.querySelectorAll('.arch-svg [data-node]').forEach(g => {
+    g.addEventListener('click', () => showNode(g.getAttribute('data-node')));
+    g.style.cursor = 'pointer';
+  });
+
+  // ── Lifecycle-Stepper ────────────────────────────────────────────────
+  const stepper = document.getElementById('stepper');
+  if (stepper) {
+    stepper.querySelectorAll('.stepper-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const step = tab.getAttribute('data-step');
+        stepper.querySelectorAll('.stepper-tab').forEach(t => t.classList.remove('is-active'));
+        stepper.querySelectorAll('.stepper-panel').forEach(p => p.classList.remove('is-active'));
+        tab.classList.add('is-active');
+        const panel = stepper.querySelector(`[data-panel="${step}"]`);
+        if (panel) panel.classList.add('is-active');
+      });
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

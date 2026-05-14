@@ -1,14 +1,21 @@
-import { apiDelete, apiGet, apiPost, apiRequest } from "./client";
+import { apiDelete, apiGet, apiPost, apiPut, apiRequest } from "./client";
 
 export type TranscriptSegment = {
   start: number;
   end: number;
   text: string;
+  /** Either a speaker id (matches Speaker.id) or null/undefined. */
   speaker?: string | null;
+};
+
+export type Speaker = {
+  id: string;
+  name: string;
 };
 
 export type Transcript = {
   segments: TranscriptSegment[];
+  speakers: Speaker[];
   full_text: string;
   language: string;
   whisper_model: string;
@@ -86,4 +93,21 @@ export async function deleteMeeting(id: string): Promise<void> {
 
 export async function retrySummary(id: string): Promise<void> {
   await apiPost<{ status: string }>(`/api/v1/meetings/${id}/retry-summary`);
+}
+
+export type SpeakerAssignment = {
+  speakers: Speaker[];
+  /** Map of segment-index (as string, JSON-friendly) → speaker id or null. */
+  segments: Record<string, string | null>;
+};
+
+export async function updateTranscriptSpeakers(
+  id: string,
+  payload: SpeakerAssignment,
+): Promise<{
+  status: string;
+  speakers: Speaker[];
+  segments: TranscriptSegment[];
+}> {
+  return apiPut(`/api/v1/meetings/${id}/transcript/speakers`, payload);
 }

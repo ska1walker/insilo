@@ -1,15 +1,19 @@
 """Meeting CRUD + audio upload."""
 
 import json
+import re
 from datetime import datetime
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire
 from app.storage import delete_object, get_presigned_url, upload_bytes
 from app.tasks.transcribe import transcribe_meeting
+
+_SPEAKER_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,32}$")
 
 router = APIRouter(prefix="/api/v1", tags=["meetings"])
 
@@ -75,7 +79,7 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
 
         transcript_row = await conn.fetchrow(
             """
-            select segments, full_text, language, whisper_model, word_count
+            select segments, speakers, full_text, language, whisper_model, word_count
             from public.transcripts
             where meeting_id = $1
             """,
@@ -106,8 +110,12 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
         segs = transcript_row["segments"]
         if isinstance(segs, str):
             segs = json.loads(segs)
+        speakers_field = transcript_row["speakers"]
+        if isinstance(speakers_field, str):
+            speakers_field = json.loads(speakers_field)
         dto["transcript"] = {
             "segments": segs,
+            "speakers": speakers_field or [],
             "full_text": transcript_row["full_text"],
             "language": transcript_row["language"],
             "whisper_model": transcript_row["whisper_model"],
@@ -200,6 +208,94 @@ async def create_recording(
     transcribe_meeting.delay(str(meeting_id))
 
     return _meeting_row_to_dto(row, audio_url=get_presigned_url(key))
+
+
+class SpeakerEntry(BaseModel):
+    id: str = Field(..., min_length=1, max_length=32)
+    name: str = Field(..., min_length=1, max_length=120)
+
+
+class SpeakerAssignment(BaseModel):
+    """Replace the speakers roster + per-segment speaker assignments.
+
+    `speakers` is the canonical list (id + display name). `segments` maps
+    segment index → speaker id (or null to clear). Unknown segment indices
+    are ignored; ids that aren't in `speakers` are rejected.
+    """
+
+    speakers: list[SpeakerEntry] = Field(default_factory=list)
+    segments: dict[str, str | None] = Field(default_factory=dict)
+
+
+@router.put("/meetings/{meeting_id}/transcript/speakers")
+async def update_transcript_speakers(
+    meeting_id: UUID,
+    payload: SpeakerAssignment,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    # Sanity: ids must be url-safe and unique.
+    seen: set[str] = set()
+    for s in payload.speakers:
+        if not _SPEAKER_ID_RE.match(s.id):
+            raise HTTPException(400, f"invalid speaker id: {s.id!r}")
+        if s.id in seen:
+            raise HTTPException(400, f"duplicate speaker id: {s.id!r}")
+        seen.add(s.id)
+
+    valid_ids = {s.id for s in payload.speakers}
+    for idx, sid in payload.segments.items():
+        if sid is not None and sid not in valid_ids:
+            raise HTTPException(400, f"segment {idx} references unknown speaker {sid!r}")
+
+    async with acquire() as conn:
+        # Make sure the user owns the meeting.
+        owned = await conn.fetchval(
+            """
+            select 1 from public.meetings
+            where id = $1 and org_id = $2 and deleted_at is null
+            """,
+            meeting_id,
+            user.org_id,
+        )
+        if not owned:
+            raise HTTPException(404, "meeting not found")
+
+        row = await conn.fetchrow(
+            "select segments from public.transcripts where meeting_id = $1",
+            meeting_id,
+        )
+        if row is None:
+            raise HTTPException(409, "no transcript yet")
+
+        segs = row["segments"]
+        if isinstance(segs, str):
+            segs = json.loads(segs)
+        if not isinstance(segs, list):
+            raise HTTPException(500, "transcript.segments has unexpected shape")
+
+        # Apply per-segment assignments. Keys come as strings from JSON.
+        for k, sid in payload.segments.items():
+            try:
+                i = int(k)
+            except ValueError:
+                continue
+            if 0 <= i < len(segs):
+                segs[i]["speaker"] = sid
+
+        speakers_payload = [s.model_dump() for s in payload.speakers]
+
+        await conn.execute(
+            """
+            update public.transcripts
+            set segments = $2::jsonb, speakers = $3::jsonb
+            where meeting_id = $1
+            """,
+            meeting_id,
+            json.dumps(segs),
+            json.dumps(speakers_payload),
+        )
+
+    return {"status": "ok", "speakers": speakers_payload, "segments": segs}
 
 
 @router.post("/meetings/{meeting_id}/retry-summary", status_code=202)

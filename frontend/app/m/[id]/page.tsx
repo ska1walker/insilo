@@ -5,13 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { SummaryView } from "@/components/summary-view";
+import { TranscriptView } from "@/components/transcript-view";
 import { ApiError } from "@/lib/api/client";
 import {
   deleteMeeting,
   getMeeting,
   retrySummary,
   type MeetingDto,
-  type Transcript,
 } from "@/lib/api/meetings";
 import { formatBytes, formatDuration, formatMeetingDate } from "@/lib/format";
 
@@ -235,7 +235,7 @@ export default function MeetingDetail() {
       )}
 
       {meeting.transcript && (
-        <TranscriptView transcript={meeting.transcript} />
+        <TranscriptView meetingId={meeting.id} transcript={meeting.transcript} />
       )}
 
       <div className="mt-16 flex justify-end">
@@ -247,55 +247,3 @@ export default function MeetingDetail() {
   );
 }
 
-function TranscriptView({ transcript }: { transcript: Transcript }) {
-  return (
-    <section className="mt-12">
-      <div className="mb-6 flex items-baseline justify-between gap-4">
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-          Transkript
-        </p>
-        <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
-          {transcript.whisper_model} · {transcript.language} · {transcript.word_count} Wörter
-        </p>
-      </div>
-
-      <div className="rounded-lg border border-border-subtle bg-white p-8">
-        {transcript.segments.length === 0 && (
-          <p className="text-sm text-text-meta">
-            Keine Sprache erkannt. Die Aufnahme enthielt nur Stille oder Hintergrundrauschen.
-          </p>
-        )}
-
-        {transcript.segments.map((seg, i) => (
-          <div
-            key={i}
-            className="grid grid-cols-[80px_1fr] gap-4 py-3 md:grid-cols-[100px_1fr] md:gap-6"
-          >
-            <div>
-              <p className="mono text-[0.8125rem] font-medium text-text-meta">
-                [{formatTime(seg.start)}]
-              </p>
-              {seg.speaker && (
-                <p
-                  className="mono mt-1 text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
-                  style={{ color: "var(--gold)" }}
-                >
-                  {seg.speaker}
-                </p>
-              )}
-            </div>
-            <p className="text-base leading-relaxed text-text-primary">{seg.text}</p>
-          </div>
-        ))}
-      </div>
-
-    </section>
-  );
-}
-
-function formatTime(seconds: number): string {
-  const total = Math.floor(seconds);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-}

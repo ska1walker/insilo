@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
+import { TagPillRow } from "@/components/tag-pill";
 import { ApiError } from "@/lib/api/client";
 import { listMeetings, type MeetingDto } from "@/lib/api/meetings";
 import { formatDuration, formatMeetingDate } from "@/lib/format";
@@ -117,6 +118,11 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
                   <p className="mt-1 text-[0.8125rem] text-text-meta">
                     {formatMeetingDate(Date.parse(m.created_at))}
                   </p>
+                  {m.tags && m.tags.length > 0 && (
+                    <div className="mt-2">
+                      <TagPillRow tags={m.tags} max={3} />
+                    </div>
+                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
                   <StatusPill status={m.status} />

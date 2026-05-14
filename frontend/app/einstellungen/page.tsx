@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { TagManager } from "@/components/tag-manager";
 import { TemplatePrompts } from "@/components/template-prompts";
 import {
   fetchSettings,
@@ -334,6 +335,20 @@ export default function EinstellungenPage() {
         </header>
 
         <TemplatePrompts />
+      </section>
+
+      <section className="mt-14">
+        <header className="mb-5">
+          <h2 className="font-display text-xl font-medium">Tags</h2>
+          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+            Markieren Sie Besprechungen mit thematischen Tags, um sie
+            später leicht zu finden — z.&nbsp;B. „Mandant Müller",
+            „Q2 Strategie" oder „Vertriebs-Pipeline". Im Archiv können
+            Sie mehrere Tags gleichzeitig als Filter kombinieren.
+          </p>
+        </header>
+
+        <TagManager />
       </section>
     </main>
   );

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { SummaryView } from "@/components/summary-view";
+import { TagPicker } from "@/components/tag-picker";
 import { useToast } from "@/components/toast";
 import { TranscriptView } from "@/components/transcript-view";
 import { ApiError } from "@/lib/api/client";
@@ -198,6 +199,20 @@ export default function MeetingDetail() {
         <span>{formatBytes(meeting.byte_size)}</span>
         <span>·</span>
         <span>{meeting.mime_type}</span>
+      </div>
+
+      <div className="mt-6">
+        <TagPicker
+          meetingId={meeting.id}
+          initialTags={meeting.tags ?? []}
+          onChange={(next) => {
+            // Optimistic local-state sync — Status-poll wird neue Daten holen.
+            setState({
+              kind: "ok",
+              meeting: { ...meeting, tags: next },
+            });
+          }}
+        />
       </div>
 
       {meeting.audio_url && (

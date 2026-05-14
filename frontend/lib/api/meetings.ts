@@ -1,4 +1,5 @@
 import { apiDelete, apiGet, apiPost, apiPut, apiRequest } from "./client";
+import type { TagDto } from "./tags";
 
 export type TranscriptSegment = {
   start: number;
@@ -58,10 +59,22 @@ export type MeetingDto = {
   template_name?: string | null;
   transcript?: Transcript | null;
   summary?: Summary | null;
+  tags?: TagDto[];
 };
 
-export async function listMeetings(): Promise<MeetingDto[]> {
-  return apiGet<MeetingDto[]>("/api/v1/meetings");
+export type ListMeetingsParams = {
+  tagIds?: string[];
+  q?: string;
+};
+
+export async function listMeetings(
+  params: ListMeetingsParams = {},
+): Promise<MeetingDto[]> {
+  const search = new URLSearchParams();
+  for (const tagId of params.tagIds ?? []) search.append("tag", tagId);
+  if (params.q) search.append("q", params.q);
+  const qs = search.toString();
+  return apiGet<MeetingDto[]>(`/api/v1/meetings${qs ? `?${qs}` : ""}`);
 }
 
 export async function getMeeting(id: string): Promise<MeetingDto> {

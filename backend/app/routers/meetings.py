@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
@@ -39,23 +39,90 @@ def _meeting_row_to_dto(row, audio_url: str | None = None) -> dict:
         "byte_size": row["audio_size_bytes"] or 0,
         "status": row["status"],
         "audio_url": audio_url,
+        "tags": [],
     }
 
 
-@router.get("/meetings")
-async def list_meetings(user: CurrentUser = Depends(get_current_user)) -> list[dict]:
-    async with acquire() as conn:
-        rows = await conn.fetch(
-            """
-            select id, title, recorded_at, duration_sec, audio_size_bytes,
-                   audio_path, status, metadata->>'mime_type' as audio_mime
-            from public.meetings
-            where org_id = $1 and deleted_at is null
-            order by recorded_at desc
-            """,
-            user.org_id,
+def _attach_tags(dtos: list[dict], tag_rows) -> None:
+    """Hängt die per `(meeting_id) → tag` joined Rows an die DTOs."""
+    by_meeting: dict[str, list[dict]] = {}
+    for tr in tag_rows:
+        mid = str(tr["meeting_id"])
+        by_meeting.setdefault(mid, []).append(
+            {"id": str(tr["id"]), "name": tr["name"], "color": tr["color"]}
         )
-    return [_meeting_row_to_dto(r) for r in rows]
+    for d in dtos:
+        d["tags"] = by_meeting.get(d["id"], [])
+
+
+@router.get("/meetings")
+async def list_meetings(
+    tag: list[UUID] = Query(default_factory=list),
+    q: str | None = Query(default=None, max_length=120),
+    user: CurrentUser = Depends(get_current_user),
+) -> list[dict]:
+    """List meetings of the user's org.
+
+    Query params:
+    - `tag` (repeatable): AND-filter — only meetings tagged with **all** given tag-IDs.
+    - `q`: case-insensitive title substring search.
+    """
+    async with acquire() as conn:
+        # Base query — join tag-count when AND-filter is set
+        if tag:
+            rows = await conn.fetch(
+                """
+                select m.id, m.title, m.recorded_at, m.duration_sec, m.audio_size_bytes,
+                       m.audio_path, m.status, m.metadata->>'mime_type' as audio_mime
+                from public.meetings m
+                where m.org_id = $1
+                  and m.deleted_at is null
+                  and ($2::text is null or m.title ilike '%' || $2 || '%')
+                  and (
+                    select count(*) from public.meeting_tags mt
+                    where mt.meeting_id = m.id and mt.tag_id = any($3::uuid[])
+                  ) = $4
+                order by m.recorded_at desc
+                """,
+                user.org_id,
+                q,
+                tag,
+                len(tag),
+            )
+        else:
+            rows = await conn.fetch(
+                """
+                select id, title, recorded_at, duration_sec, audio_size_bytes,
+                       audio_path, status, metadata->>'mime_type' as audio_mime
+                from public.meetings
+                where org_id = $1
+                  and deleted_at is null
+                  and ($2::text is null or title ilike '%' || $2 || '%')
+                order by recorded_at desc
+                """,
+                user.org_id,
+                q,
+            )
+
+        dtos = [_meeting_row_to_dto(r) for r in rows]
+        if not dtos:
+            return dtos
+
+        # In einem Schwung alle Tags aller geladenen Meetings holen.
+        meeting_ids = [UUID(d["id"]) for d in dtos]
+        tag_rows = await conn.fetch(
+            """
+            select mt.meeting_id, t.id, t.name, t.color
+            from public.meeting_tags mt
+            join public.tags t on t.id = mt.tag_id
+            where mt.meeting_id = any($1::uuid[])
+            order by t.name asc
+            """,
+            meeting_ids,
+        )
+        _attach_tags(dtos, tag_rows)
+
+    return dtos
 
 
 @router.get("/meetings/{meeting_id}")
@@ -105,6 +172,23 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
     dto["error_message"] = row["error_message"]
     dto["template_id"] = str(row["template_id"]) if row["template_id"] else None
     dto["template_name"] = row["template_name"]
+
+    # Tags zum Meeting
+    async with acquire() as conn:
+        tag_rows = await conn.fetch(
+            """
+            select t.id, t.name, t.color
+            from public.meeting_tags mt
+            join public.tags t on t.id = mt.tag_id
+            where mt.meeting_id = $1
+            order by t.name asc
+            """,
+            meeting_id,
+        )
+        dto["tags"] = [
+            {"id": str(tr["id"]), "name": tr["name"], "color": tr["color"]}
+            for tr in tag_rows
+        ]
 
     if transcript_row is not None:
         segs = transcript_row["segments"]

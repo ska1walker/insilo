@@ -1,20 +1,24 @@
-"""Speaker-Diarization für Insilo (Phase A).
+"""Speaker-Diarization für Insilo (Phase A, 3-Stage-Pipeline).
 
 Nimmt Whisper-Segmente mit Timestamps + die Audio-Datei und gibt die
 Segmente mit `speaker = "SPEAKER_00" | "SPEAKER_01" | …` zurück. Reine
 anonyme Labels — die Zuordnung zu echten Namen erledigt Phase B
 (Voice-Fingerprinting) bzw. der User manuell im Frontend.
 
-Pipeline:
-1. Pro Whisper-Segment ein Audio-Chunk schneiden
-2. SpeechBrain ECAPA-TDNN extrahiert ein 192-dim Embedding pro Chunk
-3. AgglomerativeClustering mit Cosinus-Distanz gruppiert ähnliche
-   Embeddings → das ist die Sprecher-Zugehörigkeit
-4. Sprecher-Count via Silhouette-Score über k = 2..6 geschätzt
-5. Sehr kurze (<0.5s) oder leere Chunks erben das Label des Vorgängers
+Pipeline (token-frei, alle Modelle aus öffentlichen Repos):
+1. **Silero-VAD** prüft pro Whisper-Segment, ob es überhaupt
+   verwertbares Sprachsignal enthält (Schutz vor Phantom-Segmenten
+   bei Husten/Rascheln). Trim auf den tatsächlich aktiven Sprach-
+   Anteil, ehe das Embedding gezogen wird.
+2. **SpeechBrain ECAPA-TDNN** wandelt jeden geprüften Chunk in ein
+   192-dim L2-normalisiertes Sprecher-Embedding.
+3. **sklearn AgglomerativeClustering** mit Cosinus-Linkage gruppiert
+   die Embeddings; **Silhouette-Score** über k = 2..6 entscheidet,
+   wie viele Sprecher tatsächlich da waren.
 
-Kein HuggingFace-Token nötig — SpeechBrain-Modelle laden ohne Auth aus
-ihrem öffentlichen Repo.
+Sehr kurze (<0.5 s) oder von Silero als „kein Sprachsignal"
+markierte Segmente erben das Label ihres Vorgängers, damit die
+Transkript-Zeile nie ohne Sprecher dasteht.
 """
 
 from __future__ import annotations
@@ -25,13 +29,14 @@ from dataclasses import dataclass
 import numpy as np
 import soundfile as sf
 import torch
+from silero_vad import get_speech_timestamps, load_silero_vad
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 from speechbrain.inference.speaker import EncoderClassifier
 
 log = logging.getLogger(__name__)
 
-# 16 kHz mono ist der Standard für ECAPA-TDNN
+# 16 kHz mono ist der Standard für ECAPA-TDNN und Silero
 TARGET_SR = 16_000
 # Segmente kürzer als das sind zu wenig für ein stabiles Embedding
 MIN_CHUNK_SEC = 0.5
@@ -39,6 +44,8 @@ MIN_CHUNK_SEC = 0.5
 MAX_SPEAKERS = 6
 # Wenn der beste Silhouette-Score darunter liegt: vermutlich nur 1 Sprecher
 SINGLE_SPEAKER_THRESHOLD = 0.10
+# Silero-VAD: Segment hat zu wenig Sprache, wenn aktiver Anteil < Schwelle
+MIN_VOICE_RATIO = 0.30
 
 
 @dataclass
@@ -49,6 +56,7 @@ class DiarizedSegment:
 
 
 _embedder: EncoderClassifier | None = None
+_vad_model = None  # silero-vad: pytorch jit-Modell
 
 
 def load_embedder(cache_dir: str) -> EncoderClassifier:
@@ -63,6 +71,16 @@ def load_embedder(cache_dir: str) -> EncoderClassifier:
         )
         log.info("speaker-embedder loaded")
     return _embedder
+
+
+def load_vad():
+    """Eager-load das Silero-VAD-Modell. Bundle ~2 MB JIT-Tensor."""
+    global _vad_model
+    if _vad_model is None:
+        log.info("loading silero-vad")
+        _vad_model = load_silero_vad()
+        log.info("silero-vad loaded")
+    return _vad_model
 
 
 def _resample_if_needed(audio: np.ndarray, sr: int) -> np.ndarray:
@@ -80,8 +98,50 @@ def _to_mono(audio: np.ndarray) -> np.ndarray:
     return audio.mean(axis=1)
 
 
+def _vad_trim(chunk: np.ndarray) -> np.ndarray | None:
+    """Silero-VAD: behalte nur die tatsächlich gesprochenen Anteile.
+
+    Returns:
+        Voice-gestripptes Audio, oder None falls weniger als MIN_VOICE_RATIO
+        des Chunks tatsächlich Stimme ist (= „kein verwertbares Signal").
+    """
+    if _vad_model is None:
+        return chunk  # VAD nicht verfügbar → vertraue Whisper-Boundary
+
+    chunk_tensor = torch.from_numpy(chunk).float()
+    try:
+        speech_ts = get_speech_timestamps(
+            chunk_tensor,
+            _vad_model,
+            sampling_rate=TARGET_SR,
+            threshold=0.5,
+            min_silence_duration_ms=200,
+            min_speech_duration_ms=150,
+        )
+    except Exception as exc:
+        log.warning("silero-vad failed for chunk: %s", exc)
+        return chunk
+
+    if not speech_ts:
+        return None
+
+    voiced_samples = sum(t["end"] - t["start"] for t in speech_ts)
+    if voiced_samples < len(chunk) * MIN_VOICE_RATIO:
+        return None
+
+    # Stitch nur die voiced-Intervalle zusammen — Embedding wird sauberer
+    voiced_audio = np.concatenate(
+        [chunk[t["start"]:t["end"]] for t in speech_ts]
+    )
+    return voiced_audio
+
+
 def _embed_chunk(audio_16k: np.ndarray, start_sec: float, end_sec: float) -> np.ndarray | None:
-    """Extrahiert das ECAPA-Embedding für einen Audio-Ausschnitt."""
+    """Extrahiert das ECAPA-Embedding für einen Audio-Ausschnitt.
+
+    Stufe 1: Silero-VAD trimmt auf die tatsächlich gesprochenen Anteile.
+    Stufe 2: ECAPA-TDNN liefert das 192-dim Sprecher-Embedding.
+    """
     embedder = _embedder
     if embedder is None:
         return None
@@ -92,7 +152,13 @@ def _embed_chunk(audio_16k: np.ndarray, start_sec: float, end_sec: float) -> np.
     if len(chunk) < TARGET_SR * MIN_CHUNK_SEC:
         return None
 
-    tensor = torch.from_numpy(chunk).float().unsqueeze(0)
+    # Stufe 1 — VAD-Filter
+    voiced = _vad_trim(chunk.astype(np.float32))
+    if voiced is None or len(voiced) < TARGET_SR * MIN_CHUNK_SEC:
+        return None
+
+    # Stufe 2 — ECAPA-Embedding
+    tensor = torch.from_numpy(voiced).float().unsqueeze(0)
     with torch.no_grad():
         emb = embedder.encode_batch(tensor).squeeze().cpu().numpy()
     # ECAPA gibt einen L2-normalisierten Vektor zurück; sicher ist sicher

@@ -12,12 +12,15 @@ dependencies = [
   "pydantic>=2.9.0",
   "pydantic-settings>=2.6.0",
 
-  # Speaker diarization (Phase A) — ECAPA-TDNN Embeddings + Clustering.
-  # `torch` ist die schwerste Dep (~250 MB CPU-Wheel). SpeechBrain bringt
-  # das Voxceleb-Modell zur Laufzeit aus dem öffentlichen Repo nach
-  # /app/cache, kein HuggingFace-Token nötig.
+  # Speaker diarization (Phase A) — 3-Stage-Pipeline ohne HF-Token:
+  #   1. Silero-VAD  → Sprach-Aktivität pro Whisper-Segment validieren
+  #   2. SpeechBrain ECAPA-TDNN → 192-dim Sprecher-Embedding pro Segment
+  #   3. sklearn AgglomerativeClustering → Sprecher-Cluster + Silhouette
+  # `torch` ist die schwerste Dep (~250 MB CPU-Wheel). Modelle werden zur
+  # Laufzeit nach /app/cache geladen, keine externen Account-Tokens nötig.
   "torch>=2.2.0",
   "speechbrain>=1.0.0",
+  "silero-vad>=5.1.0",
   "soundfile>=0.12.1",
   "librosa>=0.10.1",
   "scikit-learn>=1.4.0",

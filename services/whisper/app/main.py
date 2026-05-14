@@ -21,7 +21,7 @@ from faster_whisper import WhisperModel
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.diarize import diarize, load_embedder
+from app.diarize import diarize, load_embedder, load_vad
 
 
 class Settings(BaseSettings):
@@ -102,10 +102,12 @@ async def lifespan(app: FastAPI):
         try:
             os.makedirs(settings.diarization_cache_dir, exist_ok=True)
             load_embedder(settings.diarization_cache_dir)
+            load_vad()
         except Exception as exc:
-            # Diarization ist nice-to-have — wenn der Embedder nicht laden
-            # will, fallen wir auf "keine Sprecher-Labels" zurück.
-            log.exception("speaker embedder failed to load: %s", exc)
+            # Diarization ist nice-to-have — wenn einer der drei Stages
+            # nicht laden will, fallen wir auf "keine Sprecher-Labels"
+            # zurück. Whisper läuft normal weiter.
+            log.exception("speaker diarization failed to load: %s", exc)
     yield
 
 

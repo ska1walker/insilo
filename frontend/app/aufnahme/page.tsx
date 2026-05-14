@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
+import { Loader2, Mic, ShieldCheck, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
@@ -162,25 +162,46 @@ export default function AufnahmePage() {
 
       <main className="mx-auto flex min-h-[calc(100dvh-72px)] max-w-[640px] flex-col items-center justify-center px-6 py-16 md:px-12">
         <div className="w-full text-center">
-          <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-meta">
-            {phaseLabel(phase)}
-          </p>
+          <StatusEyebrow phase={phase} />
 
-          <p
-            className="mono mb-12 text-6xl font-medium tabular-nums"
-            aria-live="polite"
-          >
-            {formatDuration(phase === "recording" || phase === "saving" ? elapsed : 0)}
-          </p>
+          {(phase === "recording" || phase === "saving") && (
+            <p
+              className="mono mt-3 mb-10 text-6xl font-medium tabular-nums text-text-primary"
+              aria-live="polite"
+            >
+              {formatDuration(elapsed)}
+            </p>
+          )}
 
           {phase === "idle" && (
-            <button type="button" className="btn-record" onClick={startRecording}>
-              Start
+            <p
+              className="mono mt-3 mb-10 text-6xl font-medium tabular-nums text-text-disabled"
+              aria-hidden
+            >
+              00:00
+            </p>
+          )}
+
+          {phase === "idle" && (
+            <button
+              type="button"
+              className="btn-record"
+              onClick={startRecording}
+              aria-label="Aufnahme starten"
+            >
+              <Mic className="btn-record-icon" strokeWidth={1.5} />
             </button>
           )}
 
           {phase === "requesting" && (
-            <button type="button" className="btn-record" disabled>…</button>
+            <button
+              type="button"
+              className="btn-record"
+              disabled
+              aria-label="Mikrofon wird angefragt"
+            >
+              <Loader2 className="btn-record-icon animate-spin" strokeWidth={1.5} />
+            </button>
           )}
 
           {phase === "recording" && (
@@ -189,17 +210,31 @@ export default function AufnahmePage() {
               className="btn-record recording"
               onClick={stopAndSave}
               aria-pressed
+              aria-label="Aufnahme stoppen"
             >
-              Stopp
+              <Square className="btn-record-icon" strokeWidth={0} fill="currentColor" />
             </button>
           )}
 
           {phase === "saving" && (
-            <button type="button" className="btn-record recording" disabled>…</button>
+            <button
+              type="button"
+              className="btn-record recording"
+              disabled
+              aria-label="Wird übertragen"
+            >
+              <Loader2 className="btn-record-icon animate-spin" strokeWidth={1.5} />
+            </button>
+          )}
+
+          {phase === "idle" && (
+            <p className="mt-5 text-sm text-text-meta">
+              Klicken zum Starten
+            </p>
           )}
 
           {(phase === "idle" || phase === "recording") && (
-            <div className="mt-12">
+            <div className="mt-10">
               <button type="button" onClick={cancel} className="btn-tertiary">
                 Abbrechen
               </button>
@@ -291,15 +326,36 @@ export default function AufnahmePage() {
   );
 }
 
-function phaseLabel(p: Phase): string {
-  switch (p) {
-    case "idle": return "Bereit";
-    case "requesting": return "Mikrofon wird angefragt";
-    case "recording": return "● Aufnahme läuft";
-    case "saving": return "Übertragen";
-    case "denied": return "Zugriff verweigert";
-    case "unsupported": return "Nicht unterstützt";
-  }
+function StatusEyebrow({ phase }: { phase: Phase }) {
+  const label =
+    phase === "idle" ? "Bereit"
+    : phase === "requesting" ? "Mikrofon wird angefragt"
+    : phase === "recording" ? "Aufnahme läuft"
+    : phase === "saving" ? "Wird übertragen"
+    : phase === "denied" ? "Zugriff verweigert"
+    : "Nicht unterstützt";
+
+  const dotColor =
+    phase === "recording" ? "var(--recording)"
+    : phase === "saving" ? "var(--gold-deep)"
+    : phase === "denied" || phase === "unsupported" ? "var(--error)"
+    : "var(--text-disabled)";
+
+  const pulsing = phase === "recording" || phase === "requesting" || phase === "saving";
+
+  return (
+    <p className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-meta">
+      <span
+        aria-hidden
+        className="inline-block h-1.5 w-1.5 rounded-full"
+        style={{
+          background: dotColor,
+          animation: pulsing ? "blink 1s ease-in-out infinite" : undefined,
+        }}
+      />
+      {label}
+    </p>
+  );
 }
 
 function Notice({

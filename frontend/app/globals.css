@@ -108,24 +108,34 @@
     background: var(--white);
     color: var(--text-primary);
     border: 2px solid var(--gold);
-    width: 96px;
-    height: 96px;
+    width: 120px;
+    height: 120px;
     border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     box-shadow: 0 4px 16px rgba(201, 169, 97, 0.15);
-    font-family: var(--font-mono), Menlo, monospace;
-    font-weight: 600;
-    font-size: 0.875rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    transition: all var(--duration-medium) var(--ease-out);
+    transition: transform var(--duration-medium) var(--ease-out),
+                box-shadow var(--duration-medium) var(--ease-out),
+                background var(--duration-medium) var(--ease-out);
+    animation: pulse-idle 3.6s ease-in-out infinite;
   }
   .btn-record:hover { transform: translateY(-1px); }
+  .btn-record:disabled { animation: none; opacity: 0.6; cursor: not-allowed; }
   .btn-record.recording {
     background: var(--gold);
     color: var(--white);
     animation: pulse-gold 2s ease-in-out infinite;
   }
+  .btn-record-icon { width: 36px; height: 36px; }
+  .btn-record.recording .btn-record-icon { fill: currentColor; }
 
+  @keyframes pulse-idle {
+    0%, 100% { box-shadow: 0 4px 16px rgba(201, 169, 97, 0.15),
+                            0 0 0 0 rgba(201, 169, 97, 0); }
+    50% { box-shadow: 0 4px 18px rgba(201, 169, 97, 0.22),
+                       0 0 0 10px rgba(201, 169, 97, 0.05); }
+  }
   @keyframes pulse-gold {
     0%, 100% { box-shadow: 0 0 0 0 rgba(201, 169, 97, 0.4); }
     50% { box-shadow: 0 0 0 16px rgba(201, 169, 97, 0); }

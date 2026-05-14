@@ -54,11 +54,14 @@ export default function RootLayout({
         <ToastProvider>
           <header className="sticky top-0 z-40 border-b border-border-subtle bg-white/90 backdrop-blur">
             <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 md:px-12">
-              <Link
-                href="/"
-                className="font-display text-lg font-medium tracking-tight"
-              >
-                insilo
+              <Link href="/" aria-label="Insilo — zur Übersicht" className="inline-flex items-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/insilo_logo.svg"
+                  alt="Insilo"
+                  height={28}
+                  className="h-7 w-auto"
+                />
               </Link>
               <nav className="flex items-center gap-2">
                 <Link href="/archiv" className="btn-tertiary">

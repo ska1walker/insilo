@@ -64,6 +64,9 @@ export default function RootLayout({
                 />
               </Link>
               <nav className="flex items-center gap-2">
+                <Link href="/besprechungen" className="btn-tertiary">
+                  Besprechungen
+                </Link>
                 <Link href="/archiv" className="btn-tertiary">
                   Archiv
                 </Link>

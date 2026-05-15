@@ -211,12 +211,17 @@ insilo/
 
 ## Sprache & Schreibstil
 
-- **Kunden-UI:** Sie-Form, formelles Deutsch
-- **Microcopy:** sachlich, präzise, ohne Marketing-Sprech
-- **Fehlermeldungen:** menschlich, lösungsorientiert
-- **Code-Kommentare und commit messages:** Englisch
-- **User-facing docs:** Deutsch
-- **CLAUDE.md, ARCHITECTURE.md etc.:** Deutsch
+- **UI:** vollständig internationalisiert (DE/EN/FR/ES/IT), Default DE.
+  Texte liegen in `frontend/messages/{de,en,fr,es,it}.json`, abgerufen via
+  `useTranslations()` (next-intl). Sprachen-Resolution: User-Override (DB) >
+  Org-Default (DB) > Browser Accept-Language > 'de'.
+- **Anrede pro Sprache:** DE → Sie-Form; EN → "you"; FR → "vous";
+  ES → "usted"; IT → "Lei" / formelle Anrede.
+- **Microcopy:** sachlich, präzise, ohne Marketing-Sprech — sprachübergreifend.
+- **Fehlermeldungen:** menschlich, lösungsorientiert, in allen 5 Sprachen.
+- **Code-Kommentare und commit messages:** weiter Englisch.
+- **Docs (HANDOFF, README, ARCHITECTURE, CLAUDE.md):** weiter Deutsch
+  — internes Maintainer-Material.
 
 ---
 
@@ -260,7 +265,7 @@ insilo/
 5. **Bei Storage:** Nur `/app/data/`, `/app/cache/`, `/app/Home/`. Niemals beliebige Pfade.
 6. **Bei Olares-Manifest- oder Chart-Änderungen:** **Vor dem Commit `bash scripts/check-chart.sh` laufen lassen.** Das Script codiert die Phase-4-Learnings — Version-Sync (Marc's Golden Rule), keine `.Files.Get`, keine Helm-Hooks (chicken-and-egg `ns-owner`-Label), kein `runAsInternal: true`, SQL-Drift, helm lint + template. Vollständiges Detail in `docs/HANDOFF.md §7g`. Selbe Checks laufen in CI (`ci.yml.chart-checks`) und blockieren Image-Builds (`release.yml.preflight`).
 7. **Bei neuem Git-Tag `v*.*.*`:** Tag-Name muss `olares/Chart.yaml.version` matchen — `release.yml` bricht sonst ab. Am einfachsten via `scripts/release.sh X.Y.Z` — bumpt alle 4 Versionsstellen + image-tags, regen-Migrationen, check-chart, helm package, commit, tag, push, copy to `~/Downloads/`. Flag `--chart-only` lässt image-tags stehen (spart GH-Actions-Build wenn nur YAML geändert). `--dry-run` zeigt was passieren würde. `--no-push` stoppt lokal nach Tag.
-8. **Sprachregel:** UI-Texte Deutsch (Sie-Form). Code Englisch.
+8. **Sprachregel:** UI-Texte über `useTranslations()` aus `frontend/messages/*.json` (5 Sprachen). Default DE / Sie-Form, formelle Anrede in allen Sprachen. Code + Commit-Messages weiter Englisch. Neue inline-Strings → erst Key in alle 5 JSONs aufnehmen, dann `t('namespace.key')` verwenden.
 9. **Tests:** Vitest fürs Frontend, pytest fürs Backend. Kritische Pfade (Audio-Upload, Transkription) immer mit Tests.
 10. **Bei Unsicherheit:** stoppen und Kai fragen.
 

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend_Deca, Inter, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { ToastProvider } from "@/components/toast";
 import "./globals.css";
@@ -40,51 +42,57 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const t = await getTranslations("nav");
+
   return (
     <html
-      lang="de"
+      lang={locale}
       className={`${lexend.variable} ${inter.variable} ${jetbrains.variable}`}
     >
       <body>
-        <ToastProvider>
-          <header className="sticky top-0 z-40 border-b border-border-subtle bg-white/90 backdrop-blur">
-            <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 md:px-12">
-              <Link href="/" aria-label="Insilo — zur Übersicht" className="inline-flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/insilo_logo.svg"
-                  alt="Insilo"
-                  height={28}
-                  className="h-7 w-auto"
-                />
-              </Link>
-              <nav className="flex items-center gap-2">
-                <Link href="/besprechungen" className="btn-tertiary">
-                  Besprechungen
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ToastProvider>
+            <header className="sticky top-0 z-40 border-b border-border-subtle bg-white/90 backdrop-blur">
+              <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 md:px-12">
+                <Link href="/" aria-label={t("homeAria")} className="inline-flex items-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/insilo_logo.svg"
+                    alt={t("logoAlt")}
+                    height={28}
+                    className="h-7 w-auto"
+                  />
                 </Link>
-                <Link href="/archiv" className="btn-tertiary">
-                  Archiv
-                </Link>
-                <Link href="/einstellungen" className="btn-tertiary">
-                  Einstellungen
-                </Link>
-                <Link href="/ueber" className="btn-tertiary hidden md:inline-flex">
-                  Über Insilo
-                </Link>
-                <Link href="/aufnahme" className="btn-primary">
-                  Aufnahme
-                </Link>
-              </nav>
-            </div>
-          </header>
-          {children}
-          <ServiceWorkerRegister />
-        </ToastProvider>
+                <nav className="flex items-center gap-2">
+                  <Link href="/besprechungen" className="btn-tertiary">
+                    {t("meetings")}
+                  </Link>
+                  <Link href="/archiv" className="btn-tertiary">
+                    {t("archive")}
+                  </Link>
+                  <Link href="/einstellungen" className="btn-tertiary">
+                    {t("settings")}
+                  </Link>
+                  <Link href="/ueber" className="btn-tertiary hidden md:inline-flex">
+                    {t("about")}
+                  </Link>
+                  <Link href="/aufnahme" className="btn-primary">
+                    {t("record")}
+                  </Link>
+                </nav>
+              </div>
+            </header>
+            {children}
+            <ServiceWorkerRegister />
+          </ToastProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

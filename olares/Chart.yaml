@@ -2,5 +2,5 @@ apiVersion: v2
 name: insilo
 description: Datensouveräne Meeting-Intelligenz für deutschen Mittelstand
 type: application
-version: 0.1.42          # Chart-Version (Semver) — bei jeder Chart-Änderung erhöhen
-appVersion: "0.1.42"     # Upstream-Software-Version (= spec.versionName im OlaresManifest) — Marc's Golden Rule: muss = version sein
+version: 0.1.43          # Chart-Version (Semver) — bei jeder Chart-Änderung erhöhen
+appVersion: "0.1.43"     # Upstream-Software-Version (= spec.versionName im OlaresManifest) — Marc's Golden Rule: muss = version sein

@@ -17,6 +17,7 @@ from app.routers import (
     api_keys,
     audio,
     external_api,
+    locale,
     meetings,
     search,
     speakers,
@@ -118,3 +119,4 @@ app.include_router(webhooks.router)
 app.include_router(api_keys.router)
 app.include_router(external_api.router)
 app.include_router(speakers.router)
+app.include_router(locale.router)

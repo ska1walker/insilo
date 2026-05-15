@@ -1,3 +1,9 @@
+/**
+ * Format-Layer für Insilo. Seit v0.1.43 locale-aware via Intl-APIs —
+ * keine hartkodierten deutschen Monatsnamen mehr. Die Locale kommt
+ * wahlweise als expliziter Parameter oder über next-intl.
+ */
+
 const PAD = (n: number) => n.toString().padStart(2, "0");
 
 export function formatDuration(ms: number): string {
@@ -8,24 +14,46 @@ export function formatDuration(ms: number): string {
   return h > 0 ? `${PAD(h)}:${PAD(m)}:${PAD(s)}` : `${PAD(m)}:${PAD(s)}`;
 }
 
-const WEEKDAYS_DE = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-const MONTHS_DE = [
-  "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
-  "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
-];
-
-export function formatMeetingDate(ts: number): string {
+/**
+ * "Mo, 15. Mai · 14:30" / "Mon, 15 May · 14:30" — Wochentag (kurz),
+ * Tag, Monat (kurz), Uhrzeit. Nutzt Intl.DateTimeFormat passend zur
+ * Locale. Default-Locale ist "de" damit Aufrufer ohne expliziten
+ * locale-Parameter bei einem Render auf der Server-Seite (ohne
+ * next-intl-Context) ein stabiles Ergebnis bekommen.
+ */
+export function formatMeetingDate(ts: number, locale: string = "de"): string {
   const d = new Date(ts);
-  const day = WEEKDAYS_DE[d.getDay()];
-  const dom = d.getDate();
-  const mon = MONTHS_DE[d.getMonth()];
-  const time = `${PAD(d.getHours())}:${PAD(d.getMinutes())} Uhr`;
-  return `${day}, ${dom}. ${mon} · ${time}`;
+  const dayMon = new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(d);
+  const time = new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+  return `${dayMon} · ${time}`;
 }
 
-export function defaultMeetingTitle(ts: number): string {
+/**
+ * Default-Titel beim Aufzeichnungsstart, falls der User nichts eingibt.
+ * "Aufnahme 15.05. · 14:30" / "Recording 05/15 · 2:30 PM" etc.
+ */
+export function defaultMeetingTitle(
+  ts: number,
+  locale: string = "de",
+  recordingLabel: string = "Aufnahme",
+): string {
   const d = new Date(ts);
-  return `Aufnahme ${PAD(d.getDate())}.${PAD(d.getMonth() + 1)}. · ${PAD(d.getHours())}:${PAD(d.getMinutes())}`;
+  const dateShort = new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+  }).format(d);
+  const time = new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+  return `${recordingLabel} ${dateShort} · ${time}`;
 }
 
 export function formatBytes(b: number): string {

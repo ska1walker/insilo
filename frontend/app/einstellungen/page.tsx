@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiKeyManager } from "@/components/api-key-manager";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SpeakerCatalog } from "@/components/speaker-catalog";
 import { TagManager } from "@/components/tag-manager";
 import { TemplatePrompts } from "@/components/template-prompts";
@@ -161,6 +162,10 @@ export default function EinstellungenPage() {
           leer bleibt, nutzt Insilo die im Deployment hinterlegten Vorgaben.
         </p>
       </div>
+
+      <section className="mb-10">
+        <LocaleSwitcher />
+      </section>
 
       <form
         onSubmit={handleSubmit}

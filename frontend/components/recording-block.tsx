@@ -2,6 +2,7 @@
 
 import { Loader2, Mic, ShieldCheck, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
 import { ApiError } from "@/lib/api/client";
@@ -46,6 +47,9 @@ function pickMimeType(): string | null {
  */
 export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   const router = useRouter();
+  const t = useTranslations("recording");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -139,7 +143,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
     const mimeType = recorder.mimeType || "audio/webm";
     const blob = new Blob(chunksRef.current, { type: mimeType });
     const now = Date.now();
-    const title = defaultMeetingTitle(now);
+    const title = defaultMeetingTitle(now, locale, t("defaultTitlePrefix"));
 
     try {
       const meeting = await createMeeting({
@@ -215,7 +219,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             type="button"
             className="btn-record"
             onClick={startRecording}
-            aria-label="Aufnahme starten"
+            aria-label={t("start")}
           >
             <Mic className="btn-record-icon" strokeWidth={1.5} />
           </button>
@@ -226,7 +230,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             type="button"
             className="btn-record"
             disabled
-            aria-label="Mikrofon wird angefragt"
+            aria-label={t("requestingMic")}
           >
             <Loader2
               className="btn-record-icon animate-spin"
@@ -241,7 +245,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             className="btn-record recording"
             onClick={stopAndSave}
             aria-pressed
-            aria-label="Aufnahme stoppen"
+            aria-label={t("stop")}
           >
             <Square
               className="btn-record-icon"
@@ -256,7 +260,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             type="button"
             className="btn-record recording"
             disabled
-            aria-label="Wird übertragen"
+            aria-label={t("saving")}
           >
             <Loader2
               className="btn-record-icon animate-spin"
@@ -266,13 +270,13 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         )}
 
         {phase === "idle" && (
-          <p className="mt-5 text-sm text-text-meta">Klicken zum Starten</p>
+          <p className="mt-5 text-sm text-text-meta">{t("phaseIdle")}</p>
         )}
 
         {(phase === "idle" || phase === "recording") && cancelGoesHome && (
           <div className="mt-10">
             <button type="button" onClick={cancel} className="btn-tertiary">
-              Abbrechen
+              {tCommon("cancel")}
             </button>
           </div>
         )}
@@ -280,7 +284,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         {phase === "idle" && templates && templates.length > 0 && (
           <div className={`${isFull ? "mt-16" : "mt-12"} text-left`}>
             <p className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-              Vorlage für die Zusammenfassung
+              {t("templateLabel")}
             </p>
             <div className="rounded-lg border border-border-subtle bg-white">
               {templates.map((t, i) => (
@@ -314,9 +318,9 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
         {phase === "denied" && (
           <Notice
-            title="Mikrofon-Zugriff verweigert"
-            body="Bitte erlauben Sie Insilo den Zugriff auf Ihr Mikrofon in den Browser-Einstellungen und versuchen Sie es erneut."
-            actionLabel="Erneut versuchen"
+            title={t("phaseDenied")}
+            body={t("phaseDeniedHint")}
+            actionLabel={tCommon("tryAgain")}
             onAction={() => {
               setPhase("idle");
               startRecording();
@@ -326,8 +330,8 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
         {phase === "unsupported" && (
           <Notice
-            title="Browser unterstützt keine Audio-Aufnahme"
-            body="Dieser Browser kann keine Audio-Aufnahmen erstellen. Bitte verwenden Sie eine aktuelle Version von Chrome, Firefox, Safari oder Edge."
+            title={t("phaseUnsupported")}
+            body={t("phaseUnsupportedHint")}
           />
         )}
 
@@ -354,11 +358,10 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             </div>
             <div className="max-w-[360px] text-center">
               <p className="text-sm font-medium text-text-primary">
-                Datensouverän
+                {t("trustBadge")}
               </p>
               <p className="mt-1 text-sm text-text-meta">
-                Audio, Transkript und Suchindex bleiben auf Ihrer
-                Olares-Box. Kein Cloud-Upload, keine Drittanbieter.
+                {t("trustBadgeHint")}
               </p>
             </div>
           </div>
@@ -369,18 +372,19 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 }
 
 function StatusEyebrow({ phase }: { phase: Phase }) {
+  const t = useTranslations("recording");
   const label =
     phase === "idle"
-      ? "Bereit"
+      ? t("statusReady")
       : phase === "requesting"
-        ? "Mikrofon wird angefragt"
+        ? t("requestingMic")
         : phase === "recording"
-          ? "Aufnahme läuft"
+          ? t("phaseRecording")
           : phase === "saving"
-            ? "Wird übertragen"
+            ? t("phaseSaving")
             : phase === "denied"
-              ? "Zugriff verweigert"
-              : "Nicht unterstützt";
+              ? t("phaseDenied")
+              : t("phaseUnsupported");
 
   const dotColor =
     phase === "recording"

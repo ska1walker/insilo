@@ -3,7 +3,93 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # 🚀 v0.1.39 — Manueller Webhook + Template-Rename + Title-Edit (15. Mai 2026)
+> # 🚀 v0.1.43 — i18n-Foundation (15. Mai 2026, spät)
+>
+> **Aktueller Stand:** Box läuft auf **v0.1.43**, Helm-Revision 29.
+> Insilo hat jetzt einen **5-Sprachen-Switch** (DE/EN/FR/ES/IT). Phase 1
+> der vollständigen Internationalisierung — UI-Foundation steht,
+> einzelne Komponenten sind übersetzt, Restliche kommen in v0.1.44.
+>
+> **Was die letzten Iterationen v0.1.40 → v0.1.43 gebracht haben:**
+>
+> - **v0.1.40 — Qwen2.5-tuned Prompts + Few-Shot + Eval-Baseline:**
+>   Migration 0009 (`templates.few_shot_input/output`), seed.sql komplett
+>   neu mit Markdown-strukturierten Prompts (`## Aufgabe / Eingabeformat /
+>   Regeln / Ausgabe`), `_analyse`-Feld als CoT-vor-Output, je 1
+>   deutsches Few-Shot-Beispiel pro Template, Sampling-Params
+>   (`top_p=0.8`, `max_tokens=4096`), `summarize.build_llm_payload()` als
+>   pure Funktion extrahiert. 12 YAML-Fixtures + 39 pytest-Snapshots
+>   gegen Mock-LLM. Manuelles `scripts/eval-prompts.py` für Live-Runs.
+>   SummaryView versteckt `_`-Felder als ausklappbare „LLM-Überlegungen".
+>
+> - **v0.1.41 — Lite-Schema-Editor (custom_fields):**
+>   Migration 0010 (`template_customizations.custom_fields JSONB`).
+>   User kann zu System-Vorlagen eigene Freitext-Felder ergänzen
+>   (Text oder Liste-von-Text). Backend merged sie ins effektive
+>   Output-Schema + System-Prompt-Block. Frontend: neue Sektion
+>   „Zusätzliche Felder" im Template-Edit-Dialog.
+>
+> - **v0.1.42 — Modal-Layout-Fix:**
+>   Sticky-Footer in `voice-enrollment-dialog.tsx` + `meeting-dispatch-dialog.tsx`.
+>   Button „Aufnahme starten" / „Jetzt senden" jetzt immer sichtbar
+>   bei kompakten Viewports.
+>
+> - **v0.1.43 — Internationalisierung Phase 1 (i18n-Foundation):**
+>   Migration 0011 (`org_settings.ui_locale` + `users.ui_locale`).
+>   Backend `app/locale.py` mit 4-stufiger Resolution
+>   (User > Org > Browser > 'de'), `/api/v1/locale` Endpoint, 24
+>   pytest-Cases. Frontend: `next-intl@4` installiert, 5 Message-Files
+>   (`messages/{de,en,fr,es,it}.json`, je ~108 Strings), Locale-Switcher
+>   in `/einstellungen`, `<html lang>` dynamisch, `lib/format.ts`
+>   locale-aware via `Intl.DateTimeFormat`. Cookie `insilo-locale` +
+>   `Accept-Language`-Fallback. Übersetzt in dieser Iteration:
+>   Navigation (Header-Tabs), `recording-block.tsx`, `LocaleSwitcher`.
+>
+> # 🐞 Bekannter Bug v0.1.43: `/embed-only` bricht bei WebM-Stimmproben
+>
+> **Symptom:** Modal „Stimmprobe für X" → „Aufnahme starten" → Text
+> sprechen → „Stopp & speichern" → **HTTP 502 → „Whisper-Service
+> antwortete mit HTTP 500"**.
+>
+> **Root cause** (im Whisper-Pod-Log gefunden):
+> ```
+> File "/app/app/diarize.py", line 246, in embed_voice_sample
+> soundfile.LibsndfileError: Error opening '/tmp/tmpXXX.bin':
+> Format not recognised.
+> ```
+>
+> `embed_voice_sample()` in `services/whisper/app/diarize.py` öffnet
+> das hochgeladene Audio direkt mit `soundfile.read()`. Der Browser
+> nimmt aber `audio/webm;codecs=opus` auf — und libsndfile kann WebM
+> nicht parsen. Der `/transcribe`-Endpoint funktioniert weiterhin,
+> weil faster-whisper intern ffmpeg nutzt; `/embed-only` umgeht das.
+>
+> **Fix-Path für nächste Session (~30 min):**
+>
+> 1. In `services/whisper/app/diarize.py:embed_voice_sample()`:
+>    statt `sf.read(audio_path)` direkt → `faster_whisper.audio.decode_audio(audio_path, sampling_rate=TARGET_SR)` nutzen. Liefert das gleiche numpy-Array, akzeptiert aber WebM/Opus/MP4/OGG/WAV via ffmpeg.
+> 2. Alternativ: shell-out zu ffmpeg + temp .wav (mehr Boilerplate, weniger Deps-Risiko).
+> 3. Test: lokal `curl -X POST -F "audio=@test.webm" http://localhost:8001/embed-only` → 200.
+> 4. Pod-Logs verifizieren beim ersten Release.
+>
+> # 🎯 Nächste Story-Optionen
+>
+> 1. **v0.1.44 — Bug-Fix + i18n Phase 2:** den `/embed-only`-WebM-Bug
+>    fixen (oben beschrieben) + restliche Komponenten übersetzen
+>    (`template-prompts`, `webhook-manager`, `speaker-catalog`,
+>    `summary-view`, `transcript-view`, `cluster-assignment-panel`,
+>    `voice-enrollment-dialog`, `meeting-dispatch-dialog`,
+>    `meeting-title-edit`, `tag-manager`, About-Page) + Backend-
+>    Fehlermeldungen lokalisieren.
+> 2. **v0.1.45 — i18n Phase 3 (LLM + Whisper + Stimmprobe-Texte):**
+>    `templates.system_prompts JSONB` mit `{de,en,fr,es,it}`,
+>    Whisper `language=auto|de|en|fr|es|it` per Meeting,
+>    Stimmprobe-Texte pro Sprache (Nordwind/North-Wind/La-Bise/etc.).
+> 3. **Duo-Receiver in `duo.aimighty.de`:** der Webhook-Empfänger
+>    ist immer noch offen — Insilo-Seite ist seit v0.1.39 komplett
+>    bereit (manueller Dispatch + signierter POST).
+>
+> # 📚 v0.1.39 — Manueller Webhook + Template-Rename + Title-Edit (15. Mai 2026)
 >
 > **Aktueller Stand:** Box läuft auf **v0.1.39**, alle 5 Pods Ready,
 > Helm-Revision 25. Outbound-Integration ist jetzt **defensiv per Default**
@@ -185,14 +271,27 @@
 >   Dispatch-Dialog auf Meeting-Detail, System-Vorlagen umbenennbar via
 >   `template_customizations.display_name`, Meeting-Titel inline editierbar
 >   (`PATCH /meetings/{id}`).
+> - **v0.1.40** — **Qwen2.5-tuned Prompts + Few-Shot + Eval-Baseline:**
+>   Migration 0009, seed.sql neu (Markdown-Struktur + `_analyse` +
+>   Few-Shot je Template), `build_llm_payload()` extrahiert, 12 YAML-
+>   Fixtures + 39 Snapshot-Tests, manuelles `scripts/eval-prompts.py`.
+> - **v0.1.41** — **Lite-Schema-Editor:** Migration 0010, User darf eigene
+>   Felder zu System-Vorlagen ergänzen (Text / Liste-von-Text).
+> - **v0.1.42** — **Modal-Sticky-Footer-Fix:** Stimmprobe- + Dispatch-
+>   Dialog haben jetzt fixierten Footer, „Aufnahme starten" immer sichtbar.
+> - **v0.1.43** — **i18n-Foundation:** Migration 0011, next-intl@4,
+>   5 Message-Files, Locale-Switcher, Header-Nav + recording-block
+>   übersetzt. **Bekannter Bug**: `/embed-only` bricht bei WebM-Audio
+>   (siehe Bug-Sektion oben). UI-Vollständigkeit kommt in v0.1.44.
 >
-> **Box-State (Stand 15. Mai):** alle 5 Pods Ready auf **v0.1.39**
-> (Helm-Revision 25). System-PostgreSQL + KVRocks-Redis via Olares-
+> **Box-State (Stand 15. Mai, spät):** alle 5 Pods Ready auf **v0.1.43**
+> (Helm-Revision 29). System-PostgreSQL + KVRocks-Redis via Olares-
 > Middleware. LLM via per-Org-Einstellungen (Default: Olares-LiteLLM,
-> aber jeder OpenAI-kompatible Endpoint geht). 8 Migrationen
-> angewendet (0001 Schema, 0002 RLS, 0003 org_settings, 0004
+> aber jeder OpenAI-kompatible Endpoint geht). **11 Migrationen
+> angewendet** (0001 Schema, 0002 RLS, 0003 org_settings, 0004
 > template_customizations, 0005 webhooks+api_keys, 0006 org_speakers,
-> 0007 speaker_enrollment, 0008 manual_webhooks_template_overrides).
+> 0007 speaker_enrollment, 0008 manual_webhooks_template_overrides,
+> 0009 template_few_shot, 0010 template_custom_fields, 0011 ui_locale).
 >
 > # 🎯 Vision für die nächste Phase: Duo-Integration (v0.1.35+)
 >

@@ -13,44 +13,51 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.39** auf der Olares-Box
+**Stand:** Insilo läuft als **v0.1.43** auf der Olares-Box
 `olares@192.168.112.125` (Olares-User `kaivostudio`,
 Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
-Helm-Revision 25. Feature-Set komplett:
+**Helm-Revision 29**, 11 Migrationen angewendet. Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
-- **Outbound-Integration:** Webhooks (HMAC-Signatur, Fan-Out, Retry mit
-  exp. Backoff), externe REST-API (Bearer-Token), Markdown-Export
+- **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
+  REST-API (Bearer-Token), Markdown-Export, **manueller Dispatch
+  per Default**
 - **Org-Sprecher-Katalog** mit Voiceprint-Matching (ECAPA-TDNN 192-d,
-  Cosine ≥ 0.5 für Auto-Match, max. 20 Samples FIFO pro Sprecher)
-- **Dedizierte Stimmprobe** („Der Nordwind und die Sonne") über
-  `/embed-only`-Endpoint, ~5 s Mindest-Sprache
-- **Manueller Webhook-Push** ist Default (Datensouveränität first):
-  meeting.ready feuert nicht automatisch, User klickt im Meeting-Detail
-  „An externe Systeme senden"
-- **Werks-Templates umbenennbar** (display_name/description-Overrides),
-  **Meeting-Titel inline editierbar**
+  Cosine ≥ 0.5, max. 20 Samples FIFO)
+- **Dedizierte Stimmprobe** (Nordwind-Text) — **aktuell defekt für
+  WebM-Audio, siehe Bug-Sektion HANDOFF.md**
+- **Werks-Templates** komplett anpassbar: Name/Description-Override,
+  System-Prompt-Override, Custom-Fields (Lite-Schema-Editor v0.1.41)
+- **Meeting-Titel inline editierbar**, **Markdown-Export per Webhook**
+- **Qwen 2.5-tuned LLM-Prompts** mit Few-Shot, `_analyse`-CoT-Feld,
+  Eval-Baseline (12 Fixtures + 39 Snapshot-Tests)
+- **i18n-Foundation (v0.1.43)** — 5 Sprachen wählbar (DE/EN/FR/ES/IT)
+  in `/einstellungen`, Header-Nav + Recording-Block übersetzt. Andere
+  Komponenten noch deutsch (Phase 2)
 
-**Was zuletzt dazukam (v0.1.37 → v0.1.39):**
-- Migration 0006 (`org_speakers`, `speaker_voiceprints`,
-  `meeting_speaker_clusters` mit pgvector(192)/HNSW)
-- Migration 0007 (nullable meeting_id/cluster_idx für Standalone-
-  Enrollments)
-- Migration 0008 (`org_webhooks.trigger_mode` + template display-
-  Overrides; existing Webhooks retroaktiv auf 'manual')
-- Whisper-Service neue Funktion `embed_voice_sample()` +
-  Endpoint `POST /embed-only`
-- Backend: `app/speaker_matcher.py`, `app/routers/speakers.py`,
-  `app/exports/markdown.py`, Dispatch- + Re-Diarize-Endpoints
-- Frontend: `speaker-catalog.tsx`, `cluster-assignment-panel.tsx`,
-  `voice-enrollment-dialog.tsx`, `meeting-dispatch-dialog.tsx`,
-  `meeting-title-edit.tsx`, `webhook-manager.tsx`,
-  `api-key-manager.tsx`
+**🐞 Bug zu fixen vor neuen Features:**
 
-**Nächste geplante Iteration: Duo-Empfänger-Endpoint in Duo
-(duo.aimighty.de) bauen.** Die Insilo-Seite ist komplett. Mit dem
-manuellen Trigger-Default schickt Insilo nichts ungefragt raus —
-optimal für Mandanten-Daten.
+`/embed-only` (Stimmprobe-Endpoint im Whisper-Service) bricht bei
+WebM-Audio mit `soundfile.LibsndfileError: Format not recognised`.
+Browser nimmt WebM/Opus auf, libsndfile kann das nicht parsen.
+Fix-Pfad in HANDOFF.md unter „🐞 Bekannter Bug v0.1.43" — kurz:
+`embed_voice_sample()` soll `faster_whisper.audio.decode_audio()`
+statt `soundfile.read()` nutzen. ~30 min Arbeit.
+
+**Nächste geplante Iteration: v0.1.44 — Bug-Fix + i18n Phase 2**
+
+1. WebM-Stimmproben-Bug fixen (siehe HANDOFF)
+2. Restliche Komponenten übersetzen (template-prompts, webhook-manager,
+   speaker-catalog, summary-view, transcript-view, voice-enrollment,
+   etc. + About-Page)
+3. Backend-Fehlermeldungen lokalisieren
+
+**Alternativ v0.1.45 — i18n Phase 3 (LLM + Whisper + Stimmprobe-Texte):**
+`templates.system_prompts JSONB` mit Übersetzungen pro Sprache,
+Whisper-Language-Selector pro Meeting, Stimmprobe-Texte pro Sprache.
+
+**Alternativ Duo-Receiver:** der Webhook-Empfänger in `duo.aimighty.de`
+fehlt noch. Insilo-Seite seit v0.1.39 vollständig bereit.
 
 Die Vision (vom User):
 > Insilo schreibt nach jeder Transkription Meeting-Minutes als Markdown
@@ -171,17 +178,19 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | v0.1.39 (alle 5 Pods Ready, Helm-Rev 25) |
+| Version | **v0.1.43** (alle 5 Pods Ready, Helm-Rev 29) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.39` |
-| LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM) |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.43` |
+| LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn) |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
-| Stimmprobe | „Nordwind und Sonne"-Standardtext, Whisper `/embed-only`-Endpoint |
+| Stimmprobe | „Nordwind und Sonne"-Standardtext, Whisper `/embed-only`-Endpoint — **🐞 broken für WebM-Audio** |
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
+| i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
+| Migrationen | 11 angewendet (0001–0011) |
 
 ## Offene Issues / Bekannte Stolpersteine
 
@@ -191,11 +200,15 @@ ssh olares@192.168.112.125 \
 
 ## Wichtige Dateien zum Lesen vor dem ersten Commit
 
-1. `CLAUDE.md` — Briefing
-2. `docs/HANDOFF.md` — Status + Lessons
-3. `docs/DESIGN.md` — Designsystem (Weiß/Schwarz/Gold, Sie-Form, etc.)
-4. `olares/OlaresManifest.yaml` — Plattform-Spec
-5. `scripts/check-chart.sh` — die 9 Phase-4-Lessons als Code
+1. `CLAUDE.md` — Briefing (insbes. neue Sprachregel)
+2. `docs/HANDOFF.md` — Status + Lessons + Bug-Sektion (oben!)
+3. `docs/DESIGN.md` — Designsystem (Weiß/Schwarz/Gold, formelle Anrede)
+4. `frontend/messages/de.json` — Master für Übersetzungs-Keys; pull-up bei jeder neuen UI-String
+5. `frontend/i18n/request.ts` — Locale-Resolution & Cookie-Logik
+6. `services/whisper/app/diarize.py:embed_voice_sample()` — der Bug
+7. `backend/app/locale.py` — Backend-Resolution
+8. `olares/OlaresManifest.yaml` — Plattform-Spec
+9. `scripts/check-chart.sh` — die 9 Phase-4-Lessons als Code
 
 ## Letzter Commit + GH State (zum Stand dieses Handoffs)
 
@@ -204,5 +217,13 @@ git log --oneline -5
 gh run list --workflow=release.yml --limit 3
 ```
 
-Sollte v0.1.34 als jüngsten Tag zeigen, falls v0.1.35 noch nicht
-gestartet wurde.
+Sollte **v0.1.43** als jüngsten Tag zeigen. Tag-Liste seit
+v0.1.34: 0.1.35 → 0.1.36 → 0.1.37 → 0.1.38 → 0.1.39 → 0.1.40 →
+0.1.41 → 0.1.42 → 0.1.43. Box läuft auf v0.1.43 (Helm-Rev 29).
+
+## Cmd-Shift-R nicht vergessen
+
+Nach jedem Frontend-Deploy (besonders v0.1.43 mit dem i18n-Reset):
+**Browser-Cache hard-reloaden** (Cmd-Shift-R / Ctrl-Shift-R). Der
+Service-Worker hält sonst das alte Bundle — der User sieht die
+neue Sprach-Sektion nicht.

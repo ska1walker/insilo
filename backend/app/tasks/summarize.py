@@ -109,6 +109,63 @@ def _self_speaker_hint(speakers: list[dict[str, Any]] | None) -> str:
     return ""
 
 
+def _merge_custom_fields(
+    schema: dict[str, Any],
+    custom_fields: list[dict[str, Any]] | None,
+) -> dict[str, Any]:
+    """Append org-specific extra fields onto a template schema.
+
+    Only `string` and `array_string` types are supported (v0.1.41 Lite).
+    Returns a NEW schema dict — the input is not mutated. Collisions
+    with existing properties are silently skipped (the validation in
+    the router already prevents this, but defense-in-depth is cheap).
+    """
+    if not custom_fields:
+        return schema
+
+    out = dict(schema)
+    props = dict(out.get("properties") or {})
+    for cf in custom_fields:
+        name = cf.get("name")
+        if not name or name in props:
+            continue
+        if cf.get("type") == "array_string":
+            field_schema: dict[str, Any] = {
+                "type": "array",
+                "items": {"type": "string"},
+            }
+        else:
+            field_schema = {"type": "string"}
+        if cf.get("description"):
+            field_schema["description"] = cf["description"]
+        props[name] = field_schema
+    out["properties"] = props
+    return out
+
+
+def _custom_fields_prompt_block(custom_fields: list[dict[str, Any]] | None) -> str:
+    """Render a Markdown block listing org-specific extra fields so the
+    LLM knows they exist even before reading the schema echo."""
+    if not custom_fields:
+        return ""
+    lines = [
+        "",
+        "## Zusätzliche org-spezifische Felder",
+        "Diese Felder sind von der Organisation ergänzt. Fülle sie aus,",
+        "wenn das Transkript die Information klar liefert; sonst `null`.",
+        "",
+    ]
+    for cf in custom_fields:
+        label = cf.get("label") or cf.get("name") or ""
+        desc = cf.get("description") or ""
+        type_hint = "Liste von Texten" if cf.get("type") == "array_string" else "Text"
+        line = f"- **{cf.get('name')}** ({type_hint}) — {label}"
+        if desc:
+            line += f": {desc}"
+        lines.append(line)
+    return "\n".join(lines) + "\n"
+
+
 def build_llm_payload(
     *,
     template: dict[str, Any],
@@ -125,7 +182,8 @@ def build_llm_payload(
 
     Args:
         template: row-like dict with keys `system_prompt`, `output_schema`,
-            and optional `few_shot_input`, `few_shot_output`.
+            and optional `few_shot_input`, `few_shot_output`,
+            `custom_fields` (v0.1.41 Lite-Schema-Editor).
         speakers: enriched speakers list (each entry can carry `is_self`).
         transcript_for_llm: speaker-annotated transcript ready for the
             user message body.
@@ -137,15 +195,33 @@ def build_llm_payload(
     else:
         schema = schema_raw or {}
 
+    # v0.1.41 — org-spezifische Zusatzfelder ins Schema mergen, bevor
+    # wir es echoen. Few-Shot bleibt unverändert (zeigt nur die
+    # Pflichtfelder); der Markdown-Block weiter oben sagt der LLM, dass
+    # zusätzliche Felder vorhanden sind.
+    raw_custom = template.get("custom_fields")
+    if isinstance(raw_custom, str):
+        try:
+            custom_fields = json.loads(raw_custom)
+        except json.JSONDecodeError:
+            custom_fields = []
+    elif isinstance(raw_custom, list):
+        custom_fields = raw_custom
+    else:
+        custom_fields = []
+    effective_schema = _merge_custom_fields(schema, custom_fields)
+
     # System-Prompt: erst die Template-Anweisungen (Markdown-strukturiert,
-    # siehe seed.sql), dann ggf. der Self-Speaker-Hinweis, dann das
-    # Schema-Echo. Für Qwen2.5 Q4 ist das Schema-Echo Pflicht — der
-    # response_format=json_object reicht alleine nicht zuverlässig.
+    # siehe seed.sql), dann ggf. der Self-Speaker-Hinweis, dann die
+    # Custom-Field-Liste, dann das Schema-Echo. Für Qwen2.5 Q4 ist das
+    # Schema-Echo Pflicht — der response_format=json_object reicht
+    # alleine nicht zuverlässig.
     system_content = (
         (template.get("system_prompt") or "")
         + _self_speaker_hint(speakers)
+        + _custom_fields_prompt_block(custom_fields)
         + "\n\nSchema:\n"
-        + json.dumps(schema, ensure_ascii=False)
+        + json.dumps(effective_schema, ensure_ascii=False)
     )
 
     messages: list[dict[str, Any]] = [
@@ -242,6 +318,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
                    coalesce(c.system_prompt, t.system_prompt) as system_prompt,
                    t.few_shot_input,
                    t.few_shot_output,
+                   c.custom_fields,
                    (c.template_id is not null) as is_customized
             from public.templates t
             left join public.template_customizations c

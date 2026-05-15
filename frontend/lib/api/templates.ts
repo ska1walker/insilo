@@ -1,5 +1,14 @@
 import { apiDelete, apiGet, apiPost, apiPut } from "./client";
 
+export type CustomFieldType = "string" | "array_string";
+
+export type CustomField = {
+  name: string;          // snake_case identifier
+  label: string;         // German display label
+  type: CustomFieldType;
+  description: string;   // hint that flows into the LLM schema
+};
+
 export type TemplateDto = {
   id: string;
   name: string;
@@ -18,6 +27,8 @@ export type TemplateDto = {
   /** Few-shot example baked into the template (since v0.1.40). Read-only via UI. */
   few_shot_input?: string | null;
   few_shot_output?: Record<string, unknown> | null;
+  /** Org-specific extra fields appended to the schema (since v0.1.41). */
+  custom_fields?: CustomField[];
 };
 
 export type TemplateDetail = TemplateDto & {
@@ -40,11 +51,13 @@ export async function updateTemplatePrompt(
   systemPrompt: string,
   displayName?: string | null,
   displayDescription?: string | null,
+  customFields?: CustomField[] | null,
 ): Promise<void> {
   const payload: Record<string, unknown> = { system_prompt: systemPrompt };
   if (displayName !== undefined) payload.display_name = displayName;
   if (displayDescription !== undefined)
     payload.display_description = displayDescription;
+  if (customFields !== undefined) payload.custom_fields = customFields;
   await apiPut(`/api/v1/templates/${id}/prompt`, payload);
 }
 

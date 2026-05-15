@@ -11,6 +11,8 @@ import {
   resetTemplatePrompt,
   updateTemplate,
   updateTemplatePrompt,
+  type CustomField,
+  type CustomFieldType,
   type TemplateDetail,
   type TemplateDto,
   type TemplatePayload,
@@ -279,6 +281,7 @@ function TemplateRow({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [draft, setDraft] = useState<string>("");
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [state, setState] = useState<EditorState>({ kind: "idle" });
   const [error, setError] = useState<string | null>(null);
 
@@ -294,6 +297,7 @@ function TemplateRow({
         setName(d.name);
         setDescription(d.description ?? "");
         setDraft(d.effective_prompt);
+        setCustomFields(d.custom_fields ?? []);
         setState({ kind: "idle" });
       })
       .catch((err) => {
@@ -314,7 +318,9 @@ function TemplateRow({
     detail !== null &&
     (draft.trim() !== detail.effective_prompt.trim() ||
       name.trim() !== (detail.name ?? "") ||
-      (description ?? "").trim() !== (detail.description ?? ""));
+      (description ?? "").trim() !== (detail.description ?? "") ||
+      JSON.stringify(customFields) !==
+        JSON.stringify(detail.custom_fields ?? []));
 
   async function handleSave() {
     if (!detail) return;
@@ -325,6 +331,26 @@ function TemplateRow({
     if (name.trim().length === 0) {
       setError("Bitte einen Namen vergeben.");
       return;
+    }
+    // Validate custom fields: names need to be unique + match snake_case.
+    const namePattern = /^[a-z][a-z0-9_]*$/;
+    const seen = new Set<string>();
+    for (const cf of customFields) {
+      if (!namePattern.test(cf.name)) {
+        setError(
+          `Feldname „${cf.name}" ungültig — nur Kleinbuchstaben, Ziffern und _ erlaubt (z. B. "geburtsdatum").`,
+        );
+        return;
+      }
+      if (seen.has(cf.name)) {
+        setError(`Feldname „${cf.name}" doppelt.`);
+        return;
+      }
+      seen.add(cf.name);
+      if (!cf.label.trim()) {
+        setError(`Feld „${cf.name}" hat keine Bezeichnung.`);
+        return;
+      }
     }
     setState({ kind: "saving" });
     setError(null);
@@ -349,6 +375,7 @@ function TemplateRow({
           draft,
           newName === defaultName ? "" : newName,
           newDesc === defaultDesc ? "" : newDesc,
+          customFields,
         );
       }
       const refreshed = await getTemplate(template.id);
@@ -356,6 +383,7 @@ function TemplateRow({
       setName(refreshed.name);
       setDescription(refreshed.description ?? "");
       setDraft(refreshed.effective_prompt);
+      setCustomFields(refreshed.custom_fields ?? []);
       onSaved();
       toast.show({
         message: `„${refreshed.name}" gespeichert.`,
@@ -545,6 +573,14 @@ function TemplateRow({
                 />
               </label>
 
+              {!isOrgOwned && (
+                <CustomFieldsEditor
+                  fields={customFields}
+                  onChange={setCustomFields}
+                  disabled={state.kind !== "idle"}
+                />
+              )}
+
               {detail.few_shot_input && detail.few_shot_output && (
                 <details className="mt-4 rounded-md border border-border-subtle bg-surface-soft p-3 text-xs">
                   <summary className="cursor-pointer select-none font-medium text-text-primary">
@@ -649,5 +685,168 @@ function TemplateRow({
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Custom-Fields-Editor (v0.1.41 Lite-Schema-Editor) ────────────────
+
+const TYPE_LABEL: Record<CustomFieldType, string> = {
+  string: "Text",
+  array_string: "Liste von Text",
+};
+
+function CustomFieldsEditor({
+  fields,
+  onChange,
+  disabled,
+}: {
+  fields: CustomField[];
+  onChange: (next: CustomField[]) => void;
+  disabled?: boolean;
+}) {
+  function update(idx: number, patch: Partial<CustomField>) {
+    onChange(
+      fields.map((cf, i) => (i === idx ? { ...cf, ...patch } : cf)),
+    );
+  }
+
+  function remove(idx: number) {
+    onChange(fields.filter((_, i) => i !== idx));
+  }
+
+  function add() {
+    onChange([
+      ...fields,
+      { name: "", label: "", type: "string", description: "" },
+    ]);
+  }
+
+  return (
+    <section className="mt-6 rounded-md border border-border-subtle bg-surface-soft p-4">
+      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium text-text-primary">
+            Zusätzliche Felder
+          </p>
+          <p className="mt-0.5 text-xs text-text-secondary">
+            Ergänzen Sie eigene Felder zur Zusammenfassung — z.&nbsp;B.
+            „Geburtsdatum", „Zeugen", „Aktenzeichen". Die KI füllt sie
+            zusammen mit den Standard-Feldern. Bestehende Standard-Felder
+            werden dadurch nicht überschrieben.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={add}
+          className="btn-tertiary inline-flex items-center gap-1.5"
+          disabled={disabled}
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+          Feld hinzufügen
+        </button>
+      </header>
+
+      {fields.length === 0 && (
+        <p className="text-xs text-text-meta">
+          Noch keine zusätzlichen Felder.
+        </p>
+      )}
+
+      <div className="space-y-3">
+        {fields.map((cf, idx) => (
+          <div
+            key={idx}
+            className="rounded-md border border-border-subtle bg-white p-3"
+          >
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label className="block">
+                <span className="block text-xs font-medium text-text-secondary">
+                  Feldname (intern)
+                </span>
+                <input
+                  type="text"
+                  value={cf.name}
+                  onChange={(e) =>
+                    update(idx, {
+                      name: e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9_]/g, "_")
+                        .replace(/_+/g, "_"),
+                    })
+                  }
+                  placeholder="geburtsdatum"
+                  maxLength={64}
+                  className="input mt-1 w-full font-mono text-[0.8125rem]"
+                  disabled={disabled}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-xs font-medium text-text-secondary">
+                  Bezeichnung (Anzeige)
+                </span>
+                <input
+                  type="text"
+                  value={cf.label}
+                  onChange={(e) => update(idx, { label: e.target.value })}
+                  placeholder="Geburtsdatum"
+                  maxLength={120}
+                  className="input mt-1 w-full"
+                  disabled={disabled}
+                />
+              </label>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label className="block">
+                <span className="block text-xs font-medium text-text-secondary">
+                  Typ
+                </span>
+                <select
+                  value={cf.type}
+                  onChange={(e) =>
+                    update(idx, { type: e.target.value as CustomFieldType })
+                  }
+                  className="input mt-1 w-full"
+                  disabled={disabled}
+                >
+                  {(Object.keys(TYPE_LABEL) as CustomFieldType[]).map((t) => (
+                    <option key={t} value={t}>
+                      {TYPE_LABEL[t]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="block text-xs font-medium text-text-secondary">
+                  Hinweis an die KI (optional)
+                </span>
+                <input
+                  type="text"
+                  value={cf.description}
+                  onChange={(e) => update(idx, { description: e.target.value })}
+                  placeholder="z. B. TT.MM.JJJJ falls genannt"
+                  maxLength={500}
+                  className="input mt-1 w-full"
+                  disabled={disabled}
+                />
+              </label>
+            </div>
+
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => remove(idx)}
+                className="btn-tertiary inline-flex items-center gap-1 text-xs"
+                style={{ color: "var(--error)" }}
+                disabled={disabled}
+              >
+                <Trash2 className="h-3 w-3" strokeWidth={1.75} />
+                Feld entfernen
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

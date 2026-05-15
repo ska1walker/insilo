@@ -257,6 +257,98 @@ def test_no_few_shot_falls_back_cleanly():
     assert payload["messages"][1]["role"] == "user"
 
 
+def test_custom_fields_merge_into_schema_and_system_prompt():
+    """v0.1.41 Lite-Editor: org-eigene Zusatzfelder werden ins Schema
+    gemerget UND im System-Prompt als Markdown-Block erwähnt, damit die
+    LLM sie kennt."""
+    template = {
+        "system_prompt": "## Aufgabe\nProtokoll.",
+        "output_schema": {
+            "type": "object",
+            "properties": {"sachverhalt": {"type": "string"}},
+        },
+        "custom_fields": [
+            {"name": "geburtsdatum", "label": "Geburtsdatum",
+             "type": "string", "description": "TT.MM.JJJJ"},
+            {"name": "zeugen", "label": "Zeugen",
+             "type": "array_string", "description": ""},
+        ],
+    }
+    payload = build_llm_payload(
+        template=template,
+        speakers=[],
+        transcript_for_llm="[A]: hi",
+        model="m",
+    )
+    system = payload["messages"][0]["content"]
+
+    # Markdown-Block erwähnt beide Felder mit Label + Typ-Hint
+    assert "## Zusätzliche org-spezifische Felder" in system
+    assert "**geburtsdatum** (Text)" in system
+    assert "**zeugen** (Liste von Texten)" in system
+    # Description landet in der Liste
+    assert "TT.MM.JJJJ" in system
+
+    # Schema-Echo enthält die neuen Felder
+    schema_block = system.split("Schema:\n", 1)[-1]
+    schema = json.loads(schema_block)
+    assert "geburtsdatum" in schema["properties"]
+    assert schema["properties"]["geburtsdatum"]["type"] == "string"
+    assert schema["properties"]["geburtsdatum"]["description"] == "TT.MM.JJJJ"
+    assert "zeugen" in schema["properties"]
+    assert schema["properties"]["zeugen"]["type"] == "array"
+    assert schema["properties"]["zeugen"]["items"]["type"] == "string"
+    # Original-Property bleibt erhalten
+    assert "sachverhalt" in schema["properties"]
+
+
+def test_custom_fields_empty_list_is_noop():
+    """Leere Custom-Fields-Liste: kein Markdown-Block, Schema unverändert."""
+    template = {
+        "system_prompt": "Test.",
+        "output_schema": {
+            "type": "object",
+            "properties": {"foo": {"type": "string"}},
+        },
+        "custom_fields": [],
+    }
+    payload = build_llm_payload(
+        template=template, speakers=[], transcript_for_llm="x", model="m",
+    )
+    system = payload["messages"][0]["content"]
+    assert "Zusätzliche org-spezifische Felder" not in system
+    schema = json.loads(system.split("Schema:\n", 1)[-1])
+    assert list(schema["properties"].keys()) == ["foo"]
+
+
+def test_custom_fields_collision_with_existing_field_is_ignored():
+    """Schutz vor Versehen: ein Custom-Field-Name, der bereits im
+    Template-Schema existiert, wird stillschweigend übersprungen."""
+    template = {
+        "system_prompt": "Test.",
+        "output_schema": {
+            "type": "object",
+            "properties": {"sachverhalt": {"type": "string"}},
+        },
+        "custom_fields": [
+            # Versucht "sachverhalt" zu überschreiben — wird ignoriert
+            {"name": "sachverhalt", "label": "Sachverhalt-Custom",
+             "type": "array_string", "description": "Custom"},
+            {"name": "neues_feld", "label": "Neu",
+             "type": "string", "description": ""},
+        ],
+    }
+    payload = build_llm_payload(
+        template=template, speakers=[], transcript_for_llm="x", model="m",
+    )
+    schema = json.loads(payload["messages"][0]["content"].split("Schema:\n", 1)[-1])
+    # Original-Feld unverändert
+    assert schema["properties"]["sachverhalt"]["type"] == "string"
+    assert "description" not in schema["properties"]["sachverhalt"]
+    # Nicht-kollidierendes Feld wurde hinzugefügt
+    assert "neues_feld" in schema["properties"]
+
+
 def test_few_shot_output_as_json_string_is_parsed():
     """asyncpg can return JSONB as a string — the assembler must
     handle both dict and string and emit valid JSON for the assistant message."""

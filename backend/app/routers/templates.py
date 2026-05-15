@@ -75,6 +75,18 @@ def _base_dto(row) -> dict:
             few_shot_output = json.loads(few_shot_output)
         except json.JSONDecodeError:
             pass
+
+    # v0.1.41 — org-spezifische Zusatzfelder. Liste von
+    # {name, label, type, description}. Wird im summarize-Task in das
+    # output_schema gemerget, bevor die Anfrage rausgeht.
+    custom_fields = row["custom_fields"] if "custom_fields" in row.keys() else None
+    if isinstance(custom_fields, str):
+        try:
+            custom_fields = json.loads(custom_fields)
+        except json.JSONDecodeError:
+            custom_fields = []
+    if not isinstance(custom_fields, list):
+        custom_fields = []
     return {
         "id": str(row["id"]),
         "name": display_name or default_name,
@@ -89,6 +101,7 @@ def _base_dto(row) -> dict:
         "output_schema": schema,
         "few_shot_input": few_shot_input,
         "few_shot_output": few_shot_output,
+        "custom_fields": custom_fields,
     }
 
 
@@ -105,7 +118,7 @@ async def list_templates(user: CurrentUser = Depends(get_current_user)) -> list[
             select t.id, t.name, t.description, t.category, t.is_system,
                    t.version, t.output_schema,
                    t.few_shot_input, t.few_shot_output,
-                   c.display_name, c.display_description,
+                   c.display_name, c.display_description, c.custom_fields,
                    (c.template_id is not null) as is_customized
             from public.templates t
             left join public.template_customizations c
@@ -136,7 +149,7 @@ async def get_template(
                    t.version, t.output_schema, t.system_prompt as default_prompt,
                    t.few_shot_input, t.few_shot_output,
                    c.system_prompt as custom_prompt,
-                   c.display_name, c.display_description,
+                   c.display_name, c.display_description, c.custom_fields,
                    c.updated_at as custom_updated_at
             from public.templates t
             left join public.template_customizations c
@@ -162,6 +175,19 @@ async def get_template(
     return dto
 
 
+class CustomFieldDto(BaseModel):
+    """Org-specific extra field appended to a template's output_schema.
+
+    `type` is constrained for the v0.1.41 Lite-Editor — only flat text
+    and lists-of-text are supported. Future iterations may expand this.
+    """
+
+    name: str = Field(..., min_length=1, max_length=64, pattern=r"^[a-z][a-z0-9_]*$")
+    label: str = Field(..., min_length=1, max_length=120)
+    type: str = Field(default="string", pattern=r"^(string|array_string)$")
+    description: str = Field(default="", max_length=500)
+
+
 class PromptUpdate(BaseModel):
     """Customize a (system) template for this org.
 
@@ -169,11 +195,16 @@ class PromptUpdate(BaseModel):
     `display_name` / `display_description` let the org rename a system
     template — pass `""` (empty string) to clear an override back to the
     template's default, or `null` to leave it unchanged.
+
+    `custom_fields` (v0.1.41) lets the org append extra fields to the
+    template's output schema. Passing `null` leaves the existing list
+    untouched, an empty list `[]` clears all custom fields.
     """
 
     system_prompt: str = Field(..., min_length=10, max_length=20_000)
     display_name: str | None = Field(default=None, max_length=120)
     display_description: str | None = Field(default=None, max_length=500)
+    custom_fields: list[CustomFieldDto] | None = Field(default=None, max_length=20)
 
 
 @router.put("/templates/{template_id}/prompt")
@@ -201,6 +232,25 @@ async def upsert_template_prompt(
     new_name = _normalize(payload.display_name)
     new_description = _normalize(payload.display_description)
 
+    # v0.1.41 — Custom-Fields: null means "leave unchanged", any list
+    # (incl. []) overwrites. Validate field-name uniqueness against the
+    # base schema so additions can't collide with built-in fields.
+    custom_fields_json: str | None
+    custom_fields_provided: bool = payload.custom_fields is not None
+    if custom_fields_provided:
+        names: set[str] = set()
+        for cf in payload.custom_fields or []:
+            if cf.name in names:
+                raise HTTPException(
+                    400, f"duplicate custom field name: {cf.name!r}"
+                )
+            names.add(cf.name)
+        custom_fields_json = json.dumps(
+            [cf.model_dump() for cf in (payload.custom_fields or [])]
+        )
+    else:
+        custom_fields_json = None
+
     async with acquire() as conn:
         # Ensure the template is one the user can see.
         tpl = await conn.fetchrow(
@@ -225,17 +275,20 @@ async def upsert_template_prompt(
             """
             insert into public.template_customizations (
                 org_id, template_id, system_prompt,
-                display_name, display_description, updated_by
+                display_name, display_description, custom_fields, updated_by
             )
-            values ($1, $2, $3, $4, $5, $6)
+            values ($1, $2, $3, $4, $5, coalesce($6::jsonb, '[]'::jsonb), $7)
             on conflict (org_id, template_id) do update set
                 system_prompt = excluded.system_prompt,
                 display_name =
-                    case when $7 then excluded.display_name
+                    case when $8 then excluded.display_name
                          else public.template_customizations.display_name end,
                 display_description =
-                    case when $8 then excluded.display_description
+                    case when $9 then excluded.display_description
                          else public.template_customizations.display_description end,
+                custom_fields =
+                    case when $10 then excluded.custom_fields
+                         else public.template_customizations.custom_fields end,
                 updated_by = excluded.updated_by
             """,
             user.org_id,
@@ -243,9 +296,11 @@ async def upsert_template_prompt(
             payload.system_prompt.strip(),
             new_name,
             new_description,
+            custom_fields_json,
             user.user_id,
             payload.display_name is not None,
             payload.display_description is not None,
+            custom_fields_provided,
         )
     return {"status": "ok", "template_id": str(template_id)}
 

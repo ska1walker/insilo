@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { MeetingDispatchDialog } from "@/components/meeting-dispatch-dialog";
+import { MeetingTitleEdit } from "@/components/meeting-title-edit";
 import { StatusPill } from "@/components/status-pill";
 import { SummaryView } from "@/components/summary-view";
 import { TagPicker } from "@/components/tag-picker";
 import { useToast } from "@/components/toast";
 import { TranscriptView } from "@/components/transcript-view";
+import { Send } from "lucide-react";
 import { ApiError } from "@/lib/api/client";
 import {
   deleteMeeting,
@@ -69,6 +72,7 @@ export default function MeetingDetail() {
   }, [params.id]);
 
   const [retrying, setRetrying] = useState(false);
+  const [showDispatch, setShowDispatch] = useState(false);
 
   async function onRetrySummary() {
     if (state.kind !== "ok") return;
@@ -187,7 +191,13 @@ export default function MeetingDetail() {
       </Link>
 
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-3xl font-medium md:text-4xl">{meeting.title}</h1>
+        <MeetingTitleEdit
+          meetingId={meeting.id}
+          initialTitle={meeting.title}
+          onChange={(t) =>
+            setState({ kind: "ok", meeting: { ...meeting, title: t } })
+          }
+        />
         <StatusPill status={meeting.status} />
       </div>
 
@@ -283,11 +293,32 @@ export default function MeetingDetail() {
         <TranscriptView meetingId={meeting.id} transcript={meeting.transcript} />
       )}
 
-      <div className="mt-16 flex justify-end">
+      <div className="mt-16 flex flex-wrap items-center justify-between gap-3">
+        {meeting.status === "ready" ? (
+          <button
+            type="button"
+            onClick={() => setShowDispatch(true)}
+            className="btn-secondary inline-flex items-center gap-2"
+            title="Diese Besprechung manuell an externe Systeme schicken (z. B. Duo)"
+          >
+            <Send className="h-3.5 w-3.5" strokeWidth={1.75} />
+            An externe Systeme senden
+          </button>
+        ) : (
+          <span />
+        )}
         <button type="button" onClick={onDelete} className="btn-tertiary text-recording">
           Aufnahme löschen
         </button>
       </div>
+
+      {showDispatch && (
+        <MeetingDispatchDialog
+          meetingId={meeting.id}
+          meetingTitle={meeting.title}
+          onClose={() => setShowDispatch(false)}
+        />
+      )}
     </main>
   );
 }

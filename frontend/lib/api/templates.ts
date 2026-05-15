@@ -4,6 +4,12 @@ export type TemplateDto = {
   id: string;
   name: string;
   description: string | null;
+  /** Original name (system-template default) — present when an override exists. */
+  default_name?: string | null;
+  default_description?: string | null;
+  /** null = no override, non-null = caller has overridden the display label. */
+  display_name?: string | null;
+  display_description?: string | null;
   category: string | null;
   is_system: boolean;
   version: number;
@@ -29,8 +35,14 @@ export async function getTemplate(id: string): Promise<TemplateDetail> {
 export async function updateTemplatePrompt(
   id: string,
   systemPrompt: string,
+  displayName?: string | null,
+  displayDescription?: string | null,
 ): Promise<void> {
-  await apiPut(`/api/v1/templates/${id}/prompt`, { system_prompt: systemPrompt });
+  const payload: Record<string, unknown> = { system_prompt: systemPrompt };
+  if (displayName !== undefined) payload.display_name = displayName;
+  if (displayDescription !== undefined)
+    payload.display_description = displayDescription;
+  await apiPut(`/api/v1/templates/${id}/prompt`, payload);
 }
 
 export async function resetTemplatePrompt(id: string): Promise<void> {

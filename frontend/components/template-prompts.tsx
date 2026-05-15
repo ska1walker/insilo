@@ -313,9 +313,8 @@ function TemplateRow({
   const dirty =
     detail !== null &&
     (draft.trim() !== detail.effective_prompt.trim() ||
-      (isOrgOwned &&
-        (name.trim() !== detail.name ||
-          (description ?? "").trim() !== (detail.description ?? ""))));
+      name.trim() !== (detail.name ?? "") ||
+      (description ?? "").trim() !== (detail.description ?? ""));
 
   async function handleSave() {
     if (!detail) return;
@@ -323,7 +322,7 @@ function TemplateRow({
       setError("Der System-Prompt muss mindestens 10 Zeichen lang sein.");
       return;
     }
-    if (isOrgOwned && name.trim().length === 0) {
+    if (name.trim().length === 0) {
       setError("Bitte einen Namen vergeben.");
       return;
     }
@@ -338,7 +337,19 @@ function TemplateRow({
         };
         await updateTemplate(template.id, payload);
       } else {
-        await updateTemplatePrompt(template.id, draft);
+        // System template: send display overrides only if changed from
+        // the original default. Empty string == "clear override and
+        // fall back to default".
+        const newName = name.trim();
+        const newDesc = description.trim();
+        const defaultName = detail.default_name ?? detail.name;
+        const defaultDesc = detail.default_description ?? detail.description ?? "";
+        await updateTemplatePrompt(
+          template.id,
+          draft,
+          newName === defaultName ? "" : newName,
+          newDesc === defaultDesc ? "" : newDesc,
+        );
       }
       const refreshed = await getTemplate(template.id);
       setDetail(refreshed);
@@ -454,45 +465,65 @@ function TemplateRow({
 
           {state.kind !== "loading" && detail && (
             <>
-              {isOrgOwned ? (
-                <div className="space-y-4">
-                  <label className="block">
-                    <span className="block text-sm font-medium text-text-primary">
-                      Name
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="block text-sm font-medium text-text-primary">
+                    Name
+                  </span>
+                  {!isOrgOwned && detail?.default_name && (
+                    <span className="mt-0.5 block text-xs text-text-meta">
+                      Standardname: <span className="font-mono">{detail.default_name}</span>
+                      {detail.display_name && (
+                        <button
+                          type="button"
+                          onClick={() => setName(detail.default_name ?? "")}
+                          className="ml-2 underline hover:text-text-primary"
+                        >
+                          Auf Standard zurücksetzen
+                        </button>
+                      )}
                     </span>
-                    <input
-                      type="text"
-                      className="input mt-1 w-full"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      maxLength={120}
-                      disabled={
-                        state.kind === "saving" || state.kind === "deleting"
-                      }
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="block text-sm font-medium text-text-primary">
-                      Beschreibung
+                  )}
+                  <input
+                    type="text"
+                    className="input mt-1 w-full"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    maxLength={120}
+                    disabled={
+                      state.kind === "saving" || state.kind === "deleting"
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-text-primary">
+                    Beschreibung
+                  </span>
+                  {!isOrgOwned && detail?.default_description && (
+                    <span className="mt-0.5 block text-xs text-text-meta">
+                      Standardbeschreibung: {detail.default_description}
                     </span>
-                    <input
-                      type="text"
-                      className="input mt-1 w-full"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      maxLength={500}
-                      disabled={
-                        state.kind === "saving" || state.kind === "deleting"
-                      }
-                    />
-                  </label>
-                </div>
-              ) : (
-                <div className="mb-4 rounded-md bg-surface-soft px-3 py-2 text-xs text-text-secondary">
-                  Diese Werksvorlage hat einen festen Namen und ein festes
-                  Output-Schema. Sie können nur den System-Prompt anpassen.
-                </div>
-              )}
+                  )}
+                  <input
+                    type="text"
+                    className="input mt-1 w-full"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    maxLength={500}
+                    disabled={
+                      state.kind === "saving" || state.kind === "deleting"
+                    }
+                  />
+                </label>
+                {!isOrgOwned && (
+                  <div className="rounded-md bg-surface-soft px-3 py-2 text-xs text-text-secondary">
+                    Diese Werksvorlage hat ein festes Output-Schema und
+                    feste Felder in der Zusammenfassung. Sie können den
+                    Namen, die Beschreibung und den System-Prompt für
+                    Ihre Organisation anpassen.
+                  </div>
+                )}
+              </div>
 
               <label className="mt-4 block">
                 <span className="block text-sm font-medium text-text-primary">

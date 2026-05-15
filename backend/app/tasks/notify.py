@@ -408,6 +408,11 @@ async def _do_notify(meeting_id: UUID, event: str) -> dict[str, Any]:
             return {"status": "skipped", "reason": "no meeting"}
         org_id = org_row["org_id"]
 
+        # Auto-Filter: bei meeting.ready werden manual-Webhooks
+        # übersprungen — der User triggert sie per "An externe Systeme
+        # senden"-Button auf der Meeting-Detail-Page. Alle anderen
+        # Events (created/failed/updated/deleted) feuern immer
+        # automatisch, unabhängig von trigger_mode.
         webhook_rows = await conn.fetch(
             """
             select id
@@ -415,6 +420,7 @@ async def _do_notify(meeting_id: UUID, event: str) -> dict[str, Any]:
             where org_id = $1
               and is_active = true
               and $2 = any(events)
+              and ($2 <> 'meeting.ready' or trigger_mode = 'auto')
             """,
             org_id,
             event,
@@ -454,6 +460,73 @@ def notify_webhook(meeting_id: str, event: str) -> dict[str, Any]:
     except Exception:
         log.exception("notify_webhook crashed for %s/%s", meeting_id, event)
         raise
+
+
+# ─── Manual dispatch (user-triggered, bypasses trigger_mode filter) ────
+
+
+async def dispatch_manual(
+    meeting_id: UUID,
+    webhook_ids: list[UUID] | None,
+    org_id: UUID,
+    event: str = "meeting.ready",
+) -> dict[str, Any]:
+    """User-triggered fan-out: send a meeting event to chosen webhooks.
+
+    Unlike `_do_notify` this ignores `trigger_mode` and the event-
+    subscription filter — the user explicitly picked these webhooks.
+    Webhooks must still belong to `org_id` (security boundary) and be
+    active (no point sending to a disabled receiver).
+
+    `webhook_ids=None` means "all active webhooks of the org for this
+    event" (respects subscription list, ignores trigger_mode).
+    """
+    if event not in VALID_EVENTS:
+        return {"status": "skipped", "reason": f"unknown event {event!r}"}
+
+    conn = await _connect()
+    try:
+        if webhook_ids:
+            rows = await conn.fetch(
+                """
+                select id
+                from public.org_webhooks
+                where id = any($1::uuid[])
+                  and org_id = $2
+                  and is_active = true
+                """,
+                webhook_ids,
+                org_id,
+            )
+        else:
+            rows = await conn.fetch(
+                """
+                select id
+                from public.org_webhooks
+                where org_id = $1
+                  and is_active = true
+                  and $2 = any(events)
+                """,
+                org_id,
+                event,
+            )
+        if not rows:
+            return {"status": "ok", "fanout": 0, "reason": "no eligible webhooks"}
+
+        payload = await _load_meeting_payload(conn, meeting_id, event)
+        if payload is None:
+            return {"status": "skipped", "reason": "meeting vanished"}
+    finally:
+        await conn.close()
+
+    from app.worker import celery_app as _app
+    for wh in rows:
+        delivery_id = uuid4().hex
+        _app.send_task(
+            "deliver_webhook",
+            args=[str(wh["id"]), str(meeting_id), event, delivery_id, payload],
+        )
+    return {"status": "ok", "fanout": len(rows)}
 
 
 # ─── Public helper ─────────────────────────────────────────────────────

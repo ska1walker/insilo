@@ -54,10 +54,25 @@ def _base_dto(row) -> dict:
     schema = row["output_schema"]
     if isinstance(schema, str):
         schema = json.loads(schema)
+    # If the org overrode display_name/display_description in
+    # template_customizations, surface that as the canonical name. The
+    # original name+description are kept as `default_name` /
+    # `default_description` so the UI can show "Standard: X / Ihre
+    # Bezeichnung: Y" affordances.
+    default_name = row["name"]
+    default_description = row["description"] or ""
+    display_name = row["display_name"] if "display_name" in row.keys() else None
+    display_description = (
+        row["display_description"] if "display_description" in row.keys() else None
+    )
     return {
         "id": str(row["id"]),
-        "name": row["name"],
-        "description": row["description"],
+        "name": display_name or default_name,
+        "description": display_description if display_description is not None else default_description,
+        "default_name": default_name,
+        "default_description": default_description,
+        "display_name": display_name,
+        "display_description": display_description,
         "category": row["category"],
         "is_system": row["is_system"],
         "version": row["version"],
@@ -77,6 +92,7 @@ async def list_templates(user: CurrentUser = Depends(get_current_user)) -> list[
             """
             select t.id, t.name, t.description, t.category, t.is_system,
                    t.version, t.output_schema,
+                   c.display_name, c.display_description,
                    (c.template_id is not null) as is_customized
             from public.templates t
             left join public.template_customizations c
@@ -106,6 +122,7 @@ async def get_template(
             select t.id, t.name, t.description, t.category, t.is_system,
                    t.version, t.output_schema, t.system_prompt as default_prompt,
                    c.system_prompt as custom_prompt,
+                   c.display_name, c.display_description,
                    c.updated_at as custom_updated_at
             from public.templates t
             left join public.template_customizations c
@@ -132,7 +149,17 @@ async def get_template(
 
 
 class PromptUpdate(BaseModel):
+    """Customize a (system) template for this org.
+
+    `system_prompt` is required (the original use-case). The optional
+    `display_name` / `display_description` let the org rename a system
+    template — pass `""` (empty string) to clear an override back to the
+    template's default, or `null` to leave it unchanged.
+    """
+
     system_prompt: str = Field(..., min_length=10, max_length=20_000)
+    display_name: str | None = Field(default=None, max_length=120)
+    display_description: str | None = Field(default=None, max_length=500)
 
 
 @router.put("/templates/{template_id}/prompt")
@@ -141,11 +168,25 @@ async def upsert_template_prompt(
     payload: PromptUpdate,
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
-    """Override a template's system prompt for the calling org.
+    """Override a system template's prompt — and optionally also its
+    display name and description — for the calling org.
 
-    Idempotent — repeating the call just updates the override. Use the
-    DELETE variant to revert to the system default.
+    Idempotent. Empty strings ("") for display_name/description clear
+    the override (template falls back to its default name); `null`
+    means "leave the existing override untouched" (relevant when only
+    bumping the system_prompt).
     """
+    # Empty-string → store as NULL (= "no override, use default").
+    # null in payload → keep whatever's currently stored.
+    def _normalize(v: str | None) -> str | None | object:
+        if v is None:
+            return None  # marker for "leave unchanged"
+        s = v.strip()
+        return s if s else None  # "" → null in DB
+
+    new_name = _normalize(payload.display_name)
+    new_description = _normalize(payload.display_description)
+
     async with acquire() as conn:
         # Ensure the template is one the user can see.
         tpl = await conn.fetchrow(
@@ -161,20 +202,36 @@ async def upsert_template_prompt(
         if not tpl:
             raise HTTPException(404, "template not found")
 
+        # Build dynamic upsert: only touch the override columns the
+        # caller actually sent. asyncpg has no "leave column alone"
+        # primitive, so we use COALESCE($x, existing_col) — but for the
+        # initial INSERT case we just write payload values (NULL if
+        # absent in payload).
         await conn.execute(
             """
             insert into public.template_customizations (
-                org_id, template_id, system_prompt, updated_by
+                org_id, template_id, system_prompt,
+                display_name, display_description, updated_by
             )
-            values ($1, $2, $3, $4)
+            values ($1, $2, $3, $4, $5, $6)
             on conflict (org_id, template_id) do update set
                 system_prompt = excluded.system_prompt,
+                display_name =
+                    case when $7 then excluded.display_name
+                         else public.template_customizations.display_name end,
+                display_description =
+                    case when $8 then excluded.display_description
+                         else public.template_customizations.display_description end,
                 updated_by = excluded.updated_by
             """,
             user.org_id,
             template_id,
             payload.system_prompt.strip(),
+            new_name,
+            new_description,
             user.user_id,
+            payload.display_name is not None,
+            payload.display_description is not None,
         )
     return {"status": "ok", "template_id": str(template_id)}
 

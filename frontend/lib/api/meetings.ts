@@ -124,3 +124,27 @@ export async function updateTranscriptSpeakers(
 }> {
   return apiPut(`/api/v1/meetings/${id}/transcript/speakers`, payload);
 }
+
+export async function renameMeeting(id: string, title: string): Promise<{
+  status: string;
+  meeting_id: string;
+  updated: string[];
+}> {
+  return apiRequest(`/api/v1/meetings/${id}`, {
+    method: "PATCH",
+    body: { title },
+  });
+}
+
+export type DispatchResult = {
+  status: string;
+  fanout: number;
+  reason?: string;
+};
+
+export async function dispatchMeeting(
+  id: string,
+  webhookIds: string[] = [],
+): Promise<DispatchResult> {
+  return apiPost(`/api/v1/meetings/${id}/dispatch`, { webhook_ids: webhookIds });
+}

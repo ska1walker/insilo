@@ -428,6 +428,101 @@ async def retry_summary(
     return {"status": "queued", "meeting_id": str(meeting_id)}
 
 
+class MeetingPatch(BaseModel):
+    """Partial update — only fields actually sent get modified."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+
+
+@router.patch("/meetings/{meeting_id}")
+async def patch_meeting(
+    meeting_id: UUID,
+    payload: MeetingPatch,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """Update a meeting's editable metadata (currently: title)."""
+    fields = payload.model_dump(exclude_unset=True)
+    if not fields:
+        raise HTTPException(400, "no fields to update")
+
+    async with acquire() as conn:
+        existing = await conn.fetchrow(
+            """
+            select id from public.meetings
+            where id = $1 and org_id = $2 and deleted_at is null
+            """,
+            meeting_id,
+            user.org_id,
+        )
+        if existing is None:
+            raise HTTPException(404, "meeting not found")
+
+        if "title" in fields:
+            await conn.execute(
+                """
+                update public.meetings
+                set title = $2, updated_at = now()
+                where id = $1
+                """,
+                meeting_id,
+                fields["title"].strip(),
+            )
+
+    enqueue_webhook(meeting_id, "meeting.updated")
+    return {"status": "ok", "meeting_id": str(meeting_id), "updated": list(fields.keys())}
+
+
+class DispatchRequest(BaseModel):
+    """Manual webhook dispatch — user-triggered, bypasses trigger_mode.
+
+    `webhook_ids` is the list of webhook UUIDs to deliver to. Pass an
+    empty list (or omit) to dispatch to *all* active webhooks of the
+    org that subscribe to `meeting.ready` (regardless of trigger_mode).
+    """
+
+    webhook_ids: list[UUID] = Field(default_factory=list)
+
+
+@router.post("/meetings/{meeting_id}/dispatch", status_code=202)
+async def dispatch_meeting(
+    meeting_id: UUID,
+    payload: DispatchRequest,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """Manually send the meeting.ready event to selected webhooks.
+
+    Use case: the user has manual-mode webhooks (Default in v0.1.39) and
+    wants to decide per meeting whether the outbound push happens. This
+    endpoint is what the "An externe Systeme senden"-Button calls.
+    """
+    async with acquire() as conn:
+        meeting = await conn.fetchrow(
+            """
+            select id, status from public.meetings
+            where id = $1 and org_id = $2 and deleted_at is null
+            """,
+            meeting_id,
+            user.org_id,
+        )
+    if meeting is None:
+        raise HTTPException(404, "meeting not found")
+    if meeting["status"] != "ready":
+        raise HTTPException(
+            409,
+            f"meeting status is {meeting['status']!r} — only 'ready' meetings can be dispatched",
+        )
+
+    from app.tasks.notify import dispatch_manual
+
+    result = await dispatch_manual(
+        meeting_id,
+        list(payload.webhook_ids) or None,
+        user.org_id,
+        event="meeting.ready",
+    )
+    return result
+
+
 @router.delete("/meetings/{meeting_id}", status_code=204)
 async def delete_meeting(
     meeting_id: UUID, user: CurrentUser = Depends(get_current_user)

@@ -18,12 +18,15 @@ export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
   "meeting.updated": "Besprechung geändert",
 };
 
+export type TriggerMode = "manual" | "auto";
+
 export type WebhookRead = {
   id: string;
   url: string;
   description: string;
   events: WebhookEvent[];
   is_active: boolean;
+  trigger_mode: TriggerMode;
   has_secret: boolean;
   created_at: string;
   last_success_at: string | null;
@@ -40,6 +43,7 @@ export type WebhookCreate = {
   description?: string;
   events: WebhookEvent[];
   is_active?: boolean;
+  trigger_mode?: TriggerMode;
   secret?: string | null;
 };
 
@@ -48,6 +52,7 @@ export type WebhookUpdate = {
   description?: string;
   events?: WebhookEvent[];
   is_active?: boolean;
+  trigger_mode?: TriggerMode;
   secret?: string | null;
 };
 

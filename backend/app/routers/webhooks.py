@@ -34,6 +34,10 @@ class WebhookCreate(BaseModel):
     description: str = Field(default="", max_length=500)
     events: list[str] = Field(default_factory=lambda: ["meeting.ready"])
     is_active: bool = True
+    # 'manual' (default) requires the user to click "An externe Systeme
+    # senden" on each meeting before meeting.ready is fired. 'auto'
+    # fires on every meeting once the summary is done.
+    trigger_mode: str = Field(default="manual", pattern="^(manual|auto)$")
     # null → server-generated secret. Caller-supplied secrets must be
     # ≥16 chars so HMAC has reasonable strength.
     secret: str | None = Field(default=None, min_length=16, max_length=200)
@@ -44,6 +48,7 @@ class WebhookUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=500)
     events: list[str] | None = None
     is_active: bool | None = None
+    trigger_mode: str | None = Field(default=None, pattern="^(manual|auto)$")
     # null = keep existing; non-null = rotate.
     secret: str | None = Field(default=None, min_length=16, max_length=200)
 
@@ -54,6 +59,7 @@ class WebhookRead(BaseModel):
     description: str
     events: list[str]
     is_active: bool
+    trigger_mode: str
     has_secret: bool
     created_at: str
     last_success_at: str | None
@@ -93,6 +99,7 @@ def _row_to_read(row: dict[str, Any]) -> WebhookRead:
         description=row["description"] or "",
         events=list(row["events"] or []),
         is_active=bool(row["is_active"]),
+        trigger_mode=row.get("trigger_mode") or "manual",
         has_secret=bool(row["secret"]),
         created_at=row["created_at"].isoformat() if row["created_at"] else "",
         last_success_at=row["last_success_at"].isoformat() if row["last_success_at"] else None,
@@ -122,7 +129,7 @@ async def list_webhooks(user: CurrentUser = Depends(get_current_user)) -> list[W
     async with acquire() as conn:
         rows = await conn.fetch(
             """
-            select id, url, description, events, is_active, secret,
+            select id, url, description, events, is_active, trigger_mode, secret,
                    created_at, last_success_at, last_failure_at, last_failure_msg
             from public.org_webhooks
             where org_id = $1
@@ -146,10 +153,10 @@ async def create_webhook(
             """
             insert into public.org_webhooks (
                 org_id, url, description, events, is_active,
-                secret, created_by
+                trigger_mode, secret, created_by
             )
-            values ($1, $2, $3, $4, $5, $6, $7)
-            returning id, url, description, events, is_active, secret,
+            values ($1, $2, $3, $4, $5, $6, $7, $8)
+            returning id, url, description, events, is_active, trigger_mode, secret,
                       created_at, last_success_at, last_failure_at, last_failure_msg
             """,
             user.org_id,
@@ -157,6 +164,7 @@ async def create_webhook(
             payload.description.strip(),
             events,
             payload.is_active,
+            payload.trigger_mode,
             secret,
             user.user_id,
         )
@@ -184,13 +192,14 @@ async def update_webhook(
         row = await conn.fetchrow(
             """
             update public.org_webhooks set
-                url         = coalesce($2, url),
-                description = coalesce($3, description),
-                events      = coalesce($4, events),
-                is_active   = coalesce($5, is_active),
-                secret      = coalesce($6, secret)
+                url          = coalesce($2, url),
+                description  = coalesce($3, description),
+                events       = coalesce($4, events),
+                is_active    = coalesce($5, is_active),
+                trigger_mode = coalesce($6, trigger_mode),
+                secret       = coalesce($7, secret)
             where id = $1
-            returning id, url, description, events, is_active, secret,
+            returning id, url, description, events, is_active, trigger_mode, secret,
                       created_at, last_success_at, last_failure_at, last_failure_msg
             """,
             webhook_id,
@@ -198,6 +207,7 @@ async def update_webhook(
             payload.description.strip() if payload.description is not None else None,
             events,
             payload.is_active,
+            payload.trigger_mode,
             payload.secret,
         )
     return _row_to_read(dict(row))

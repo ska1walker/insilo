@@ -230,6 +230,23 @@ function WebhookRow({
             <p className="mt-1 text-sm text-text-secondary">{webhook.description}</p>
           )}
           <div className="mt-2 flex flex-wrap gap-1.5">
+            <span
+              className="rounded-full px-2 py-0.5 text-xs"
+              style={
+                webhook.trigger_mode === "manual"
+                  ? { background: "rgba(201,169,97,0.12)", color: "var(--gold-deep)" }
+                  : { background: "var(--surface-soft)", color: "var(--text-secondary)" }
+              }
+              title={
+                webhook.trigger_mode === "manual"
+                  ? "meeting.ready feuert nur, wenn Sie manuell 'An externe Systeme senden' klicken"
+                  : "meeting.ready feuert automatisch nach jeder Aufnahme"
+              }
+            >
+              {webhook.trigger_mode === "manual"
+                ? "manuell auslösen"
+                : "automatisch"}
+            </span>
             {webhook.events.map((ev) => (
               <span
                 key={ev}
@@ -465,6 +482,9 @@ function WebhookForm({
   const [events, setEvents] = useState<WebhookEvent[]>(
     initial?.events ?? ["meeting.ready"],
   );
+  const [triggerMode, setTriggerMode] = useState<"manual" | "auto">(
+    initial?.trigger_mode ?? "manual",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -492,6 +512,7 @@ function WebhookForm({
           url: url.trim(),
           description: description.trim(),
           events,
+          trigger_mode: triggerMode,
         });
         onCreated?.(created);
       } else if (initial) {
@@ -499,6 +520,7 @@ function WebhookForm({
           url: url.trim(),
           description: description.trim(),
           events,
+          trigger_mode: triggerMode,
         });
         onUpdated?.();
       }
@@ -558,6 +580,51 @@ function WebhookForm({
               <span>{WEBHOOK_EVENT_LABELS[ev]}</span>
             </label>
           ))}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend className="block text-xs font-medium text-text-secondary">
+          Auslöser für „Zusammenfassung fertig"
+        </legend>
+        <div className="mt-2 space-y-2">
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="radio"
+              name="trigger-mode"
+              value="manual"
+              checked={triggerMode === "manual"}
+              onChange={() => setTriggerMode("manual")}
+              disabled={saving}
+              className="mt-1"
+            />
+            <span>
+              <span className="font-medium text-text-primary">Manuell</span>
+              <span className="ml-2 text-xs text-text-meta">
+                Sie klicken pro Besprechung „An externe Systeme senden". Andere
+                Ereignisse (Erstellt/Fehler/Geändert/Gelöscht) feuern trotzdem
+                automatisch.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="radio"
+              name="trigger-mode"
+              value="auto"
+              checked={triggerMode === "auto"}
+              onChange={() => setTriggerMode("auto")}
+              disabled={saving}
+              className="mt-1"
+            />
+            <span>
+              <span className="font-medium text-text-primary">Automatisch</span>
+              <span className="ml-2 text-xs text-text-meta">
+                Jede fertige Zusammenfassung wird sofort gepusht. Schneller, aber
+                jede Aufnahme verlässt die Box ohne Bestätigung.
+              </span>
+            </span>
+          </label>
         </div>
       </fieldset>
 

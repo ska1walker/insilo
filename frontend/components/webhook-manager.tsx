@@ -11,6 +11,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import {
@@ -37,6 +38,7 @@ import {
  * dass das Secret nicht erneut sichtbar sein wird.
  */
 export function WebhookManager() {
+  const t = useTranslations("webhookManager");
   const toast = useToast();
   const [webhooks, setWebhooks] = useState<WebhookRead[] | null>(null);
   const [adding, setAdding] = useState(false);
@@ -78,7 +80,7 @@ export function WebhookManager() {
             className="btn-secondary inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            Neuen Webhook hinzufügen
+            {t("addNew")}
           </button>
         )}
       </div>
@@ -92,7 +94,7 @@ export function WebhookManager() {
             setJustCreated(w);
             refresh();
             toast.show({
-              message: "Webhook angelegt.",
+              message: t("createdToast"),
               variant: "success",
             });
           }}
@@ -101,9 +103,7 @@ export function WebhookManager() {
 
       {webhooks.length === 0 && !adding && (
         <p className="text-sm text-text-secondary">
-          Noch keine Webhooks. Legen Sie über „Neuen Webhook hinzufügen" eine
-          Ziel-URL an — Insilo schickt dann bei jeder Statusänderung einer
-          Besprechung einen signierten POST-Request dorthin.
+          {t("noneYet")}
         </p>
       )}
 
@@ -151,6 +151,8 @@ function WebhookRow({
   onAfterDelete: () => void;
   onAfterToggle: () => void;
 }) {
+  const t = useTranslations("webhookManager");
+  const tCommon = useTranslations("common");
   const toast = useToast();
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<WebhookTestResult | null>(null);
@@ -163,7 +165,7 @@ function WebhookRow({
       const r = await testWebhook(webhook.id);
       setTestResult(r);
     } catch {
-      setTestResult({ ok: false, error_message: "Test fehlgeschlagen." });
+      setTestResult({ ok: false, error_message: t("testFailedMsg") });
     } finally {
       setTesting(false);
     }
@@ -174,18 +176,18 @@ function WebhookRow({
       await updateWebhook(webhook.id, { is_active: !webhook.is_active });
       onAfterToggle();
     } catch {
-      toast.show({ message: "Konnte Status nicht ändern.", variant: "error" });
+      toast.show({ message: t("statusToggleFail"), variant: "error" });
     }
   }
 
   function handleDelete() {
     let cancelled = false;
     toast.show({
-      message: "Webhook wird gelöscht",
+      message: t("deleteUndoMsg"),
       variant: "undo",
       duration: 5000,
       action: {
-        label: "Rückgängig",
+        label: tCommon("undo"),
         onClick: () => {
           cancelled = true;
         },
@@ -197,7 +199,7 @@ function WebhookRow({
           onAfterDelete();
         } catch {
           toast.show({
-            message: "Webhook konnte nicht gelöscht werden.",
+            message: t("deleteFailToast"),
             variant: "error",
           });
         }
@@ -205,7 +207,7 @@ function WebhookRow({
     });
   }
 
-  const health = getHealth(webhook);
+  const health = getHealth(webhook, t);
 
   return (
     <div className="px-5 py-4">
@@ -222,7 +224,7 @@ function WebhookRow({
             </span>
             {!webhook.is_active && (
               <span className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-meta">
-                inaktiv
+                {t("inactive")}
               </span>
             )}
           </div>
@@ -239,13 +241,13 @@ function WebhookRow({
               }
               title={
                 webhook.trigger_mode === "manual"
-                  ? "meeting.ready feuert nur, wenn Sie manuell 'An externe Systeme senden' klicken"
-                  : "meeting.ready feuert automatisch nach jeder Aufnahme"
+                  ? t("manualTooltip")
+                  : t("autoTooltip")
               }
             >
               {webhook.trigger_mode === "manual"
-                ? "manuell auslösen"
-                : "automatisch"}
+                ? t("manualLabel")
+                : t("autoLabel")}
             </span>
             {webhook.events.map((ev) => (
               <span
@@ -265,20 +267,20 @@ function WebhookRow({
             onClick={handleTest}
             className="btn-tertiary inline-flex items-center gap-1"
             disabled={testing}
-            aria-label="Webhook testen"
+            aria-label={t("testAria")}
           >
             <RefreshCw
               className={"h-3.5 w-3.5" + (testing ? " animate-spin" : "")}
               strokeWidth={1.75}
             />
-            {testing ? "Teste …" : "Testen"}
+            {testing ? t("testing") : t("test")}
           </button>
           <button
             type="button"
             onClick={handleToggle}
             className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-            aria-label={webhook.is_active ? "Deaktivieren" : "Aktivieren"}
-            title={webhook.is_active ? "Deaktivieren" : "Aktivieren"}
+            aria-label={webhook.is_active ? t("deactivate") : t("activate")}
+            title={webhook.is_active ? t("deactivate") : t("activate")}
           >
             {webhook.is_active ? (
               <XCircle className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -290,7 +292,7 @@ function WebhookRow({
             type="button"
             onClick={onEdit}
             className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-            aria-label="Bearbeiten"
+            aria-label={t("editAria")}
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
           </button>
@@ -298,7 +300,7 @@ function WebhookRow({
             type="button"
             onClick={handleDelete}
             className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft"
-            aria-label="Löschen"
+            aria-label={t("deleteAria")}
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
           </button>
@@ -323,7 +325,7 @@ function WebhookRow({
           }
         >
           <p className="font-medium">
-            {testResult.ok ? "Test erfolgreich" : "Test fehlgeschlagen"}
+            {testResult.ok ? t("testSuccess") : t("testFail")}
           </p>
           <p className="mt-1 opacity-90">
             {testResult.ok
@@ -348,7 +350,7 @@ function WebhookRow({
         ) : (
           <ChevronDown className="h-3 w-3" strokeWidth={2} />
         )}
-        Letzte Auslieferungen
+        {t("lastDeliveries")}
       </button>
 
       {showDeliveries && <DeliveryList webhookId={webhook.id} />}
@@ -356,24 +358,30 @@ function WebhookRow({
   );
 }
 
-function getHealth(w: WebhookRead): { color: string; label: string } {
-  if (!w.is_active) return { color: "text-meta", label: "Deaktiviert" };
+function getHealth(
+  w: WebhookRead,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): { color: string; label: string } {
+  if (!w.is_active) return { color: "text-meta", label: t("healthDeactivated") };
   const ts = (v: string | null) => (v ? new Date(v).getTime() : 0);
   const lastOk = ts(w.last_success_at);
   const lastFail = ts(w.last_failure_at);
   if (!lastOk && !lastFail)
-    return { color: "text-meta", label: "Noch keine Auslieferung." };
+    return { color: "text-meta", label: t("healthNoDeliveries") };
   if (lastFail > lastOk) {
     return {
       color: "error",
-      label: `Letzter Fehler: ${formatRelative(w.last_failure_at)}${
-        w.last_failure_msg ? ` – ${w.last_failure_msg}` : ""
-      }`,
+      label: w.last_failure_msg
+        ? t("healthLastFailWithMsg", {
+            when: formatRelative(w.last_failure_at),
+            msg: w.last_failure_msg,
+          })
+        : t("healthLastFail", { when: formatRelative(w.last_failure_at) }),
     };
   }
   return {
     color: "success",
-    label: `Letzte erfolgreiche Auslieferung: ${formatRelative(w.last_success_at)}`,
+    label: t("healthLastOk", { when: formatRelative(w.last_success_at) }),
   };
 }
 
@@ -392,6 +400,7 @@ function formatRelative(iso: string | null): string {
 // ─── Delivery list ──────────────────────────────────────────────────────
 
 function DeliveryList({ webhookId }: { webhookId: string }) {
+  const t = useTranslations("webhookManager");
   const [items, setItems] = useState<WebhookDelivery[] | null>(null);
 
   useEffect(() => {
@@ -409,11 +418,11 @@ function DeliveryList({ webhookId }: { webhookId: string }) {
   }, [webhookId]);
 
   if (items === null) {
-    return <p className="mt-2 text-xs text-text-meta">Wird geladen …</p>;
+    return <p className="mt-2 text-xs text-text-meta">{t("loadingDeliveries")}</p>;
   }
 
   if (items.length === 0) {
-    return <p className="mt-2 text-xs text-text-meta">Noch keine Auslieferungen.</p>;
+    return <p className="mt-2 text-xs text-text-meta">{t("noDeliveries")}</p>;
   }
 
   return (
@@ -421,10 +430,10 @@ function DeliveryList({ webhookId }: { webhookId: string }) {
       <table className="w-full text-xs">
         <thead>
           <tr className="text-text-meta">
-            <th className="px-2 py-1 text-left font-normal">Zeit</th>
-            <th className="px-2 py-1 text-left font-normal">Event</th>
-            <th className="px-2 py-1 text-left font-normal">Status</th>
-            <th className="px-2 py-1 text-left font-normal">Antwort</th>
+            <th className="px-2 py-1 text-left font-normal">{t("colTime")}</th>
+            <th className="px-2 py-1 text-left font-normal">{t("colEvent")}</th>
+            <th className="px-2 py-1 text-left font-normal">{t("colStatus")}</th>
+            <th className="px-2 py-1 text-left font-normal">{t("colResponse")}</th>
           </tr>
         </thead>
         <tbody>
@@ -477,6 +486,8 @@ function WebhookForm({
   onCreated?: (w: WebhookCreated) => void;
   onUpdated?: () => void;
 }) {
+  const t = useTranslations("webhookManager.form");
+  const tCommon = useTranslations("common");
   const [url, setUrl] = useState(initial?.url ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [events, setEvents] = useState<WebhookEvent[]>(
@@ -498,11 +509,11 @@ function WebhookForm({
     e.preventDefault();
     setError(null);
     if (!url.trim()) {
-      setError("URL darf nicht leer sein.");
+      setError(t("errEmptyUrl"));
       return;
     }
     if (events.length === 0) {
-      setError("Mindestens ein Ereignis muss aktiv sein.");
+      setError(t("errNoEvent"));
       return;
     }
     setSaving(true);
@@ -526,7 +537,7 @@ function WebhookForm({
       }
     } catch (err: unknown) {
       console.error("save webhook failed", err);
-      setError("Speichern fehlgeschlagen.");
+      setError(t("errSave"));
     } finally {
       setSaving(false);
     }
@@ -536,13 +547,13 @@ function WebhookForm({
     <form onSubmit={submit} className="space-y-3 rounded-md bg-surface-soft p-4">
       <label className="block">
         <span className="block text-xs font-medium text-text-secondary">
-          Ziel-URL
+          {t("urlLabel")}
         </span>
         <input
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://duo.example.com/api/inbox"
+          placeholder={t("urlPlaceholder")}
           className="input mt-1 w-full"
           disabled={saving}
           autoFocus={mode === "create"}
@@ -551,13 +562,13 @@ function WebhookForm({
 
       <label className="block">
         <span className="block text-xs font-medium text-text-secondary">
-          Beschreibung (optional)
+          {t("descLabel")}
         </span>
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="z. B. Duo Knowledge-Hub"
+          placeholder={t("descPlaceholder")}
           maxLength={500}
           className="input mt-1 w-full"
           disabled={saving}
@@ -566,7 +577,7 @@ function WebhookForm({
 
       <fieldset>
         <legend className="block text-xs font-medium text-text-secondary">
-          Ereignisse
+          {t("eventsLegend")}
         </legend>
         <div className="mt-1 flex flex-wrap gap-3">
           {WEBHOOK_EVENTS.map((ev) => (
@@ -585,7 +596,7 @@ function WebhookForm({
 
       <fieldset>
         <legend className="block text-xs font-medium text-text-secondary">
-          Auslöser für „Zusammenfassung fertig"
+          {t("triggerLegend")}
         </legend>
         <div className="mt-2 space-y-2">
           <label className="flex items-start gap-2 text-sm">
@@ -599,11 +610,9 @@ function WebhookForm({
               className="mt-1"
             />
             <span>
-              <span className="font-medium text-text-primary">Manuell</span>
+              <span className="font-medium text-text-primary">{t("manualOption")}</span>
               <span className="ml-2 text-xs text-text-meta">
-                Sie klicken pro Besprechung „An externe Systeme senden". Andere
-                Ereignisse (Erstellt/Fehler/Geändert/Gelöscht) feuern trotzdem
-                automatisch.
+                {t("manualHint")}
               </span>
             </span>
           </label>
@@ -618,10 +627,9 @@ function WebhookForm({
               className="mt-1"
             />
             <span>
-              <span className="font-medium text-text-primary">Automatisch</span>
+              <span className="font-medium text-text-primary">{t("autoOption")}</span>
               <span className="ml-2 text-xs text-text-meta">
-                Jede fertige Zusammenfassung wird sofort gepusht. Schneller, aber
-                jede Aufnahme verlässt die Box ohne Bestätigung.
+                {t("autoHint")}
               </span>
             </span>
           </label>
@@ -641,10 +649,10 @@ function WebhookForm({
           className="btn-tertiary"
           disabled={saving}
         >
-          Abbrechen
+          {tCommon("cancel")}
         </button>
         <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? "Speichert …" : mode === "edit" ? "Speichern" : "Anlegen"}
+          {saving ? t("saving") : mode === "edit" ? t("save") : t("create")}
         </button>
       </div>
     </form>
@@ -660,6 +668,7 @@ function SecretReveal({
   webhook: WebhookCreated;
   onDismiss: () => void;
 }) {
+  const t = useTranslations("webhookManager");
   const [copied, setCopied] = useState(false);
 
   function copy() {
@@ -678,12 +687,12 @@ function SecretReveal({
       }}
     >
       <h4 className="text-sm font-medium text-text-primary">
-        Webhook-Secret
+        {t("secretTitle")}
       </h4>
       <p className="mt-1 text-xs text-text-secondary">
-        Insilo signiert jeden Webhook-POST mit diesem Secret im Header
-        <code className="mx-1 rounded bg-white px-1 font-mono">X-Insilo-Signature</code>.
-        Speichern Sie es jetzt — es wird Ihnen nicht erneut angezeigt.
+        {t("secretHintBefore")}
+        <code className="mx-1 rounded bg-white px-1 font-mono">X-Insilo-Signature</code>
+        {t("secretHintAfter")}
       </p>
       <div className="mt-3 flex items-center gap-2">
         <code className="flex-1 break-all rounded-md border border-border-subtle bg-white px-2 py-1.5 font-mono text-xs">
@@ -695,12 +704,12 @@ function SecretReveal({
           className="btn-secondary inline-flex items-center gap-1"
         >
           <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
-          {copied ? "Kopiert" : "Kopieren"}
+          {copied ? t("copied") : t("copy")}
         </button>
       </div>
       <div className="mt-3 flex justify-end">
         <button type="button" onClick={onDismiss} className="btn-tertiary">
-          Verstanden, ausblenden
+          {t("dismiss")}
         </button>
       </div>
     </div>
@@ -710,14 +719,15 @@ function SecretReveal({
 // ─── Contract Disclosure ───────────────────────────────────────────────
 
 function ContractDisclosure() {
+  const t = useTranslations("webhookManager");
   return (
     <details className="group text-xs text-text-secondary">
       <summary className="cursor-pointer select-none hover:text-text-primary">
-        Vertrag &amp; Empfänger-Beispiel anzeigen
+        {t("contractToggle")}
       </summary>
       <div className="mt-3 space-y-3 rounded-md border border-border-subtle bg-surface-soft p-3 leading-relaxed">
         <div>
-          <p className="font-medium text-text-primary">Header</p>
+          <p className="font-medium text-text-primary">{t("contractHeader")}</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5 font-mono text-[11px]">
             <li>X-Insilo-Event: meeting.ready</li>
             <li>X-Insilo-Delivery-ID: &lt;uuid-hex, stabil über Retries&gt;</li>
@@ -725,7 +735,7 @@ function ContractDisclosure() {
           </ul>
         </div>
         <div>
-          <p className="font-medium text-text-primary">Empfänger-Pseudocode (Python)</p>
+          <p className="font-medium text-text-primary">{t("contractReceiverExample")}</p>
           <pre className="mt-1 overflow-x-auto rounded bg-white p-2 font-mono text-[11px] text-text-primary">{`raw = request.body
 sig = request.headers["x-insilo-signature"]
 expected = "sha256=" + hmac_sha256(secret, raw).hexdigest()
@@ -737,14 +747,13 @@ if already_processed(request.headers["x-insilo-delivery-id"]):
 return 200`}</pre>
         </div>
         <p>
-          Retry-Verhalten: max. 2 Wiederholungen bei 5xx/Timeout (30 s, 90 s
-          Backoff), keine Wiederholung bei 4xx. Idempotenz über
-          <code className="mx-1 rounded bg-white px-1 font-mono">X-Insilo-Delivery-ID</code>.
-          Antworten Sie schnell mit 2xx.
+          {t("contractRetryBefore")}
+          <code className="mx-1 rounded bg-white px-1 font-mono">X-Insilo-Delivery-ID</code>
+          {t("contractRetryAfter")}
         </p>
         <p>
-          Vollständige Spec mit allen Events, Feld-Garantien und Beispielen:
-          <span className="ml-1 font-mono">docs/WEBHOOKS.md</span> im Insilo-Repository.
+          {t("contractSpecBefore")}
+          <span className="ml-1 font-mono">{t("contractSpecPath")}</span>
         </p>
       </div>
     </details>

@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /** Konvertiert einen Hex-Code in eine `rgba(r,g,b,alpha)`-Background-Farbe. */
 function withAlpha(hex: string, alpha: number): string {
@@ -27,6 +28,7 @@ export function TagPill({
   /** Macht die Pill klickbar (Filter-Chips). */
   onClick?: () => void;
 }) {
+  const t = useTranslations("tags");
   const bg = active ? withAlpha(color, 0.12) : "var(--white)";
   const border = active ? withAlpha(color, 0.35) : "var(--border-subtle)";
   const text = active ? color : "var(--text-meta)";
@@ -54,7 +56,7 @@ export function TagPill({
             onRemove();
           }}
           className="-mr-0.5 rounded-full p-0.5 hover:bg-black/5"
-          aria-label={`Tag „${name}" entfernen`}
+          aria-label={t("removeAria", { name })}
         >
           <X className="h-2.5 w-2.5" strokeWidth={2.5} />
         </button>

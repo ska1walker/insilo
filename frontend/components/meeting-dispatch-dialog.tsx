@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Send, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import { ApiError } from "@/lib/api/client";
@@ -25,6 +26,8 @@ export function MeetingDispatchDialog({
   onClose: () => void;
 }) {
   const toast = useToast();
+  const t = useTranslations("dispatch");
+  const tCommon = useTranslations("common");
   const [webhooks, setWebhooks] = useState<WebhookRead[] | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
@@ -57,9 +60,7 @@ export function MeetingDispatchDialog({
     try {
       const result = await dispatchMeeting(meetingId, Array.from(selectedIds));
       toast.show({
-        message: `An ${result.fanout} ${
-          result.fanout === 1 ? "Empfänger" : "Empfänger"
-        } gesendet.`,
+        message: t("sentToast", { count: result.fanout }),
         variant: "success",
       });
       onClose();
@@ -67,11 +68,11 @@ export function MeetingDispatchDialog({
       console.error("dispatch failed", err);
       if (err instanceof ApiError) {
         toast.show({
-          message: `Versand fehlgeschlagen: HTTP ${err.status}`,
+          message: t("sendFailedHttp", { status: err.status }),
           variant: "error",
         });
       } else {
-        toast.show({ message: "Versand fehlgeschlagen.", variant: "error" });
+        toast.show({ message: t("sendFailed"), variant: "error" });
       }
     } finally {
       setSending(false);
@@ -83,7 +84,7 @@ export function MeetingDispatchDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       role="dialog"
       aria-modal
-      aria-label="An externe Systeme senden"
+      aria-label={t("header")}
     >
       {/* Header fix + Body scrollt + Footer sticky — selbe Struktur wie
           voice-enrollment-dialog, damit die Action-Buttons bei kleinen
@@ -94,18 +95,15 @@ export function MeetingDispatchDialog({
             type="button"
             onClick={onClose}
             className="absolute right-4 top-4 rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-            aria-label="Schließen"
+            aria-label={tCommon("close")}
           >
             <X className="h-4 w-4" strokeWidth={1.75} />
           </button>
           <h2 className="font-display text-2xl font-medium tracking-tight">
-            An externe Systeme senden
+            {t("header")}
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            Insilo schickt die Zusammenfassung dieser Besprechung („{meetingTitle}
-            ") an die ausgewählten Empfänger. Diese Aktion bleibt auf Ihre
-            ausdrückliche Bestätigung beschränkt — automatische Auslieferung
-            ist pro Webhook gesondert konfigurierbar.
+            {t("intro", { title: meetingTitle })}
           </p>
         </div>
 
@@ -113,15 +111,20 @@ export function MeetingDispatchDialog({
           {webhooks === null ? (
             <div className="flex items-center gap-3 rounded-md bg-surface-soft p-4 text-sm text-text-secondary">
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
-              Empfänger werden geladen …
+              {t("loadingRecipients")}
             </div>
           ) : webhooks.length === 0 ? (
             <div className="rounded-md border border-border-subtle bg-surface-soft p-4 text-sm text-text-secondary">
-              Sie haben noch keine aktiven Webhooks für{" "}
-              <code className="rounded bg-white px-1 font-mono">meeting.ready</code>{" "}
-              angelegt. Legen Sie unter
-              <span className="mx-1 font-medium">Einstellungen → Webhooks</span>
-              mindestens einen Empfänger an.
+              {t.rich("noWebhooks", {
+                code: (chunks) => (
+                  <code className="rounded bg-white px-1 font-mono">
+                    {chunks}
+                  </code>
+                ),
+                bold: (chunks) => (
+                  <span className="font-medium">{chunks}</span>
+                ),
+              })}
             </div>
           ) : (
             <ul className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
@@ -152,7 +155,9 @@ export function MeetingDispatchDialog({
                             : { background: "var(--surface-soft)", color: "var(--text-secondary)" }
                         }
                       >
-                        {w.trigger_mode === "manual" ? "manuell" : "automatisch"}
+                        {w.trigger_mode === "manual"
+                          ? t("triggerManual")
+                          : t("triggerAuto")}
                       </span>
                     </span>
                   </label>
@@ -165,7 +170,10 @@ export function MeetingDispatchDialog({
         <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border-subtle bg-white p-6">
           <p className="text-xs text-text-meta">
             {webhooks && webhooks.length > 0
-              ? `${selectedIds.size} von ${webhooks.length} ausgewählt`
+              ? t("selectedCount", {
+                  selected: selectedIds.size,
+                  total: webhooks.length,
+                })
               : ""}
           </p>
           <div className="flex gap-2">
@@ -175,7 +183,7 @@ export function MeetingDispatchDialog({
               className="btn-tertiary"
               disabled={sending}
             >
-              Abbrechen
+              {tCommon("cancel")}
             </button>
             <button
               type="button"
@@ -186,12 +194,12 @@ export function MeetingDispatchDialog({
               {sending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
-                  Wird gesendet …
+                  {t("sending")}
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4" strokeWidth={1.75} />
-                  Jetzt senden
+                  {t("send")}
                 </>
               )}
             </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import {
@@ -36,6 +37,7 @@ JSON-Antwort zurück:
 - offene_fragen: was unbeantwortet blieb`;
 
 export function TemplatePrompts() {
+  const t = useTranslations("templatePrompts");
   const [list, setList] = useState<TemplateDto[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -80,19 +82,19 @@ export function TemplatePrompts() {
             className="btn-secondary inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            Neue Vorlage
+            {t("newTemplate")}
           </button>
         )}
       </div>
 
       {showCreate && (
         <CreateTemplateForm
-          onCreated={(t) => {
+          onCreated={(created) => {
             setShowCreate(false);
             refreshList();
-            setOpenId(t.id);
+            setOpenId(created.id);
             toast.show({
-              message: `Vorlage „${t.name}" angelegt.`,
+              message: t("createdToast", { name: created.name }),
               variant: "success",
             });
           }}
@@ -101,17 +103,15 @@ export function TemplatePrompts() {
       )}
 
       {list.length === 0 ? (
-        <p className="text-sm text-text-secondary">
-          Keine Vorlagen vorhanden. Legen Sie über „Neue Vorlage" Ihre erste an.
-        </p>
+        <p className="text-sm text-text-secondary">{t("noneYet")}</p>
       ) : (
         <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
-          {list.map((t) => (
+          {list.map((tpl) => (
             <TemplateRow
-              key={t.id}
-              template={t}
-              open={openId === t.id}
-              onToggle={() => setOpenId(openId === t.id ? null : t.id)}
+              key={tpl.id}
+              template={tpl}
+              open={openId === tpl.id}
+              onToggle={() => setOpenId(openId === tpl.id ? null : tpl.id)}
               onSaved={() => {
                 refreshList();
               }}
@@ -139,6 +139,8 @@ function CreateTemplateForm({
   onCreated: (t: TemplateDto) => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("templatePrompts");
+  const tCommon = useTranslations("common");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -148,25 +150,25 @@ function CreateTemplateForm({
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault();
     if (name.trim().length === 0) {
-      setError("Bitte einen Namen vergeben.");
+      setError(t("errEmptyName"));
       return;
     }
     if (prompt.trim().length < 10) {
-      setError("Der System-Prompt muss mindestens 10 Zeichen lang sein.");
+      setError(t("errPromptTooShort"));
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const t = await createTemplate({
+      const created = await createTemplate({
         name: name.trim(),
         description: description.trim(),
         system_prompt: prompt.trim(),
       });
-      onCreated(t);
+      onCreated(created);
     } catch (err) {
       console.error("create template failed", err);
-      setError("Anlegen fehlgeschlagen. Bitte erneut versuchen.");
+      setError(t("errCreate"));
     } finally {
       setSaving(false);
     }
@@ -179,18 +181,18 @@ function CreateTemplateForm({
     >
       <div className="flex items-baseline justify-between">
         <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-          Neue Vorlage
+          {t("createHeader")}
         </p>
       </div>
 
       <label className="block">
-        <span className="block text-sm font-medium text-text-primary">Name</span>
+        <span className="block text-sm font-medium text-text-primary">{t("nameLabel")}</span>
         <input
           type="text"
           className="input mt-1 w-full"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="z. B. Retrospektive"
+          placeholder={t("namePlaceholder")}
           maxLength={120}
           autoFocus
           disabled={saving}
@@ -199,18 +201,17 @@ function CreateTemplateForm({
 
       <label className="block">
         <span className="block text-sm font-medium text-text-primary">
-          Beschreibung
+          {t("descLabel")}
         </span>
         <span className="mt-1 mb-2 block text-xs text-text-secondary">
-          Wofür Sie diese Vorlage nutzen — wird in der Aufnahme-Auswahl
-          angezeigt.
+          {t("descHint")}
         </span>
         <input
           type="text"
           className="input w-full"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="z. B. Sprint-Rückblick mit Action-Items"
+          placeholder={t("descPlaceholder")}
           maxLength={500}
           disabled={saving}
         />
@@ -218,12 +219,10 @@ function CreateTemplateForm({
 
       <label className="block">
         <span className="block text-sm font-medium text-text-primary">
-          System-Prompt
+          {t("promptLabel")}
         </span>
         <span className="mt-1 mb-2 block text-xs text-text-secondary">
-          Anweisungen ans Sprachmodell, wie das Transkript zu strukturieren
-          ist. Neue Vorlagen nutzen automatisch ein flexibles Standard-Schema
-          (Zusammenfassung · Kernpunkte · Entscheidungen · Aufgaben · Offene Fragen).
+          {t("promptHintCreate")}
         </span>
         <textarea
           className="input w-full font-mono text-[0.8125rem] leading-relaxed"
@@ -249,10 +248,10 @@ function CreateTemplateForm({
           className="btn-tertiary"
           disabled={saving}
         >
-          Abbrechen
+          {tCommon("cancel")}
         </button>
         <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? "Wird angelegt …" : "Vorlage anlegen"}
+          {saving ? t("creating") : t("createBtn")}
         </button>
       </div>
     </form>
@@ -276,6 +275,8 @@ function TemplateRow({
   onReset: () => void;
   onDeleted: () => void;
 }) {
+  const t = useTranslations("templatePrompts");
+  const tCommon = useTranslations("common");
   const toast = useToast();
   const [detail, setDetail] = useState<TemplateDetail | null>(null);
   const [name, setName] = useState("");
@@ -303,13 +304,13 @@ function TemplateRow({
       .catch((err) => {
         if (cancelled) return;
         console.error("template detail failed", err);
-        setError("Vorlage konnte nicht geladen werden.");
+        setError(t("errLoad"));
         setState({ kind: "idle" });
       });
     return () => {
       cancelled = true;
     };
-  }, [open, template.id]);
+  }, [open, template.id, t]);
 
   // Org templates: full edit (name/description/prompt + delete)
   const isOrgOwned = !template.is_system;
@@ -325,11 +326,11 @@ function TemplateRow({
   async function handleSave() {
     if (!detail) return;
     if (draft.trim().length < 10) {
-      setError("Der System-Prompt muss mindestens 10 Zeichen lang sein.");
+      setError(t("errPromptTooShort"));
       return;
     }
     if (name.trim().length === 0) {
-      setError("Bitte einen Namen vergeben.");
+      setError(t("errEmptyName"));
       return;
     }
     // Validate custom fields: names need to be unique + match snake_case.
@@ -337,18 +338,16 @@ function TemplateRow({
     const seen = new Set<string>();
     for (const cf of customFields) {
       if (!namePattern.test(cf.name)) {
-        setError(
-          `Feldname „${cf.name}" ungültig — nur Kleinbuchstaben, Ziffern und _ erlaubt (z. B. "geburtsdatum").`,
-        );
+        setError(t("errFieldInvalid", { name: cf.name }));
         return;
       }
       if (seen.has(cf.name)) {
-        setError(`Feldname „${cf.name}" doppelt.`);
+        setError(t("errFieldDuplicate", { name: cf.name }));
         return;
       }
       seen.add(cf.name);
       if (!cf.label.trim()) {
-        setError(`Feld „${cf.name}" hat keine Bezeichnung.`);
+        setError(t("errFieldNoLabel", { name: cf.name }));
         return;
       }
     }
@@ -386,12 +385,12 @@ function TemplateRow({
       setCustomFields(refreshed.custom_fields ?? []);
       onSaved();
       toast.show({
-        message: `„${refreshed.name}" gespeichert.`,
+        message: t("savedToast", { name: refreshed.name }),
         variant: "success",
       });
     } catch (err) {
       console.error("save template failed", err);
-      setError("Speichern fehlgeschlagen. Bitte erneut versuchen.");
+      setError(t("errSave"));
     } finally {
       setState({ kind: "idle" });
     }
@@ -409,7 +408,7 @@ function TemplateRow({
       onReset();
     } catch (err) {
       console.error("reset prompt failed", err);
-      setError("Zurücksetzen fehlgeschlagen.");
+      setError(t("errReset"));
     } finally {
       setState({ kind: "idle" });
     }
@@ -417,15 +416,15 @@ function TemplateRow({
 
   function handleDeleteRequest() {
     if (!isOrgOwned || !detail) return;
-    const name = detail.name;
+    const detailName = detail.name;
     let cancelled = false;
 
     toast.show({
-      message: `Vorlage „${name}" wird gelöscht`,
+      message: t("deleteUndoMsg", { name: detailName }),
       variant: "undo",
       duration: 5000,
       action: {
-        label: "Rückgängig",
+        label: tCommon("undo"),
         onClick: () => {
           cancelled = true;
         },
@@ -439,7 +438,7 @@ function TemplateRow({
         } catch (err) {
           console.error("delete template failed", err);
           toast.show({
-            message: "Löschen fehlgeschlagen. Bitte erneut versuchen.",
+            message: t("deleteFailToast"),
             variant: "error",
           });
           setState({ kind: "idle" });
@@ -461,7 +460,7 @@ function TemplateRow({
             <p className="font-medium text-text-primary">{template.name}</p>
             {template.is_system && (
               <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
-                · system
+                {t("tagSystem")}
               </span>
             )}
             {template.is_customized && (
@@ -469,7 +468,7 @@ function TemplateRow({
                 className="mono text-[0.6875rem] uppercase tracking-[0.08em]"
                 style={{ color: "var(--gold-deep)" }}
               >
-                · angepasst
+                {t("tagCustomized")}
               </span>
             )}
           </div>
@@ -496,18 +495,19 @@ function TemplateRow({
               <div className="space-y-4">
                 <label className="block">
                   <span className="block text-sm font-medium text-text-primary">
-                    Name
+                    {t("nameLabel")}
                   </span>
                   {!isOrgOwned && detail?.default_name && (
                     <span className="mt-0.5 block text-xs text-text-meta">
-                      Standardname: <span className="font-mono">{detail.default_name}</span>
+                      {t("defaultName")}{" "}
+                      <span className="font-mono">{detail.default_name}</span>
                       {detail.display_name && (
                         <button
                           type="button"
                           onClick={() => setName(detail.default_name ?? "")}
                           className="ml-2 underline hover:text-text-primary"
                         >
-                          Auf Standard zurücksetzen
+                          {t("resetToDefaultLink")}
                         </button>
                       )}
                     </span>
@@ -525,11 +525,11 @@ function TemplateRow({
                 </label>
                 <label className="block">
                   <span className="block text-sm font-medium text-text-primary">
-                    Beschreibung
+                    {t("descLabel")}
                   </span>
                   {!isOrgOwned && detail?.default_description && (
                     <span className="mt-0.5 block text-xs text-text-meta">
-                      Standardbeschreibung: {detail.default_description}
+                      {t("defaultDesc", { value: detail.default_description })}
                     </span>
                   )}
                   <input
@@ -545,23 +545,17 @@ function TemplateRow({
                 </label>
                 {!isOrgOwned && (
                   <div className="rounded-md bg-surface-soft px-3 py-2 text-xs text-text-secondary">
-                    Diese Werksvorlage hat ein festes Output-Schema und
-                    feste Felder in der Zusammenfassung. Sie können den
-                    Namen, die Beschreibung und den System-Prompt für
-                    Ihre Organisation anpassen.
+                    {t("systemNote")}
                   </div>
                 )}
               </div>
 
               <label className="mt-4 block">
                 <span className="block text-sm font-medium text-text-primary">
-                  System-Prompt
+                  {t("promptLabel")}
                 </span>
                 <span className="mt-1 mb-2 block text-xs text-text-secondary">
-                  Anweisungen ans Sprachmodell. Variablen wie das Transkript
-                  ergänzt das System automatisch. Diese Vorlage ist für
-                  Qwen 2.5 optimiert (Markdown-Sektionen, Schema-Echo,
-                  Few-Shot-Beispiel).
+                  {t("promptHintEdit")}
                 </span>
                 <textarea
                   value={draft}
@@ -584,19 +578,15 @@ function TemplateRow({
               {detail.few_shot_input && detail.few_shot_output && (
                 <details className="mt-4 rounded-md border border-border-subtle bg-surface-soft p-3 text-xs">
                   <summary className="cursor-pointer select-none font-medium text-text-primary">
-                    Few-Shot-Beispiel (read-only)
+                    {t("fewShotTitle")}
                   </summary>
                   <p className="mt-2 text-text-secondary">
-                    Insilo schickt vor jedem echten Transkript dieses
-                    Beispiel an die KI, damit sie das Antwortformat
-                    sicher trifft. Es kann aktuell nur am Werks-Template
-                    geändert werden — Customizing erfolgt rein über den
-                    System-Prompt.
+                    {t("fewShotIntro")}
                   </p>
                   <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div>
                       <p className="mono text-[0.625rem] uppercase tracking-[0.08em] text-text-meta">
-                        Eingabe-Snippet
+                        {t("fewShotInput")}
                       </p>
                       <pre className="mt-1 max-h-[200px] overflow-auto rounded bg-white p-2 font-mono text-[0.75rem] text-text-primary">
                         {detail.few_shot_input}
@@ -604,7 +594,7 @@ function TemplateRow({
                     </div>
                     <div>
                       <p className="mono text-[0.625rem] uppercase tracking-[0.08em] text-text-meta">
-                        Erwartete JSON-Antwort
+                        {t("fewShotOutput")}
                       </p>
                       <pre className="mt-1 max-h-[200px] overflow-auto rounded bg-white p-2 font-mono text-[0.75rem] text-text-primary">
                         {JSON.stringify(detail.few_shot_output, null, 2)}
@@ -624,16 +614,20 @@ function TemplateRow({
                 <div className="text-xs text-text-meta">
                   {detail.is_customized && detail.custom_updated_at ? (
                     <>
-                      Angepasst am{" "}
-                      {new Date(detail.custom_updated_at).toLocaleString("de-DE", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
+                      {t("customizedAt", {
+                        date: new Date(detail.custom_updated_at).toLocaleString(
+                          "de-DE",
+                          {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          },
+                        ),
                       })}
                     </>
                   ) : isOrgOwned ? (
-                    <>Version {detail.version}</>
+                    <>{t("version", { version: detail.version })}</>
                   ) : (
-                    <>Werksvorlage (noch nicht angepasst)</>
+                    <>{t("factoryNotCustomized")}</>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -648,7 +642,7 @@ function TemplateRow({
                       }
                     >
                       <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-                      Vorlage löschen
+                      {t("deleteBtn")}
                     </button>
                   )}
                   {!isOrgOwned && detail.is_customized && (
@@ -661,8 +655,8 @@ function TemplateRow({
                       }
                     >
                       {state.kind === "resetting"
-                        ? "Wird zurückgesetzt …"
-                        : "Auf Standard zurücksetzen"}
+                        ? t("resetting")
+                        : t("resetToDefault")}
                     </button>
                   )}
                   <button
@@ -676,7 +670,7 @@ function TemplateRow({
                       state.kind === "deleting"
                     }
                   >
-                    {state.kind === "saving" ? "Wird gespeichert …" : "Speichern"}
+                    {state.kind === "saving" ? t("savingBtn") : t("saveBtn")}
                   </button>
                 </div>
               </div>
@@ -690,11 +684,6 @@ function TemplateRow({
 
 // ─── Custom-Fields-Editor (v0.1.41 Lite-Schema-Editor) ────────────────
 
-const TYPE_LABEL: Record<CustomFieldType, string> = {
-  string: "Text",
-  array_string: "Liste von Text",
-};
-
 function CustomFieldsEditor({
   fields,
   onChange,
@@ -704,6 +693,13 @@ function CustomFieldsEditor({
   onChange: (next: CustomField[]) => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("templatePrompts.customFields");
+
+  const TYPE_LABEL: Record<CustomFieldType, string> = {
+    string: t("types.string"),
+    array_string: t("types.array_string"),
+  };
+
   function update(idx: number, patch: Partial<CustomField>) {
     onChange(
       fields.map((cf, i) => (i === idx ? { ...cf, ...patch } : cf)),
@@ -726,13 +722,10 @@ function CustomFieldsEditor({
       <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-text-primary">
-            Zusätzliche Felder
+            {t("title")}
           </p>
           <p className="mt-0.5 text-xs text-text-secondary">
-            Ergänzen Sie eigene Felder zur Zusammenfassung — z.&nbsp;B.
-            „Geburtsdatum", „Zeugen", „Aktenzeichen". Die KI füllt sie
-            zusammen mit den Standard-Feldern. Bestehende Standard-Felder
-            werden dadurch nicht überschrieben.
+            {t("hint")}
           </p>
         </div>
         <button
@@ -742,13 +735,13 @@ function CustomFieldsEditor({
           disabled={disabled}
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-          Feld hinzufügen
+          {t("addBtn")}
         </button>
       </header>
 
       {fields.length === 0 && (
         <p className="text-xs text-text-meta">
-          Noch keine zusätzlichen Felder.
+          {t("none")}
         </p>
       )}
 
@@ -761,7 +754,7 @@ function CustomFieldsEditor({
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <label className="block">
                 <span className="block text-xs font-medium text-text-secondary">
-                  Feldname (intern)
+                  {t("internalName")}
                 </span>
                 <input
                   type="text"
@@ -774,7 +767,7 @@ function CustomFieldsEditor({
                         .replace(/_+/g, "_"),
                     })
                   }
-                  placeholder="geburtsdatum"
+                  placeholder={t("internalPlaceholder")}
                   maxLength={64}
                   className="input mt-1 w-full font-mono text-[0.8125rem]"
                   disabled={disabled}
@@ -782,13 +775,13 @@ function CustomFieldsEditor({
               </label>
               <label className="block">
                 <span className="block text-xs font-medium text-text-secondary">
-                  Bezeichnung (Anzeige)
+                  {t("labelLabel")}
                 </span>
                 <input
                   type="text"
                   value={cf.label}
                   onChange={(e) => update(idx, { label: e.target.value })}
-                  placeholder="Geburtsdatum"
+                  placeholder={t("labelPlaceholder")}
                   maxLength={120}
                   className="input mt-1 w-full"
                   disabled={disabled}
@@ -799,7 +792,7 @@ function CustomFieldsEditor({
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               <label className="block">
                 <span className="block text-xs font-medium text-text-secondary">
-                  Typ
+                  {t("typeLabel")}
                 </span>
                 <select
                   value={cf.type}
@@ -809,22 +802,22 @@ function CustomFieldsEditor({
                   className="input mt-1 w-full"
                   disabled={disabled}
                 >
-                  {(Object.keys(TYPE_LABEL) as CustomFieldType[]).map((t) => (
-                    <option key={t} value={t}>
-                      {TYPE_LABEL[t]}
+                  {(Object.keys(TYPE_LABEL) as CustomFieldType[]).map((tp) => (
+                    <option key={tp} value={tp}>
+                      {TYPE_LABEL[tp]}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="block">
                 <span className="block text-xs font-medium text-text-secondary">
-                  Hinweis an die KI (optional)
+                  {t("hintAi")}
                 </span>
                 <input
                   type="text"
                   value={cf.description}
                   onChange={(e) => update(idx, { description: e.target.value })}
-                  placeholder="z. B. TT.MM.JJJJ falls genannt"
+                  placeholder={t("hintAiPlaceholder")}
                   maxLength={500}
                   className="input mt-1 w-full"
                   disabled={disabled}
@@ -841,7 +834,7 @@ function CustomFieldsEditor({
                 disabled={disabled}
               >
                 <Trash2 className="h-3 w-3" strokeWidth={1.75} />
-                Feld entfernen
+                {t("removeBtn")}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { ClusterAssignmentPanel } from "@/components/cluster-assignment-panel";
 import {
@@ -19,6 +20,9 @@ export function TranscriptView({
   meetingId: string;
   transcript: Transcript;
 }) {
+  const t = useTranslations("transcript");
+  const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
   const [mode, setMode] = useState<Mode>("view");
   const [speakers, setSpeakers] = useState<Speaker[]>(initial.speakers ?? []);
   const [segments, setSegments] = useState<TranscriptSegment[]>(initial.segments);
@@ -96,7 +100,7 @@ export function TranscriptView({
       setMode("view");
     } catch (err) {
       console.error("save speakers failed", err);
-      setError("Speichern fehlgeschlagen. Bitte erneut versuchen.");
+      setError(tErrors("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -114,17 +118,20 @@ export function TranscriptView({
     <section className="mt-12">
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-4">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-          Transkript
+          {t("label")}
         </p>
         <div className="flex items-center gap-3">
           {savedAt && mode === "view" && (
             <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-success">
-              gespeichert
+              {t("savedFlag")}
             </span>
           )}
           <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
-            {initial.whisper_model} · {initial.language} ·{" "}
-            {initial.word_count} Wörter
+            {t("stats", {
+              model: initial.whisper_model,
+              language: initial.language,
+              words: initial.word_count,
+            })}
           </p>
           {mode === "view" ? (
             segments.length > 0 && (
@@ -133,7 +140,7 @@ export function TranscriptView({
                 onClick={() => setMode("edit")}
                 className="btn-tertiary"
               >
-                Sprecher zuweisen
+                {t("assignSpeakers")}
               </button>
             )
           ) : (
@@ -144,7 +151,7 @@ export function TranscriptView({
                 className="btn-tertiary"
                 disabled={saving}
               >
-                Abbrechen
+                {tCommon("cancel")}
               </button>
               <button
                 type="button"
@@ -152,7 +159,7 @@ export function TranscriptView({
                 className="btn-primary"
                 disabled={saving || !dirty}
               >
-                {saving ? "Speichert…" : "Speichern"}
+                {saving ? tCommon("saving") : tCommon("save")}
               </button>
             </div>
           )}
@@ -186,10 +193,7 @@ export function TranscriptView({
 
       <div className="rounded-lg border border-border-subtle bg-white p-8">
         {segments.length === 0 && (
-          <p className="text-sm text-text-meta">
-            Keine Sprache erkannt. Die Aufnahme enthielt nur Stille oder
-            Hintergrundrauschen.
-          </p>
+          <p className="text-sm text-text-meta">{t("noSpeech")}</p>
         )}
 
         {segments.map((seg, i) => {
@@ -223,7 +227,7 @@ export function TranscriptView({
                 ) : (
                   mode === "edit" && (
                     <p className="mono mt-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-disabled">
-                      tippen
+                      {t("tapHint")}
                     </p>
                   )
                 )}
@@ -251,11 +255,7 @@ export function TranscriptView({
       </div>
 
       {mode === "edit" && (
-        <p className="mt-4 text-xs text-text-meta">
-          Tipp: Klicken Sie einen Abschnitt an, um die Sprecherin oder den
-          Sprecher zuzuweisen. Vorhandene Einträge können oben umbenannt
-          oder gelöscht werden.
-        </p>
+        <p className="mt-4 text-xs text-text-meta">{t("editTip")}</p>
       )}
     </section>
   );
@@ -274,6 +274,8 @@ function SpeakerRoster({
   onRename: (id: string, name: string) => void;
   onRemove: (id: string) => void;
 }) {
+  const t = useTranslations("transcript");
+  const tCommon = useTranslations("common");
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -294,7 +296,7 @@ function SpeakerRoster({
     <div className="mb-5 rounded-lg border border-border-subtle bg-surface-soft p-4">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-          Sprecher · {speakers.length}
+          {t("rosterLabel", { count: speakers.length })}
         </p>
         {!adding && (
           <button
@@ -303,7 +305,7 @@ function SpeakerRoster({
             className="btn-tertiary inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            Sprecher hinzufügen
+            {t("addSpeaker")}
           </button>
         )}
       </div>
@@ -333,7 +335,7 @@ function SpeakerRoster({
                 type="button"
                 onClick={() => setEditingId(s.id)}
                 className="rounded-full p-1 text-text-meta hover:bg-surface-soft hover:text-text-primary"
-                aria-label={`${s.name} umbenennen`}
+                aria-label={t("renameAria", { name: s.name })}
               >
                 <Pencil className="h-3 w-3" strokeWidth={2} />
               </button>
@@ -341,7 +343,7 @@ function SpeakerRoster({
                 type="button"
                 onClick={() => onRemove(s.id)}
                 className="rounded-full p-1 text-text-meta hover:bg-surface-soft hover:text-error"
-                aria-label={`${s.name} entfernen`}
+                aria-label={t("removeAria", { name: s.name })}
               >
                 <Trash2 className="h-3 w-3" strokeWidth={2} />
               </button>
@@ -364,7 +366,7 @@ function SpeakerRoster({
                 }
               }}
               onBlur={commitAdd}
-              placeholder="Name"
+              placeholder={t("namePlaceholder")}
               className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-disabled"
               style={{ color: "var(--gold-deep)", width: "120px" }}
             />
@@ -379,7 +381,7 @@ function SpeakerRoster({
                 setNewName("");
               }}
               className="rounded-full p-1 text-text-meta hover:bg-surface-soft"
-              aria-label="Abbrechen"
+              aria-label={tCommon("cancel")}
             >
               <X className="h-3 w-3" strokeWidth={2} />
             </button>
@@ -387,10 +389,7 @@ function SpeakerRoster({
         )}
 
         {speakers.length === 0 && !adding && (
-          <p className="text-sm text-text-meta">
-            Noch keine Sprecher angelegt. Klicken Sie auf „Sprecher
-            hinzufügen" oder direkt auf einen Abschnitt im Transkript.
-          </p>
+          <p className="text-sm text-text-meta">{t("rosterEmpty")}</p>
         )}
       </div>
     </div>
@@ -441,6 +440,8 @@ function SegmentPicker({
   onCreate: (name: string) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("transcript");
+  const tCommon = useTranslations("common");
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
 
@@ -455,13 +456,13 @@ function SegmentPicker({
     >
       <div className="mb-2 flex items-baseline justify-between">
         <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
-          Sprecher wählen
+          {t("pickerTitle")}
         </p>
         <button
           type="button"
           onClick={onClose}
           className="text-text-meta hover:text-text-primary"
-          aria-label="Schließen"
+          aria-label={tCommon("close")}
         >
           <X className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
@@ -498,7 +499,7 @@ function SegmentPicker({
             onClick={() => onPick(null)}
             className="inline-flex rounded-full border border-border-subtle bg-white px-3 py-1 text-[0.8125rem] text-text-meta transition hover:bg-surface-soft"
           >
-            Zuweisung entfernen
+            {t("unassign")}
           </button>
         )}
 
@@ -508,7 +509,7 @@ function SegmentPicker({
             onClick={() => setCreating(true)}
             className="inline-flex items-center gap-1 rounded-full border border-dashed border-border-strong bg-white px-3 py-1 text-[0.8125rem] text-text-meta transition hover:bg-surface-soft"
           >
-            <Plus className="h-3 w-3" strokeWidth={2} /> Neu
+            <Plus className="h-3 w-3" strokeWidth={2} /> {t("createNew")}
           </button>
         ) : (
           <div className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-white py-1 pl-3 pr-1">
@@ -529,7 +530,7 @@ function SegmentPicker({
                   setNewName("");
                 }
               }}
-              placeholder="Name"
+              placeholder={t("namePlaceholder")}
               className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-disabled"
               style={{ color: "var(--gold-deep)", width: "120px" }}
             />

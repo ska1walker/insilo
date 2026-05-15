@@ -15,11 +15,12 @@ import re
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire
+from app.errors import http_error
 from app.tasks.notify import enqueue as enqueue_webhook
 
 router = APIRouter(prefix="/api/v1", tags=["tags"])
@@ -56,7 +57,7 @@ def _validate_color(color: str | None) -> str:
     if color is None:
         return _DEFAULT_COLOR
     if not _HEX_COLOR_RE.match(color):
-        raise HTTPException(400, f"invalid color: {color!r} (expected #RRGGBB)")
+        raise http_error(400, "tags.invalid_color", color=repr(color))
     return color.lower()
 
 
@@ -90,7 +91,7 @@ async def create_tag(
 ) -> TagDto:
     name = _normalize_name(payload.name)
     if not name:
-        raise HTTPException(400, "name must not be empty")
+        raise http_error(400, "tags.name_empty")
     color = _validate_color(payload.color)
 
     async with acquire() as conn:
@@ -106,7 +107,7 @@ async def create_tag(
                 color,
             )
         except asyncpg.UniqueViolationError:
-            raise HTTPException(409, f"tag '{name}' already exists") from None
+            raise http_error(409, "tags.duplicate", name=name) from None
     return _row_to_dto(row)
 
 
@@ -118,7 +119,7 @@ async def update_tag(
 ) -> TagDto:
     name = _normalize_name(payload.name)
     if not name:
-        raise HTTPException(400, "name must not be empty")
+        raise http_error(400, "tags.name_empty")
     color = _validate_color(payload.color)
 
     async with acquire() as conn:
@@ -136,9 +137,9 @@ async def update_tag(
                 user.org_id,
             )
         except asyncpg.UniqueViolationError:
-            raise HTTPException(409, f"tag '{name}' already exists") from None
+            raise http_error(409, "tags.duplicate", name=name) from None
     if not row:
-        raise HTTPException(404, "tag not found")
+        raise http_error(404, "tags.not_found")
     return _row_to_dto(row)
 
 
@@ -155,7 +156,7 @@ async def delete_tag(
         )
     # asyncpg returns "DELETE n"
     if result == "DELETE 0":
-        raise HTTPException(404, "tag not found")
+        raise http_error(404, "tags.not_found")
 
 
 # ─── Meeting ↔ Tag Verknüpfung ────────────────────────────────────────
@@ -171,7 +172,7 @@ async def _ensure_meeting_owned(conn, meeting_id: UUID, org_id) -> None:
         org_id,
     )
     if not owned:
-        raise HTTPException(404, "meeting not found")
+        raise http_error(404, "meeting.not_found")
 
 
 async def _ensure_tag_owned(conn, tag_id: UUID, org_id) -> None:
@@ -181,7 +182,7 @@ async def _ensure_tag_owned(conn, tag_id: UUID, org_id) -> None:
         org_id,
     )
     if not owned:
-        raise HTTPException(404, "tag not found")
+        raise http_error(404, "tags.not_found")
 
 
 @router.post("/meetings/{meeting_id}/tags", status_code=201)

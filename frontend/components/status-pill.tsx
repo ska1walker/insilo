@@ -1,17 +1,7 @@
-import type { MeetingStatus } from "@/lib/api/meetings";
+"use client";
 
-const LABEL: Record<MeetingStatus, string> = {
-  draft: "Entwurf",
-  uploading: "Wird übertragen",
-  queued: "Wartet",
-  transcribing: "Transkribiere",
-  transcribed: "Transkribiert",
-  summarizing: "Fasse zusammen",
-  embedding: "Indexiere",
-  ready: "Fertig",
-  failed: "Fehlgeschlagen",
-  archived: "Archiviert",
-};
+import { useTranslations } from "next-intl";
+import type { MeetingStatus } from "@/lib/api/meetings";
 
 const TONE: Record<MeetingStatus, "neutral" | "live" | "ok" | "err"> = {
   draft: "neutral",
@@ -27,14 +17,16 @@ const TONE: Record<MeetingStatus, "neutral" | "live" | "ok" | "err"> = {
 };
 
 export function StatusPill({ status }: { status: MeetingStatus }) {
+  const t = useTranslations("statusPill");
   const tone = TONE[status];
+  const label = t(status);
   if (tone === "err") {
     return (
       <span
         className="pill"
         style={{ background: "rgba(163, 58, 47, 0.08)", color: "var(--error)" }}
       >
-        {LABEL[status]}
+        {label}
       </span>
     );
   }
@@ -44,12 +36,12 @@ export function StatusPill({ status }: { status: MeetingStatus }) {
         className="pill"
         style={{ background: "rgba(74, 124, 89, 0.08)", color: "var(--success)" }}
       >
-        {LABEL[status]}
+        {label}
       </span>
     );
   }
   if (tone === "live") {
-    return <span className="pill pill-recording">{LABEL[status]}</span>;
+    return <span className="pill pill-recording">{label}</span>;
   }
-  return <span className="pill">{LABEL[status]}</span>;
+  return <span className="pill">{label}</span>;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
@@ -23,6 +24,8 @@ const PIPELINE_STATUSES = new Set([
 ]);
 
 export function RecentMeetings({ limit = 5 }: { limit?: number }) {
+  const t = useTranslations("meeting");
+  const tErrors = useTranslations("errors");
   const [state, setState] = useState<LoadState>({ kind: "loading" });
 
   useEffect(() => {
@@ -46,8 +49,8 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
         if (cancelled) return;
         const msg =
           err instanceof ApiError
-            ? `Backend nicht erreichbar (HTTP ${err.status}).`
-            : "Backend nicht erreichbar.";
+            ? t("backendUnreachableHttp", { status: err.status })
+            : tErrors("network");
         setState({ kind: "error", message: msg });
       }
     }
@@ -57,20 +60,20 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [limit]);
+  }, [limit, t, tErrors]);
 
   return (
     <section>
       <div className="mb-4 flex items-baseline justify-between gap-4">
         <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-          Zuletzt aufgenommen
+          {t("recentTitle")}
         </p>
         {state.kind === "ok" && state.total > limit && (
           <Link
             href="/besprechungen"
             className="mono inline-flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta transition hover:text-text-primary"
           >
-            Alle anzeigen
+            {t("viewAll")}
             <ArrowRight className="h-3 w-3" strokeWidth={2} />
           </Link>
         )}
@@ -96,7 +99,7 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
       {state.kind === "ok" && state.meetings.length === 0 && (
         <div className="rounded-lg border border-border-subtle bg-white p-8 text-center">
           <p className="text-sm text-text-secondary">
-            Noch keine Aufnahmen — Ihre erste startet hier oben.
+            {t("listEmptyHome")}
           </p>
         </div>
       )}

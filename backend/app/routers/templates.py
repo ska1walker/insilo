@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire
+from app.errors import http_error
 
 router = APIRouter(prefix="/api/v1", tags=["templates"])
 
@@ -162,7 +163,7 @@ async def get_template(
             user.org_id,
         )
     if not row:
-        raise HTTPException(404, "template not found")
+        raise http_error(404, "template.not_found")
 
     dto = _base_dto(row)
     dto["default_prompt"] = row["default_prompt"]
@@ -264,7 +265,7 @@ async def upsert_template_prompt(
             user.org_id,
         )
         if not tpl:
-            raise HTTPException(404, "template not found")
+            raise http_error(404, "template.not_found")
 
         # Build dynamic upsert: only touch the override columns the
         # caller actually sent. asyncpg has no "leave column alone"
@@ -386,7 +387,7 @@ async def update_template(
             template_id,
         )
         if not tpl:
-            raise HTTPException(404, "template not found")
+            raise http_error(404, "template.not_found")
         if tpl["is_system"]:
             raise HTTPException(
                 403,
@@ -409,7 +410,7 @@ async def update_template(
             user.org_id,
         )
         if not row:
-            raise HTTPException(404, "template not found in your organisation")
+            raise http_error(404, "template.not_found")
     dto = _base_dto(row)
     dto["is_customized"] = False
     return dto
@@ -427,11 +428,11 @@ async def delete_template(
             template_id,
         )
         if not tpl:
-            raise HTTPException(404, "template not found")
+            raise http_error(404, "template.not_found")
         if tpl["is_system"]:
-            raise HTTPException(403, "system templates cannot be deleted")
+            raise http_error(403, "template.system_locked")
         if tpl["org_id"] != user.org_id:
-            raise HTTPException(404, "template not found in your organisation")
+            raise http_error(404, "template.not_found")
 
         await conn.execute(
             """

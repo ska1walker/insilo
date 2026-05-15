@@ -1,6 +1,7 @@
 "use client";
 
 import { Mic, Pencil, Plus, Star, Trash2, UserRound, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import { VoiceEnrollmentDialog } from "@/components/voice-enrollment-dialog";
@@ -24,6 +25,7 @@ import {
  *   - Sprecher löschen (cascadiert auf Samples + setzt cluster auf pending)
  */
 export function SpeakerCatalog() {
+  const t = useTranslations("speakerCatalog");
   const toast = useToast();
   const [speakers, setSpeakers] = useState<OrgSpeaker[] | null>(null);
   const [adding, setAdding] = useState(false);
@@ -57,7 +59,7 @@ export function SpeakerCatalog() {
             className="btn-secondary inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            Sprecher anlegen
+            {t("addBtn")}
           </button>
         )}
       </div>
@@ -70,7 +72,7 @@ export function SpeakerCatalog() {
             setAdding(false);
             refresh();
             toast.show({
-              message: `Sprecher „${s.display_name}" angelegt.`,
+              message: t("createdToast", { name: s.display_name }),
               variant: "success",
             });
           }}
@@ -79,10 +81,7 @@ export function SpeakerCatalog() {
 
       {speakers.length === 0 && !adding && (
         <p className="text-sm text-text-secondary">
-          Noch keine Sprecher angelegt. Sie können Personen hier anlegen
-          (Insilo lernt die Stimme dann beim ersten Zuweisen im
-          Transkript), oder den Katalog wachsen lassen indem Sie in einer
-          Besprechung „SPEAKER_00" einem neuen Namen zuweisen.
+          {t("noneYet")}
         </p>
       )}
 
@@ -124,7 +123,7 @@ export function SpeakerCatalog() {
             onSuccess={() => {
               refresh();
               toast.show({
-                message: `Stimmprobe für „${target.display_name}" gespeichert.`,
+                message: t("sampleSavedToast", { name: target.display_name }),
                 variant: "success",
               });
             }}
@@ -146,22 +145,18 @@ function SpeakerRow({
   onEnroll: () => void;
   onAfterDelete: () => void;
 }) {
+  const t = useTranslations("speakerCatalog");
   const toast = useToast();
 
   function handleDelete() {
-    if (
-      !confirm(
-        `Sprecher „${speaker.display_name}" löschen? Alle Voiceprints und Meeting-Zuordnungen werden entfernt.`,
-      )
-    )
-      return;
+    if (!confirm(t("deleteConfirm", { name: speaker.display_name }))) return;
     deleteSpeaker(speaker.id)
       .then(() => {
-        toast.show({ message: "Sprecher gelöscht.", variant: "success" });
+        toast.show({ message: t("deletedToast"), variant: "success" });
         onAfterDelete();
       })
       .catch(() =>
-        toast.show({ message: "Löschen fehlgeschlagen.", variant: "error" }),
+        toast.show({ message: t("deleteFailToast"), variant: "error" }),
       );
   }
 
@@ -174,7 +169,7 @@ function SpeakerRow({
               className="h-3.5 w-3.5"
               strokeWidth={2}
               style={{ color: "var(--gold)" }}
-              aria-label="Das bin ich"
+              aria-label={t("isSelfAria")}
             />
           ) : (
             <UserRound
@@ -187,12 +182,11 @@ function SpeakerRow({
           </span>
           {speaker.has_voiceprint ? (
             <span className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-secondary">
-              {speaker.sample_count}{" "}
-              {speaker.sample_count === 1 ? "Stimmprobe" : "Stimmproben"}
+              {t("samplesPlural", { count: speaker.sample_count })}
             </span>
           ) : (
             <span className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-meta">
-              noch keine Stimmprobe
+              {t("noVoiceprintLabel")}
             </span>
           )}
         </div>
@@ -202,9 +196,9 @@ function SpeakerRow({
           </p>
         )}
         <p className="mt-1 text-xs text-text-meta">
-          Angelegt {formatDate(speaker.created_at)}
+          {t("createdAt", { date: formatDate(speaker.created_at) })}
           {speaker.last_heard_at && (
-            <> · zuletzt gehört {formatDate(speaker.last_heard_at)}</>
+            <> · {t("lastHeardAt", { date: formatDate(speaker.last_heard_at) })}</>
           )}
         </p>
       </div>
@@ -216,18 +210,18 @@ function SpeakerRow({
           className="btn-tertiary inline-flex items-center gap-1"
           title={
             speaker.has_voiceprint
-              ? "Zusätzliche Stimmprobe aufnehmen (verbessert den Voiceprint)"
-              : "Stimmprobe aufnehmen (Nordwind & Sonne, ~40 s)"
+              ? t("addSampleTitleAddon")
+              : t("addSampleTitleNew")
           }
         >
           <Mic className="h-3.5 w-3.5" strokeWidth={1.75} />
-          {speaker.has_voiceprint ? "Probe nachlegen" : "Stimmprobe aufnehmen"}
+          {speaker.has_voiceprint ? t("addSampleBtnAddon") : t("addSampleBtnNew")}
         </button>
         <button
           type="button"
           onClick={onEdit}
           className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-          aria-label="Bearbeiten"
+          aria-label={t("editAria")}
         >
           <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
         </button>
@@ -235,7 +229,7 @@ function SpeakerRow({
           type="button"
           onClick={handleDelete}
           className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft"
-          aria-label="Löschen"
+          aria-label={t("deleteAria")}
         >
           <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
         </button>
@@ -263,6 +257,7 @@ function SpeakerForm({
   onSaved: (s: OrgSpeaker) => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("speakerCatalog.form");
   const [name, setName] = useState(initial?.display_name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [isSelf, setIsSelf] = useState(initial?.is_self ?? false);
@@ -275,7 +270,7 @@ function SpeakerForm({
     setError(null);
     const trimmed = name.trim();
     if (!trimmed) {
-      setError("Name darf nicht leer sein.");
+      setError(t("errEmptyName"));
       return;
     }
     setSaving(true);
@@ -302,9 +297,9 @@ function SpeakerForm({
         "status" in err &&
         (err as { status: number }).status === 409
       ) {
-        setError("Ein Sprecher mit diesem Namen existiert bereits.");
+        setError(t("errDuplicate"));
       } else {
-        setError("Speichern fehlgeschlagen.");
+        setError(t("errSave"));
       }
     } finally {
       setSaving(false);
@@ -315,14 +310,14 @@ function SpeakerForm({
     <form onSubmit={submit} className="space-y-3 rounded-md bg-surface-soft p-4">
       <label className="block">
         <span className="block text-xs font-medium text-text-secondary">
-          Name
+          {t("name")}
         </span>
         <input
           autoFocus
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="z. B. Kai Böhm"
+          placeholder={t("namePlaceholder")}
           maxLength={120}
           className="input mt-1 w-full"
           disabled={saving}
@@ -331,13 +326,13 @@ function SpeakerForm({
 
       <label className="block">
         <span className="block text-xs font-medium text-text-secondary">
-          Beschreibung (optional)
+          {t("descLabel")}
         </span>
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="z. B. Mandant Müller GmbH"
+          placeholder={t("descPlaceholder")}
           maxLength={500}
           className="input mt-1 w-full"
           disabled={saving}
@@ -352,10 +347,9 @@ function SpeakerForm({
           disabled={saving}
         />
         <span>
-          Das bin ich
+          {t("isSelf")}
           <span className="ml-2 text-xs text-text-meta">
-            (Zusammenfassungen dürfen mich mit „Sie" ansprechen — max. 1 pro
-            Organisation)
+            {t("isSelfHint")}
           </span>
         </span>
       </label>
@@ -369,10 +363,9 @@ function SpeakerForm({
             disabled={saving}
           />
           <span>
-            Stimmprobe zurücksetzen
+            {t("clearVoiceprint")}
             <span className="ml-2 text-xs text-text-meta">
-              (alle {initial.sample_count} Samples werden gelöscht, Insilo lernt
-              die Stimme neu beim nächsten Zuweisen)
+              {t("clearVoiceprintHint", { count: initial.sample_count })}
             </span>
           </span>
         </label>
@@ -392,14 +385,14 @@ function SpeakerForm({
           disabled={saving}
         >
           <X className="h-3.5 w-3.5" strokeWidth={2} />
-          Abbrechen
+          {t("cancel")}
         </button>
         <button type="submit" className="btn-primary" disabled={saving}>
           {saving
-            ? "Speichert …"
+            ? t("saving")
             : mode === "edit"
-            ? "Speichern"
-            : "Anlegen"}
+            ? t("save")
+            : t("create")}
         </button>
       </div>
     </form>

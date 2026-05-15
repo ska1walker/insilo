@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import {
   Brain,
   Building2,
@@ -10,34 +11,35 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-export const metadata = {
-  title: "Über Insilo · Datensouveräne Meeting-Intelligenz",
-};
+export async function generateMetadata() {
+  const t = await getTranslations("about");
+  return {
+    title: t("metadataTitle"),
+  };
+}
 
-export default function UeberPage() {
+export default async function UeberPage() {
+  const t = await getTranslations("about");
+
   return (
     <main className="mx-auto max-w-[1080px] px-6 py-16 md:px-12 md:py-24">
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <section className="mb-28">
         <p className="mono mb-6 text-xs uppercase tracking-[0.08em] text-text-meta">
-          Insilo · v0.1
+          {t("version")}
         </p>
         <h1 className="font-display text-[2.5rem] font-medium leading-[1.05] tracking-tight text-text-primary md:text-[3.5rem]">
-          Meeting-Intelligenz,
-          <br />
-          die niemals Ihr Haus verlässt.
+          {t("heroTitle")}
         </h1>
         <p className="mt-8 max-w-[640px] text-lg leading-relaxed text-text-secondary md:text-xl">
-          Insilo nimmt Geschäftsgespräche auf, transkribiert sie und erzeugt
-          strukturierte Protokolle — vollständig auf Ihrer Olares-Box im
-          Serverraum. Kein Cloud-Upload, keine Drittanbieter, keine Telemetrie.
+          {t("heroBody")}
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <Link href="/aufnahme" className="btn-primary">
-            Erste Aufnahme starten
+            {t("ctaPrimary")}
           </Link>
           <a href="#funktionen" className="btn-tertiary">
-            Wie es funktioniert ↓
+            {t("ctaSecondary")}
           </a>
         </div>
       </section>
@@ -45,27 +47,27 @@ export default function UeberPage() {
       {/* ── Was Insilo macht ──────────────────────────────────────────── */}
       <section id="funktionen" className="mb-28">
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-meta">
-          01 · Drei Schritte
+          {t("stepsLabel")}
         </p>
         <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
-          Aufnehmen. Transkribieren. Verstehen.
+          {t("stepsTitle")}
         </h2>
 
         <div className="mt-14 grid gap-12 md:grid-cols-3">
           <FeatureBlock
             icon={<Mic className="h-5 w-5" strokeWidth={1.75} />}
-            title="Aufnehmen"
-            body="Im Browser, auf Mobile oder Desktop. Die PWA nutzt die MediaRecorder-API — drei Klicks, das Meeting läuft. Audio wird verschlüsselt zur Box übertragen und landet im hostPath."
+            title={t("step1Title")}
+            body={t("step1Body")}
           />
           <FeatureBlock
             icon={<FileText className="h-5 w-5" strokeWidth={1.75} />}
-            title="Transkribieren"
-            body="Whisper läuft auf der Box. Deutsche Sprache, ungefähr 30 Sekunden Verarbeitung pro Audio-Minute. Speaker-Diarization erkennt automatisch, wer spricht."
+            title={t("step2Title")}
+            body={t("step2Body")}
           />
           <FeatureBlock
             icon={<Brain className="h-5 w-5" strokeWidth={1.75} />}
-            title="Verstehen"
-            body="Ein lokales Sprachmodell erstellt strukturierte Protokolle nach Ihrer Vorlage. Fragen Sie später quer durch Ihr Meeting-Archiv — Antworten kommen mit Quellenangabe."
+            title={t("step3Title")}
+            body={t("step3Body")}
           />
         </div>
       </section>
@@ -89,24 +91,20 @@ export default function UeberPage() {
             </div>
             <div className="min-w-0">
               <p className="mono mb-2 text-xs uppercase tracking-[0.08em] text-text-meta">
-                02 · Das Versprechen
+                {t("promiseLabel")}
               </p>
               <h2 className="font-display text-2xl font-medium leading-tight tracking-tight md:text-3xl">
-                Keine Audiosekunde verlässt jemals Ihre Box.
+                {t("promiseTitle")}
               </h2>
               <p className="mt-4 max-w-[640px] text-text-secondary">
-                Audio, Transkript, Embeddings und Suchindex liegen auf der
-                Hardware Ihrer Organisation. Insilo telefoniert nicht nach
-                Hause. Wenn Sie ein externes Sprachmodell ansprechen wollen,
-                entscheiden Sie das bewusst über die Einstellungen — sonst
-                läuft alles ausschließlich lokal.
+                {t("promiseBody")}
               </p>
               <ul className="mt-6 space-y-2 text-sm text-text-secondary">
-                <SovereignBullet text="Audio bleibt im hostPath /app/data/audio/" />
-                <SovereignBullet text="Transkripte in lokaler PostgreSQL" />
-                <SovereignBullet text="Embeddings im pgvector der Box" />
-                <SovereignBullet text="LLM-Aufrufe wahlweise an die lokale Olares-LiteLLM oder Ihren eigenen Endpunkt" />
-                <SovereignBullet text="Keine Telemetrie, kein Phone Home, keine externen Schriften" />
+                <SovereignBullet text={t("promise1")} />
+                <SovereignBullet text={t("promise2")} />
+                <SovereignBullet text={t("promise3")} />
+                <SovereignBullet text={t("promise4")} />
+                <SovereignBullet text={t("promise5")} />
               </ul>
             </div>
           </div>
@@ -116,33 +114,32 @@ export default function UeberPage() {
       {/* ── Für wen ───────────────────────────────────────────────────── */}
       <section className="mb-28">
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-meta">
-          03 · Zielgruppe
+          {t("audienceLabel")}
         </p>
         <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
-          Für Organisationen, in denen Vertraulichkeit
-          <br className="hidden md:block" /> kein Marketing-Versprechen ist.
+          {t("audienceTitle")}
         </h2>
 
         <div className="mt-12 grid gap-10 md:grid-cols-2">
           <PersonaBlock
             icon={<Lock className="h-4 w-4" strokeWidth={1.75} />}
-            label="Anwaltskanzleien"
-            body="Mandantengespräche unter Berufsgeheimnis. Keine Übertragung an Dritte — § 203 StGB-konform."
+            label={t("personaLawTitle")}
+            body={t("personaLawBody")}
           />
           <PersonaBlock
             icon={<FileText className="h-4 w-4" strokeWidth={1.75} />}
-            label="Steuerberatungen"
-            body="Jahresgespräche, Mandantengeheimnis, DSGVO. Strukturierte Protokolle direkt aus dem Beratungstermin."
+            label={t("personaTaxTitle")}
+            body={t("personaTaxBody")}
           />
           <PersonaBlock
             icon={<Search className="h-4 w-4" strokeWidth={1.75} />}
-            label="Management-Beratung"
-            body="Strategie-Sessions und Workshops. Erkenntnisse durchsuchbar machen, ohne dass Inhalte in fremden Clouds landen."
+            label={t("personaConsultTitle")}
+            body={t("personaConsultBody")}
           />
           <PersonaBlock
             icon={<Building2 className="h-4 w-4" strokeWidth={1.75} />}
-            label="Industrie-Mittelstand"
-            body="Werkstor-Schutz für IP, Konstruktionsdetails und Lieferantenverhandlungen. Selbst-gehostete Infrastruktur, eigene Compliance."
+            label={t("personaIndustryTitle")}
+            body={t("personaIndustryBody")}
           />
         </div>
       </section>
@@ -150,37 +147,22 @@ export default function UeberPage() {
       {/* ── Tech in einem Satz ────────────────────────────────────────── */}
       <section className="mb-28">
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-meta">
-          04 · Architektur
+          {t("archLabel")}
         </p>
         <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
-          Standard-Bausteine. Saubere Trennung.
+          {t("archTitle")}
         </h2>
 
         <div className="mt-12 grid gap-y-6 text-sm leading-relaxed md:grid-cols-[180px_1fr] md:gap-x-10 md:gap-y-8">
+          <ArchRow label={t("archPwaLabel")} text={t("archPwaText")} />
+          <ArchRow label={t("archBackendLabel")} text={t("archBackendText")} />
           <ArchRow
-            label="PWA"
-            text="Next.js 15 (App Router, RSC). MediaRecorder API für die Aufnahme. Offline-fähig per Service Worker."
+            label={t("archTranscribeLabel")}
+            text={t("archTranscribeText")}
           />
-          <ArchRow
-            label="Backend"
-            text="FastAPI, asyncpg gegen die Olares-System-PostgreSQL. Authentifizierung übernimmt Olares' Envoy-Sidecar — wir vertrauen dem X-Bfl-User-Header."
-          />
-          <ArchRow
-            label="Transkription"
-            text="faster-whisper mit large-v3, deutsche Sprache, optional pyannote.audio für Speaker-Diarization."
-          />
-          <ArchRow
-            label="Sprachmodell"
-            text="OpenAI-kompatibler Endpunkt. Default: die Olares-LiteLLM-Gateway-App. Alternative beliebig konfigurierbar unter Einstellungen."
-          />
-          <ArchRow
-            label="Suche"
-            text="BGE-M3-Embeddings (multilingual), pgvector zur Distanz-Suche, grounded Q&A mit Quellenmarkern."
-          />
-          <ArchRow
-            label="Speicher"
-            text="Audio im hostPath der Olares-Box. Transkripte, Templates und Org-Settings in PostgreSQL mit Row-Level-Security."
-          />
+          <ArchRow label={t("archLlmLabel")} text={t("archLlmText")} />
+          <ArchRow label={t("archSearchLabel")} text={t("archSearchText")} />
+          <ArchRow label={t("archStorageLabel")} text={t("archStorageText")} />
         </div>
       </section>
 
@@ -188,17 +170,13 @@ export default function UeberPage() {
       <section className="mb-28">
         <div className="rounded-lg border border-border-subtle bg-white p-10 md:p-14">
           <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-meta">
-            05 · Signatur
+            {t("signatureLabel")}
           </p>
           <h2 className="font-display text-2xl font-medium leading-tight tracking-tight md:text-3xl">
-            Eine Pulse-Linie. Mehr nicht.
+            {t("signatureTitle")}
           </h2>
           <p className="mt-4 max-w-[640px] text-text-secondary">
-            Während eine Aufnahme läuft, pulsiert eine 1-Pixel-dünne goldene
-            Linie am oberen Bildschirmrand. Das ist die einzige visuelle
-            Ankündigung. Sie ist sofort lesbar, ohne aufdringlich zu sein —
-            und sie ist der Beweis, dass alle Vorgänge auf Ihrer Hardware
-            laufen, weil nichts ist, was sich nicht zeigen lässt.
+            {t("signatureBody")}
           </p>
         </div>
       </section>
@@ -208,20 +186,18 @@ export default function UeberPage() {
         <div className="flex flex-col items-start gap-6 md:flex-row md:items-end md:justify-between md:gap-10">
           <div>
             <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
-              Bereit für die erste Aufnahme?
+              {t("finalTitle")}
             </h2>
             <p className="mt-3 max-w-[480px] text-text-secondary">
-              Dauert keine Minute. Sie sehen sofort, wie Transkription und
-              Zusammenfassung auf Ihrer Box laufen — und können danach Ihre
-              Vorlagen und Ihr Sprachmodell anpassen.
+              {t("finalBody")}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/aufnahme" className="btn-primary">
-              Aufnahme starten
+              {t("finalCtaPrimary")}
             </Link>
             <Link href="/einstellungen" className="btn-secondary">
-              Einstellungen öffnen
+              {t("finalCtaSecondary")}
             </Link>
           </div>
         </div>
@@ -229,12 +205,10 @@ export default function UeberPage() {
 
       <footer className="mt-16">
         <div className="flex flex-col gap-3 border-t border-border-subtle pt-8 text-xs text-text-meta md:flex-row md:items-center md:justify-between">
-          <p>
-            Insilo · Datensouveräne Meeting-Intelligenz · © kaivo.studio
-          </p>
+          <p>{t("footerLeft")}</p>
           <p className="mono inline-flex items-center gap-2">
             <Server className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Self-hosted auf Olares · Made in Germany
+            {t("footerRight")}
           </p>
         </div>
       </footer>

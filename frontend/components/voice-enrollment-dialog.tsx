@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, Loader2, Mic, Square, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
 import { ApiError } from "@/lib/api/client";
@@ -52,6 +53,7 @@ export function VoiceEnrollmentDialog({
   onClose: () => void;
   onSuccess: (result: EnrollResult) => void;
 }) {
+  const t = useTranslations("voiceEnrollment");
   const [phase, setPhase] = useState<Phase>("intro");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +144,7 @@ export function VoiceEnrollmentDialog({
     }
 
     if (blob.size === 0) {
-      setError("Die Aufnahme war leer. Bitte erneut versuchen.");
+      setError(t("errEmpty"));
       setPhase("error");
       return;
     }
@@ -157,16 +159,19 @@ export function VoiceEnrollmentDialog({
       if (err instanceof ApiError && err.status === 422) {
         setError(
           (err.body as { detail?: string } | null)?.detail ??
-            "Zu wenig erkennbare Sprache. Bitte erneut versuchen.",
+            t("errLowSpeech"),
         );
       } else if (err instanceof ApiError) {
         setError(
-          `Fehler ${err.status}: ${
-            (err.body as { detail?: string } | null)?.detail ?? "Upload abgelehnt"
-          }`,
+          t("errStatus", {
+            status: err.status,
+            detail:
+              (err.body as { detail?: string } | null)?.detail ??
+              t("errStatusFallback"),
+          }),
         );
       } else {
-        setError("Upload fehlgeschlagen — Verbindung prüfen.");
+        setError(t("errGenericUpload"));
       }
       setPhase("error");
     }
@@ -189,7 +194,7 @@ export function VoiceEnrollmentDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       role="dialog"
       aria-modal
-      aria-label="Stimmprobe aufnehmen"
+      aria-label={t("dialogAria")}
     >
       {phase === "recording" && <RecordingIndicator />}
 
@@ -205,18 +210,16 @@ export function VoiceEnrollmentDialog({
             type="button"
             onClick={handleClose}
             className="absolute right-4 top-4 rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-            aria-label="Schließen"
+            aria-label={t("closeAria")}
           >
             <X className="h-4 w-4" strokeWidth={1.75} />
           </button>
           <h2 className="font-display text-2xl font-medium tracking-tight">
-            Stimmprobe für{" "}
+            {t("titlePrefix")}{" "}
             <span style={{ color: "var(--gold-deep)" }}>{speaker.display_name}</span>
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            Lesen Sie den folgenden Standardtext laut und deutlich vor. Er
-            dauert etwa 35–45 Sekunden und enthält alle wichtigen deutschen
-            Laute — damit lernt Insilo die Stimme besonders genau.
+            {t("intro")}
           </p>
         </div>
 
@@ -228,7 +231,7 @@ export function VoiceEnrollmentDialog({
             phase === "unsupported") && (
             <div className="rounded-md border border-border-subtle bg-surface-soft p-4 text-sm leading-relaxed text-text-primary">
               <p className="mono mb-2 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
-                Der Nordwind und die Sonne
+                {t("nordwindTitle")}
               </p>
               <p>{NORDWIND_TEXT}</p>
             </div>
@@ -244,7 +247,7 @@ export function VoiceEnrollmentDialog({
                   className="mono text-[0.6875rem] uppercase tracking-[0.08em]"
                   style={{ color: "var(--gold-deep)" }}
                 >
-                  Aufnahme läuft
+                  {t("recordingHeader")}
                 </p>
                 <p className="mono tabular-nums text-base font-medium" aria-live="polite">
                   {formatDuration(elapsed * 1000)}
@@ -257,7 +260,7 @@ export function VoiceEnrollmentDialog({
           {phase === "uploading" && (
             <div className="flex items-center gap-3 rounded-md bg-surface-soft p-4 text-sm text-text-secondary">
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
-              Stimmprobe wird verarbeitet …
+              {t("processing")}
             </div>
           )}
 
@@ -272,13 +275,14 @@ export function VoiceEnrollmentDialog({
             >
               <div className="flex items-center gap-2 font-medium">
                 <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} />
-                Stimmprobe gespeichert
+                {t("successHeader")}
               </div>
               <p className="mt-1 text-xs opacity-90">
-                {result.voiced_seconds.toFixed(1)} s erkennbare Sprache aus{" "}
-                {result.total_seconds.toFixed(1)} s Aufnahme · Sprecher hat
-                jetzt {result.sample_count}{" "}
-                {result.sample_count === 1 ? "Stimmprobe" : "Stimmproben"}.
+                {t("successDetail", {
+                  voiced: result.voiced_seconds.toFixed(1),
+                  total: result.total_seconds.toFixed(1),
+                  samples: t("samplesPlural", { count: result.sample_count }),
+                })}
               </p>
             </div>
           )}
@@ -292,7 +296,7 @@ export function VoiceEnrollmentDialog({
                 color: "var(--error)",
               }}
             >
-              <p className="font-medium">Aufnahme nicht verwertbar</p>
+              <p className="font-medium">{t("errorHeader")}</p>
               <p className="mt-1 text-xs opacity-90">{error}</p>
             </div>
           )}
@@ -306,10 +310,9 @@ export function VoiceEnrollmentDialog({
                 color: "var(--error)",
               }}
             >
-              <p className="font-medium">Mikrofonzugriff verweigert</p>
+              <p className="font-medium">{t("deniedHeader")}</p>
               <p className="mt-1 text-xs opacity-90">
-                Bitte erlauben Sie Insilo den Zugriff aufs Mikrofon in den
-                Browser-Einstellungen und versuchen Sie es erneut.
+                {t("deniedBody")}
               </p>
             </div>
           )}
@@ -323,9 +326,9 @@ export function VoiceEnrollmentDialog({
                 color: "var(--error)",
               }}
             >
-              <p className="font-medium">Browser unterstützt keine Aufnahme</p>
+              <p className="font-medium">{t("unsupportedHeader")}</p>
               <p className="mt-1 text-xs opacity-90">
-                Bitte nutzen Sie einen aktuellen Chrome- oder Safari-Browser.
+                {t("unsupportedBody")}
               </p>
             </div>
           )}
@@ -334,13 +337,13 @@ export function VoiceEnrollmentDialog({
         {/* Footer — sticky, immer sichtbar */}
         <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border-subtle bg-white p-6">
           <p className="text-xs text-text-meta">
-            Die Aufnahme verlässt Ihre Olares-Box nicht.
+            {t("footerNote")}
           </p>
           <div className="flex gap-2">
             {phase === "intro" && (
               <>
                 <button type="button" onClick={handleClose} className="btn-tertiary">
-                  Abbrechen
+                  {t("cancel")}
                 </button>
                 <button
                   type="button"
@@ -348,13 +351,13 @@ export function VoiceEnrollmentDialog({
                   className="btn-primary inline-flex items-center gap-2"
                 >
                   <Mic className="h-4 w-4" strokeWidth={1.75} />
-                  Aufnahme starten
+                  {t("start")}
                 </button>
               </>
             )}
             {phase === "requesting" && (
               <button type="button" disabled className="btn-primary">
-                Mikrofon wird angefragt …
+                {t("requesting")}
               </button>
             )}
             {phase === "recording" && (
@@ -365,27 +368,27 @@ export function VoiceEnrollmentDialog({
                 style={{ background: "var(--gold-deep)" }}
               >
                 <Square className="h-4 w-4 fill-current" strokeWidth={1.75} />
-                Stopp & speichern
+                {t("stop")}
               </button>
             )}
             {phase === "uploading" && (
               <button type="button" disabled className="btn-primary">
-                Wird verarbeitet …
+                {t("uploading")}
               </button>
             )}
             {(phase === "error" || phase === "denied") && (
               <>
                 <button type="button" onClick={handleClose} className="btn-tertiary">
-                  Schließen
+                  {t("close")}
                 </button>
                 <button type="button" onClick={handleRetry} className="btn-primary">
-                  Erneut versuchen
+                  {t("retry")}
                 </button>
               </>
             )}
             {phase === "success" && (
               <button type="button" onClick={handleClose} className="btn-primary">
-                Fertig
+                {t("done")}
               </button>
             )}
           </div>

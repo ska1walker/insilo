@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, Plus, Star, UserRound } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
 import {
@@ -31,6 +32,7 @@ export function ClusterAssignmentPanel({
   onChange?: () => void;
 }) {
   const toast = useToast();
+  const t = useTranslations("clusters");
   const [clusters, setClusters] = useState<MeetingCluster[] | null>(null);
   const [speakers, setSpeakers] = useState<OrgSpeaker[]>([]);
   const [pickerOpenIdx, setPickerOpenIdx] = useState<number | null>(null);
@@ -74,9 +76,8 @@ export function ClusterAssignmentPanel({
       refresh();
       onChange?.();
       toast.show({
-        message: orgSpeakerId || newName
-          ? "Sprecher zugewiesen."
-          : "Zuweisung entfernt.",
+        message:
+          orgSpeakerId || newName ? t("assignedToast") : t("unassignedToast"),
         variant: "success",
       });
     } catch (err: unknown) {
@@ -88,12 +89,12 @@ export function ClusterAssignmentPanel({
         (err as { status: number }).status === 409
       ) {
         toast.show({
-          message: "Ein Sprecher mit diesem Namen existiert bereits.",
+          message: t("duplicateToast"),
           variant: "error",
         });
       } else {
         toast.show({
-          message: "Zuweisung fehlgeschlagen.",
+          message: t("assignFailedToast"),
           variant: "error",
         });
       }
@@ -111,9 +112,7 @@ export function ClusterAssignmentPanel({
   if (clusters.length === 0) {
     return (
       <div className="mb-5 rounded-lg border border-border-subtle bg-surface-soft p-4 text-xs text-text-meta">
-        Für dieses Meeting wurden keine Sprecher-Cluster gespeichert. Wenn es
-        vor v0.1.37 aufgenommen wurde, können Sie über die Detail-Seite eine
-        Neu-Diarization auslösen.
+        {t("emptyPre137")}
       </div>
     );
   }
@@ -121,7 +120,7 @@ export function ClusterAssignmentPanel({
   return (
     <div className="mb-5 rounded-lg border border-border-subtle bg-surface-soft p-4">
       <p className="mono mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
-        Stimmen aus dem Katalog · {clusters.length}
+        {t("sectionLabel", { count: clusters.length })}
       </p>
 
       <div className="space-y-2">
@@ -159,6 +158,7 @@ function ClusterRow({
   onTogglePicker: () => void;
   onAssign: (orgSpeakerId: string | null, newName?: string) => void;
 }) {
+  const t = useTranslations("clusters");
   const matched = cluster.org_speaker_id !== null;
   const showScore =
     cluster.match_score !== null &&
@@ -182,7 +182,7 @@ function ClusterRow({
                   className="h-3 w-3"
                   strokeWidth={2}
                   style={{ color: "var(--gold)" }}
-                  aria-label="Sie"
+                  aria-label={t("isSelfAria")}
                 />
               )}
               <span
@@ -194,7 +194,7 @@ function ClusterRow({
               {cluster.assignment === "auto" && showScore && (
                 <span
                   className="rounded-full bg-surface-soft px-2 py-0.5 text-[0.6875rem] uppercase tracking-[0.04em] text-text-meta"
-                  title="Auto-Match Cosine-Similarity"
+                  title={t("scoreTooltip")}
                 >
                   {scorePct}%
                 </span>
@@ -207,7 +207,7 @@ function ClusterRow({
                     : { background: "var(--surface-soft)", color: "var(--text-meta)" }
                 }
               >
-                {cluster.assignment === "auto" ? "automatisch" : "manuell"}
+                {cluster.assignment === "auto" ? t("automatic") : t("manual")}
               </span>
             </>
           ) : (
@@ -222,7 +222,7 @@ function ClusterRow({
           onClick={onTogglePicker}
           className="btn-tertiary inline-flex items-center gap-1"
         >
-          {matched ? "Ändern" : "Zuweisen"}
+          {matched ? t("change") : t("assign")}
           <ChevronDown className="h-3 w-3" strokeWidth={2} />
         </button>
       </div>
@@ -253,6 +253,7 @@ function ClusterPicker({
   onCreate: (name: string) => void;
   onClear: () => void;
 }) {
+  const t = useTranslations("clusters");
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -300,8 +301,8 @@ function ClusterPicker({
               }
               title={
                 s.has_voiceprint
-                  ? `${s.sample_count} Stimmprobe(n)`
-                  : "Noch keine Stimmprobe"
+                  ? t("samplesTooltip", { count: s.sample_count })
+                  : t("noSampleTooltip")
               }
             >
               {s.is_self ? (
@@ -325,7 +326,7 @@ function ClusterPicker({
             className="inline-flex items-center gap-1 rounded-full border border-dashed border-border-strong bg-white px-3 py-1 text-[0.8125rem] text-text-meta transition hover:bg-surface-soft"
           >
             <Plus className="h-3 w-3" strokeWidth={2} />
-            Neu anlegen
+            {t("newSpeaker")}
           </button>
         ) : (
           <div className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-white py-1 pl-3 pr-1">
@@ -341,7 +342,7 @@ function ClusterPicker({
                   setNewName("");
                 }
               }}
-              placeholder="Name"
+              placeholder={t("namePlaceholder")}
               maxLength={120}
               className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-disabled"
               style={{ color: "var(--gold-deep)", width: "120px" }}
@@ -355,7 +356,7 @@ function ClusterPicker({
             onClick={onClear}
             className="rounded-full border border-border-subtle bg-white px-3 py-1 text-[0.8125rem] text-text-meta transition hover:bg-surface-soft"
           >
-            Zuweisung entfernen
+            {t("unassign")}
           </button>
         )}
       </div>

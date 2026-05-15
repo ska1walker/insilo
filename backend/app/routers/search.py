@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
 from app.db import acquire
+from app.errors import http_error
 from app.llm_config import load_llm_config
 
 log = logging.getLogger(__name__)
@@ -122,7 +123,7 @@ async def search(
     try:
         qvec = await _embed_query(req.query)
     except httpx.HTTPError as exc:
-        raise HTTPException(503, f"embeddings service unreachable: {exc}") from exc
+        raise http_error(503, "service.embeddings_unreachable") from exc
 
     hits = await _retrieve(user.org_id, qvec, req.limit)
     return SearchResponse(query=req.query, hits=hits)
@@ -168,7 +169,7 @@ async def ask(
     try:
         qvec = await _embed_query(req.question)
     except httpx.HTTPError as exc:
-        raise HTTPException(503, f"embeddings service unreachable: {exc}") from exc
+        raise http_error(503, "service.embeddings_unreachable") from exc
 
     hits = await _retrieve(user.org_id, qvec, req.limit)
 
@@ -197,7 +198,7 @@ async def ask(
             resp.raise_for_status()
             data = resp.json()
     except httpx.HTTPError as exc:
-        raise HTTPException(503, f"LLM unreachable: {exc}") from exc
+        raise http_error(503, "service.llm_unreachable") from exc
 
     choices = data.get("choices") or []
     answer = (choices[0].get("message", {}) or {}).get("content", "") if choices else ""

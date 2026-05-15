@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { listTags, type TagDto } from "@/lib/api/tags";
 import { TagPill } from "./tag-pill";
@@ -19,6 +20,7 @@ export function TagFilterBar({
   selectedIds: string[];
   onChange: (ids: string[]) => void;
 }) {
+  const t = useTranslations("tags");
   const [tags, setTags] = useState<TagDto[] | null>(null);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function TagFilterBar({
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2">
       <span className="mono mr-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
-        Filter:
+        {t("filterPrefix")}
       </span>
       {tags.map((t) => (
         <TagPill
@@ -68,7 +70,7 @@ export function TagFilterBar({
           className="ml-1 inline-flex items-center gap-1 text-[0.75rem] text-text-meta transition hover:text-text-primary"
         >
           <X className="h-3 w-3" strokeWidth={2} />
-          Alle zurücksetzen
+          {t("resetAll")}
         </button>
       )}
     </div>

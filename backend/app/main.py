@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import CurrentUser, get_current_user
 from app.db import close_pool, init_pool
+from app.errors import locale_middleware
 from app.routers import (
     api_keys,
     audio,
@@ -53,6 +54,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Per-request locale resolution for user-facing error messages (v0.1.45+).
+# Reads Accept-Language and stashes a DE/EN-supported locale in a
+# contextvar that `app.errors.http_error` reads when building responses.
+app.middleware("http")(locale_middleware)
 
 
 # ----------------------------------------------------------------------------

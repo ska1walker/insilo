@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Pencil, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
 import { renameMeeting } from "@/lib/api/meetings";
@@ -20,6 +21,8 @@ export function MeetingTitleEdit({
   onChange?: (newTitle: string) => void;
 }) {
   const toast = useToast();
+  const tMeeting = useTranslations("meeting");
+  const tCommon = useTranslations("common");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(initialTitle);
   const [saving, setSaving] = useState(false);
@@ -52,7 +55,7 @@ export function MeetingTitleEdit({
     } catch (err) {
       console.error("rename failed", err);
       toast.show({
-        message: "Umbenennen fehlgeschlagen.",
+        message: tMeeting("renameFailed"),
         variant: "error",
       });
       setDraft(initialTitle);
@@ -81,13 +84,13 @@ export function MeetingTitleEdit({
           maxLength={255}
           disabled={saving}
           className="input flex-1 min-w-[280px] text-3xl font-medium md:text-4xl"
-          aria-label="Titel bearbeiten"
+          aria-label={tMeeting("renameInputAria")}
         />
         <button
           type="button"
           onClick={commit}
           className="rounded-md p-2 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-          aria-label="Speichern"
+          aria-label={tCommon("save")}
           disabled={saving}
         >
           <Check className="h-5 w-5" strokeWidth={1.75} />
@@ -96,7 +99,7 @@ export function MeetingTitleEdit({
           type="button"
           onClick={cancel}
           className="rounded-md p-2 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-          aria-label="Abbrechen"
+          aria-label={tCommon("cancel")}
           disabled={saving}
         >
           <X className="h-5 w-5" strokeWidth={1.75} />
@@ -112,8 +115,8 @@ export function MeetingTitleEdit({
         type="button"
         onClick={() => setEditing(true)}
         className="rounded-md p-1.5 text-text-meta opacity-0 transition hover:bg-surface-soft hover:text-text-primary group-hover:opacity-100 focus:opacity-100"
-        aria-label="Titel umbenennen"
-        title="Titel umbenennen"
+        aria-label={tMeeting("renameAria")}
+        title={tMeeting("renameAria")}
       >
         <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
       </button>

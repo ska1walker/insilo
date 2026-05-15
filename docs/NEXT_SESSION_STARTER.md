@@ -13,10 +13,10 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.44** auf der Olares-Box
+**Stand:** Insilo läuft als **v0.1.45** auf der Olares-Box
 `olares@192.168.112.125` (Olares-User `kaivostudio`,
 Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
-**Helm-Revision 30**, 11 Migrationen angewendet. Feature-Set:
+**Helm-Revision 31**, 11 Migrationen angewendet. Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
 - **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
@@ -31,24 +31,26 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
 - **Meeting-Titel inline editierbar**, **Markdown-Export per Webhook**
 - **Qwen 2.5-tuned LLM-Prompts** mit Few-Shot, `_analyse`-CoT-Feld,
   Eval-Baseline (12 Fixtures + 39 Snapshot-Tests)
-- **i18n-Foundation (v0.1.43)** — 5 Sprachen wählbar (DE/EN/FR/ES/IT)
-  in `/einstellungen`, Header-Nav + Recording-Block übersetzt. Andere
-  Komponenten noch deutsch (Phase 2 = v0.1.45)
+- **i18n vollständig (v0.1.45)** — 5 Sprachen wählbar (DE/EN/FR/ES/IT)
+  in `/einstellungen`, 461 Keys pro Sprache, alle UI-Komponenten +
+  About-Page übersetzt. Backend-Fehlermeldungen DE/EN per
+  `Accept-Language` (FR/ES/IT fallen auf EN zurück bis v0.1.46).
 
-**Nächste geplante Iteration: v0.1.45 — i18n Phase 2**
+**Nächste geplante Iteration: v0.1.46 — i18n Phase 3 (Content-Strings)**
 
-1. Restliche Komponenten übersetzen (template-prompts, webhook-manager,
-   speaker-catalog, summary-view, transcript-view, cluster-assignment-panel,
-   voice-enrollment-dialog, meeting-dispatch-dialog, meeting-title-edit,
-   tag-manager, tag-picker, tag-filter-bar, tag-pill, recent-meetings,
-   api-key-manager, recording-indicator, status-pill, toast, About-Page).
-2. Backend-Fehlermeldungen via `Accept-Language` + DE/EN-Dict
-   (vorerst nur DE+EN, FR/ES/IT in v0.1.46). Bestehender
-   `backend/app/locale.py`-Resolver wird wiederverwendet.
-
-**Alternativ v0.1.46 — i18n Phase 3 (LLM + Whisper + Stimmprobe-Texte):**
-`templates.system_prompts JSONB` mit Übersetzungen pro Sprache,
-Whisper-Language-Selector pro Meeting, Stimmprobe-Texte pro Sprache.
+1. `templates.system_prompts JSONB` mit `{de,en,fr,es,it}` —
+   LLM-Prompts pro Sprache.
+2. `LABEL_OVERRIDES` in `summary-view.tsx` zieht mit, weil die
+   LLM-Output-Keys jetzt sprachabhängig sind.
+3. Whisper bekommt `language=auto|de|en|fr|es|it` per Meeting
+   (statt hardcoded `'de'` im POST /recordings).
+4. Stimmprobe-Texte pro Sprache (Nordwind/North-Wind/La-Bise/etc.).
+5. FR/ES/IT in `backend/app/errors.ERRORS` ergänzen.
+6. `frontend/lib/api/client.ts` schickt den `insilo-locale`-Cookie
+   als `Accept-Language` mit, damit der In-App-Override auch Backend-
+   Fehler beeinflusst (heute kommt da nur die Browser-Sprache an).
+7. `ContractDisclosure`-Block in `webhook-manager.tsx` — die zwei
+   verbliebenen deutschen Fragmente in den Code-Snippets.
 
 **Alternativ Duo-Receiver:** der Webhook-Empfänger in `duo.aimighty.de`
 fehlt noch. Insilo-Seite seit v0.1.39 vollständig bereit.
@@ -172,15 +174,17 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.44** (alle 5 Pods Ready, Helm-Rev 30) |
+| Version | **v0.1.45** (alle 5 Pods Ready, Helm-Rev 31) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.44` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.45` |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
-| Stimmprobe | „Nordwind und Sonne"-Standardtext, Whisper `/embed-only`-Endpoint — **funktional seit v0.1.44** (decode_audio statt sf.read) |
+| Stimmprobe | „Nordwind und Sonne"-Standardtext, Whisper `/embed-only`-Endpoint — funktional seit v0.1.44 (decode_audio statt sf.read) |
+| UI-i18n | 461 Keys × 5 Sprachen, vollständig übersetzt; LLM-Prompts + Content-Strings folgen in v0.1.46 |
+| Backend-i18n | `app/errors.py` mit DE/EN-Dict + ContextVar-Resolution via Accept-Language; FR/ES/IT fallen auf EN zurück bis v0.1.46 |
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
@@ -199,7 +203,7 @@ ssh olares@192.168.112.125 \
 3. `docs/DESIGN.md` — Designsystem (Weiß/Schwarz/Gold, formelle Anrede)
 4. `frontend/messages/de.json` — Master für Übersetzungs-Keys; pull-up bei jeder neuen UI-String
 5. `frontend/i18n/request.ts` — Locale-Resolution & Cookie-Logik
-6. `backend/app/locale.py` — Backend-Resolution (wird in v0.1.45 für Fehlermeldungen wiederverwendet)
+6. `backend/app/locale.py` + `backend/app/errors.py` — Backend-i18n (Resolver + DE/EN-Dict mit ContextVar-Middleware)
 7. `olares/OlaresManifest.yaml` — Plattform-Spec
 8. `scripts/check-chart.sh` — die 9 Phase-4-Lessons als Code
 
@@ -210,9 +214,9 @@ git log --oneline -5
 gh run list --workflow=release.yml --limit 3
 ```
 
-Sollte **v0.1.44** als jüngsten Tag zeigen. Tag-Liste seit
+Sollte **v0.1.45** als jüngsten Tag zeigen. Tag-Liste seit
 v0.1.34: 0.1.35 → 0.1.36 → 0.1.37 → 0.1.38 → 0.1.39 → 0.1.40 →
-0.1.41 → 0.1.42 → 0.1.43 → 0.1.44. Box läuft auf v0.1.44 (Helm-Rev 30).
+0.1.41 → 0.1.42 → 0.1.43 → 0.1.44 → 0.1.45. Box läuft auf v0.1.45 (Helm-Rev 31).
 
 ## Cmd-Shift-R nicht vergessen
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import {
@@ -19,6 +20,8 @@ import { TagPill } from "./tag-pill";
  */
 export function TagManager() {
   const toast = useToast();
+  const t = useTranslations("tags");
+  const tCommon = useTranslations("common");
   const [tags, setTags] = useState<TagDto[] | null>(null);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -50,7 +53,7 @@ export function TagManager() {
             className="btn-secondary inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            Neuer Tag
+            {t("addNew")}
           </button>
         )}
       </div>
@@ -59,11 +62,11 @@ export function TagManager() {
         <TagForm
           mode="create"
           onCancel={() => setAdding(false)}
-          onSaved={(t) => {
+          onSaved={(created) => {
             setAdding(false);
             refresh();
             toast.show({
-              message: `Tag „${t.name}" angelegt.`,
+              message: t("created", { name: created.name }),
               variant: "success",
             });
           }}
@@ -72,19 +75,18 @@ export function TagManager() {
 
       {tags.length === 0 && !adding && (
         <p className="text-sm text-text-secondary">
-          Noch keine Tags. Legen Sie über „Neuer Tag" Ihren ersten an —
-          z.&nbsp;B. „Mandant Müller" oder „Q2 Strategie".
+          {t("noneYet")}
         </p>
       )}
 
       {tags.length > 0 && (
         <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
-          {tags.map((t) =>
-            editingId === t.id ? (
-              <div key={t.id} className="p-3">
+          {tags.map((tag) =>
+            editingId === tag.id ? (
+              <div key={tag.id} className="p-3">
                 <TagForm
                   mode="edit"
-                  initial={t}
+                  initial={tag}
                   onCancel={() => setEditingId(null)}
                   onSaved={() => {
                     setEditingId(null);
@@ -94,16 +96,16 @@ export function TagManager() {
               </div>
             ) : (
               <div
-                key={t.id}
+                key={tag.id}
                 className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
               >
-                <TagPill name={t.name} color={t.color} />
+                <TagPill name={tag.name} color={tag.color} />
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => setEditingId(t.id)}
+                    onClick={() => setEditingId(tag.id)}
                     className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-                    aria-label={`„${t.name}" bearbeiten`}
+                    aria-label={t("renameAria", { name: tag.name })}
                   >
                     <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
                   </button>
@@ -112,11 +114,11 @@ export function TagManager() {
                     onClick={() => {
                       let cancelled = false;
                       toast.show({
-                        message: `Tag „${t.name}" wird gelöscht`,
+                        message: t("deleteConfirm", { name: tag.name }),
                         variant: "undo",
                         duration: 5000,
                         action: {
-                          label: "Rückgängig",
+                          label: tCommon("undo"),
                           onClick: () => {
                             cancelled = true;
                           },
@@ -124,13 +126,12 @@ export function TagManager() {
                         onTimeout: async () => {
                           if (cancelled) return;
                           try {
-                            await deleteTag(t.id);
+                            await deleteTag(tag.id);
                             refresh();
                           } catch (err) {
                             console.error(err);
                             toast.show({
-                              message:
-                                "Tag konnte nicht gelöscht werden.",
+                              message: t("deleteFailed"),
                               variant: "error",
                             });
                           }
@@ -139,7 +140,7 @@ export function TagManager() {
                     }}
                     className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft"
                     style={{ color: "var(--text-meta)" }}
-                    aria-label={`„${t.name}" löschen`}
+                    aria-label={t("deleteAria", { name: tag.name })}
                   >
                     <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
                   </button>
@@ -164,6 +165,9 @@ function TagForm({
   onSaved: (t: TagDto) => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("tags");
+  const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
   const [name, setName] = useState(initial?.name ?? "");
   const [color, setColor] = useState(initial?.color ?? TAG_COLORS[0].value);
   const [saving, setSaving] = useState(false);
@@ -173,7 +177,7 @@ function TagForm({
     ev.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
-      setError("Name darf nicht leer sein.");
+      setError(tErrors("emptyName"));
       return;
     }
     setSaving(true);
@@ -193,9 +197,9 @@ function TagForm({
         "status" in err &&
         (err as { status: number }).status === 409
       ) {
-        setError("Ein Tag mit diesem Namen existiert bereits.");
+        setError(t("duplicate"));
       } else {
-        setError("Speichern fehlgeschlagen.");
+        setError(t("errSave"));
       }
     } finally {
       setSaving(false);
@@ -207,14 +211,14 @@ function TagForm({
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex-1 min-w-[160px]">
           <span className="block text-xs font-medium text-text-secondary">
-            Name
+            {t("nameLabel")}
           </span>
           <input
             autoFocus
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="z. B. Mandant Müller"
+            placeholder={t("namePlaceholder")}
             maxLength={80}
             className="input mt-1 w-full"
             disabled={saving}
@@ -222,7 +226,7 @@ function TagForm({
         </label>
         <div>
           <span className="block text-xs font-medium text-text-secondary">
-            Farbe
+            {t("colorLabel")}
           </span>
           <div className="mt-1 flex flex-wrap gap-1">
             {TAG_COLORS.map((c) => (
@@ -241,7 +245,7 @@ function TagForm({
                       : undefined,
                 }}
                 title={c.label}
-                aria-label={`Farbe: ${c.label}`}
+                aria-label={t("colorAria", { label: c.label })}
               >
                 {color === c.value && (
                   <Check
@@ -270,10 +274,10 @@ function TagForm({
           disabled={saving}
         >
           <X className="h-3.5 w-3.5" strokeWidth={2} />
-          Abbrechen
+          {tCommon("cancel")}
         </button>
         <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? "Speichert …" : mode === "edit" ? "Speichern" : "Anlegen"}
+          {saving ? tCommon("saving") : mode === "edit" ? tCommon("save") : t("create")}
         </button>
       </div>
     </form>

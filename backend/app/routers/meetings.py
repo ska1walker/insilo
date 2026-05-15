@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire
+from app.errors import http_error
 from app.storage import delete_object, get_presigned_url, upload_bytes
 from app.tasks.notify import enqueue as enqueue_webhook
 from app.tasks.transcribe import transcribe_meeting
@@ -143,7 +144,7 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
             user.org_id,
         )
         if row is None:
-            raise HTTPException(404, "meeting not found")
+            raise http_error(404, "meeting.not_found")
 
         transcript_row = await conn.fetchrow(
             """
@@ -259,7 +260,7 @@ async def create_recording(
                 user.org_id,
             )
             if not allowed:
-                raise HTTPException(400, "template not available")
+                raise http_error(400, "template.not_available")
 
         row = await conn.fetchrow(
             """
@@ -323,15 +324,20 @@ async def update_transcript_speakers(
     seen: set[str] = set()
     for s in payload.speakers:
         if not _SPEAKER_ID_RE.match(s.id):
-            raise HTTPException(400, f"invalid speaker id: {s.id!r}")
+            raise http_error(400, "meeting.invalid_speaker_id", sid=repr(s.id))
         if s.id in seen:
-            raise HTTPException(400, f"duplicate speaker id: {s.id!r}")
+            raise http_error(400, "meeting.duplicate_speaker_id", sid=repr(s.id))
         seen.add(s.id)
 
     valid_ids = {s.id for s in payload.speakers}
     for idx, sid in payload.segments.items():
         if sid is not None and sid not in valid_ids:
-            raise HTTPException(400, f"segment {idx} references unknown speaker {sid!r}")
+            raise http_error(
+                400,
+                "meeting.unknown_speaker_ref",
+                idx=idx,
+                sid=repr(sid),
+            )
 
     async with acquire() as conn:
         # Make sure the user owns the meeting.
@@ -344,14 +350,14 @@ async def update_transcript_speakers(
             user.org_id,
         )
         if not owned:
-            raise HTTPException(404, "meeting not found")
+            raise http_error(404, "meeting.not_found")
 
         row = await conn.fetchrow(
             "select segments from public.transcripts where meeting_id = $1",
             meeting_id,
         )
         if row is None:
-            raise HTTPException(409, "no transcript yet")
+            raise http_error(409, "meeting.no_transcript")
 
         segs = row["segments"]
         if isinstance(segs, str):
@@ -407,7 +413,7 @@ async def retry_summary(
             user.org_id,
         )
         if row is None:
-            raise HTTPException(404, "meeting not found")
+            raise http_error(404, "meeting.not_found")
         if not row["full_text"]:
             raise HTTPException(
                 409, "no transcript yet — cannot summarize"
@@ -443,7 +449,7 @@ async def patch_meeting(
     """Update a meeting's editable metadata (currently: title)."""
     fields = payload.model_dump(exclude_unset=True)
     if not fields:
-        raise HTTPException(400, "no fields to update")
+        raise http_error(400, "meeting.no_fields")
 
     async with acquire() as conn:
         existing = await conn.fetchrow(
@@ -455,7 +461,7 @@ async def patch_meeting(
             user.org_id,
         )
         if existing is None:
-            raise HTTPException(404, "meeting not found")
+            raise http_error(404, "meeting.not_found")
 
         if "title" in fields:
             await conn.execute(
@@ -505,7 +511,7 @@ async def dispatch_meeting(
             user.org_id,
         )
     if meeting is None:
-        raise HTTPException(404, "meeting not found")
+        raise http_error(404, "meeting.not_found")
     if meeting["status"] != "ready":
         raise HTTPException(
             409,
@@ -539,7 +545,7 @@ async def delete_meeting(
             user.org_id,
         )
     if row is None:
-        raise HTTPException(404, "meeting not found")
+        raise http_error(404, "meeting.not_found")
     # Soft-delete in DB; also remove from object storage to reclaim space.
     if row["audio_path"]:
         try:

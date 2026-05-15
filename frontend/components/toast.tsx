@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   createContext,
   useCallback,
@@ -117,6 +118,7 @@ function ToastCard({
   toast: ToastEntry;
   onDismiss: (id: string) => void;
 }) {
+  const tCommon = useTranslations("common");
   const [leaving, setLeaving] = useState(false);
   const actionFiredRef = useRef(false);
 
@@ -201,7 +203,7 @@ function ToastCard({
             type="button"
             onClick={handleClose}
             className="-my-1 -mr-1 shrink-0 rounded p-1.5 text-text-meta hover:bg-surface-soft hover:text-text-primary"
-            aria-label="Schließen"
+            aria-label={tCommon("close")}
           >
             <X className="h-3.5 w-3.5" strokeWidth={2} />
           </button>

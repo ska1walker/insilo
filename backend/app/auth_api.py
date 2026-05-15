@@ -19,6 +19,8 @@ from uuid import UUID
 from fastapi import Depends, Header, HTTPException
 from passlib.context import CryptContext
 
+from app.errors import http_error
+
 from app.db import acquire
 
 KEY_PREFIX = "inskey_"
@@ -89,7 +91,7 @@ async def get_api_caller(
                 match = r
                 break
         if match is None:
-            raise HTTPException(status_code=401, detail="Invalid API key.")
+            raise http_error(401, "auth.invalid_key")
 
         # Best-effort last-used update — don't block the request on it.
         await conn.execute(
@@ -110,7 +112,7 @@ def require_scope(scope: str):
 
     async def _checker(caller: ApiCaller = Depends(get_api_caller)) -> ApiCaller:
         if scope not in caller.scopes:
-            raise HTTPException(status_code=403, detail=f"Missing scope: {scope}")
+            raise http_error(403, "auth.missing_scope", scope=scope)
         return caller
 
     return _checker

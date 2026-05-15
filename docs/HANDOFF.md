@@ -3,10 +3,52 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🚀 v0.1.45 — i18n Phase 2 (15. Mai 2026, Nacht)
+>
+> **Aktueller Stand:** Box läuft auf **v0.1.45**, Helm-Revision 31.
+> UI fast vollständig in 5 Sprachen — alle nicht-trivialen Komponenten
+> nutzen jetzt `useTranslations()`. Backend-Fehlermeldungen sind
+> DE/EN-lokalisiert per `Accept-Language` (FR/ES/IT fallen bewusst auf
+> EN zurück bis v0.1.46).
+>
+> **Was v0.1.45 gebracht hat:**
+>
+> - **Frontend i18n vollständig (außer Phase-3-Inhalt):** alle 18
+>   verbleibenden Komponenten übersetzt + About-Page (server-component
+>   mit `getTranslations`) + 3 Stragglers in `recording-block.tsx`.
+>   **461 Keys** pro Sprach-JSON, `jq -S` bestätigt: alle 5 Files
+>   haben identische Key-Trees. Frontend `tsc --noEmit` clean.
+>   Pattern: `useTranslations("namespace")` + `t.rich(...)` für
+>   eingebettetes Markup (Code-Snippets, fett-formatierter Text). ICU
+>   plurals via `{count, plural, =1 {…} other {…}}`.
+> - **Backend Error-i18n:** neues Modul `backend/app/errors.py` mit
+>   DE/EN-Dict (18 Keys), ContextVar-basierte Locale-Resolution via
+>   ASGI-Middleware aus `app/locale.py`-Parser, Helper
+>   `http_error(status, key, **params)` für saubere Call-Sites.
+>   **15 HTTPException-Sites** in `tags.py`, `meetings.py`,
+>   `templates.py`, `auth_api.py`, `search.py` umgestellt — alle
+>   user-sichtbaren Fehler kommen jetzt in der Sprache des Users an.
+>   **22 neue pytest-Cases** (`test_error_i18n.py`), Backend-Suite
+>   101/101 grün.
+> - **Explizit aufgeschoben für v0.1.46 (Phase 3):**
+>   `LABEL_OVERRIDES` in `summary-view.tsx` (LLM-Output-Field-Labels —
+>   wandern mit den Prompts), `NORDWIND_TEXT` + `PROMPT_PLACEHOLDER`
+>   (Sprach-Content, nicht UI-Chrome), das `ContractDisclosure`-
+>   Beispiel in `webhook-manager.tsx` mit zwei deutschen Fragmenten in
+>   `<pre>`-Codeblöcken (technische Referenz). FR/ES/IT Backend-Fehler.
+>
+> **Wichtig fürs nächste Mal:** der bestehende `LocaleSwitcher` in
+> `/einstellungen` schickt die gewählte UI-Locale nicht automatisch als
+> `Accept-Language` an Backend-Calls — Backend-Fehler kommen also nach
+> Browser-Sprache, nicht nach In-App-Override. Das ist 80%-richtig
+> (Browser-Sprache stimmt meist mit User-Wunsch überein), aber sollte
+> in v0.1.46 nachgezogen werden, indem `api/client.ts` aus dem Cookie
+> `insilo-locale` einen expliziten Header setzt.
+>
 > # 🚀 v0.1.44 — WebM-Stimmproben-Bug behoben (15. Mai 2026, später Abend)
 >
-> **Aktueller Stand:** Box läuft auf **v0.1.44**, Helm-Revision 30.
-> Stimmprobe-Aufnahme funktioniert wieder für Browser-Audio (WebM/Opus).
+> **Stand bei v0.1.44:** Helm-Revision 30. Stimmprobe-Aufnahme
+> funktioniert wieder für Browser-Audio (WebM/Opus).
 > Speaker-Diarization im `/transcribe`-Flow profitiert mit — der gleiche
 > latente Decoder-Bug war dort silent unter `try/except` versteckt und
 > ist jetzt ebenfalls weg.
@@ -73,23 +115,17 @@
 >   `Accept-Language`-Fallback. Übersetzt in dieser Iteration:
 >   Navigation (Header-Tabs), `recording-block.tsx`, `LocaleSwitcher`.
 >
-> # 🎯 Nächste Story-Optionen
+> # 🎯 Nächste Story-Optionen (nach v0.1.45)
 >
-> 1. **v0.1.45 — i18n Phase 2:** restliche Komponenten übersetzen
->    (`template-prompts`, `webhook-manager`, `speaker-catalog`,
->    `summary-view`, `transcript-view`, `cluster-assignment-panel`,
->    `voice-enrollment-dialog`, `meeting-dispatch-dialog`,
->    `meeting-title-edit`, `tag-manager`, `tag-picker`, `tag-filter-bar`,
->    `tag-pill`, `recent-meetings`, `api-key-manager`,
->    `recording-indicator`, `status-pill`, `toast`, About-Page).
->    Backend-Fehlermeldungen via `Accept-Language` + DE/EN-Dict
->    (vorerst nur DE+EN, FR/ES/IT in v0.1.46), bestehender
->    `backend/app/locale.py`-Resolver wiederverwenden.
-> 2. **v0.1.46 — i18n Phase 3 (LLM + Whisper + Stimmprobe-Texte):**
->    `templates.system_prompts JSONB` mit `{de,en,fr,es,it}`,
->    Whisper `language=auto|de|en|fr|es|it` per Meeting,
->    Stimmprobe-Texte pro Sprache (Nordwind/North-Wind/La-Bise/etc.).
-> 3. **Duo-Receiver in `duo.aimighty.de`:** der Webhook-Empfänger
+> 1. **v0.1.46 — i18n Phase 3 (LLM + Whisper + content-strings):**
+>    `templates.system_prompts JSONB` mit `{de,en,fr,es,it}`, Whisper
+>    `language=auto|de|en|fr|es|it` per Meeting, Stimmprobe-Texte
+>    pro Sprache, LABEL_OVERRIDES in `summary-view.tsx` und der
+>    `ContractDisclosure`-Block in `webhook-manager.tsx`. Plus
+>    FR/ES/IT für die Backend-Error-Dict + `api/client.ts` schickt
+>    den `insilo-locale`-Cookie als `Accept-Language` mit, damit der
+>    In-App-Override auch Backend-Fehler beeinflusst.
+> 2. **Duo-Receiver in `duo.aimighty.de`:** der Webhook-Empfänger
 >    ist immer noch offen — Insilo-Seite ist seit v0.1.39 komplett
 >    bereit (manueller Dispatch + signierter POST).
 >
@@ -301,15 +337,24 @@
 >   funktioniert wieder, libsndfile + librosa raus. Diarize-`except` in
 >   `main.py` loggt jetzt Filename + Bytes (silent failure war seit v0.1.31
 >   möglich). Kein Schema-Drift, keine neue Migration.
+> - **v0.1.45** — **i18n Phase 2 (UI-Vollständigkeit + Backend-Errors):**
+>   18 Komponenten + About-Page + Stragglers übersetzt, 461 Keys pro
+>   Sprach-JSON (DE/EN/FR/ES/IT identische Trees). Pattern: `useTranslations()`,
+>   `t.rich()` für eingebettetes Markup, ICU-Plurals. Neues
+>   `backend/app/errors.py` mit DE/EN-Dict + ContextVar-basierte
+>   `Accept-Language`-Resolution (Middleware in `app/main.py`), 15
+>   user-sichtbare HTTPException-Sites umgestellt auf `http_error()`.
+>   22 neue pytest-Cases, Backend-Suite 101/101 grün. Kein Schema-Drift.
 >
-> **Box-State (Stand 15. Mai, später Abend):** alle 5 Pods Ready auf
-> **v0.1.44** (Helm-Revision 30). System-PostgreSQL + KVRocks-Redis via
+> **Box-State (Stand 15. Mai, Nacht):** alle 5 Pods Ready auf
+> **v0.1.45** (Helm-Revision 31). System-PostgreSQL + KVRocks-Redis via
 > Olares-Middleware. LLM via per-Org-Einstellungen (Default: Olares-
 > LiteLLM, aber jeder OpenAI-kompatible Endpoint geht). **11 Migrationen
 > angewendet** (0001 Schema, 0002 RLS, 0003 org_settings, 0004
 > template_customizations, 0005 webhooks+api_keys, 0006 org_speakers,
 > 0007 speaker_enrollment, 0008 manual_webhooks_template_overrides,
 > 0009 template_few_shot, 0010 template_custom_fields, 0011 ui_locale).
+> Kein Schema-Drift in v0.1.45 — nur Code.
 >
 > # 🎯 Vision für die nächste Phase: Duo-Integration (v0.1.35+)
 >

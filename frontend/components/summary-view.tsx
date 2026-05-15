@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { Summary } from "@/lib/api/meetings";
 
 /**
@@ -75,6 +78,7 @@ function isEmpty(v: unknown): boolean {
 }
 
 export function SummaryView({ summary }: { summary: Summary }) {
+  const t = useTranslations("summary");
   // Felder mit `_`-Präfix (z. B. `_analyse`) sind LLM-interne
   // Scratch-Felder seit v0.1.40 (CoT-vor-Output-Pattern). Sie werden
   // separat als ausklappbare „LLM-Überlegungen" gerendert, damit der
@@ -88,12 +92,7 @@ export function SummaryView({ summary }: { summary: Summary }) {
   );
 
   if (entries.length === 0 && internalEntries.length === 0) {
-    return (
-      <p className="text-sm text-text-meta">
-        Die KI hat keine Inhalte aus dem Transkript extrahiert. Das Transkript
-        enthielt vermutlich zu wenig Material.
-      </p>
-    );
+    return <p className="text-sm text-text-meta">{t("emptyExtract")}</p>;
   }
 
   return (
@@ -105,7 +104,7 @@ export function SummaryView({ summary }: { summary: Summary }) {
       {internalEntries.length > 0 && (
         <details className="group border-t border-border-subtle pt-6 text-sm">
           <summary className="cursor-pointer select-none text-text-meta hover:text-text-primary">
-            LLM-Überlegungen anzeigen
+            {t("internalThoughts")}
           </summary>
           <div className="mt-3 space-y-3 rounded-md bg-surface-soft p-3 text-xs leading-relaxed text-text-secondary">
             {internalEntries.map(([key, value]) => (

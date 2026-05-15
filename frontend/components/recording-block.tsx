@@ -116,9 +116,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         setPhase("denied");
       } else {
         setPhase("idle");
-        setError(
-          "Das Mikrofon konnte nicht gestartet werden. Bitte prüfen Sie die Browser-Berechtigungen.",
-        );
+        setError(t("micStartFailed"));
       }
     }
   }
@@ -158,11 +156,9 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
       console.error("upload failed", err);
       setPhase("idle");
       if (err instanceof ApiError) {
-        setError(
-          `Upload fehlgeschlagen (HTTP ${err.status}). Backend erreichbar?`,
-        );
+        setError(t("uploadFailedHttp", { status: err.status }));
       } else {
-        setError("Upload fehlgeschlagen. Bitte erneut versuchen.");
+        setError(t("uploadFailedTryAgain"));
       }
     }
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Tag as TagIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
 import {
@@ -31,6 +32,7 @@ export function TagPicker({
   onChange?: (tags: TagDto[]) => void;
 }) {
   const toast = useToast();
+  const t = useTranslations("tags");
   const [tags, setTags] = useState<TagDto[]>(initialTags);
   const [open, setOpen] = useState(false);
   const [allTags, setAllTags] = useState<TagDto[] | null>(null);
@@ -56,15 +58,15 @@ export function TagPicker({
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
-  const attachedIds = useMemo(() => new Set(tags.map((t) => t.id)), [tags]);
+  const attachedIds = useMemo(() => new Set(tags.map((tag) => tag.id)), [tags]);
   const available = useMemo(() => {
     if (!allTags) return [];
     return allTags
-      .filter((t) => !attachedIds.has(t.id))
-      .filter((t) =>
+      .filter((tag) => !attachedIds.has(tag.id))
+      .filter((tag) =>
         filter.trim() === ""
           ? true
-          : t.name.toLowerCase().includes(filter.toLowerCase()),
+          : tag.name.toLowerCase().includes(filter.toLowerCase()),
       );
   }, [allTags, attachedIds, filter]);
 
@@ -84,7 +86,7 @@ export function TagPicker({
       console.error("attach tag failed", err);
       emit(tags); // rollback
       toast.show({
-        message: `Tag „${tag.name}" konnte nicht hinzugefügt werden.`,
+        message: t("attachFail", { name: tag.name }),
         variant: "error",
       });
     }
@@ -92,14 +94,14 @@ export function TagPicker({
 
   async function detach(tag: TagDto) {
     const prev = tags;
-    emit(tags.filter((t) => t.id !== tag.id));
+    emit(tags.filter((other) => other.id !== tag.id));
     try {
       await removeTagFromMeeting(meetingId, tag.id);
     } catch (err) {
       console.error("detach tag failed", err);
       emit(prev);
       toast.show({
-        message: `Tag „${tag.name}" konnte nicht entfernt werden.`,
+        message: t("detachFail", { name: tag.name }),
         variant: "error",
       });
     }
@@ -117,7 +119,7 @@ export function TagPicker({
     } catch (err) {
       console.error("create tag failed", err);
       toast.show({
-        message: "Tag konnte nicht angelegt werden.",
+        message: t("createFail"),
         variant: "error",
       });
     }
@@ -126,12 +128,12 @@ export function TagPicker({
   return (
     <div className="relative inline-block">
       <div className="flex flex-wrap items-center gap-1.5">
-        {tags.map((t) => (
+        {tags.map((tag) => (
           <TagPill
-            key={t.id}
-            name={t.name}
-            color={t.color}
-            onRemove={() => detach(t)}
+            key={tag.id}
+            name={tag.name}
+            color={tag.color}
+            onRemove={() => detach(tag)}
           />
         ))}
         <button
@@ -140,7 +142,7 @@ export function TagPicker({
           className="inline-flex items-center gap-1 rounded-full border border-dashed border-border-strong px-2.5 py-0.5 text-[0.75rem] font-medium text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
         >
           <TagIcon className="h-3 w-3" strokeWidth={2} />
-          {tags.length === 0 ? "Tag hinzufügen" : "Tag"}
+          {tags.length === 0 ? t("pickerAdd") : t("pickerShort")}
         </button>
       </div>
 
@@ -166,18 +168,18 @@ export function TagPicker({
               }
               if (e.key === "Escape") setOpen(false);
             }}
-            placeholder="Tag suchen oder anlegen …"
+            placeholder={t("pickerSearchPlaceholder")}
             autoFocus
             className="input w-full text-sm"
           />
 
           <div className="mt-3 max-h-[240px] overflow-y-auto">
             {allTags === null && (
-              <p className="text-xs text-text-meta">Lädt …</p>
+              <p className="text-xs text-text-meta">{t("pickerLoading")}</p>
             )}
             {allTags !== null && available.length === 0 && filter.trim() === "" && (
               <p className="text-xs text-text-meta">
-                Keine weiteren Tags. Tippen Sie einen Namen zum Anlegen.
+                {t("pickerNoneMore")}
               </p>
             )}
             {allTags !== null && available.length === 0 && filter.trim() !== "" && (
@@ -187,26 +189,24 @@ export function TagPicker({
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-primary hover:bg-surface-soft"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-                <span>
-                  Neuen Tag anlegen: <strong>„{filter.trim()}"</strong>
-                </span>
+                <span>{t("pickerCreateNew", { name: filter.trim() })}</span>
               </button>
             )}
             {available.length > 0 && (
               <ul className="space-y-0.5">
-                {available.map((t) => (
-                  <li key={t.id}>
+                {available.map((tag) => (
+                  <li key={tag.id}>
                     <button
                       type="button"
-                      onClick={() => attach(t)}
+                      onClick={() => attach(tag)}
                       className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-surface-soft"
                     >
                       <span
                         className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: t.color }}
+                        style={{ background: tag.color }}
                       />
                       <span className="truncate text-sm text-text-primary">
-                        {t.name}
+                        {tag.name}
                       </span>
                     </button>
                   </li>
@@ -216,9 +216,9 @@ export function TagPicker({
           </div>
 
           <p className="mt-2 border-t border-border-subtle pt-2 text-[0.6875rem] text-text-meta">
-            Farben &amp; Verwaltung in{" "}
+            {t("pickerManageSuffix")}{" "}
             <a href="/einstellungen" className="underline">
-              Einstellungen
+              {t("pickerSettingsLink")}
             </a>
             .
           </p>

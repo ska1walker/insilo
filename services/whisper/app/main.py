@@ -59,7 +59,8 @@ class Segment(BaseModel):
     start: float
     end: float
     text: str
-    speaker: str | None = None  # filled by diarization in Phase 2
+    speaker: str | None = None       # anonymes Label, e.g. "SPEAKER_00"
+    cluster_idx: int | None = None   # 0,1,2,… für das Org-Matching im Backend
 
 
 class TranscribeResponse(BaseModel):
@@ -68,6 +69,10 @@ class TranscribeResponse(BaseModel):
     full_text: str
     segments: list[Segment]
     model: str
+    # Pro erkanntem Cluster ein L2-normalisiertes Centroid (192 floats).
+    # Reihenfolge = sortierte Cluster-Indices, also entspricht
+    # centroids[i] dem Cluster mit cluster_idx == i.
+    cluster_centroids: list[list[float]] = []
 
 
 _model: WhisperModel | None = None
@@ -168,14 +173,20 @@ async def transcribe(
         # Phase A: speaker diarization über die jetzt vorliegenden
         # Segmente. Bei Fehler oder deaktivierter Diarization lassen wir
         # speaker=None — Frontend zeigt dann generische Labels.
+        centroids: list[list[float]] = []
         if settings.diarization_enabled and segments:
             try:
-                labels = diarize(
+                result = diarize(
                     tmp.name,
                     [(s.start, s.end) for s in segments],
                 )
-                for seg, label in zip(segments, labels, strict=False):
+                for seg, label, cidx in zip(
+                    segments, result.speaker_labels, result.cluster_indices,
+                    strict=False,
+                ):
                     seg.speaker = label
+                    seg.cluster_idx = cidx
+                centroids = result.cluster_centroids
             except Exception as exc:
                 log.exception("diarization failed: %s", exc)
 
@@ -185,4 +196,5 @@ async def transcribe(
         full_text=" ".join(s.text for s in segments).strip(),
         segments=segments,
         model=settings.model,
+        cluster_centroids=centroids,
     )

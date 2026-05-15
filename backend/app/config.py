@@ -67,6 +67,19 @@ class Settings(BaseSettings):
     webhook_max_retries: int = 2
     webhook_retry_base_delay_sec: int = 30
 
+    # --- Speaker catalog ---
+    # Cosine-Similarity, ab der ein Cluster-Centroid automatisch einem
+    # Org-Speaker zugeordnet wird. 0.5 ist konservativ; bei viel manueller
+    # Korrektur kann der User später hochziehen.
+    speaker_match_threshold: float = 0.5
+    # Pro Sprecher behalten wir die N jüngsten Voiceprints (FIFO). Genug
+    # für robuste Mittelwerte, bei Stimme-altert/Mikrofon-Wechsel passt
+    # sich der Voiceprint langsam an.
+    speaker_max_voiceprints_per_speaker: int = 20
+    # Ab dieser Cosine-Similarity blenden wir die "X% Confidence"-Pill
+    # in der Transkript-Anzeige aus (zu offensichtlich um anzuzeigen).
+    speaker_high_confidence_threshold: float = 0.75
+
     # --- Dev ---
     log_level: str = "info"
     debug: bool = True

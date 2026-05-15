@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiKeyManager } from "@/components/api-key-manager";
+import { SpeakerCatalog } from "@/components/speaker-catalog";
 import { TagManager } from "@/components/tag-manager";
 import { TemplatePrompts } from "@/components/template-prompts";
 import { WebhookManager } from "@/components/webhook-manager";
@@ -337,6 +338,21 @@ export default function EinstellungenPage() {
         </header>
 
         <TemplatePrompts />
+      </section>
+
+      <section className="mt-14">
+        <header className="mb-5">
+          <h2 className="font-display text-xl font-medium">Sprecher-Katalog</h2>
+          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+            Personen, deren Stimme Insilo wiedererkennt. Sobald Sie einer
+            Stimme im Transkript einen Namen geben, lernt das System die
+            Stimm-Charakteristik — beim nächsten Meeting derselben Person
+            erscheint der Name automatisch. Alle Stimm-Daten bleiben auf
+            Ihrer Olares-Box; sie verlassen das Gerät nie.
+          </p>
+        </header>
+
+        <SpeakerCatalog />
       </section>
 
       <section className="mt-14">

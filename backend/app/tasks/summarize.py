@@ -44,13 +44,69 @@ async def _set_status(
     )
 
 
-def _wrap_user_prompt(full_text: str) -> str:
+def _wrap_user_prompt(transcript_text: str) -> str:
     return (
         "Hier folgt das Transkript der Besprechung. Analysiere es streng nach den "
         "Vorgaben des Systems und gib AUSSCHLIESSLICH ein JSON-Objekt zurück, das "
         "dem definierten Output-Schema entspricht.\n\n"
-        f"=== TRANSKRIPT ===\n{full_text}\n=== ENDE TRANSKRIPT ==="
+        f"=== TRANSKRIPT ===\n{transcript_text}\n=== ENDE TRANSKRIPT ==="
     )
+
+
+def _format_transcript_for_llm(
+    segments: list[dict[str, Any]] | None,
+    speakers: list[dict[str, Any]] | None,
+    fallback: str,
+) -> str:
+    """Bau ein speaker-annotiertes Transkript für die LLM-Eingabe.
+
+    Hat das Transkript Speaker-Labels (Diarization ist gelaufen, der User
+    hat Namen vergeben), wird daraus eine `[Name]: Text`-Zeile pro
+    Segment — die LLM kann dann Beschlüsse Personen zuordnen.
+
+    Ohne brauchbare Labels fallen wir auf den Plain-Text-Fallback zurück.
+    """
+    if not segments:
+        return fallback
+    name_by_id: dict[str, str] = {}
+    for s in speakers or []:
+        sid = s.get("id")
+        name = s.get("name")
+        if sid and name:
+            name_by_id[sid] = name
+
+    lines: list[str] = []
+    for seg in segments:
+        text = (seg.get("text") or "").strip()
+        if not text:
+            continue
+        sid = seg.get("speaker") or ""
+        label = name_by_id.get(sid, sid or "Sprecher")
+        lines.append(f"[{label}]: {text}")
+    if not lines:
+        return fallback
+    return "\n".join(lines)
+
+
+def _self_speaker_hint(speakers: list[dict[str, Any]] | None) -> str:
+    """Optionaler Hinweis ans Modell: einer der Sprecher ist der Nutzer.
+
+    Wenn das System weiß welcher Sprecher der User ist, kann die Summary
+    Beschlüsse aus der Sie-Perspektive formulieren ("Sie hatten zugesagt
+    …" statt "Kai hatte zugesagt …"). Greift nur wenn ein Org-Speaker
+    mit is_self=true existiert und in diesem Meeting gesprochen hat.
+    """
+    if not speakers:
+        return ""
+    for s in speakers:
+        if s.get("is_self") and s.get("name"):
+            return (
+                f"\n\nHinweis: Sprecher »{s['name']}« ist die Nutzerin/der Nutzer "
+                "dieses Systems. Beschlüsse und Aufgaben dürfen — wo es natürlich "
+                "wirkt — in zweiter Person formuliert werden (»Sie haben …«, "
+                "»Ihnen obliegt …«) statt in dritter."
+            )
+    return ""
 
 
 async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
@@ -59,7 +115,8 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         meeting = await conn.fetchrow(
             """
             select m.id, m.org_id, m.template_id,
-                   t.full_text, t.word_count
+                   t.full_text, t.word_count,
+                   t.segments, t.speakers
             from public.meetings m
             left join public.transcripts t on t.meeting_id = m.id
             where m.id = $1 and m.deleted_at is null
@@ -70,6 +127,28 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
             return {"status": "skipped", "reason": "no meeting"}
         if not meeting["full_text"]:
             return {"status": "skipped", "reason": "no transcript"}
+
+        # Parse JSONB segments + speakers (asyncpg gives them back as strings).
+        raw_segments = meeting["segments"]
+        if isinstance(raw_segments, str):
+            raw_segments = json.loads(raw_segments)
+        raw_speakers = meeting["speakers"]
+        if isinstance(raw_speakers, str):
+            raw_speakers = json.loads(raw_speakers)
+        # Annotate speakers with is_self by looking up the org-speaker row
+        # they point to. transcripts.speakers entries with id="org_<uuid>"
+        # carry an org_speaker_id we can resolve directly.
+        speakers_enriched: list[dict[str, Any]] = []
+        for s in (raw_speakers or []):
+            entry = dict(s)
+            org_sid = entry.get("org_speaker_id")
+            if org_sid:
+                row = await conn.fetchrow(
+                    "select is_self from public.org_speakers where id = $1",
+                    UUID(org_sid),
+                )
+                entry["is_self"] = bool(row and row["is_self"])
+            speakers_enriched.append(entry)
 
         # Pick template: explicit on meeting, else the system default. Apply
         # the org's prompt customization (from /einstellungen) if present —
@@ -109,6 +188,13 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         else json.loads(template["output_schema"])
     )
 
+    # Wenn das Transkript Sprecher-Labels hat, geben wir der LLM eine
+    # speaker-annotierte Version statt nackten Fließtext — damit kann sie
+    # Beschlüsse Personen zuordnen. Ohne Labels: identisch zu vorher.
+    transcript_for_llm = _format_transcript_for_llm(
+        raw_segments, speakers_enriched, fallback=meeting["full_text"]
+    )
+
     # OpenAI-compatible JSON-mode (works for LiteLLM proxy and Ollama's
     # native /v1 endpoint). Schema enforcement is best-effort via prompt
     # instructions because not every backend supports structured outputs.
@@ -121,10 +207,11 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
             {
                 "role": "system",
                 "content": template["system_prompt"]
+                + _self_speaker_hint(speakers_enriched)
                 + "\n\nAntwortformat: ein einziges JSON-Objekt, das diesem Schema entspricht:\n"
                 + json.dumps(schema, ensure_ascii=False),
             },
-            {"role": "user", "content": _wrap_user_prompt(meeting["full_text"])},
+            {"role": "user", "content": _wrap_user_prompt(transcript_for_llm)},
         ],
     }
 

@@ -13,6 +13,12 @@ import httpx
 from celery import shared_task
 
 from app.config import settings
+from app.speaker_matcher import (
+    _to_pgvector,
+    append_voiceprint_sample,
+    load_org_voiceprints,
+    match_centroids,
+)
 from app.storage import get_bytes as _storage_get_bytes
 from app.worker import celery_app  # noqa: F401  -- import side-effect: registers
 
@@ -52,7 +58,7 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     try:
         row = await conn.fetchrow(
             """
-            select audio_path, metadata->>'mime_type' as mime
+            select audio_path, org_id, metadata->>'mime_type' as mime
             from public.meetings
             where id = $1
             """,
@@ -60,6 +66,7 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
         )
         if not row or not row["audio_path"]:
             return {"status": "skipped", "reason": "no audio_path"}
+        org_id = row["org_id"]
 
         await _set_status(conn, meeting_id, "transcribing")
     finally:
@@ -85,8 +92,50 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
 
     segments = result["segments"]
     full_text = result["full_text"]
+    cluster_centroids: list[list[float]] = result.get("cluster_centroids") or []
 
-    # Persist the transcript and mark the meeting ready.
+    # ─── Org-Speaker-Matching ─────────────────────────────────────────
+    # Wenn die Org bereits Voiceprints kennt, ordnen wir jeden Cluster-
+    # Centroid dem ähnlichsten Org-Speaker zu (cosine ≥ Threshold).
+    # speakers_payload ist die Liste, die in transcripts.speakers landet —
+    # mit echten Namen wo zugeordnet, sonst weiterhin "SPEAKER_NN".
+    conn = await _connect()
+    try:
+        rows, vp_matrix = await load_org_voiceprints(conn, org_id)
+    finally:
+        await conn.close()
+    matches = match_centroids(cluster_centroids, rows, vp_matrix) if cluster_centroids else []
+
+    # Pro Cluster ein Speaker-Eintrag — id zeigt entweder auf einen Org-
+    # Speaker ("org_<uuid>") oder bleibt cluster-anonym ("cluster_<n>").
+    speakers_payload: list[dict[str, Any]] = []
+    for c_idx in range(len(cluster_centroids)):
+        if c_idx < len(matches) and matches[c_idx].org_speaker_id is not None:
+            m = matches[c_idx]
+            speakers_payload.append({
+                "id": f"org_{m.org_speaker_id}",
+                "name": m.display_name,
+                "org_speaker_id": str(m.org_speaker_id),
+                "match_score": round(m.score, 4),
+                "assignment": "auto",
+            })
+        else:
+            score = matches[c_idx].score if c_idx < len(matches) else 0.0
+            speakers_payload.append({
+                "id": f"cluster_{c_idx}",
+                "name": f"SPEAKER_{c_idx:02d}",
+                "match_score": round(score, 4),
+                "assignment": "pending",
+            })
+
+    # Patch segment.speaker so the IDs in transcripts.segments line up
+    # with the canonical speaker list above.
+    for seg in segments:
+        c_idx = seg.get("cluster_idx")
+        if c_idx is not None and 0 <= c_idx < len(speakers_payload):
+            seg["speaker"] = speakers_payload[c_idx]["id"]
+
+    # ─── Persist transcript + clusters + auto-match voiceprints ──────
     conn = await _connect()
     try:
         async with conn.transaction():
@@ -96,9 +145,10 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
                     meeting_id, segments, speakers, full_text,
                     language, whisper_model, word_count
                 )
-                values ($1, $2::jsonb, '[]'::jsonb, $3, $4, $5, $6)
+                values ($1, $2::jsonb, $3::jsonb, $4, $5, $6, $7)
                 on conflict (meeting_id) do update set
                     segments = excluded.segments,
+                    speakers = excluded.speakers,
                     full_text = excluded.full_text,
                     language = excluded.language,
                     whisper_model = excluded.whisper_model,
@@ -106,14 +156,60 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
                 """,
                 meeting_id,
                 json.dumps(segments),
+                json.dumps(speakers_payload),
                 full_text,
                 result.get("language") or settings.app_lang,
                 result.get("model") or "unknown",
                 len(full_text.split()),
             )
-            # Don't mark "ready" yet — chain a summary task. The summarize
-            # task is responsible for the final "ready" transition.
+
+            # Wipe any clusters from a previous transcribe (re-diarize case),
+            # then persist the new cluster set.
+            await conn.execute(
+                "delete from public.meeting_speaker_clusters where meeting_id = $1",
+                meeting_id,
+            )
+            for c_idx, centroid in enumerate(cluster_centroids):
+                match = matches[c_idx] if c_idx < len(matches) else None
+                await conn.execute(
+                    """
+                    insert into public.meeting_speaker_clusters (
+                        meeting_id, cluster_idx, centroid,
+                        org_speaker_id, match_score, assignment
+                    )
+                    values ($1, $2, $3::vector, $4, $5, $6)
+                    """,
+                    meeting_id,
+                    c_idx,
+                    _to_pgvector(centroid),
+                    match.org_speaker_id if match else None,
+                    match.score if match else None,
+                    "auto" if (match and match.org_speaker_id) else "pending",
+                )
+
             await _set_status(conn, meeting_id, "transcribed")
+
+        # Feed auto-matched centroids back into the speakers' voiceprint
+        # history — that's how voiceprints refine over time. We do this
+        # outside the main transaction so a single bad sample doesn't
+        # roll back the whole transcript.
+        for c_idx, match in enumerate(matches):
+            if match.org_speaker_id is None or c_idx >= len(cluster_centroids):
+                continue
+            try:
+                await append_voiceprint_sample(
+                    conn,
+                    org_speaker_id=match.org_speaker_id,
+                    meeting_id=meeting_id,
+                    cluster_idx=c_idx,
+                    embedding=cluster_centroids[c_idx],
+                    source="auto-match",
+                )
+            except Exception:
+                log.exception(
+                    "auto-match voiceprint append failed for speaker %s",
+                    match.org_speaker_id,
+                )
     finally:
         await conn.close()
 

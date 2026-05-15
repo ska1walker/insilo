@@ -2,6 +2,7 @@
 
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { ClusterAssignmentPanel } from "@/components/cluster-assignment-panel";
 import {
   type Speaker,
   type Transcript,
@@ -159,12 +160,22 @@ export function TranscriptView({
       </div>
 
       {mode === "edit" && (
-        <SpeakerRoster
-          speakers={speakers}
-          onAdd={(name) => addSpeaker(name)}
-          onRename={renameSpeaker}
-          onRemove={removeSpeaker}
-        />
+        <>
+          <ClusterAssignmentPanel
+            meetingId={meetingId}
+            onChange={() => {
+              // Parent (Meeting-Detail-Page) pollt status alle paar Sekunden,
+              // sodass die neu zugewiesenen Namen automatisch im Transkript
+              // landen. Wir bleiben hier passiv.
+            }}
+          />
+          <SpeakerRoster
+            speakers={speakers}
+            onAdd={(name) => addSpeaker(name)}
+            onRename={renameSpeaker}
+            onRemove={removeSpeaker}
+          />
+        </>
       )}
 
       {error && (

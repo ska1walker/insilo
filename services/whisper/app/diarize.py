@@ -201,10 +201,24 @@ def _estimate_speakers(embeddings: np.ndarray) -> tuple[int, np.ndarray]:
     return best_k, best_labels
 
 
+@dataclass
+class DiarizationResult:
+    """Result of one diarization run.
+
+    Backwards-compat: `speaker_labels` is what v0.1.31..36 returned. The
+    new fields (`cluster_indices`, `cluster_centroids`) feed the
+    org-speaker matching pipeline introduced in v0.1.37.
+    """
+
+    speaker_labels: list[str | None]            # "SPEAKER_00", … (one per segment)
+    cluster_indices: list[int | None]           # 0,1,2,… (one per segment) or None
+    cluster_centroids: list[list[float]]        # N × 192 floats, L2-normalised
+
+
 def diarize(
     audio_path: str,
     segments: list[tuple[float, float]],
-) -> list[str | None]:
+) -> DiarizationResult:
     """Diarize the segments of a single audio file.
 
     Args:
@@ -212,15 +226,16 @@ def diarize(
         segments: Liste von (start_sec, end_sec) — die Whisper-Output-Segmente.
 
     Returns:
-        Liste von Speaker-Labels (`"SPEAKER_00"` etc.) in derselben
-        Reihenfolge wie `segments`. None nur wenn ein Segment komplett zu
-        kurz war und kein Nachbar einsprang (sollte selten passieren).
+        DiarizationResult mit per-Segment-Labels + per-Segment-Cluster-Index
+        + per-Cluster-Centroid. Der Centroid ist der L2-normalisierte
+        Mittelwert aller ECAPA-Embeddings dieses Clusters und dient als
+        "Voice-Fingerprint" für das Org-Speaker-Matching im Backend.
     """
     if not segments:
-        return []
+        return DiarizationResult([], [], [])
     if _embedder is None:
         log.warning("diarize() called before load_embedder() — skipping")
-        return [None] * len(segments)
+        return DiarizationResult([None] * len(segments), [None] * len(segments), [])
 
     # Audio laden + auf 16 kHz mono bringen
     audio, sr = sf.read(audio_path, always_2d=False)
@@ -233,8 +248,21 @@ def diarize(
     ]
     valid_idx = [i for i, emb in enumerate(embeddings) if emb is not None]
     if len(valid_idx) < 2:
-        # Zu wenige verwertbare Chunks — alles zu Sprecher 0 zusammenfassen
-        return ["SPEAKER_00"] * len(segments)
+        # Zu wenige verwertbare Chunks — alles zu Sprecher 0 zusammenfassen.
+        # Centroid berechnen wir trotzdem (falls eines da war) — der Org-
+        # Matcher kann auch mit einem einzelnen Sprecher arbeiten.
+        if valid_idx:
+            single = embeddings[valid_idx[0]]
+            norm = np.linalg.norm(single)
+            centroid = (single / norm).tolist() if norm > 0 else single.tolist()
+            centroids: list[list[float]] = [centroid]
+        else:
+            centroids = []
+        return DiarizationResult(
+            speaker_labels=["SPEAKER_00"] * len(segments),
+            cluster_indices=[0] * len(segments),
+            cluster_centroids=centroids,
+        )
 
     valid_array = np.stack([embeddings[i] for i in valid_idx])
     n_speakers, labels = _estimate_speakers(valid_array)
@@ -242,16 +270,39 @@ def diarize(
         "diarization: %d Segmente · %d Sprecher erkannt", len(segments), n_speakers
     )
 
-    # Result-Liste füllen + zu kurze Segmente vom Vorgänger erben lassen
-    result: list[str | None] = [None] * len(segments)
+    # Centroids pro Cluster: L2-normalisierter Mittelwert der Cluster-
+    # Mitglieder. Aktuelles Cluster-Set = unique(labels), sortiert.
+    cluster_ids = sorted({int(label) for label in labels})
+    centroids = []
+    for cid in cluster_ids:
+        members = valid_array[labels == cid]
+        mean = members.mean(axis=0)
+        norm = np.linalg.norm(mean)
+        if norm > 0:
+            mean = mean / norm
+        centroids.append(mean.astype(float).tolist())
+
+    # Label-Liste + Cluster-Index-Liste füllen, zu kurze Segmente vom
+    # Vorgänger erben lassen.
+    speaker_labels: list[str | None] = [None] * len(segments)
+    cluster_indices: list[int | None] = [None] * len(segments)
     for cluster_label, seg_idx in zip(labels, valid_idx, strict=False):
-        result[seg_idx] = f"SPEAKER_{int(cluster_label):02d}"
+        cl = int(cluster_label)
+        speaker_labels[seg_idx] = f"SPEAKER_{cl:02d}"
+        cluster_indices[seg_idx] = cl
 
-    last_seen: str | None = None
-    for i in range(len(result)):
-        if result[i] is None:
-            result[i] = last_seen or "SPEAKER_00"
+    last_label: str | None = None
+    last_cluster: int | None = None
+    for i in range(len(segments)):
+        if speaker_labels[i] is None:
+            speaker_labels[i] = last_label or "SPEAKER_00"
+            cluster_indices[i] = last_cluster if last_cluster is not None else 0
         else:
-            last_seen = result[i]
+            last_label = speaker_labels[i]
+            last_cluster = cluster_indices[i]
 
-    return result
+    return DiarizationResult(
+        speaker_labels=speaker_labels,
+        cluster_indices=cluster_indices,
+        cluster_centroids=centroids,
+    )

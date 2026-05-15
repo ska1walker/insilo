@@ -19,6 +19,7 @@ from app.routers import (
     external_api,
     meetings,
     search,
+    speakers,
     tags,
     templates,
     webhooks,
@@ -116,3 +117,4 @@ app.include_router(tags.router)
 app.include_router(webhooks.router)
 app.include_router(api_keys.router)
 app.include_router(external_api.router)
+app.include_router(speakers.router)

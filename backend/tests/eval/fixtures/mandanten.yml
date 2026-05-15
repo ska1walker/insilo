@@ -1,0 +1,36 @@
+template_id: 00000000-0000-0000-0000-000000000002
+cases:
+  - name: kuendigungsschutz_complete
+    description: Mandantengespräch zur Kündigungsschutzklage mit klarem Sachverhalt.
+    speakers:
+      - {id: spk_anw, name: Dr. Wagner, is_self: true}
+      - {id: spk_mand, name: Frau Müller}
+    segments:
+      - {speaker: spk_anw, text: "Frau Müller, schildern Sie bitte den Sachverhalt."}
+      - {speaker: spk_mand, text: "Mündliche Kündigung am 8. Mai, nach 12 Jahren, ohne Abmahnung."}
+      - {speaker: spk_anw, text: "Wir reichen Kündigungsschutzklage ein, sobald die schriftliche Kündigung vorliegt. Honorar nach RVG."}
+    expected_speaker_labels: ["Dr. Wagner", "Frau Müller"]
+    self_speaker_name: Dr. Wagner
+
+  - name: erstgespraech_ohne_honorar
+    description: Erstgespräch — Honorar noch nicht thematisiert, Feld muss null bleiben.
+    speakers:
+      - {id: spk_anw, name: Frau Becker}
+      - {id: spk_mand, name: Herr Lang}
+    segments:
+      - {speaker: spk_anw, text: "Wir hören Sie zuerst an, Honorar besprechen wir nächste Woche."}
+      - {speaker: spk_mand, text: "Es geht um einen Streit mit meinem Vermieter."}
+    expected_speaker_labels: ["Frau Becker", "Herr Lang"]
+    self_speaker_name: null
+    expected_null_fields: ["honorarvereinbarung"]
+
+  - name: steuer_mandat_dokumente
+    description: Steuerlich, viele Dokumente — eingebrachte_unterlagen-Feld muss befüllt sein.
+    speakers:
+      - {id: spk_stb, name: StB Walter}
+      - {id: spk_mand, name: GmbH-Geschäftsführer}
+    segments:
+      - {speaker: spk_mand, text: "Ich bringe die Steuerbescheide 2024 und die BWA Q1 mit."}
+      - {speaker: spk_stb, text: "Sehr gut, prüfen wir die Vorauszahlungsanpassung."}
+    expected_speaker_labels: ["StB Walter", "GmbH-Geschäftsführer"]
+    self_speaker_name: null

@@ -109,6 +109,88 @@ def _self_speaker_hint(speakers: list[dict[str, Any]] | None) -> str:
     return ""
 
 
+def build_llm_payload(
+    *,
+    template: dict[str, Any],
+    speakers: list[dict[str, Any]] | None,
+    transcript_for_llm: str,
+    model: str,
+) -> dict[str, Any]:
+    """Compose the OpenAI-compatible chat-completions payload for one meeting.
+
+    Pure function — extracted so we can unit-test the message-assembly
+    contract (system + optional few-shot + real user) without booting
+    Celery or the DB. Called from `_do_summarize` for production, and
+    from `backend/tests/eval/test_prompt_quality.py` for snapshots.
+
+    Args:
+        template: row-like dict with keys `system_prompt`, `output_schema`,
+            and optional `few_shot_input`, `few_shot_output`.
+        speakers: enriched speakers list (each entry can carry `is_self`).
+        transcript_for_llm: speaker-annotated transcript ready for the
+            user message body.
+        model: model name as the LLM gateway expects it.
+    """
+    schema_raw = template.get("output_schema")
+    if isinstance(schema_raw, str):
+        schema = json.loads(schema_raw)
+    else:
+        schema = schema_raw or {}
+
+    # System-Prompt: erst die Template-Anweisungen (Markdown-strukturiert,
+    # siehe seed.sql), dann ggf. der Self-Speaker-Hinweis, dann das
+    # Schema-Echo. Für Qwen2.5 Q4 ist das Schema-Echo Pflicht — der
+    # response_format=json_object reicht alleine nicht zuverlässig.
+    system_content = (
+        (template.get("system_prompt") or "")
+        + _self_speaker_hint(speakers)
+        + "\n\nSchema:\n"
+        + json.dumps(schema, ensure_ascii=False)
+    )
+
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": system_content},
+    ]
+
+    # Few-Shot — eingehängt als zusätzliche User→Assistant-Runde vor
+    # dem realen Transkript. Bei 14B Q4 mit >5 Schema-Feldern bringt das
+    # spürbar saubereren JSON-Output (siehe v0.1.40-Plan).
+    few_shot_input = template.get("few_shot_input")
+    few_shot_output_raw = template.get("few_shot_output")
+    if few_shot_input and few_shot_output_raw:
+        if isinstance(few_shot_output_raw, str):
+            try:
+                few_shot_output_obj = json.loads(few_shot_output_raw)
+            except json.JSONDecodeError:
+                few_shot_output_obj = None
+        else:
+            few_shot_output_obj = few_shot_output_raw
+        if few_shot_output_obj is not None:
+            messages.append({
+                "role": "user",
+                "content": _wrap_user_prompt(few_shot_input),
+            })
+            messages.append({
+                "role": "assistant",
+                "content": json.dumps(few_shot_output_obj, ensure_ascii=False),
+            })
+
+    messages.append({"role": "user", "content": _wrap_user_prompt(transcript_for_llm)})
+
+    # OpenAI-compatible JSON-mode (works for LiteLLM proxy and Ollama's
+    # native /v1 endpoint). Sampling-Parameter folgen Qwen2.5-Community-
+    # Empfehlungen für strukturierte Tasks (temp 0.2, top_p 0.8).
+    return {
+        "model": model,
+        "stream": False,
+        "temperature": 0.2,
+        "top_p": 0.8,
+        "max_tokens": 4096,
+        "response_format": {"type": "json_object"},
+        "messages": messages,
+    }
+
+
 async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     conn = await _connect()
     try:
@@ -158,6 +240,8 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
             """
             select t.id, t.version, t.output_schema,
                    coalesce(c.system_prompt, t.system_prompt) as system_prompt,
+                   t.few_shot_input,
+                   t.few_shot_output,
                    (c.template_id is not null) as is_customized
             from public.templates t
             left join public.template_customizations c
@@ -179,15 +263,6 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     finally:
         await conn.close()
 
-    # Build the LLM request. Ollama supports `format` as either "json" (loose)
-    # or a JSON-Schema object (strict, >=0.5). We pass the schema for stricter
-    # adherence — falling back to "json" if the model can't keep up.
-    schema = (
-        template["output_schema"]
-        if isinstance(template["output_schema"], dict)
-        else json.loads(template["output_schema"])
-    )
-
     # Wenn das Transkript Sprecher-Labels hat, geben wir der LLM eine
     # speaker-annotierte Version statt nackten Fließtext — damit kann sie
     # Beschlüsse Personen zuordnen. Ohne Labels: identisch zu vorher.
@@ -195,25 +270,12 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         raw_segments, speakers_enriched, fallback=meeting["full_text"]
     )
 
-    # OpenAI-compatible JSON-mode (works for LiteLLM proxy and Ollama's
-    # native /v1 endpoint). Schema enforcement is best-effort via prompt
-    # instructions because not every backend supports structured outputs.
-    payload = {
-        "model": llm.model,
-        "stream": False,
-        "temperature": 0.2,
-        "response_format": {"type": "json_object"},
-        "messages": [
-            {
-                "role": "system",
-                "content": template["system_prompt"]
-                + _self_speaker_hint(speakers_enriched)
-                + "\n\nAntwortformat: ein einziges JSON-Objekt, das diesem Schema entspricht:\n"
-                + json.dumps(schema, ensure_ascii=False),
-            },
-            {"role": "user", "content": _wrap_user_prompt(transcript_for_llm)},
-        ],
-    }
+    payload = build_llm_payload(
+        template=dict(template),
+        speakers=speakers_enriched,
+        transcript_for_llm=transcript_for_llm,
+        model=llm.model,
+    )
 
     log.info(
         "summarize meeting %s · model=%s · template=%s",

@@ -1,0 +1,39 @@
+template_id: 00000000-0000-0000-0000-000000000001
+cases:
+  - name: hosting_decision_complete
+    description: Vollständiges Entscheidungsmeeting mit klaren Beschlüssen.
+    speakers:
+      - {id: spk_0, name: Kai Böhm, is_self: true}
+      - {id: spk_1, name: Lea Schmidt}
+      - {id: spk_2, name: Marc Berger}
+    segments:
+      - {speaker: spk_0, text: "Wir entscheiden heute die Hosting-Frage."}
+      - {speaker: spk_1, text: "Hetzner ist mein Vorschlag — gleicher Preis wie IONOS, besserer Support."}
+      - {speaker: spk_0, text: "Einverstanden. Lea, du machst den Vertrag bis Freitag."}
+      - {speaker: spk_2, text: "Migration mache ich, brauche Zugang zum alten System."}
+      - {speaker: spk_0, text: "Zugang bekommst du bis Montag."}
+    expected_speaker_labels: ["Kai Böhm", "Lea Schmidt", "Marc Berger"]
+    self_speaker_name: Kai Böhm
+
+  - name: sparse_kickoff
+    description: Kurzer Kickoff ohne klare Beschlüsse — sollte zu null-Feldern führen.
+    speakers:
+      - {id: spk_a, name: Anna}
+      - {id: spk_b, name: Ben}
+    segments:
+      - {speaker: spk_a, text: "Lass uns kurz das Projekt anschauen."}
+      - {speaker: spk_b, text: "Klar. Ich bin gespannt."}
+      - {speaker: spk_a, text: "Wir reden später mehr darüber."}
+    expected_speaker_labels: ["Anna", "Ben"]
+    self_speaker_name: null
+
+  - name: unassigned_segment
+    description: Edge-Case — ein Segment hat keinen Speaker zugewiesen.
+    speakers:
+      - {id: spk_x, name: Frau Vogel}
+    segments:
+      - {speaker: spk_x, text: "Wir starten."}
+      - {speaker: null, text: "Hintergrund unklar."}
+      - {speaker: spk_x, text: "Nächstes Meeting Donnerstag."}
+    expected_speaker_labels: ["Frau Vogel"]
+    self_speaker_name: null

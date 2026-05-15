@@ -1,0 +1,36 @@
+template_id: 00000000-0000-0000-0000-000000000003
+cases:
+  - name: bant_complete
+    description: Discovery Call mit vollständigem BANT-Bild.
+    speakers:
+      - {id: spk_sale, name: Markus, is_self: true}
+      - {id: spk_kunde, name: Frau Schäfer}
+    segments:
+      - {speaker: spk_sale, text: "Welche Themen treiben Sie aktuell um?"}
+      - {speaker: spk_kunde, text: "40 % Wachstum dieses Jahr, das HR-Tool skaliert nicht. Budget 30k im Q3."}
+      - {speaker: spk_kunde, text: "DSGVO ist allerdings der Knackpunkt für uns."}
+      - {speaker: spk_sale, text: "Folgetermin in zwei Wochen, ich bringe die DSGVO-Doku mit."}
+    expected_speaker_labels: ["Markus", "Frau Schäfer"]
+    self_speaker_name: Markus
+
+  - name: kein_budget_erwaehnt
+    description: Kunde nennt kein Budget — BANT.budget muss "nicht erfragt" oder null sein.
+    speakers:
+      - {id: spk_sale, name: Lena}
+      - {id: spk_kunde, name: Herr Albers}
+    segments:
+      - {speaker: spk_sale, text: "Wer entscheidet bei Ihnen über solche Lösungen?"}
+      - {speaker: spk_kunde, text: "Ich gemeinsam mit dem CTO. Brauchen wir bis Q4."}
+    expected_speaker_labels: ["Lena", "Herr Albers"]
+    self_speaker_name: null
+
+  - name: starker_einwand
+    description: Kunde äußert starken Einwand — verkaufschance_einschaetzung sollte niedrig/mittel sein.
+    speakers:
+      - {id: spk_sale, name: Robert}
+      - {id: spk_kunde, name: Frau Klein}
+    segments:
+      - {speaker: spk_kunde, text: "Ehrlich gesagt: Ihr Mitbewerber ist 30 % günstiger und kann genau dasselbe."}
+      - {speaker: spk_sale, text: "Verstehe. Lassen Sie uns die TCO durchrechnen."}
+    expected_speaker_labels: ["Robert", "Frau Klein"]
+    self_speaker_name: null

@@ -1,0 +1,36 @@
+template_id: 00000000-0000-0000-0000-000000000004
+cases:
+  - name: expandierender_bestandskunde
+    description: Bestandskunde mit klarer Veränderung seit Vorjahr.
+    speakers:
+      - {id: spk_ber, name: Berater Klein, is_self: true}
+      - {id: spk_kunde, name: Herr Vogel}
+    segments:
+      - {speaker: spk_ber, text: "Was hat sich im letzten Jahr verändert?"}
+      - {speaker: spk_kunde, text: "Dritter Standort, GmbH zu GmbH & Co. KG umgewandelt, 85 Mitarbeiter."}
+      - {speaker: spk_ber, text: "Berufshaftpflicht passen wir an, D&O-Termin in vier Wochen."}
+    expected_speaker_labels: ["Berater Klein", "Herr Vogel"]
+    self_speaker_name: Berater Klein
+
+  - name: stabile_beziehung
+    description: Wenig Veränderung — risikoveraenderungen sollte leer/kurz sein.
+    speakers:
+      - {id: spk_ber, name: Frau Wolf}
+      - {id: spk_kunde, name: Herr Frank}
+    segments:
+      - {speaker: spk_ber, text: "Wir blicken aufs Jahr zurück."}
+      - {speaker: spk_kunde, text: "Alles wie gehabt, keine Änderungen."}
+      - {speaker: spk_ber, text: "Dann setzen wir Wiedervorlage in 12 Monaten."}
+    expected_speaker_labels: ["Frau Wolf", "Herr Frank"]
+    self_speaker_name: null
+
+  - name: cross_selling_signal
+    description: Kunde äußert Interesse an weiterem Produkt — cross_selling_potenziale muss befüllt sein.
+    speakers:
+      - {id: spk_ber, name: Berater Hahn}
+      - {id: spk_kunde, name: Frau Meier}
+    segments:
+      - {speaker: spk_kunde, text: "Wir denken über eine Cyberversicherung nach, kennt ihr da was?"}
+      - {speaker: spk_ber, text: "Ja, ich schicke Ihnen Unterlagen bis Freitag."}
+    expected_speaker_labels: ["Berater Hahn", "Frau Meier"]
+    self_speaker_name: null

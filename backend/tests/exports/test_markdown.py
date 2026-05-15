@@ -6,7 +6,7 @@ mirror what `routers/meetings.py:get_meeting` produces.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.exports.markdown import render_meeting_markdown
 
@@ -15,7 +15,7 @@ def _meeting(**overrides):
     base = {
         "id": "11111111-1111-1111-1111-111111111111",
         "title": "Strategie Q2",
-        "recorded_at": datetime(2026, 5, 12, 14, 30, tzinfo=timezone.utc),
+        "recorded_at": datetime(2026, 5, 12, 14, 30, tzinfo=UTC),
         "duration_sec": 1800,
         "language": "de",
     }

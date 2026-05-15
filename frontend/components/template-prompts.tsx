@@ -531,7 +531,9 @@ function TemplateRow({
                 </span>
                 <span className="mt-1 mb-2 block text-xs text-text-secondary">
                   Anweisungen ans Sprachmodell. Variablen wie das Transkript
-                  ergänzt das System automatisch.
+                  ergänzt das System automatisch. Diese Vorlage ist für
+                  Qwen 2.5 optimiert (Markdown-Sektionen, Schema-Echo,
+                  Few-Shot-Beispiel).
                 </span>
                 <textarea
                   value={draft}
@@ -542,6 +544,39 @@ function TemplateRow({
                   disabled={state.kind === "saving" || state.kind === "resetting" || state.kind === "deleting"}
                 />
               </label>
+
+              {detail.few_shot_input && detail.few_shot_output && (
+                <details className="mt-4 rounded-md border border-border-subtle bg-surface-soft p-3 text-xs">
+                  <summary className="cursor-pointer select-none font-medium text-text-primary">
+                    Few-Shot-Beispiel (read-only)
+                  </summary>
+                  <p className="mt-2 text-text-secondary">
+                    Insilo schickt vor jedem echten Transkript dieses
+                    Beispiel an die KI, damit sie das Antwortformat
+                    sicher trifft. Es kann aktuell nur am Werks-Template
+                    geändert werden — Customizing erfolgt rein über den
+                    System-Prompt.
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div>
+                      <p className="mono text-[0.625rem] uppercase tracking-[0.08em] text-text-meta">
+                        Eingabe-Snippet
+                      </p>
+                      <pre className="mt-1 max-h-[200px] overflow-auto rounded bg-white p-2 font-mono text-[0.75rem] text-text-primary">
+                        {detail.few_shot_input}
+                      </pre>
+                    </div>
+                    <div>
+                      <p className="mono text-[0.625rem] uppercase tracking-[0.08em] text-text-meta">
+                        Erwartete JSON-Antwort
+                      </p>
+                      <pre className="mt-1 max-h-[200px] overflow-auto rounded bg-white p-2 font-mono text-[0.75rem] text-text-primary">
+                        {JSON.stringify(detail.few_shot_output, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                </details>
+              )}
 
               {error && (
                 <p className="mt-3 text-sm" style={{ color: "var(--error)" }}>

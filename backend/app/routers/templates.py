@@ -65,6 +65,16 @@ def _base_dto(row) -> dict:
     display_description = (
         row["display_description"] if "display_description" in row.keys() else None
     )
+    # Few-Shot (read-only): nur bei System-Templates oder wenn explizit
+    # gesetzt. Frontend rendert das als Vorschau, damit der User sieht,
+    # welche Form die LLM erwartet.
+    few_shot_input = row["few_shot_input"] if "few_shot_input" in row.keys() else None
+    few_shot_output = row["few_shot_output"] if "few_shot_output" in row.keys() else None
+    if isinstance(few_shot_output, str):
+        try:
+            few_shot_output = json.loads(few_shot_output)
+        except json.JSONDecodeError:
+            pass
     return {
         "id": str(row["id"]),
         "name": display_name or default_name,
@@ -77,6 +87,8 @@ def _base_dto(row) -> dict:
         "is_system": row["is_system"],
         "version": row["version"],
         "output_schema": schema,
+        "few_shot_input": few_shot_input,
+        "few_shot_output": few_shot_output,
     }
 
 
@@ -92,6 +104,7 @@ async def list_templates(user: CurrentUser = Depends(get_current_user)) -> list[
             """
             select t.id, t.name, t.description, t.category, t.is_system,
                    t.version, t.output_schema,
+                   t.few_shot_input, t.few_shot_output,
                    c.display_name, c.display_description,
                    (c.template_id is not null) as is_customized
             from public.templates t
@@ -121,6 +134,7 @@ async def get_template(
             """
             select t.id, t.name, t.description, t.category, t.is_system,
                    t.version, t.output_schema, t.system_prompt as default_prompt,
+                   t.few_shot_input, t.few_shot_output,
                    c.system_prompt as custom_prompt,
                    c.display_name, c.display_description,
                    c.updated_at as custom_updated_at

@@ -15,6 +15,9 @@ export type TemplateDto = {
   version: number;
   output_schema: Record<string, unknown>;
   is_customized?: boolean;
+  /** Few-shot example baked into the template (since v0.1.40). Read-only via UI. */
+  few_shot_input?: string | null;
+  few_shot_output?: Record<string, unknown> | null;
 };
 
 export type TemplateDetail = TemplateDto & {

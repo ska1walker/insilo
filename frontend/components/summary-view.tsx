@@ -75,9 +75,19 @@ function isEmpty(v: unknown): boolean {
 }
 
 export function SummaryView({ summary }: { summary: Summary }) {
-  const entries = Object.entries(summary.content).filter(([, v]) => !isEmpty(v));
+  // Felder mit `_`-Präfix (z. B. `_analyse`) sind LLM-interne
+  // Scratch-Felder seit v0.1.40 (CoT-vor-Output-Pattern). Sie werden
+  // separat als ausklappbare „LLM-Überlegungen" gerendert, damit der
+  // Hauptkörper sauber bleibt.
+  const all = Object.entries(summary.content);
+  const internalEntries = all.filter(
+    ([k, v]) => k.startsWith("_") && !isEmpty(v),
+  );
+  const entries = all.filter(
+    ([k, v]) => !k.startsWith("_") && !isEmpty(v),
+  );
 
-  if (entries.length === 0) {
+  if (entries.length === 0 && internalEntries.length === 0) {
     return (
       <p className="text-sm text-text-meta">
         Die KI hat keine Inhalte aus dem Transkript extrahiert. Das Transkript
@@ -91,6 +101,24 @@ export function SummaryView({ summary }: { summary: Summary }) {
       {entries.map(([key, value]) => (
         <SummarySection key={key} keyName={key} value={value} />
       ))}
+
+      {internalEntries.length > 0 && (
+        <details className="group border-t border-border-subtle pt-6 text-sm">
+          <summary className="cursor-pointer select-none text-text-meta hover:text-text-primary">
+            LLM-Überlegungen anzeigen
+          </summary>
+          <div className="mt-3 space-y-3 rounded-md bg-surface-soft p-3 text-xs leading-relaxed text-text-secondary">
+            {internalEntries.map(([key, value]) => (
+              <div key={key}>
+                <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+                  {humanLabel(key.replace(/^_/, ""))}
+                </p>
+                <p className="mt-1">{String(value)}</p>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }

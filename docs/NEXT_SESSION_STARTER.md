@@ -13,23 +13,44 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.36** auf der Olares-Box
+**Stand:** Insilo läuft als **v0.1.39** auf der Olares-Box
 `olares@192.168.112.125` (Olares-User `kaivostudio`,
-Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready.
-Feature-Set komplett: Aufnahme + Diarization + Transkript + Summary +
-Q&A + Templates + Speaker-Editing + Tags + Filter + **Outbound-Webhooks
-+ externe REST-API + Markdown-Export**.
+Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
+Helm-Revision 25. Feature-Set komplett:
 
-**Was in v0.1.35/v0.1.36 dazukam:** Migration 0005 (`org_webhooks`,
-`webhook_deliveries`, `api_keys`), Celery-Dispatcher mit Fan-Out + Retry
-(`backend/app/tasks/notify.py`), Markdown-Renderer
-(`backend/app/exports/markdown.py`), REST-API `/api/external/v1/*` mit
-Bearer-Token, UI-Sektionen in `/einstellungen` (Webhook-Manager + API-Key-
-Manager + ContractDisclosure-Hilfe), Doku `docs/WEBHOOKS.md`.
+- Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
+- **Outbound-Integration:** Webhooks (HMAC-Signatur, Fan-Out, Retry mit
+  exp. Backoff), externe REST-API (Bearer-Token), Markdown-Export
+- **Org-Sprecher-Katalog** mit Voiceprint-Matching (ECAPA-TDNN 192-d,
+  Cosine ≥ 0.5 für Auto-Match, max. 20 Samples FIFO pro Sprecher)
+- **Dedizierte Stimmprobe** („Der Nordwind und die Sonne") über
+  `/embed-only`-Endpoint, ~5 s Mindest-Sprache
+- **Manueller Webhook-Push** ist Default (Datensouveränität first):
+  meeting.ready feuert nicht automatisch, User klickt im Meeting-Detail
+  „An externe Systeme senden"
+- **Werks-Templates umbenennbar** (display_name/description-Overrides),
+  **Meeting-Titel inline editierbar**
+
+**Was zuletzt dazukam (v0.1.37 → v0.1.39):**
+- Migration 0006 (`org_speakers`, `speaker_voiceprints`,
+  `meeting_speaker_clusters` mit pgvector(192)/HNSW)
+- Migration 0007 (nullable meeting_id/cluster_idx für Standalone-
+  Enrollments)
+- Migration 0008 (`org_webhooks.trigger_mode` + template display-
+  Overrides; existing Webhooks retroaktiv auf 'manual')
+- Whisper-Service neue Funktion `embed_voice_sample()` +
+  Endpoint `POST /embed-only`
+- Backend: `app/speaker_matcher.py`, `app/routers/speakers.py`,
+  `app/exports/markdown.py`, Dispatch- + Re-Diarize-Endpoints
+- Frontend: `speaker-catalog.tsx`, `cluster-assignment-panel.tsx`,
+  `voice-enrollment-dialog.tsx`, `meeting-dispatch-dialog.tsx`,
+  `meeting-title-edit.tsx`, `webhook-manager.tsx`,
+  `api-key-manager.tsx`
 
 **Nächste geplante Iteration: Duo-Empfänger-Endpoint in Duo
-(duo.aimighty.de) bauen.** Insilo-Seite ist fertig — Integration läuft
-nur noch als Konfiguration.
+(duo.aimighty.de) bauen.** Die Insilo-Seite ist komplett. Mit dem
+manuellen Trigger-Default schickt Insilo nichts ungefragt raus —
+optimal für Mandanten-Daten.
 
 Die Vision (vom User):
 > Insilo schreibt nach jeder Transkription Meeting-Minutes als Markdown
@@ -38,7 +59,7 @@ Die Vision (vom User):
 > One-Pager zur Sitzung von letzter Woche". Aufgaben aus Insilo-Meetings
 > landen als Checklist-Items in Duo → über alle Meetings aggregierbar.
 
-**Was wir bereits wissen (Stand v0.1.36):**
+**Was wir bereits wissen:**
 
 - **Duo ist eine Cloud-App des Users** (`duo.aimighty.de`). Notizen +
   Folders + Tasks, Multi-User. User baut Duo selbst und kann
@@ -56,7 +77,9 @@ Die Vision (vom User):
      `processed_webhook_deliveries`)
    - Upsert `notes` über `(external_source='insilo', external_id=meeting.id)`
 3. Optional: Checkbox-Parser für `## Offene Aufgaben` → Duo-Tasks.
-4. End-to-End-Test gegen die Box.
+4. End-to-End-Test gegen die Box: in Insilo Meeting aufnehmen → auf
+   Meeting-Detail „An externe Systeme senden" klicken → Webhook
+   landet bei Duo.
 
 **Architektur-Skizze (in HANDOFF.md Header detaillierter):**
 
@@ -116,7 +139,7 @@ template: <Template-Name>
 `docs/HANDOFF.md` $1 (Header-Banner) komplett. Erst dann planen.
 
 **Tools im Repo, die du nutzt:**
-- **Release-Script:** `bash scripts/release.sh 0.1.35 --yes -m "..."`
+- **Release-Script:** `bash scripts/release.sh 0.1.X --yes -m "..."`
   bumpt Versionen, lint, package, commit, tag, push, copy to ~/Downloads.
 - **Migrations-Generator:** `python3 scripts/regen-migrations.py` —
   pflichtmäßig nach Schema-Änderung.
@@ -148,13 +171,16 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | v0.1.36 (alle 5 Pods Ready) |
+| Version | v0.1.39 (alle 5 Pods Ready, Helm-Rev 25) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.36` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.39` |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn) |
+| Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
+| Stimmprobe | „Nordwind und Sonne"-Standardtext, Whisper `/embed-only`-Endpoint |
+| Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
 
 ## Offene Issues / Bekannte Stolpersteine

@@ -1,9 +1,68 @@
-# Handoff — Stand & Learnings (Mai 2026, **letzte Aktualisierung: 14. Mai**)
+# Handoff — Stand & Learnings (Mai 2026, **letzte Aktualisierung: 15. Mai**)
 
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # 🚀 v0.1.36 — Webhooks + API-Keys + Markdown-Export (14. Mai 2026, Abend)
+> # 🚀 v0.1.39 — Manueller Webhook + Template-Rename + Title-Edit (15. Mai 2026)
+>
+> **Aktueller Stand:** Box läuft auf **v0.1.39**, alle 5 Pods Ready,
+> Helm-Revision 25. Outbound-Integration ist jetzt **defensiv per Default**
+> (kein Auto-Push), Werks-Vorlagen sind beliebig umbenennbar, Meeting-Titel
+> nachträglich editierbar.
+>
+> **Was v0.1.37 / v0.1.38 / v0.1.39 gebracht haben:**
+>
+> - **v0.1.37 — Org-Speaker-Katalog mit Voiceprint-Matching:**
+>   Migration 0006 mit 3 neuen Tabellen (`org_speakers`,
+>   `speaker_voiceprints`, `meeting_speaker_clusters`) +
+>   pgvector(192)/HNSW-Index. Whisper-Service liefert jetzt pro Cluster
+>   einen L2-normalisierten ECAPA-Centroid mit der TranscribeResponse,
+>   Backend matched ihn per `centroids @ voiceprints.T` (Cosine ≥ 0.5
+>   konfigurierbar via `speaker_match_threshold`). Auto-Match-Samples
+>   werden als `source='auto-match'` persistiert → Voiceprint verfeinert
+>   sich. Pro Sprecher max. 20 Samples (FIFO). UI: neue Sektion
+>   „Sprecher-Katalog" in `/einstellungen` (`speaker-catalog.tsx`) +
+>   Cluster-Assignment-Panel im Transkript-Edit-Modus
+>   (`cluster-assignment-panel.tsx`). `summarize.py` sieht jetzt ein
+>   speaker-annotiertes Transkript (`[Kai]: …`) und kennt den Self-Marker
+>   für „Sie"-Anrede in der Summary.
+>
+> - **v0.1.38 — Dedizierte Stimmprobe (Nordwind-Text):**
+>   Migration 0007 macht `speaker_voiceprints.meeting_id` + `cluster_idx`
+>   nullable. Whisper bekommt einen neuen Endpoint `POST /embed-only`,
+>   der VAD-Trim + ECAPA-Encoding ohne Transkription macht. Backend
+>   `POST /api/v1/speakers/{id}/enroll` forwarded Audio nach Whisper und
+>   persistiert als `source='enrollment'`. UI:
+>   `voice-enrollment-dialog.tsx` mit Standard-Text „Der Nordwind und
+>   die Sonne" (~40 s, IPA-Referenz), MediaRecorder, Validierung min.
+>   5 s aktive Sprache (sonst HTTP 422 + DE-Fehlermeldung).
+>
+> - **v0.1.39 — Manueller Webhook-Push + Template-Rename + Title-Edit:**
+>   Migration 0008 fügt `org_webhooks.trigger_mode` (`'auto'|'manual'`,
+>   Default manual, retroaktiv auf manual) +
+>   `template_customizations.display_name/display_description` hinzu.
+>   Bei `meeting.ready` werden manual-Webhooks **nicht** automatisch
+>   gefeuert; User klickt im Detail „An externe Systeme senden"
+>   (`meeting-dispatch-dialog.tsx`) → `POST /meetings/{id}/dispatch`
+>   bypasst den Filter. System-Vorlagen können jetzt org-eigene Namen
+>   tragen (z. B. „Mandantengespräch" → „Beratungstermin") via
+>   `template_customizations.display_name` — Schema und Output-Felder
+>   bleiben fest. Meeting-Titel lässt sich auf der Detail-Seite
+>   inline editieren (Pencil-Icon, `meeting-title-edit.tsx`), neuer
+>   Endpoint `PATCH /api/v1/meetings/{id}` feuert `meeting.updated`.
+>
+> # 🎯 Nächste Story
+>
+> **Duo-Empfänger-Endpoint in `duo.aimighty.de` bauen** — die Insilo-Seite
+> ist fertig. Mit v0.1.39 ist Auto-Push pro Default sicher aus, der User
+> entscheidet pro Meeting bewusst. Für Duo also nur noch:
+> 1. Receiver `POST /api/integrations/insilo` mit HMAC-Verify
+> 2. Upsert über `external_source='insilo'` + `external_id=meeting.id`
+> 3. Optional: Checkbox-Parser für `## Offene Aufgaben` → Duo-Tasks
+> Spec dafür in `docs/WEBHOOKS.md` + Pseudocode-Block in `ContractDisclosure`
+> direkt im UI.
+>
+> # 📚 v0.1.36 — Webhooks + API-Keys + Markdown-Export (14. Mai 2026, Abend)
 >
 > **Aktueller Stand:** Box läuft auf v0.1.36, alle 5 Pods Ready. Insilo
 > hat jetzt **Outbound-Integration**: ausgehende Webhooks mit
@@ -111,12 +170,29 @@
 >   (notify→deliver Fan-Out, 4xx/5xx-Differenzierung, exp. Backoff via
 >   `webhook_retry_base_delay_sec`), `ContractDisclosure`-Hilfe in der
 >   UI, `docs/WEBHOOKS.md` als vollständige Contract-Spec.
+> - **v0.1.37** — **Org-Speaker-Katalog + Voiceprint-Matching:**
+>   Migration 0006 (3 Tabellen + pgvector(192) HNSW). ECAPA-Centroids aus
+>   Whisper → Cosine-Match gegen Org-Voiceprints (Threshold 0.5). UI-
+>   Sektion „Sprecher-Katalog" + Cluster-Assignment-Panel im Transkript.
+>   `summarize.py` injiziert speaker-annotiertes Transkript + is_self-Hint.
+> - **v0.1.38** — **Stimmprobe-Aufnahme („Nordwind und Sonne"):**
+>   Migration 0007 (nullable meeting_id/cluster_idx). Whisper
+>   `/embed-only`-Endpoint, Backend `POST /speakers/{id}/enroll`,
+>   `voice-enrollment-dialog.tsx`. Voiceprint-Bootstrap ohne erstes
+>   Meeting möglich.
+> - **v0.1.39** — **Manueller Webhook-Push + Template-Rename + Title-Edit:**
+>   Migration 0008 (`trigger_mode` + display-Overrides). Manueller
+>   Dispatch-Dialog auf Meeting-Detail, System-Vorlagen umbenennbar via
+>   `template_customizations.display_name`, Meeting-Titel inline editierbar
+>   (`PATCH /meetings/{id}`).
 >
-> **Box-State (Stand 14. Mai, Abend):** alle 5 Pods Ready auf v0.1.35
-> (das war die erste Wave). v0.1.36 ist eine zusätzliche Rolling-Update
-> (notify.py-Refactor + ContractDisclosure + Doku). System-PostgreSQL +
-> KVRocks-Redis via Olares-Middleware. LLM via per-Org-Einstellungen
-> (Default: Olares-LiteLLM, aber jeder OpenAI-kompatible Endpoint geht).
+> **Box-State (Stand 15. Mai):** alle 5 Pods Ready auf **v0.1.39**
+> (Helm-Revision 25). System-PostgreSQL + KVRocks-Redis via Olares-
+> Middleware. LLM via per-Org-Einstellungen (Default: Olares-LiteLLM,
+> aber jeder OpenAI-kompatible Endpoint geht). 8 Migrationen
+> angewendet (0001 Schema, 0002 RLS, 0003 org_settings, 0004
+> template_customizations, 0005 webhooks+api_keys, 0006 org_speakers,
+> 0007 speaker_enrollment, 0008 manual_webhooks_template_overrides).
 >
 > # 🎯 Vision für die nächste Phase: Duo-Integration (v0.1.35+)
 >

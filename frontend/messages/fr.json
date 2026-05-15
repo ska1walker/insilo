@@ -289,7 +289,10 @@
         "string": "Texte",
         "array_string": "Liste de textes"
       }
-    }
+    },
+    "localeHint": "Tenez à jour un prompt distinct par langue. L'allemand est obligatoire — si une autre langue est vide, Insilo utilise automatiquement le prompt allemand.",
+    "placeholderFallback": "Laissez vide pour utiliser le prompt allemand comme repli.",
+    "revertDrafts": "Réinitialiser aux valeurs par défaut"
   },
   "webhookManager": {
     "addNew": "Ajouter un webhook",
@@ -355,7 +358,9 @@
     "contractRetryBefore": "Comportement de relance : max. 2 tentatives en cas de 5xx/timeout (backoff 30 s, 90 s), pas de relance en cas de 4xx. Idempotence via",
     "contractRetryAfter": ". Répondez rapidement par 2xx.",
     "contractSpecBefore": "Spécification complète avec tous les événements, garanties de champs et exemples :",
-    "contractSpecPath": "docs/WEBHOOKS.md dans le dépôt Insilo."
+    "contractSpecPath": "docs/WEBHOOKS.md dans le dépôt Insilo.",
+    "contractDeliveryIdHint": "uuid-hex, stable entre les nouvelles tentatives",
+    "contractUpsertComment": "... upsert basé sur payload[\"meeting\"][\"id\"] ..."
   },
   "speakerCatalog": {
     "addBtn": "Ajouter un intervenant",
@@ -511,5 +516,52 @@
     "finalCtaSecondary": "Ouvrir les paramètres",
     "footerLeft": "Insilo · Intelligence de réunion souveraine · © kaivo.studio",
     "footerRight": "Auto-hébergé sur Olares · Made in Germany"
+  },
+  "summaryLabels": {
+    "zusammenfassung": "Synthèse",
+    "kernpunkte": "Points clés",
+    "entscheidungen": "Décisions",
+    "aufgaben": "Actions",
+    "was": "Quoi",
+    "wer": "Qui",
+    "wann": "Quand",
+    "anwesende": "Participants",
+    "kernthemen": "Thèmes principaux",
+    "wichtige_aussagen": "Déclarations importantes",
+    "beschluesse": "Décisions",
+    "offene_fragen": "Questions ouvertes",
+    "naechste_schritte": "Prochaines étapes",
+    "mandantenname": "Client",
+    "sachverhalt": "Exposé des faits",
+    "rechtsfragen": "Questions juridiques",
+    "eingebrachte_unterlagen": "Documents fournis",
+    "vereinbarte_leistungen": "Prestations convenues",
+    "wichtige_termine_fristen": "Dates & échéances",
+    "honorarvereinbarung": "Honoraires",
+    "naechste_schritte_mandat": "Prochaines étapes (dossier)",
+    "verschwiegenheitsvermerke": "Notes de confidentialité",
+    "kunde": "Client",
+    "schmerzpunkte": "Points de friction",
+    "aktuelle_loesung": "Solution actuelle",
+    "bant": "Évaluation BANT",
+    "einwaende": "Objections",
+    "vereinbarte_naechste_schritte": "Prochaines étapes",
+    "follow_up_datum": "Relance",
+    "verkaufschance_einschaetzung": "Opportunité",
+    "bestandsuebersicht": "Portefeuille",
+    "risikoveraenderungen": "Évolution du risque",
+    "cross_selling_potenziale": "Potentiel de vente croisée",
+    "kundenwuensche": "Demandes du client",
+    "wiedervorlage": "Date de relance",
+    "beschluss": "Décision",
+    "verantwortlich": "Responsable",
+    "frist": "Échéance",
+    "sprecher": "Intervenant",
+    "aussage": "Déclaration",
+    "termin": "Date",
+    "budget": "Budget",
+    "entscheider": "Décideur",
+    "need": "Besoin",
+    "timing": "Calendrier"
   }
 }

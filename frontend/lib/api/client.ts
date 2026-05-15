@@ -25,6 +25,21 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | object | null;
 };
 
+const LOCALE_COOKIE = "insilo-locale";
+const SUPPORTED_LOCALES = new Set(["de", "en", "fr", "es", "it"]);
+
+/** Read the in-app locale override the LocaleSwitcher writes to a cookie.
+ *  Returns null on the server (no document) or when no/invalid cookie. */
+function readLocaleCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(
+    new RegExp("(?:^|; )" + LOCALE_COOKIE + "=([^;]+)"),
+  );
+  if (!match) return null;
+  const value = decodeURIComponent(match[1]);
+  return SUPPORTED_LOCALES.has(value) ? value : null;
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
@@ -32,10 +47,21 @@ export async function apiRequest<T>(
   const { body, headers, ...rest } = options;
 
   // Mock Olares Envoy auth header for local dev.
-  const finalHeaders: HeadersInit = {
+  const finalHeaders: Record<string, string> = {
     "X-Bfl-User": DEV_USER,
-    ...(headers ?? {}),
+    ...((headers as Record<string, string>) ?? {}),
   };
+
+  // Forward the in-app locale override (LocaleSwitcher → cookie) as
+  // Accept-Language so the backend's error i18n picks the same language
+  // as the UI. Without this the browser-set Accept-Language wins, which
+  // diverges as soon as the user manually overrides via /einstellungen.
+  if (!finalHeaders["Accept-Language"]) {
+    const cookieLocale = readLocaleCookie();
+    if (cookieLocale) {
+      finalHeaders["Accept-Language"] = cookieLocale;
+    }
+  }
 
   let finalBody: BodyInit | null | undefined = undefined;
   if (body !== undefined && body !== null) {

@@ -720,6 +720,11 @@ function SecretReveal({
 
 function ContractDisclosure() {
   const t = useTranslations("webhookManager");
+  // Embed translated comments into the otherwise code-shaped strings.
+  // We keep the surrounding code identical across locales — only the
+  // human-readable comment / placeholder text varies.
+  const deliveryIdHint = t("contractDeliveryIdHint");
+  const upsertComment = t("contractUpsertComment");
   return (
     <details className="group text-xs text-text-secondary">
       <summary className="cursor-pointer select-none hover:text-text-primary">
@@ -730,7 +735,7 @@ function ContractDisclosure() {
           <p className="font-medium text-text-primary">{t("contractHeader")}</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5 font-mono text-[11px]">
             <li>X-Insilo-Event: meeting.ready</li>
-            <li>X-Insilo-Delivery-ID: &lt;uuid-hex, stabil über Retries&gt;</li>
+            <li>X-Insilo-Delivery-ID: &lt;{deliveryIdHint}&gt;</li>
             <li>X-Insilo-Signature: sha256=&lt;HMAC-SHA256(secret, raw body)&gt;</li>
           </ul>
         </div>
@@ -743,7 +748,7 @@ if not hmac.compare_digest(sig, expected):
     return 401
 if already_processed(request.headers["x-insilo-delivery-id"]):
     return 200
-# ... upsert anhand payload["meeting"]["id"] ...
+# ${upsertComment}
 return 200`}</pre>
         </div>
         <p>

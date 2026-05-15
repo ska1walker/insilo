@@ -44,12 +44,150 @@ async def _set_status(
     )
 
 
-def _wrap_user_prompt(transcript_text: str) -> str:
-    return (
+def _resolve_prompt(template: dict[str, Any], locale: str) -> str | None:
+    """Pick the right prompt body for `locale` from a template row.
+
+    Resolution order (v0.1.46+):
+      1. Customization's locale-specific prompt (`c.system_prompts->>locale`)
+      2. Customization's DE prompt (`c.system_prompts->>'de'`)
+      3. Customization's legacy TEXT prompt (`c.system_prompt`)
+      4. System template's locale-specific prompt (`t.system_prompts->>locale`)
+      5. System template's DE prompt
+      6. System template's legacy TEXT prompt
+
+    Returns the first non-empty string, or None if nothing usable exists.
+    """
+    def _from(jsonb_val: Any, code: str) -> str | None:
+        if jsonb_val is None:
+            return None
+        if isinstance(jsonb_val, str):
+            try:
+                jsonb_val = json.loads(jsonb_val)
+            except json.JSONDecodeError:
+                return None
+        if not isinstance(jsonb_val, dict):
+            return None
+        v = jsonb_val.get(code)
+        return v if isinstance(v, str) and v.strip() else None
+
+    candidates = [
+        _from(template.get("c_system_prompts"), locale),
+        _from(template.get("c_system_prompts"), "de"),
+        template.get("c_system_prompt"),
+        _from(template.get("t_system_prompts"), locale),
+        _from(template.get("t_system_prompts"), "de"),
+        template.get("t_system_prompt"),
+    ]
+    for c in candidates:
+        if isinstance(c, str) and c.strip():
+            return c
+    return None
+
+
+# LLM-bound boilerplate strings, localized so the model sees a coherent
+# language signal (system_prompt + user-wrapper + self-speaker-hint).
+# Falls back to DE when an unknown locale is requested.
+_WRAP_USER: dict[str, tuple[str, str, str]] = {
+    "de": (
         "Hier folgt das Transkript der Besprechung. Analysiere es streng nach den "
         "Vorgaben des Systems und gib AUSSCHLIESSLICH ein JSON-Objekt zurück, das "
-        "dem definierten Output-Schema entspricht.\n\n"
-        f"=== TRANSKRIPT ===\n{transcript_text}\n=== ENDE TRANSKRIPT ==="
+        "dem definierten Output-Schema entspricht.",
+        "TRANSKRIPT", "ENDE TRANSKRIPT",
+    ),
+    "en": (
+        "The following is the meeting transcript. Analyse it strictly according to "
+        "the system instructions and return ONLY a JSON object that matches the "
+        "defined output schema.",
+        "TRANSCRIPT", "END TRANSCRIPT",
+    ),
+    "fr": (
+        "Voici la transcription de la réunion. Analyse-la strictement selon les "
+        "instructions du système et renvoie UNIQUEMENT un objet JSON conforme au "
+        "schéma de sortie défini.",
+        "TRANSCRIPTION", "FIN TRANSCRIPTION",
+    ),
+    "es": (
+        "A continuación la transcripción de la reunión. Analízala estrictamente "
+        "según las instrucciones del sistema y devuelve EXCLUSIVAMENTE un objeto "
+        "JSON conforme al esquema de salida definido.",
+        "TRANSCRIPCIÓN", "FIN TRANSCRIPCIÓN",
+    ),
+    "it": (
+        "Segue la trascrizione della riunione. Analizzala rigorosamente secondo le "
+        "istruzioni del sistema e restituisci ESCLUSIVAMENTE un oggetto JSON "
+        "conforme allo schema di output definito.",
+        "TRASCRIZIONE", "FINE TRASCRIZIONE",
+    ),
+}
+
+_SELF_SPEAKER_HINT: dict[str, str] = {
+    "de": "\n\nHinweis: Sprecher »{name}« ist die Nutzerin/der Nutzer dieses Systems. "
+          "Beschlüsse und Aufgaben dürfen — wo es natürlich wirkt — in zweiter Person "
+          "formuliert werden (»Sie haben …«, »Ihnen obliegt …«) statt in dritter.",
+    "en": "\n\nNote: speaker \"{name}\" is the user of this system. Decisions and "
+          "tasks may — where natural — be phrased in the second person (\"you "
+          "agreed …\", \"it falls to you to …\") rather than the third.",
+    "fr": "\n\nNote : le locuteur « {name} » est l'utilisateur de ce système. Les "
+          "décisions et tâches peuvent — lorsque cela paraît naturel — être "
+          "formulées à la deuxième personne (« vous avez accepté … », « il vous "
+          "revient de … ») plutôt qu'à la troisième.",
+    "es": "\n\nNota: el hablante «{name}» es el usuario de este sistema. Las "
+          "decisiones y tareas pueden — cuando suene natural — formularse en "
+          "segunda persona formal («usted aceptó …», «le corresponde …») en lugar "
+          "de la tercera.",
+    "it": "\n\nNota: il parlante «{name}» è l'utente di questo sistema. Le "
+          "decisioni e i compiti possono — quando suoni naturale — essere "
+          "formulati in seconda persona formale («Lei ha accettato …», «spetta a "
+          "Lei …») anziché in terza.",
+}
+
+_CUSTOM_FIELDS_HEADER: dict[str, tuple[str, str, str, str]] = {
+    "de": (
+        "## Zusätzliche org-spezifische Felder",
+        "Diese Felder sind von der Organisation ergänzt. Fülle sie aus,",
+        "wenn das Transkript die Information klar liefert; sonst `null`.",
+        "Liste von Texten",
+    ),
+    "en": (
+        "## Additional organisation-specific fields",
+        "These fields were added by the organisation. Fill them in",
+        "when the transcript provides the information clearly; otherwise `null`.",
+        "List of strings",
+    ),
+    "fr": (
+        "## Champs supplémentaires spécifiques à l'organisation",
+        "Ces champs ont été ajoutés par l'organisation. Remplissez-les",
+        "lorsque la transcription fournit l'information clairement ; sinon `null`.",
+        "Liste de chaînes",
+    ),
+    "es": (
+        "## Campos adicionales específicos de la organización",
+        "Estos campos los ha añadido la organización. Rellénelos",
+        "cuando la transcripción aporte la información con claridad; si no, `null`.",
+        "Lista de textos",
+    ),
+    "it": (
+        "## Campi aggiuntivi specifici dell'organizzazione",
+        "Questi campi sono stati aggiunti dall'organizzazione. Compilali",
+        "quando la trascrizione fornisce l'informazione in modo chiaro; altrimenti `null`.",
+        "Lista di stringhe",
+    ),
+}
+
+_TEXT_TYPE_LABEL: dict[str, str] = {
+    "de": "Text", "en": "Text", "fr": "Texte", "es": "Texto", "it": "Testo",
+}
+
+_FALLBACK_SPEAKER_LABEL: dict[str, str] = {
+    "de": "Sprecher", "en": "Speaker", "fr": "Locuteur", "es": "Hablante", "it": "Parlante",
+}
+
+
+def _wrap_user_prompt(transcript_text: str, locale: str = "de") -> str:
+    intro, start, end = _WRAP_USER.get(locale) or _WRAP_USER["de"]
+    return (
+        f"{intro}\n\n"
+        f"=== {start} ===\n{transcript_text}\n=== {end} ==="
     )
 
 
@@ -57,6 +195,7 @@ def _format_transcript_for_llm(
     segments: list[dict[str, Any]] | None,
     speakers: list[dict[str, Any]] | None,
     fallback: str,
+    locale: str = "de",
 ) -> str:
     """Bau ein speaker-annotiertes Transkript für die LLM-Eingabe.
 
@@ -81,14 +220,17 @@ def _format_transcript_for_llm(
         if not text:
             continue
         sid = seg.get("speaker") or ""
-        label = name_by_id.get(sid, sid or "Sprecher")
+        fallback_label = _FALLBACK_SPEAKER_LABEL.get(locale, _FALLBACK_SPEAKER_LABEL["de"])
+        label = name_by_id.get(sid, sid or fallback_label)
         lines.append(f"[{label}]: {text}")
     if not lines:
         return fallback
     return "\n".join(lines)
 
 
-def _self_speaker_hint(speakers: list[dict[str, Any]] | None) -> str:
+def _self_speaker_hint(
+    speakers: list[dict[str, Any]] | None, locale: str = "de"
+) -> str:
     """Optionaler Hinweis ans Modell: einer der Sprecher ist der Nutzer.
 
     Wenn das System weiß welcher Sprecher der User ist, kann die Summary
@@ -98,14 +240,10 @@ def _self_speaker_hint(speakers: list[dict[str, Any]] | None) -> str:
     """
     if not speakers:
         return ""
+    template = _SELF_SPEAKER_HINT.get(locale) or _SELF_SPEAKER_HINT["de"]
     for s in speakers:
         if s.get("is_self") and s.get("name"):
-            return (
-                f"\n\nHinweis: Sprecher »{s['name']}« ist die Nutzerin/der Nutzer "
-                "dieses Systems. Beschlüsse und Aufgaben dürfen — wo es natürlich "
-                "wirkt — in zweiter Person formuliert werden (»Sie haben …«, "
-                "»Ihnen obliegt …«) statt in dritter."
-            )
+            return template.format(name=s["name"])
     return ""
 
 
@@ -143,22 +281,22 @@ def _merge_custom_fields(
     return out
 
 
-def _custom_fields_prompt_block(custom_fields: list[dict[str, Any]] | None) -> str:
+def _custom_fields_prompt_block(
+    custom_fields: list[dict[str, Any]] | None, locale: str = "de"
+) -> str:
     """Render a Markdown block listing org-specific extra fields so the
     LLM knows they exist even before reading the schema echo."""
     if not custom_fields:
         return ""
-    lines = [
-        "",
-        "## Zusätzliche org-spezifische Felder",
-        "Diese Felder sind von der Organisation ergänzt. Fülle sie aus,",
-        "wenn das Transkript die Information klar liefert; sonst `null`.",
-        "",
-    ]
+    header, line1, line2, list_type = (
+        _CUSTOM_FIELDS_HEADER.get(locale) or _CUSTOM_FIELDS_HEADER["de"]
+    )
+    text_type = _TEXT_TYPE_LABEL.get(locale, _TEXT_TYPE_LABEL["de"])
+    lines = ["", header, line1, line2, ""]
     for cf in custom_fields:
         label = cf.get("label") or cf.get("name") or ""
         desc = cf.get("description") or ""
-        type_hint = "Liste von Texten" if cf.get("type") == "array_string" else "Text"
+        type_hint = list_type if cf.get("type") == "array_string" else text_type
         line = f"- **{cf.get('name')}** ({type_hint}) — {label}"
         if desc:
             line += f": {desc}"
@@ -172,6 +310,7 @@ def build_llm_payload(
     speakers: list[dict[str, Any]] | None,
     transcript_for_llm: str,
     model: str,
+    locale: str = "de",
 ) -> dict[str, Any]:
     """Compose the OpenAI-compatible chat-completions payload for one meeting.
 
@@ -218,8 +357,8 @@ def build_llm_payload(
     # alleine nicht zuverlässig.
     system_content = (
         (template.get("system_prompt") or "")
-        + _self_speaker_hint(speakers)
-        + _custom_fields_prompt_block(custom_fields)
+        + _self_speaker_hint(speakers, locale)
+        + _custom_fields_prompt_block(custom_fields, locale)
         + "\n\nSchema:\n"
         + json.dumps(effective_schema, ensure_ascii=False)
     )
@@ -244,14 +383,14 @@ def build_llm_payload(
         if few_shot_output_obj is not None:
             messages.append({
                 "role": "user",
-                "content": _wrap_user_prompt(few_shot_input),
+                "content": _wrap_user_prompt(few_shot_input, locale),
             })
             messages.append({
                 "role": "assistant",
                 "content": json.dumps(few_shot_output_obj, ensure_ascii=False),
             })
 
-    messages.append({"role": "user", "content": _wrap_user_prompt(transcript_for_llm)})
+    messages.append({"role": "user", "content": _wrap_user_prompt(transcript_for_llm, locale)})
 
     # OpenAI-compatible JSON-mode (works for LiteLLM proxy and Ollama's
     # native /v1 endpoint). Sampling-Parameter folgen Qwen2.5-Community-
@@ -311,11 +450,31 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         # Pick template: explicit on meeting, else the system default. Apply
         # the org's prompt customization (from /einstellungen) if present —
         # otherwise the seeded `system_prompt` is used.
+        #
+        # v0.1.46+: prompts can be authored per locale in `system_prompts JSONB`.
+        # We resolve the meeting-creator's UI locale (with org-default + 'de'
+        # fallback) and pick the matching prompt. If no locale-specific entry
+        # exists for either the customization or the system template, we fall
+        # back to DE, then to the legacy `system_prompt TEXT` column.
         template_id = meeting["template_id"] or UUID(settings.default_template_id)
+        locale_row = await conn.fetchrow(
+            """
+            select coalesce(u.ui_locale, os.ui_locale, 'de') as locale
+            from public.meetings m
+            join public.users u on u.id = m.created_by
+            left join public.org_settings os on os.org_id = m.org_id
+            where m.id = $1
+            """,
+            meeting_id,
+        )
+        summary_locale = (locale_row and locale_row["locale"]) or "de"
         template = await conn.fetchrow(
             """
             select t.id, t.version, t.output_schema,
-                   coalesce(c.system_prompt, t.system_prompt) as system_prompt,
+                   t.system_prompt          as t_system_prompt,
+                   t.system_prompts         as t_system_prompts,
+                   c.system_prompt          as c_system_prompt,
+                   c.system_prompts         as c_system_prompts,
                    t.few_shot_input,
                    t.few_shot_output,
                    c.custom_fields,
@@ -333,6 +492,15 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         if template["is_customized"]:
             log.info("using org-customized system prompt for template %s", template_id)
 
+        resolved_prompt = _resolve_prompt(template, summary_locale)
+        if resolved_prompt is None:
+            return {"status": "skipped", "reason": "template has no prompt"}
+        template = {**dict(template), "system_prompt": resolved_prompt}
+        log.info(
+            "summarize: template=%s locale=%s (resolved from system_prompts)",
+            template_id, summary_locale,
+        )
+
         # Per-org LLM endpoint/key/model (falls back to env defaults).
         llm = await load_llm_config(conn, meeting["org_id"])
 
@@ -344,7 +512,10 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     # speaker-annotierte Version statt nackten Fließtext — damit kann sie
     # Beschlüsse Personen zuordnen. Ohne Labels: identisch zu vorher.
     transcript_for_llm = _format_transcript_for_llm(
-        raw_segments, speakers_enriched, fallback=meeting["full_text"]
+        raw_segments,
+        speakers_enriched,
+        fallback=meeting["full_text"],
+        locale=summary_locale,
     )
 
     payload = build_llm_payload(
@@ -352,6 +523,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         speakers=speakers_enriched,
         transcript_for_llm=transcript_for_llm,
         model=llm.model,
+        locale=summary_locale,
     )
 
     log.info(

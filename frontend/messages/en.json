@@ -289,7 +289,10 @@
         "string": "Text",
         "array_string": "List of text"
       }
-    }
+    },
+    "localeHint": "Maintain a separate prompt per language. German is required — if another language is empty, Insilo automatically falls back to the German prompt.",
+    "placeholderFallback": "Leave empty to fall back to the German prompt.",
+    "revertDrafts": "Revert to default"
   },
   "webhookManager": {
     "addNew": "Add new webhook",
@@ -355,7 +358,9 @@
     "contractRetryBefore": "Retry behaviour: up to 2 retries on 5xx/timeout (30 s, 90 s backoff), no retry on 4xx. Idempotency via",
     "contractRetryAfter": ". Respond quickly with 2xx.",
     "contractSpecBefore": "Full spec with all events, field guarantees and examples:",
-    "contractSpecPath": "docs/WEBHOOKS.md in the Insilo repository."
+    "contractSpecPath": "docs/WEBHOOKS.md in the Insilo repository.",
+    "contractDeliveryIdHint": "uuid-hex, stable across retries",
+    "contractUpsertComment": "... upsert keyed on payload[\"meeting\"][\"id\"] ..."
   },
   "speakerCatalog": {
     "addBtn": "Add speaker",
@@ -511,5 +516,52 @@
     "finalCtaSecondary": "Open settings",
     "footerLeft": "Insilo · Data-sovereign meeting intelligence · © kaivo.studio",
     "footerRight": "Self-hosted on Olares · Made in Germany"
+  },
+  "summaryLabels": {
+    "zusammenfassung": "Summary",
+    "kernpunkte": "Key points",
+    "entscheidungen": "Decisions",
+    "aufgaben": "Tasks",
+    "was": "What",
+    "wer": "Who",
+    "wann": "When",
+    "anwesende": "Attendees",
+    "kernthemen": "Key topics",
+    "wichtige_aussagen": "Key statements",
+    "beschluesse": "Decisions",
+    "offene_fragen": "Open questions",
+    "naechste_schritte": "Next steps",
+    "mandantenname": "Client",
+    "sachverhalt": "Case summary",
+    "rechtsfragen": "Legal questions",
+    "eingebrachte_unterlagen": "Documents provided",
+    "vereinbarte_leistungen": "Agreed services",
+    "wichtige_termine_fristen": "Dates & deadlines",
+    "honorarvereinbarung": "Fee agreement",
+    "naechste_schritte_mandat": "Next steps (matter)",
+    "verschwiegenheitsvermerke": "Confidentiality notes",
+    "kunde": "Customer",
+    "schmerzpunkte": "Pain points",
+    "aktuelle_loesung": "Current solution",
+    "bant": "BANT assessment",
+    "einwaende": "Objections",
+    "vereinbarte_naechste_schritte": "Next steps",
+    "follow_up_datum": "Follow-up",
+    "verkaufschance_einschaetzung": "Opportunity",
+    "bestandsuebersicht": "Portfolio overview",
+    "risikoveraenderungen": "Risk changes",
+    "cross_selling_potenziale": "Cross-sell potential",
+    "kundenwuensche": "Customer requests",
+    "wiedervorlage": "Follow-up date",
+    "beschluss": "Decision",
+    "verantwortlich": "Responsible",
+    "frist": "Deadline",
+    "sprecher": "Speaker",
+    "aussage": "Statement",
+    "termin": "Date",
+    "budget": "Budget",
+    "entscheider": "Decision maker",
+    "need": "Need",
+    "timing": "Timing"
   }
 }

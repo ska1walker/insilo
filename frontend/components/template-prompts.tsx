@@ -9,11 +9,14 @@ import {
   deleteTemplate,
   getTemplate,
   listTemplates,
+  LOCALES,
   resetTemplatePrompt,
   updateTemplate,
   updateTemplatePrompt,
   type CustomField,
   type CustomFieldType,
+  type Locale,
+  type LocalePromptMap,
   type TemplateDetail,
   type TemplateDto,
   type TemplatePayload,
@@ -35,6 +38,32 @@ JSON-Antwort zurück:
 - entscheidungen: getroffene Beschlüsse
 - aufgaben: To-dos mit "was", "wer", "wann"
 - offene_fragen: was unbeantwortet blieb`;
+
+/** Build an empty drafts map seeded from a TemplateDetail's effective prompts. */
+function draftsFrom(detail: TemplateDetail): Record<Locale, string> {
+  const out = {} as Record<Locale, string>;
+  for (const loc of LOCALES) {
+    out[loc] = detail.effective_prompts[loc] ?? "";
+  }
+  return out;
+}
+
+/** Build an empty drafts map (all locales → ""). */
+function emptyDrafts(): Record<Locale, string> {
+  const out = {} as Record<Locale, string>;
+  for (const loc of LOCALES) out[loc] = "";
+  return out;
+}
+
+/** Strip empty entries — backend falls back to DE for missing locales. */
+function compactDrafts(drafts: Record<Locale, string>): LocalePromptMap {
+  const out: LocalePromptMap = {};
+  for (const loc of LOCALES) {
+    const v = drafts[loc]?.trim();
+    if (v) out[loc] = v;
+  }
+  return out;
+}
 
 export function TemplatePrompts() {
   const t = useTranslations("templatePrompts");
@@ -130,6 +159,56 @@ export function TemplatePrompts() {
   );
 }
 
+// ─── Locale tab strip ─────────────────────────────────────────────────
+
+function LocaleTabs({
+  active,
+  onChange,
+  drafts,
+}: {
+  active: Locale;
+  onChange: (loc: Locale) => void;
+  drafts: Record<Locale, string>;
+}) {
+  const tLocale = useTranslations("locale.names");
+  return (
+    <div
+      role="tablist"
+      aria-label="Locale"
+      className="flex flex-wrap gap-1 border-b border-border-subtle"
+    >
+      {LOCALES.map((loc) => {
+        const isActive = loc === active;
+        const isEmpty = !drafts[loc]?.trim();
+        return (
+          <button
+            key={loc}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(loc)}
+            className={
+              "relative -mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-medium transition " +
+              (isActive
+                ? "border-text-primary text-text-primary"
+                : "border-transparent text-text-meta hover:text-text-primary")
+            }
+            title={tLocale(loc)}
+          >
+            <span className="mono uppercase tracking-[0.08em]">{loc}</span>
+            {isEmpty && loc !== "de" && (
+              <span
+                aria-hidden
+                className="inline-block h-1 w-1 rounded-full bg-text-meta opacity-50"
+              />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Create form ──────────────────────────────────────────────────────
 
 function CreateTemplateForm({
@@ -143,7 +222,8 @@ function CreateTemplateForm({
   const tCommon = useTranslations("common");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [prompt, setPrompt] = useState("");
+  const [drafts, setDrafts] = useState<Record<Locale, string>>(emptyDrafts());
+  const [activeLocale, setActiveLocale] = useState<Locale>("de");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -153,7 +233,8 @@ function CreateTemplateForm({
       setError(t("errEmptyName"));
       return;
     }
-    if (prompt.trim().length < 10) {
+    const dePrompt = drafts.de.trim();
+    if (dePrompt.length < 10) {
       setError(t("errPromptTooShort"));
       return;
     }
@@ -163,7 +244,7 @@ function CreateTemplateForm({
       const created = await createTemplate({
         name: name.trim(),
         description: description.trim(),
-        system_prompt: prompt.trim(),
+        system_prompts: compactDrafts(drafts),
       });
       onCreated(created);
     } catch (err) {
@@ -217,23 +298,37 @@ function CreateTemplateForm({
         />
       </label>
 
-      <label className="block">
+      <div>
         <span className="block text-sm font-medium text-text-primary">
           {t("promptLabel")}
         </span>
         <span className="mt-1 mb-2 block text-xs text-text-secondary">
           {t("promptHintCreate")}
         </span>
+        <span className="mb-2 block text-xs text-text-meta">
+          {t("localeHint")}
+        </span>
+        <LocaleTabs
+          active={activeLocale}
+          onChange={setActiveLocale}
+          drafts={drafts}
+        />
         <textarea
-          className="input w-full font-mono text-[0.8125rem] leading-relaxed"
+          className="input mt-3 w-full font-mono text-[0.8125rem] leading-relaxed"
           rows={10}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={PROMPT_PLACEHOLDER}
+          value={drafts[activeLocale]}
+          onChange={(e) =>
+            setDrafts((prev) => ({ ...prev, [activeLocale]: e.target.value }))
+          }
+          placeholder={
+            activeLocale === "de"
+              ? PROMPT_PLACEHOLDER
+              : t("placeholderFallback")
+          }
           spellCheck={false}
           disabled={saving}
         />
-      </label>
+      </div>
 
       {error && (
         <p className="text-sm" style={{ color: "var(--error)" }}>
@@ -281,7 +376,8 @@ function TemplateRow({
   const [detail, setDetail] = useState<TemplateDetail | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [draft, setDraft] = useState<string>("");
+  const [drafts, setDrafts] = useState<Record<Locale, string>>(emptyDrafts());
+  const [activeLocale, setActiveLocale] = useState<Locale>("de");
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [state, setState] = useState<EditorState>({ kind: "idle" });
   const [error, setError] = useState<string | null>(null);
@@ -297,7 +393,8 @@ function TemplateRow({
         setDetail(d);
         setName(d.name);
         setDescription(d.description ?? "");
-        setDraft(d.effective_prompt);
+        setDrafts(draftsFrom(d));
+        setActiveLocale("de");
         setCustomFields(d.custom_fields ?? []);
         setState({ kind: "idle" });
       })
@@ -315,9 +412,18 @@ function TemplateRow({
   // Org templates: full edit (name/description/prompt + delete)
   const isOrgOwned = !template.is_system;
 
+  // Drafts differ from the persisted effective prompts when any locale's
+  // text has changed — compare trimmed strings per locale.
+  const promptsDirty =
+    detail !== null &&
+    LOCALES.some(
+      (loc) =>
+        (drafts[loc] ?? "").trim() !==
+        (detail.effective_prompts[loc] ?? "").trim(),
+    );
   const dirty =
     detail !== null &&
-    (draft.trim() !== detail.effective_prompt.trim() ||
+    (promptsDirty ||
       name.trim() !== (detail.name ?? "") ||
       (description ?? "").trim() !== (detail.description ?? "") ||
       JSON.stringify(customFields) !==
@@ -325,7 +431,9 @@ function TemplateRow({
 
   async function handleSave() {
     if (!detail) return;
-    if (draft.trim().length < 10) {
+    if (drafts.de.trim().length < 10) {
+      // DE is the canonical fallback — enforce minimum length only on DE.
+      setActiveLocale("de");
       setError(t("errPromptTooShort"));
       return;
     }
@@ -358,7 +466,7 @@ function TemplateRow({
         const payload: TemplatePayload = {
           name: name.trim(),
           description: description.trim(),
-          system_prompt: draft.trim(),
+          system_prompts: compactDrafts(drafts),
         };
         await updateTemplate(template.id, payload);
       } else {
@@ -371,7 +479,7 @@ function TemplateRow({
         const defaultDesc = detail.default_description ?? detail.description ?? "";
         await updateTemplatePrompt(
           template.id,
-          draft,
+          compactDrafts(drafts),
           newName === defaultName ? "" : newName,
           newDesc === defaultDesc ? "" : newDesc,
           customFields,
@@ -381,7 +489,7 @@ function TemplateRow({
       setDetail(refreshed);
       setName(refreshed.name);
       setDescription(refreshed.description ?? "");
-      setDraft(refreshed.effective_prompt);
+      setDrafts(draftsFrom(refreshed));
       setCustomFields(refreshed.custom_fields ?? []);
       onSaved();
       toast.show({
@@ -404,7 +512,7 @@ function TemplateRow({
       await resetTemplatePrompt(template.id);
       const refreshed = await getTemplate(template.id);
       setDetail(refreshed);
-      setDraft(refreshed.effective_prompt);
+      setDrafts(draftsFrom(refreshed));
       onReset();
     } catch (err) {
       console.error("reset prompt failed", err);
@@ -412,6 +520,16 @@ function TemplateRow({
     } finally {
       setState({ kind: "idle" });
     }
+  }
+
+  /** Pull every visible locale back to its default-prompt baseline. */
+  function handleResetDraftsToDefault() {
+    if (!detail) return;
+    const next = {} as Record<Locale, string>;
+    for (const loc of LOCALES) {
+      next[loc] = detail.default_prompts[loc] ?? "";
+    }
+    setDrafts(next);
   }
 
   function handleDeleteRequest() {
@@ -550,22 +668,44 @@ function TemplateRow({
                 )}
               </div>
 
-              <label className="mt-4 block">
+              <div className="mt-4">
                 <span className="block text-sm font-medium text-text-primary">
                   {t("promptLabel")}
                 </span>
                 <span className="mt-1 mb-2 block text-xs text-text-secondary">
                   {t("promptHintEdit")}
                 </span>
+                <span className="mb-2 block text-xs text-text-meta">
+                  {t("localeHint")}
+                </span>
+                <LocaleTabs
+                  active={activeLocale}
+                  onChange={setActiveLocale}
+                  drafts={drafts}
+                />
                 <textarea
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  className="input w-full font-mono text-[0.8125rem] leading-relaxed"
+                  value={drafts[activeLocale]}
+                  onChange={(e) =>
+                    setDrafts((prev) => ({
+                      ...prev,
+                      [activeLocale]: e.target.value,
+                    }))
+                  }
+                  className="input mt-3 w-full font-mono text-[0.8125rem] leading-relaxed"
                   rows={12}
                   spellCheck={false}
-                  disabled={state.kind === "saving" || state.kind === "resetting" || state.kind === "deleting"}
+                  placeholder={
+                    activeLocale === "de"
+                      ? undefined
+                      : t("placeholderFallback")
+                  }
+                  disabled={
+                    state.kind === "saving" ||
+                    state.kind === "resetting" ||
+                    state.kind === "deleting"
+                  }
                 />
-              </label>
+              </div>
 
               {!isOrgOwned && (
                 <CustomFieldsEditor
@@ -657,6 +797,16 @@ function TemplateRow({
                       {state.kind === "resetting"
                         ? t("resetting")
                         : t("resetToDefault")}
+                    </button>
+                  )}
+                  {!isOrgOwned && !detail.is_customized && promptsDirty && (
+                    <button
+                      type="button"
+                      onClick={handleResetDraftsToDefault}
+                      className="btn-tertiary"
+                      disabled={state.kind !== "idle"}
+                    >
+                      {t("revertDrafts")}
                     </button>
                   )}
                   <button

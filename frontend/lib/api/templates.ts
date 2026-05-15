@@ -9,6 +9,14 @@ export type CustomField = {
   description: string;   // hint that flows into the LLM schema
 };
 
+/** Supported UI locales. Keep in sync with frontend/messages/*.json. */
+export type Locale = "de" | "en" | "fr" | "es" | "it";
+
+export const LOCALES: readonly Locale[] = ["de", "en", "fr", "es", "it"] as const;
+
+/** Map of locale code → prompt text. Backend treats `de` as required. */
+export type LocalePromptMap = Partial<Record<Locale, string>>;
+
 export type TemplateDto = {
   id: string;
   name: string;
@@ -32,9 +40,14 @@ export type TemplateDto = {
 };
 
 export type TemplateDetail = TemplateDto & {
+  /** Legacy DE-only flavors — retained for backward compat. */
   default_prompt: string;
   custom_prompt: string | null;
   effective_prompt: string;
+  /** Locale-aware prompt maps (v0.1.46+). DE is always present in defaults. */
+  default_prompts: LocalePromptMap;
+  custom_prompts: LocalePromptMap | null;
+  effective_prompts: LocalePromptMap;
   custom_updated_at: string | null;
 };
 
@@ -46,14 +59,28 @@ export async function getTemplate(id: string): Promise<TemplateDetail> {
   return apiGet<TemplateDetail>(`/api/v1/templates/${id}`);
 }
 
+/**
+ * Persist a system-template override.
+ *
+ * `systemPrompts` is the locale-aware map (v0.1.46+). Empty values are
+ * stripped before POST so the backend can fall back to the DE default
+ * for any missing locale.
+ */
 export async function updateTemplatePrompt(
   id: string,
-  systemPrompt: string,
+  systemPrompts: LocalePromptMap,
   displayName?: string | null,
   displayDescription?: string | null,
   customFields?: CustomField[] | null,
 ): Promise<void> {
-  const payload: Record<string, unknown> = { system_prompt: systemPrompt };
+  const cleaned: LocalePromptMap = {};
+  for (const loc of LOCALES) {
+    const v = systemPrompts[loc];
+    if (v !== undefined && v !== null && v.trim() !== "") {
+      cleaned[loc] = v;
+    }
+  }
+  const payload: Record<string, unknown> = { system_prompts: cleaned };
   if (displayName !== undefined) payload.display_name = displayName;
   if (displayDescription !== undefined)
     payload.display_description = displayDescription;
@@ -68,7 +95,8 @@ export async function resetTemplatePrompt(id: string): Promise<void> {
 export type TemplatePayload = {
   name: string;
   description: string;
-  system_prompt: string;
+  /** Locale-aware prompt map. DE must be present and non-empty. */
+  system_prompts: LocalePromptMap;
 };
 
 export async function createTemplate(

@@ -3,13 +3,65 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🚀 v0.1.46 — i18n Phase 3 (16. Mai 2026, früh)
+>
+> **Aktueller Stand:** Box läuft auf **v0.1.46**, Helm-Revision 32.
+> Damit ist die Internationalisierung end-to-end durch: LLM-Prompts
+> ziehen jetzt nach User-Sprache, Backend-Fehler decken alle 5
+> Sprachen ab, der UI-Locale-Override aus `/einstellungen` beeinflusst
+> auch Backend-Antworten.
+>
+> **Was v0.1.46 gebracht hat:**
+>
+> - **Migration 0012:** `templates.system_prompts JSONB` und
+>   `template_customizations.system_prompts JSONB`, beide mit Backfill
+>   `{ "de": existing_system_prompt }`. Legacy `system_prompt TEXT`
+>   bleibt aktiv für Backward-Compat — Resolution-Order in `summarize.py`:
+>   `c.system_prompts->>locale → c.system_prompts->>'de' → c.system_prompt
+>   → t.system_prompts->>locale → t.system_prompts->>'de' → t.system_prompt`.
+> - **Backend prompt selection nach User-Locale:** `_do_summarize`
+>   resolved bei Task-Start `coalesce(u.ui_locale, os.ui_locale, 'de')`
+>   und gibt das durch `build_llm_payload(locale=...)`. Alle LLM-bound
+>   Helper-Strings (`_wrap_user_prompt`, `_self_speaker_hint`,
+>   `_custom_fields_prompt_block`, `_format_transcript_for_llm`) sind
+>   jetzt locale-aware, damit System-Prompt + Wrapper + Hint dem LLM
+>   dieselbe Sprache signalisieren.
+> - **seed.sql neu (4 Templates × 5 Sprachen):** alle System-Templates
+>   (Allgemein, Mandantengespräch, Vertriebsgespräch, …) tragen jetzt
+>   `system_prompts` als jsonb_build_object mit DE/EN/FR/ES/IT-Prompts.
+>   Schema-Field-Names bleiben deutsch (`zusammenfassung`, `kernpunkte`,
+>   …) — die LLM gibt sprachenunabhängig dieselbe JSON-Struktur zurück,
+>   nur der Inhalt ist lokalisiert. Die Display-Labels kommen über die
+>   neue `summaryLabels`-Namespace in `messages/*.json`.
+> - **Frontend 5-Tab Prompt-Editor:** `template-prompts.tsx` hat einen
+>   `LocaleTabs`-Streifen (DE/EN/FR/ES/IT) statt einer einzelnen
+>   Textarea. State ist `drafts: Record<Locale, string>` mit
+>   per-Locale-Dirty-Tracking. Save schickt `system_prompts: {locale: str}`
+>   an `PUT /templates/{id}/prompt`; Backend extrahiert DE für die
+>   Legacy-Spalte.
+> - **`summary-view.tsx`:** `LABEL_OVERRIDES`-Dict raus, neue
+>   `useHumanLabel()`-Hook nutzt `t.has(key)` (next-intl@4) gegen die
+>   `summaryLabels`-Namespace, Fallback ist `titleCaseKey(key)` für
+>   unbekannte Keys (z. B. org-Custom-Fields).
+> - **Backend Error-i18n FR/ES/IT:** `errors.ERRORS` jetzt mit allen
+>   5 Sprachen, `SUPPORTED = ("de","en","fr","es","it")`. Tests
+>   angepasst (24/24 grün).
+> - **`api/client.ts`:** liest `insilo-locale`-Cookie und schickt ihn
+>   als `Accept-Language` mit. Der In-App-Switcher beeinflusst jetzt
+>   auch Backend-Antworten (vorher: nur Browser-Sprache).
+> - **`webhook-manager.tsx`:** die beiden verbliebenen deutschen
+>   Fragmente im ContractDisclosure-Codeblock (`contractDeliveryIdHint`,
+>   `contractUpsertComment`) sind jetzt i18n.
+>
+> **Stats:** 511 Keys pro Sprach-JSON (vorher 461), alle 5 Files
+> Tree-identisch. Frontend TS clean, Backend pytest 103/103.
+>
 > # 🚀 v0.1.45 — i18n Phase 2 (15. Mai 2026, Nacht)
 >
-> **Aktueller Stand:** Box läuft auf **v0.1.45**, Helm-Revision 31.
-> UI fast vollständig in 5 Sprachen — alle nicht-trivialen Komponenten
-> nutzen jetzt `useTranslations()`. Backend-Fehlermeldungen sind
-> DE/EN-lokalisiert per `Accept-Language` (FR/ES/IT fallen bewusst auf
-> EN zurück bis v0.1.46).
+> **Stand bei v0.1.45:** Helm-Revision 31. UI fast vollständig in 5
+> Sprachen — alle nicht-trivialen Komponenten nutzen
+> `useTranslations()`. Backend-Fehlermeldungen sind DE/EN-lokalisiert
+> per `Accept-Language` (FR/ES/IT wurden in v0.1.46 ergänzt).
 >
 > **Was v0.1.45 gebracht hat:**
 >
@@ -115,19 +167,23 @@
 >   `Accept-Language`-Fallback. Übersetzt in dieser Iteration:
 >   Navigation (Header-Tabs), `recording-block.tsx`, `LocaleSwitcher`.
 >
-> # 🎯 Nächste Story-Optionen (nach v0.1.45)
+> # 🎯 Nächste Story-Optionen (nach v0.1.46)
 >
-> 1. **v0.1.46 — i18n Phase 3 (LLM + Whisper + content-strings):**
->    `templates.system_prompts JSONB` mit `{de,en,fr,es,it}`, Whisper
->    `language=auto|de|en|fr|es|it` per Meeting, Stimmprobe-Texte
->    pro Sprache, LABEL_OVERRIDES in `summary-view.tsx` und der
->    `ContractDisclosure`-Block in `webhook-manager.tsx`. Plus
->    FR/ES/IT für die Backend-Error-Dict + `api/client.ts` schickt
->    den `insilo-locale`-Cookie als `Accept-Language` mit, damit der
->    In-App-Override auch Backend-Fehler beeinflusst.
+> 1. **v0.1.47 — Whisper-Language + Stimmprobe-Texte (Audio-i18n):**
+>    aktuell hardcoded `language='de'` im `POST /recordings` und ein
+>    einzelner Nordwind-Standardtext im `voice-enrollment-dialog`.
+>    Beides ziehen pro Sprache: Whisper `language=auto|de|en|fr|es|it`
+>    per Meeting (Dropdown an der Aufnahme + Default aus
+>    `users.ui_locale`), Stimmproben-Standardtexte aus den jeweils
+>    kanonischen phonetisch ausgewogenen Passagen pro Sprache
+>    (Nordwind/North-Wind/La-Bise/El-viento-del-norte/La-tramontana).
 > 2. **Duo-Receiver in `duo.aimighty.de`:** der Webhook-Empfänger
 >    ist immer noch offen — Insilo-Seite ist seit v0.1.39 komplett
 >    bereit (manueller Dispatch + signierter POST).
+> 3. **Drop legacy `templates.system_prompt TEXT`** in einer späteren
+>    Migration, sobald wir sicher sind dass nichts mehr darauf liest
+>    (Backend resolver hat sie in v0.1.46 schon depriorisiert, aber
+>    `seed.sql` schreibt sie noch zum Backward-Compat).
 >
 > **Lesson aus v0.1.44:** Browser-Audio ist immer WebM/Opus. Wenn
 > wir je wieder Audio-Bytes in Python aufschlagen, **direkt
@@ -345,16 +401,35 @@
 >   `Accept-Language`-Resolution (Middleware in `app/main.py`), 15
 >   user-sichtbare HTTPException-Sites umgestellt auf `http_error()`.
 >   22 neue pytest-Cases, Backend-Suite 101/101 grün. Kein Schema-Drift.
+> - **v0.1.46** — **i18n Phase 3 (LLM-Prompts + Content + Loose Ends):**
+>   Migration 0012 (`templates.system_prompts JSONB` + dasselbe auf
+>   `template_customizations`), seed.sql neu mit 4 Templates × 5 Sprachen
+>   via `jsonb_build_object`. `summarize.py` resolved User-Locale aus
+>   `users.ui_locale → org_settings.ui_locale → 'de'` und picked das
+>   passende Prompt; alle LLM-bound Helper (`_wrap_user_prompt`,
+>   `_self_speaker_hint`, `_custom_fields_prompt_block`,
+>   `_format_transcript_for_llm`) sind locale-aware. Frontend
+>   `template-prompts.tsx` hat einen 5-Tab-Editor pro Locale (drafts:
+>   `Record<Locale, string>`). `summary-view.tsx`: `LABEL_OVERRIDES`-
+>   Dict raus, `useHumanLabel()`-Hook gegen `summaryLabels`-Namespace
+>   (511 Keys jetzt pro JSON, identische Trees). `errors.py` mit
+>   FR/ES/IT ergänzt (24/24 Tests), `api/client.ts` schickt
+>   `insilo-locale`-Cookie als `Accept-Language`, ContractDisclosure-
+>   Fragmente in `webhook-manager.tsx` lokalisiert. Backend pytest
+>   103/103. Schema field-names bleiben deutsch — LLM gibt
+>   sprachenunabhängig dieselbe JSON-Struktur zurück, nur Content wird
+>   lokalisiert; UI mapped die deutschen Keys via `summaryLabels` auf
+>   localized Display-Labels.
 >
-> **Box-State (Stand 15. Mai, Nacht):** alle 5 Pods Ready auf
-> **v0.1.45** (Helm-Revision 31). System-PostgreSQL + KVRocks-Redis via
+> **Box-State (Stand 16. Mai, früh):** alle 5 Pods Ready auf
+> **v0.1.46** (Helm-Revision 32). System-PostgreSQL + KVRocks-Redis via
 > Olares-Middleware. LLM via per-Org-Einstellungen (Default: Olares-
-> LiteLLM, aber jeder OpenAI-kompatible Endpoint geht). **11 Migrationen
+> LiteLLM, aber jeder OpenAI-kompatible Endpoint geht). **12 Migrationen
 > angewendet** (0001 Schema, 0002 RLS, 0003 org_settings, 0004
 > template_customizations, 0005 webhooks+api_keys, 0006 org_speakers,
 > 0007 speaker_enrollment, 0008 manual_webhooks_template_overrides,
-> 0009 template_few_shot, 0010 template_custom_fields, 0011 ui_locale).
-> Kein Schema-Drift in v0.1.45 — nur Code.
+> 0009 template_few_shot, 0010 template_custom_fields, 0011 ui_locale,
+> 0012 template_locale_prompts).
 >
 > # 🎯 Vision für die nächste Phase: Duo-Integration (v0.1.35+)
 >

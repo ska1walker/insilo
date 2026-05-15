@@ -32,9 +32,10 @@ from app.errors import (
         ("", "de"),
         ("de", "de"),
         ("en-US,en;q=0.9", "en"),
-        ("fr-FR,fr;q=0.9", "de"),  # FR falls back — not supported yet
-        ("es,en;q=0.5", "en"),  # es not supported, en is next
-        ("it,fr;q=0.8", "de"),  # neither supported → DEFAULT
+        ("fr-FR,fr;q=0.9", "fr"),
+        ("es,en;q=0.5", "es"),
+        ("it,fr;q=0.8", "it"),
+        ("ja,en;q=0.5", "en"),  # ja not supported, en is next
         ("*", "de"),
         ("xx-YY", "de"),  # unparseable / unknown
     ],
@@ -43,9 +44,9 @@ def test_resolve_error_locale(header: str | None, expected: str) -> None:
     assert resolve_error_locale(header) == expected
 
 
-def test_supported_is_de_en_only() -> None:
-    """Phase 2 contract: only DE+EN — FR/ES/IT come in v0.1.46."""
-    assert set(SUPPORTED) == {"de", "en"}
+def test_supported_is_all_five() -> None:
+    """v0.1.46+ contract: all five UI locales are supported in error messages too."""
+    assert set(SUPPORTED) == {"de", "en", "fr", "es", "it"}
     assert DEFAULT == "de"
 
 
@@ -66,9 +67,16 @@ def test_translate_with_params() -> None:
 
 
 def test_translate_unsupported_locale_falls_back_to_en() -> None:
-    # fr/es/it aren't in the catalogue yet — return EN
-    out = translate("tags.not_found", "fr")
+    # 'ja' isn't in the catalogue — return EN
+    out = translate("tags.not_found", "ja")
     assert out == "Tag not found."
+
+
+def test_translate_fr_es_it() -> None:
+    # FR/ES/IT entered the catalogue in v0.1.46.
+    assert translate("tags.not_found", "fr") == "Étiquette introuvable."
+    assert translate("tags.not_found", "es") == "Etiqueta no encontrada."
+    assert translate("tags.not_found", "it") == "Tag non trovato."
 
 
 def test_translate_unknown_key_returns_key() -> None:
@@ -99,7 +107,7 @@ def test_set_and_reset_request_locale() -> None:
 
 
 def test_set_request_locale_rejects_unsupported() -> None:
-    token = set_request_locale("xx")
+    token = set_request_locale("ja")
     try:
         # Unsupported codes are coerced to DEFAULT.
         assert current_locale() == DEFAULT

@@ -289,7 +289,10 @@
         "string": "Texto",
         "array_string": "Lista de textos"
       }
-    }
+    },
+    "localeHint": "Mantenga un prompt distinto por idioma. El alemán es obligatorio — si otro idioma queda vacío, Insilo recurre automáticamente al prompt en alemán.",
+    "placeholderFallback": "Deje vacío para usar el prompt en alemán como respaldo.",
+    "revertDrafts": "Restablecer a los valores predeterminados"
   },
   "webhookManager": {
     "addNew": "Añadir nuevo webhook",
@@ -355,7 +358,9 @@
     "contractRetryBefore": "Comportamiento de reintento: hasta 2 reintentos en 5xx/timeout (backoff 30 s, 90 s), sin reintento en 4xx. Idempotencia mediante",
     "contractRetryAfter": ". Responda rápidamente con 2xx.",
     "contractSpecBefore": "Especificación completa con todos los eventos, garantías de campos y ejemplos:",
-    "contractSpecPath": "docs/WEBHOOKS.md en el repositorio Insilo."
+    "contractSpecPath": "docs/WEBHOOKS.md en el repositorio Insilo.",
+    "contractDeliveryIdHint": "uuid-hex, estable entre reintentos",
+    "contractUpsertComment": "... upsert según payload[\"meeting\"][\"id\"] ..."
   },
   "speakerCatalog": {
     "addBtn": "Añadir hablante",
@@ -511,5 +516,52 @@
     "finalCtaSecondary": "Abrir ajustes",
     "footerLeft": "Insilo · Inteligencia de reuniones con soberanía de datos · © kaivo.studio",
     "footerRight": "Autoalojado en Olares · Made in Germany"
+  },
+  "summaryLabels": {
+    "zusammenfassung": "Resumen",
+    "kernpunkte": "Puntos clave",
+    "entscheidungen": "Decisiones",
+    "aufgaben": "Tareas",
+    "was": "Qué",
+    "wer": "Quién",
+    "wann": "Cuándo",
+    "anwesende": "Asistentes",
+    "kernthemen": "Temas principales",
+    "wichtige_aussagen": "Declaraciones relevantes",
+    "beschluesse": "Decisiones",
+    "offene_fragen": "Cuestiones abiertas",
+    "naechste_schritte": "Próximos pasos",
+    "mandantenname": "Cliente",
+    "sachverhalt": "Exposición de los hechos",
+    "rechtsfragen": "Cuestiones jurídicas",
+    "eingebrachte_unterlagen": "Documentos aportados",
+    "vereinbarte_leistungen": "Servicios acordados",
+    "wichtige_termine_fristen": "Fechas y plazos",
+    "honorarvereinbarung": "Honorarios",
+    "naechste_schritte_mandat": "Próximos pasos (expediente)",
+    "verschwiegenheitsvermerke": "Notas de confidencialidad",
+    "kunde": "Cliente",
+    "schmerzpunkte": "Puntos de dolor",
+    "aktuelle_loesung": "Solución actual",
+    "bant": "Evaluación BANT",
+    "einwaende": "Objeciones",
+    "vereinbarte_naechste_schritte": "Próximos pasos",
+    "follow_up_datum": "Seguimiento",
+    "verkaufschance_einschaetzung": "Oportunidad",
+    "bestandsuebersicht": "Cartera",
+    "risikoveraenderungen": "Variación del riesgo",
+    "cross_selling_potenziale": "Potencial de venta cruzada",
+    "kundenwuensche": "Solicitudes del cliente",
+    "wiedervorlage": "Fecha de seguimiento",
+    "beschluss": "Decisión",
+    "verantwortlich": "Responsable",
+    "frist": "Plazo",
+    "sprecher": "Interlocutor",
+    "aussage": "Declaración",
+    "termin": "Fecha",
+    "budget": "Presupuesto",
+    "entscheider": "Decisor",
+    "need": "Necesidad",
+    "timing": "Calendario"
   }
 }

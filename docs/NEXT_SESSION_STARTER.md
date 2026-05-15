@@ -13,10 +13,10 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.45** auf der Olares-Box
+**Stand:** Insilo läuft als **v0.1.46** auf der Olares-Box
 `olares@192.168.112.125` (Olares-User `kaivostudio`,
 Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
-**Helm-Revision 31**, 11 Migrationen angewendet. Feature-Set:
+**Helm-Revision 32**, 12 Migrationen angewendet. Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
 - **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
@@ -31,26 +31,33 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
 - **Meeting-Titel inline editierbar**, **Markdown-Export per Webhook**
 - **Qwen 2.5-tuned LLM-Prompts** mit Few-Shot, `_analyse`-CoT-Feld,
   Eval-Baseline (12 Fixtures + 39 Snapshot-Tests)
-- **i18n vollständig (v0.1.45)** — 5 Sprachen wählbar (DE/EN/FR/ES/IT)
-  in `/einstellungen`, 461 Keys pro Sprache, alle UI-Komponenten +
-  About-Page übersetzt. Backend-Fehlermeldungen DE/EN per
-  `Accept-Language` (FR/ES/IT fallen auf EN zurück bis v0.1.46).
+- **i18n end-to-end (v0.1.46)** — 5 Sprachen wählbar (DE/EN/FR/ES/IT)
+  in `/einstellungen`, 511 Keys pro Sprache, LLM-Prompts pro Locale
+  in `templates.system_prompts JSONB` (Migration 0012),
+  `summarize.py` resolved User-Locale und gibt sie dem LLM mit. UI-
+  Locale-Override aus dem Cookie schickt auch `Accept-Language` an
+  Backend-Calls, Backend-Errors decken alle 5 Sprachen. Schema-Keys
+  bleiben deutsch (LLM-Output sprachenunabhängig), Display-Labels
+  kommen über die neue `summaryLabels`-Namespace.
 
-**Nächste geplante Iteration: v0.1.46 — i18n Phase 3 (Content-Strings)**
+**Nächste geplante Iteration: v0.1.47 — Audio-i18n + legacy cleanup**
 
-1. `templates.system_prompts JSONB` mit `{de,en,fr,es,it}` —
-   LLM-Prompts pro Sprache.
-2. `LABEL_OVERRIDES` in `summary-view.tsx` zieht mit, weil die
-   LLM-Output-Keys jetzt sprachabhängig sind.
-3. Whisper bekommt `language=auto|de|en|fr|es|it` per Meeting
-   (statt hardcoded `'de'` im POST /recordings).
-4. Stimmprobe-Texte pro Sprache (Nordwind/North-Wind/La-Bise/etc.).
-5. FR/ES/IT in `backend/app/errors.ERRORS` ergänzen.
-6. `frontend/lib/api/client.ts` schickt den `insilo-locale`-Cookie
-   als `Accept-Language` mit, damit der In-App-Override auch Backend-
-   Fehler beeinflusst (heute kommt da nur die Browser-Sprache an).
-7. `ContractDisclosure`-Block in `webhook-manager.tsx` — die zwei
-   verbliebenen deutschen Fragmente in den Code-Snippets.
+1. **Whisper-Language pro Meeting:** aktuell `language='de'`
+   hardcoded in `backend/app/routers/meetings.py` (POST /recordings)
+   und in `backend/app/tasks/transcribe.py`. Ziel: Dropdown an der
+   Aufnahme mit Default aus `users.ui_locale` + Auto-Detect-Option.
+2. **Stimmprobe-Standardtexte pro Sprache:** aktuell `NORDWIND_TEXT`
+   in `frontend/components/voice-enrollment-dialog.tsx` hardcoded
+   deutsch. Pro Sprache ein kanonischer phonetisch ausgewogener Text
+   (North-Wind / La-Bise et le Soleil / El viento del norte y el
+   Sol / La tramontana e il Sole). Auswahl folgt User-UI-Locale.
+3. **Legacy `templates.system_prompt TEXT` droppen** in Migration
+   0013, sobald sicher ist dass nichts mehr darauf liest. Backend-
+   Resolver in v0.1.46 depriorisiert sie schon, aber `seed.sql`
+   schreibt sie noch fürs Backward-Compat.
+
+**Alternativ Duo-Receiver:** der Webhook-Empfänger in `duo.aimighty.de`
+ist seit v0.1.39 offen — Insilo-Seite komplett bereit.
 
 **Alternativ Duo-Receiver:** der Webhook-Empfänger in `duo.aimighty.de`
 fehlt noch. Insilo-Seite seit v0.1.39 vollständig bereit.
@@ -174,17 +181,18 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.45** (alle 5 Pods Ready, Helm-Rev 31) |
+| Version | **v0.1.46** (alle 5 Pods Ready, Helm-Rev 32) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.45` |
-| LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.46` |
+| LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot, **5-Sprachen-Prompts seit v0.1.46** |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
-| Stimmprobe | „Nordwind und Sonne"-Standardtext, Whisper `/embed-only`-Endpoint — funktional seit v0.1.44 (decode_audio statt sf.read) |
-| UI-i18n | 461 Keys × 5 Sprachen, vollständig übersetzt; LLM-Prompts + Content-Strings folgen in v0.1.46 |
-| Backend-i18n | `app/errors.py` mit DE/EN-Dict + ContextVar-Resolution via Accept-Language; FR/ES/IT fallen auf EN zurück bis v0.1.46 |
+| Stimmprobe | „Nordwind und Sonne"-Standardtext (DE only — pro Sprache kommt in v0.1.47), Whisper `/embed-only`-Endpoint |
+| UI-i18n | 511 Keys × 5 Sprachen, alle UI-Strings + LLM-Output-Labels lokalisiert (`summaryLabels`-Namespace) |
+| Backend-i18n | `app/errors.py` jetzt mit allen 5 Sprachen; ContextVar-Resolution via Accept-Language + `insilo-locale`-Cookie aus `api/client.ts` |
+| Prompts | `templates.system_prompts JSONB` (Migration 0012), pro Locale; `summarize.py` resolved `users.ui_locale → org_settings.ui_locale → 'de'` |
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
@@ -214,9 +222,10 @@ git log --oneline -5
 gh run list --workflow=release.yml --limit 3
 ```
 
-Sollte **v0.1.45** als jüngsten Tag zeigen. Tag-Liste seit
+Sollte **v0.1.46** als jüngsten Tag zeigen. Tag-Liste seit
 v0.1.34: 0.1.35 → 0.1.36 → 0.1.37 → 0.1.38 → 0.1.39 → 0.1.40 →
-0.1.41 → 0.1.42 → 0.1.43 → 0.1.44 → 0.1.45. Box läuft auf v0.1.45 (Helm-Rev 31).
+0.1.41 → 0.1.42 → 0.1.43 → 0.1.44 → 0.1.45 → 0.1.46.
+Box läuft auf v0.1.46 (Helm-Rev 32).
 
 ## Cmd-Shift-R nicht vergessen
 

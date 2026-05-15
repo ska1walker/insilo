@@ -31,84 +31,133 @@ from fastapi import HTTPException, Request
 
 from app.locale import parse_accept_language
 
-SUPPORTED: tuple[str, ...] = ("de", "en")
+SUPPORTED: tuple[str, ...] = ("de", "en", "fr", "es", "it")
 DEFAULT: str = "de"
 
-# Two-language catalogue. FR/ES/IT fall through to EN in v0.1.45 —
-# v0.1.46 will add them along with the LLM-prompt translations.
 ERRORS: dict[str, dict[str, str]] = {
     # ── tags ────────────────────────────────────────────────────────
     "tags.invalid_color": {
         "de": "Ungültige Farbe: {color} (erwartet wird #RRGGBB).",
         "en": "Invalid colour: {color} (expected #RRGGBB).",
+        "fr": "Couleur invalide : {color} (format attendu : #RRGGBB).",
+        "es": "Color no válido: {color} (se espera #RRGGBB).",
+        "it": "Colore non valido: {color} (formato atteso: #RRGGBB).",
     },
     "tags.name_empty": {
         "de": "Name darf nicht leer sein.",
         "en": "Name must not be empty.",
+        "fr": "Le nom ne peut pas être vide.",
+        "es": "El nombre no puede estar vacío.",
+        "it": "Il nome non può essere vuoto.",
     },
     "tags.duplicate": {
         "de": "Tag „{name}\" existiert bereits.",
         "en": "Tag '{name}' already exists.",
+        "fr": "L'étiquette « {name} » existe déjà.",
+        "es": "La etiqueta «{name}» ya existe.",
+        "it": "Il tag «{name}» esiste già.",
     },
     "tags.not_found": {
         "de": "Tag nicht gefunden.",
         "en": "Tag not found.",
+        "fr": "Étiquette introuvable.",
+        "es": "Etiqueta no encontrada.",
+        "it": "Tag non trovato.",
     },
     # ── meetings ───────────────────────────────────────────────────
     "meeting.not_found": {
         "de": "Besprechung nicht gefunden.",
         "en": "Meeting not found.",
+        "fr": "Réunion introuvable.",
+        "es": "Reunión no encontrada.",
+        "it": "Riunione non trovata.",
     },
     "meeting.no_transcript": {
         "de": "Noch kein Transkript verfügbar.",
         "en": "No transcript available yet.",
+        "fr": "Aucune transcription disponible pour l'instant.",
+        "es": "Aún no hay transcripción disponible.",
+        "it": "Trascrizione non ancora disponibile.",
     },
     "meeting.no_fields": {
         "de": "Keine Felder zum Aktualisieren angegeben.",
         "en": "No fields to update.",
+        "fr": "Aucun champ à mettre à jour.",
+        "es": "Ningún campo para actualizar.",
+        "it": "Nessun campo da aggiornare.",
     },
     "meeting.invalid_speaker_id": {
         "de": "Ungültige Sprecher-ID: {sid}",
         "en": "Invalid speaker id: {sid}",
+        "fr": "Identifiant de locuteur invalide : {sid}",
+        "es": "ID de hablante no válido: {sid}",
+        "it": "ID parlante non valido: {sid}",
     },
     "meeting.duplicate_speaker_id": {
         "de": "Doppelte Sprecher-ID: {sid}",
         "en": "Duplicate speaker id: {sid}",
+        "fr": "Identifiant de locuteur en double : {sid}",
+        "es": "ID de hablante duplicado: {sid}",
+        "it": "ID parlante duplicato: {sid}",
     },
     "meeting.unknown_speaker_ref": {
         "de": "Segment {idx} verweist auf unbekannten Sprecher {sid}.",
         "en": "Segment {idx} references unknown speaker {sid}.",
+        "fr": "Le segment {idx} référence un locuteur inconnu {sid}.",
+        "es": "El segmento {idx} hace referencia a un hablante desconocido {sid}.",
+        "it": "Il segmento {idx} fa riferimento al parlante sconosciuto {sid}.",
     },
     # ── templates ──────────────────────────────────────────────────
     "template.not_found": {
         "de": "Vorlage nicht gefunden.",
         "en": "Template not found.",
+        "fr": "Modèle introuvable.",
+        "es": "Plantilla no encontrada.",
+        "it": "Modello non trovato.",
     },
     "template.not_available": {
         "de": "Vorlage ist nicht verfügbar.",
         "en": "Template not available.",
+        "fr": "Modèle non disponible.",
+        "es": "Plantilla no disponible.",
+        "it": "Modello non disponibile.",
     },
     "template.system_locked": {
         "de": "System-Vorlagen können nicht gelöscht werden.",
         "en": "System templates cannot be deleted.",
+        "fr": "Les modèles système ne peuvent pas être supprimés.",
+        "es": "Las plantillas del sistema no se pueden eliminar.",
+        "it": "I modelli di sistema non possono essere eliminati.",
     },
     # ── auth / api keys ───────────────────────────────────────────
     "auth.invalid_key": {
         "de": "Ungültiger API-Schlüssel.",
         "en": "Invalid API key.",
+        "fr": "Clé API invalide.",
+        "es": "Clave API no válida.",
+        "it": "Chiave API non valida.",
     },
     "auth.missing_scope": {
         "de": "Fehlender Scope: {scope}",
         "en": "Missing scope: {scope}",
+        "fr": "Portée manquante : {scope}",
+        "es": "Alcance ausente: {scope}",
+        "it": "Scope mancante: {scope}",
     },
     # ── upstream services ─────────────────────────────────────────
     "service.embeddings_unreachable": {
         "de": "Embedding-Service nicht erreichbar.",
         "en": "Embeddings service unreachable.",
+        "fr": "Service d'embeddings inaccessible.",
+        "es": "Servicio de embeddings no accesible.",
+        "it": "Servizio di embedding non raggiungibile.",
     },
     "service.llm_unreachable": {
         "de": "Sprachmodell nicht erreichbar.",
         "en": "LLM unreachable.",
+        "fr": "Modèle linguistique inaccessible.",
+        "es": "Modelo de lenguaje no accesible.",
+        "it": "Modello linguistico non raggiungibile.",
     },
 }
 

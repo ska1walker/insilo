@@ -8,66 +8,13 @@ import type { Summary } from "@/lib/api/meetings";
  * Walks the template-produced JSON tree and emits HubSpot-style sections —
  * because the schema varies per template (Mandantengespräch vs. Allgemein etc.)
  * we treat the content as a dict of typed fields and render each generically.
+ *
+ * Field labels live in `frontend/messages/{locale}.json` under the
+ * `summaryLabels` namespace (v0.1.46+). The JSON schema keys themselves
+ * stay German — only the user-facing display label is localized. If a
+ * key isn't covered by `summaryLabels` (e.g. an org-custom field) we
+ * fall back to a title-cased version of the key itself.
  */
-
-const LABEL_OVERRIDES: Record<string, string> = {
-  // Default schema for user-created templates (since v0.1.25)
-  zusammenfassung: "Zusammenfassung",
-  kernpunkte: "Kernpunkte",
-  entscheidungen: "Entscheidungen",
-  aufgaben: "Aufgaben",
-  was: "Was",
-  wer: "Wer",
-  wann: "Wann",
-  // Existing seed templates
-  anwesende: "Anwesende",
-  kernthemen: "Kernthemen",
-  wichtige_aussagen: "Wichtige Aussagen",
-  beschluesse: "Beschlüsse",
-  offene_fragen: "Offene Fragen",
-  naechste_schritte: "Nächste Schritte",
-  mandantenname: "Mandant",
-  sachverhalt: "Sachverhalt",
-  rechtsfragen: "Rechtsfragen",
-  eingebrachte_unterlagen: "Eingebrachte Unterlagen",
-  vereinbarte_leistungen: "Vereinbarte Leistungen",
-  wichtige_termine_fristen: "Termine & Fristen",
-  honorarvereinbarung: "Honorar",
-  naechste_schritte_mandat: "Nächste Schritte (Mandat)",
-  verschwiegenheitsvermerke: "Schweigepflicht-Vermerke",
-  kunde: "Kunde",
-  schmerzpunkte: "Schmerzpunkte",
-  aktuelle_loesung: "Aktuelle Lösung",
-  bant: "BANT-Einschätzung",
-  einwaende: "Einwände",
-  vereinbarte_naechste_schritte: "Nächste Schritte",
-  follow_up_datum: "Follow-up",
-  verkaufschance_einschaetzung: "Chance",
-  bestandsuebersicht: "Bestandsübersicht",
-  risikoveraenderungen: "Risikoveränderungen",
-  cross_selling_potenziale: "Cross-Selling-Potenziale",
-  kundenwuensche: "Kundenwünsche",
-  wiedervorlage: "Wiedervorlage",
-  beschluss: "Beschluss",
-  verantwortlich: "Verantwortlich",
-  frist: "Frist",
-  sprecher: "Sprecher",
-  aussage: "Aussage",
-  termin: "Termin",
-  budget: "Budget",
-  entscheider: "Entscheider",
-  need: "Bedarf",
-  timing: "Timing",
-};
-
-function humanLabel(key: string): string {
-  return (
-    LABEL_OVERRIDES[key] ??
-    key
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase())
-  );
-}
 
 function isEmpty(v: unknown): boolean {
   if (v === null || v === undefined) return true;
@@ -77,8 +24,29 @@ function isEmpty(v: unknown): boolean {
   return false;
 }
 
+/** Title-case a snake_case key as a last-resort fallback. */
+function titleCaseKey(key: string): string {
+  return key
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Hook returning a `humanLabel(key)` that consults the `summaryLabels`
+ * namespace and falls back to title-cased snake_case when a key is
+ * unknown (e.g. user-defined custom fields).
+ *
+ * next-intl v4 exposes `t.has(key)`; we use it to avoid throwing on
+ * missing keys.
+ */
+function useHumanLabel(): (key: string) => string {
+  const t = useTranslations("summaryLabels");
+  return (key: string) => (t.has(key) ? t(key) : titleCaseKey(key));
+}
+
 export function SummaryView({ summary }: { summary: Summary }) {
   const t = useTranslations("summary");
+  const humanLabel = useHumanLabel();
   // Felder mit `_`-Präfix (z. B. `_analyse`) sind LLM-interne
   // Scratch-Felder seit v0.1.40 (CoT-vor-Output-Pattern). Sie werden
   // separat als ausklappbare „LLM-Überlegungen" gerendert, damit der
@@ -98,7 +66,12 @@ export function SummaryView({ summary }: { summary: Summary }) {
   return (
     <div className="space-y-8">
       {entries.map(([key, value]) => (
-        <SummarySection key={key} keyName={key} value={value} />
+        <SummarySection
+          key={key}
+          keyName={key}
+          value={value}
+          humanLabel={humanLabel}
+        />
       ))}
 
       {internalEntries.length > 0 && (
@@ -122,18 +95,32 @@ export function SummaryView({ summary }: { summary: Summary }) {
   );
 }
 
-function SummarySection({ keyName, value }: { keyName: string; value: unknown }) {
+function SummarySection({
+  keyName,
+  value,
+  humanLabel,
+}: {
+  keyName: string;
+  value: unknown;
+  humanLabel: (key: string) => string;
+}) {
   return (
     <section>
       <h3 className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
         {humanLabel(keyName)}
       </h3>
-      <SummaryValue value={value} />
+      <SummaryValue value={value} humanLabel={humanLabel} />
     </section>
   );
 }
 
-function SummaryValue({ value }: { value: unknown }) {
+function SummaryValue({
+  value,
+  humanLabel,
+}: {
+  value: unknown;
+  humanLabel: (key: string) => string;
+}) {
   if (value === null || value === undefined) return null;
 
   if (typeof value === "string") {
@@ -167,7 +154,7 @@ function SummaryValue({ value }: { value: unknown }) {
             key={i}
             className="rounded-md border border-border-subtle bg-surface-soft p-4"
           >
-            <SummaryValue value={item} />
+            <SummaryValue value={item} humanLabel={humanLabel} />
           </div>
         ))}
       </div>
@@ -187,7 +174,7 @@ function SummaryValue({ value }: { value: unknown }) {
               {humanLabel(k)}
             </dt>
             <dd className="md:py-1">
-              <SummaryValue value={v} />
+              <SummaryValue value={v} humanLabel={humanLabel} />
             </dd>
           </div>
         ))}

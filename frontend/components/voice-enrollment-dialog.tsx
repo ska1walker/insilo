@@ -193,131 +193,146 @@ export function VoiceEnrollmentDialog({
     >
       {phase === "recording" && <RecordingIndicator />}
 
-      <div className="relative max-h-[90vh] w-full max-w-[640px] overflow-y-auto rounded-lg border border-border-subtle bg-white p-6 shadow-2xl">
-        <button
-          type="button"
-          onClick={handleClose}
-          className="absolute right-4 top-4 rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
-          aria-label="Schließen"
-        >
-          <X className="h-4 w-4" strokeWidth={1.75} />
-        </button>
-
-        <h2 className="font-display text-2xl font-medium tracking-tight">
-          Stimmprobe für{" "}
-          <span style={{ color: "var(--gold-deep)" }}>{speaker.display_name}</span>
-        </h2>
-        <p className="mt-2 text-sm text-text-secondary">
-          Lesen Sie den folgenden Standardtext laut und deutlich vor. Er
-          dauert etwa 35–45 Sekunden und enthält alle wichtigen deutschen
-          Laute — damit lernt Insilo die Stimme besonders genau.
-        </p>
-
-        {(phase === "intro" || phase === "requesting" || phase === "denied" || phase === "unsupported") && (
-          <div className="mt-5 rounded-md border border-border-subtle bg-surface-soft p-4 text-sm leading-relaxed text-text-primary">
-            <p className="mono mb-2 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
-              Der Nordwind und die Sonne
-            </p>
-            <p>{NORDWIND_TEXT}</p>
-          </div>
-        )}
-
-        {phase === "recording" && (
-          <div className="mt-5 rounded-md border bg-surface-soft p-4 text-sm leading-relaxed text-text-primary"
-            style={{ borderColor: "var(--gold)" }}
+      {/*
+        Modal-Struktur: fester Header oben + scrollbarer Body in der Mitte +
+        sticky Footer unten. Damit bleibt der „Aufnahme starten"-Button
+        immer sichtbar — auch bei kleinen Viewports und langem Nordwind-Text.
+      */}
+      <div className="relative flex max-h-[90vh] w-full max-w-[640px] flex-col rounded-lg border border-border-subtle bg-white shadow-2xl">
+        {/* Header — fix */}
+        <div className="flex-shrink-0 border-b border-border-subtle p-6 pr-12">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="absolute right-4 top-4 rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+            aria-label="Schließen"
           >
-            <div className="mb-3 flex items-center justify-between">
-              <p
-                className="mono text-[0.6875rem] uppercase tracking-[0.08em]"
-                style={{ color: "var(--gold-deep)" }}
-              >
-                Aufnahme läuft
+            <X className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+          <h2 className="font-display text-2xl font-medium tracking-tight">
+            Stimmprobe für{" "}
+            <span style={{ color: "var(--gold-deep)" }}>{speaker.display_name}</span>
+          </h2>
+          <p className="mt-2 text-sm text-text-secondary">
+            Lesen Sie den folgenden Standardtext laut und deutlich vor. Er
+            dauert etwa 35–45 Sekunden und enthält alle wichtigen deutschen
+            Laute — damit lernt Insilo die Stimme besonders genau.
+          </p>
+        </div>
+
+        {/* Body — scrollt wenn nötig */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {(phase === "intro" ||
+            phase === "requesting" ||
+            phase === "denied" ||
+            phase === "unsupported") && (
+            <div className="rounded-md border border-border-subtle bg-surface-soft p-4 text-sm leading-relaxed text-text-primary">
+              <p className="mono mb-2 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+                Der Nordwind und die Sonne
               </p>
-              <p className="mono tabular-nums text-base font-medium" aria-live="polite">
-                {formatDuration(elapsed * 1000)}
+              <p>{NORDWIND_TEXT}</p>
+            </div>
+          )}
+
+          {phase === "recording" && (
+            <div
+              className="rounded-md border bg-surface-soft p-4 text-sm leading-relaxed text-text-primary"
+              style={{ borderColor: "var(--gold)" }}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <p
+                  className="mono text-[0.6875rem] uppercase tracking-[0.08em]"
+                  style={{ color: "var(--gold-deep)" }}
+                >
+                  Aufnahme läuft
+                </p>
+                <p className="mono tabular-nums text-base font-medium" aria-live="polite">
+                  {formatDuration(elapsed * 1000)}
+                </p>
+              </div>
+              <p>{NORDWIND_TEXT}</p>
+            </div>
+          )}
+
+          {phase === "uploading" && (
+            <div className="flex items-center gap-3 rounded-md bg-surface-soft p-4 text-sm text-text-secondary">
+              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
+              Stimmprobe wird verarbeitet …
+            </div>
+          )}
+
+          {phase === "success" && result && (
+            <div
+              className="rounded-md border p-4 text-sm"
+              style={{
+                borderColor: "var(--success)",
+                background: "rgba(74,124,89,0.06)",
+                color: "var(--success)",
+              }}
+            >
+              <div className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} />
+                Stimmprobe gespeichert
+              </div>
+              <p className="mt-1 text-xs opacity-90">
+                {result.voiced_seconds.toFixed(1)} s erkennbare Sprache aus{" "}
+                {result.total_seconds.toFixed(1)} s Aufnahme · Sprecher hat
+                jetzt {result.sample_count}{" "}
+                {result.sample_count === 1 ? "Stimmprobe" : "Stimmproben"}.
               </p>
             </div>
-            <p>{NORDWIND_TEXT}</p>
-          </div>
-        )}
+          )}
 
-        {phase === "uploading" && (
-          <div className="mt-5 flex items-center gap-3 rounded-md bg-surface-soft p-4 text-sm text-text-secondary">
-            <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
-            Stimmprobe wird verarbeitet …
-          </div>
-        )}
-
-        {phase === "success" && result && (
-          <div
-            className="mt-5 rounded-md border p-4 text-sm"
-            style={{
-              borderColor: "var(--success)",
-              background: "rgba(74,124,89,0.06)",
-              color: "var(--success)",
-            }}
-          >
-            <div className="flex items-center gap-2 font-medium">
-              <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} />
-              Stimmprobe gespeichert
+          {phase === "error" && error && (
+            <div
+              className="rounded-md border p-4 text-sm"
+              style={{
+                borderColor: "var(--error)",
+                background: "rgba(163,58,47,0.06)",
+                color: "var(--error)",
+              }}
+            >
+              <p className="font-medium">Aufnahme nicht verwertbar</p>
+              <p className="mt-1 text-xs opacity-90">{error}</p>
             </div>
-            <p className="mt-1 text-xs opacity-90">
-              {result.voiced_seconds.toFixed(1)} s erkennbare Sprache aus{" "}
-              {result.total_seconds.toFixed(1)} s Aufnahme · Sprecher hat
-              jetzt {result.sample_count}{" "}
-              {result.sample_count === 1 ? "Stimmprobe" : "Stimmproben"}.
-            </p>
-          </div>
-        )}
+          )}
 
-        {phase === "error" && error && (
-          <div
-            className="mt-5 rounded-md border p-4 text-sm"
-            style={{
-              borderColor: "var(--error)",
-              background: "rgba(163,58,47,0.06)",
-              color: "var(--error)",
-            }}
-          >
-            <p className="font-medium">Aufnahme nicht verwertbar</p>
-            <p className="mt-1 text-xs opacity-90">{error}</p>
-          </div>
-        )}
+          {phase === "denied" && (
+            <div
+              className="rounded-md border p-4 text-sm"
+              style={{
+                borderColor: "var(--error)",
+                background: "rgba(163,58,47,0.06)",
+                color: "var(--error)",
+              }}
+            >
+              <p className="font-medium">Mikrofonzugriff verweigert</p>
+              <p className="mt-1 text-xs opacity-90">
+                Bitte erlauben Sie Insilo den Zugriff aufs Mikrofon in den
+                Browser-Einstellungen und versuchen Sie es erneut.
+              </p>
+            </div>
+          )}
 
-        {phase === "denied" && (
-          <div
-            className="mt-5 rounded-md border p-4 text-sm"
-            style={{
-              borderColor: "var(--error)",
-              background: "rgba(163,58,47,0.06)",
-              color: "var(--error)",
-            }}
-          >
-            <p className="font-medium">Mikrofonzugriff verweigert</p>
-            <p className="mt-1 text-xs opacity-90">
-              Bitte erlauben Sie Insilo den Zugriff aufs Mikrofon in den
-              Browser-Einstellungen und versuchen Sie es erneut.
-            </p>
-          </div>
-        )}
+          {phase === "unsupported" && (
+            <div
+              className="rounded-md border p-4 text-sm"
+              style={{
+                borderColor: "var(--error)",
+                background: "rgba(163,58,47,0.06)",
+                color: "var(--error)",
+              }}
+            >
+              <p className="font-medium">Browser unterstützt keine Aufnahme</p>
+              <p className="mt-1 text-xs opacity-90">
+                Bitte nutzen Sie einen aktuellen Chrome- oder Safari-Browser.
+              </p>
+            </div>
+          )}
+        </div>
 
-        {phase === "unsupported" && (
-          <div
-            className="mt-5 rounded-md border p-4 text-sm"
-            style={{
-              borderColor: "var(--error)",
-              background: "rgba(163,58,47,0.06)",
-              color: "var(--error)",
-            }}
-          >
-            <p className="font-medium">Browser unterstützt keine Aufnahme</p>
-            <p className="mt-1 text-xs opacity-90">
-              Bitte nutzen Sie einen aktuellen Chrome- oder Safari-Browser.
-            </p>
-          </div>
-        )}
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        {/* Footer — sticky, immer sichtbar */}
+        <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border-subtle bg-white p-6">
           <p className="text-xs text-text-meta">
             Die Aufnahme verlässt Ihre Olares-Box nicht.
           </p>

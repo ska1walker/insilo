@@ -13,10 +13,10 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.43** auf der Olares-Box
+**Stand:** Insilo läuft als **v0.1.44** auf der Olares-Box
 `olares@192.168.112.125` (Olares-User `kaivostudio`,
 Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
-**Helm-Revision 29**, 11 Migrationen angewendet. Feature-Set:
+**Helm-Revision 30**, 11 Migrationen angewendet. Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
 - **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
@@ -24,8 +24,8 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
   per Default**
 - **Org-Sprecher-Katalog** mit Voiceprint-Matching (ECAPA-TDNN 192-d,
   Cosine ≥ 0.5, max. 20 Samples FIFO)
-- **Dedizierte Stimmprobe** (Nordwind-Text) — **aktuell defekt für
-  WebM-Audio, siehe Bug-Sektion HANDOFF.md**
+- **Dedizierte Stimmprobe** (Nordwind-Text) — **wieder funktional
+  für WebM/Opus seit v0.1.44** (decode_audio statt sf.read)
 - **Werks-Templates** komplett anpassbar: Name/Description-Override,
   System-Prompt-Override, Custom-Fields (Lite-Schema-Editor v0.1.41)
 - **Meeting-Titel inline editierbar**, **Markdown-Export per Webhook**
@@ -33,26 +33,20 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
   Eval-Baseline (12 Fixtures + 39 Snapshot-Tests)
 - **i18n-Foundation (v0.1.43)** — 5 Sprachen wählbar (DE/EN/FR/ES/IT)
   in `/einstellungen`, Header-Nav + Recording-Block übersetzt. Andere
-  Komponenten noch deutsch (Phase 2)
+  Komponenten noch deutsch (Phase 2 = v0.1.45)
 
-**🐞 Bug zu fixen vor neuen Features:**
+**Nächste geplante Iteration: v0.1.45 — i18n Phase 2**
 
-`/embed-only` (Stimmprobe-Endpoint im Whisper-Service) bricht bei
-WebM-Audio mit `soundfile.LibsndfileError: Format not recognised`.
-Browser nimmt WebM/Opus auf, libsndfile kann das nicht parsen.
-Fix-Pfad in HANDOFF.md unter „🐞 Bekannter Bug v0.1.43" — kurz:
-`embed_voice_sample()` soll `faster_whisper.audio.decode_audio()`
-statt `soundfile.read()` nutzen. ~30 min Arbeit.
+1. Restliche Komponenten übersetzen (template-prompts, webhook-manager,
+   speaker-catalog, summary-view, transcript-view, cluster-assignment-panel,
+   voice-enrollment-dialog, meeting-dispatch-dialog, meeting-title-edit,
+   tag-manager, tag-picker, tag-filter-bar, tag-pill, recent-meetings,
+   api-key-manager, recording-indicator, status-pill, toast, About-Page).
+2. Backend-Fehlermeldungen via `Accept-Language` + DE/EN-Dict
+   (vorerst nur DE+EN, FR/ES/IT in v0.1.46). Bestehender
+   `backend/app/locale.py`-Resolver wird wiederverwendet.
 
-**Nächste geplante Iteration: v0.1.44 — Bug-Fix + i18n Phase 2**
-
-1. WebM-Stimmproben-Bug fixen (siehe HANDOFF)
-2. Restliche Komponenten übersetzen (template-prompts, webhook-manager,
-   speaker-catalog, summary-view, transcript-view, voice-enrollment,
-   etc. + About-Page)
-3. Backend-Fehlermeldungen lokalisieren
-
-**Alternativ v0.1.45 — i18n Phase 3 (LLM + Whisper + Stimmprobe-Texte):**
+**Alternativ v0.1.46 — i18n Phase 3 (LLM + Whisper + Stimmprobe-Texte):**
 `templates.system_prompts JSONB` mit Übersetzungen pro Sprache,
 Whisper-Language-Selector pro Meeting, Stimmprobe-Texte pro Sprache.
 
@@ -178,15 +172,15 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.43** (alle 5 Pods Ready, Helm-Rev 29) |
+| Version | **v0.1.44** (alle 5 Pods Ready, Helm-Rev 30) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.43` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.44` |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot |
-| Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn) |
+| Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
-| Stimmprobe | „Nordwind und Sonne"-Standardtext, Whisper `/embed-only`-Endpoint — **🐞 broken für WebM-Audio** |
+| Stimmprobe | „Nordwind und Sonne"-Standardtext, Whisper `/embed-only`-Endpoint — **funktional seit v0.1.44** (decode_audio statt sf.read) |
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
@@ -201,14 +195,13 @@ ssh olares@192.168.112.125 \
 ## Wichtige Dateien zum Lesen vor dem ersten Commit
 
 1. `CLAUDE.md` — Briefing (insbes. neue Sprachregel)
-2. `docs/HANDOFF.md` — Status + Lessons + Bug-Sektion (oben!)
+2. `docs/HANDOFF.md` — Status + Lessons (v0.1.44-Block oben für Decoder-Lesson)
 3. `docs/DESIGN.md` — Designsystem (Weiß/Schwarz/Gold, formelle Anrede)
 4. `frontend/messages/de.json` — Master für Übersetzungs-Keys; pull-up bei jeder neuen UI-String
 5. `frontend/i18n/request.ts` — Locale-Resolution & Cookie-Logik
-6. `services/whisper/app/diarize.py:embed_voice_sample()` — der Bug
-7. `backend/app/locale.py` — Backend-Resolution
-8. `olares/OlaresManifest.yaml` — Plattform-Spec
-9. `scripts/check-chart.sh` — die 9 Phase-4-Lessons als Code
+6. `backend/app/locale.py` — Backend-Resolution (wird in v0.1.45 für Fehlermeldungen wiederverwendet)
+7. `olares/OlaresManifest.yaml` — Plattform-Spec
+8. `scripts/check-chart.sh` — die 9 Phase-4-Lessons als Code
 
 ## Letzter Commit + GH State (zum Stand dieses Handoffs)
 
@@ -217,13 +210,13 @@ git log --oneline -5
 gh run list --workflow=release.yml --limit 3
 ```
 
-Sollte **v0.1.43** als jüngsten Tag zeigen. Tag-Liste seit
+Sollte **v0.1.44** als jüngsten Tag zeigen. Tag-Liste seit
 v0.1.34: 0.1.35 → 0.1.36 → 0.1.37 → 0.1.38 → 0.1.39 → 0.1.40 →
-0.1.41 → 0.1.42 → 0.1.43. Box läuft auf v0.1.43 (Helm-Rev 29).
+0.1.41 → 0.1.42 → 0.1.43 → 0.1.44. Box läuft auf v0.1.44 (Helm-Rev 30).
 
 ## Cmd-Shift-R nicht vergessen
 
-Nach jedem Frontend-Deploy (besonders v0.1.43 mit dem i18n-Reset):
-**Browser-Cache hard-reloaden** (Cmd-Shift-R / Ctrl-Shift-R). Der
-Service-Worker hält sonst das alte Bundle — der User sieht die
-neue Sprach-Sektion nicht.
+Nach jedem Frontend-Deploy: **Browser-Cache hard-reloaden**
+(Cmd-Shift-R / Ctrl-Shift-R). Der Service-Worker hält sonst das alte
+Bundle. (v0.1.44 ist reines Whisper-Service-Update — Frontend-Bundle
+unverändert, hard-reload trotzdem nicht schaden.)

@@ -27,8 +27,8 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
-import soundfile as sf
 import torch
+from faster_whisper.audio import decode_audio
 from silero_vad import get_speech_timestamps, load_silero_vad
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
@@ -90,21 +90,6 @@ def load_vad():
         _vad_model = load_silero_vad()
         log.info("silero-vad loaded")
     return _vad_model
-
-
-def _resample_if_needed(audio: np.ndarray, sr: int) -> np.ndarray:
-    """Sicherstellen, dass ECAPA seine 16 kHz bekommt."""
-    if sr == TARGET_SR:
-        return audio.astype(np.float32)
-    # Lazy import — librosa ist nur fürs Resampling nötig
-    import librosa
-    return librosa.resample(audio.astype(np.float32), orig_sr=sr, target_sr=TARGET_SR)
-
-
-def _to_mono(audio: np.ndarray) -> np.ndarray:
-    if audio.ndim == 1:
-        return audio
-    return audio.mean(axis=1)
 
 
 def _vad_trim(chunk: np.ndarray) -> np.ndarray | None:
@@ -243,9 +228,7 @@ def embed_voice_sample(
         log.warning("embed_voice_sample() called before load_embedder()")
         return None
 
-    audio, sr = sf.read(audio_path, always_2d=False)
-    audio = _to_mono(audio)
-    audio_16k = _resample_if_needed(audio, sr).astype(np.float32)
+    audio_16k = decode_audio(audio_path, sampling_rate=TARGET_SR).astype(np.float32)
     total_seconds = float(len(audio_16k) / TARGET_SR)
 
     # VAD trim — speakers reading the Nordwind passage typically have
@@ -300,10 +283,8 @@ def diarize(
         log.warning("diarize() called before load_embedder() — skipping")
         return DiarizationResult([None] * len(segments), [None] * len(segments), [])
 
-    # Audio laden + auf 16 kHz mono bringen
-    audio, sr = sf.read(audio_path, always_2d=False)
-    audio = _to_mono(audio)
-    audio_16k = _resample_if_needed(audio, sr)
+    # Audio laden + auf 16 kHz mono bringen (decode_audio macht beides via ffmpeg)
+    audio_16k = decode_audio(audio_path, sampling_rate=TARGET_SR)
 
     # Embeddings pro Segment
     embeddings: list[np.ndarray | None] = [

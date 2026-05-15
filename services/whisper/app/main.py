@@ -196,7 +196,10 @@ async def transcribe(
                     seg.cluster_idx = cidx
                 centroids = result.cluster_centroids
             except Exception as exc:
-                log.exception("diarization failed: %s", exc)
+                log.exception(
+                    "diarization failed (filename=%s, bytes=%d): %s",
+                    audio.filename, len(payload), exc,
+                )
 
     return TranscribeResponse(
         language=info.language,

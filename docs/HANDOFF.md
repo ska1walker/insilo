@@ -3,12 +3,40 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🚀 v0.1.44 — WebM-Stimmproben-Bug behoben (15. Mai 2026, später Abend)
+>
+> **Aktueller Stand:** Box läuft auf **v0.1.44**, Helm-Revision 30.
+> Stimmprobe-Aufnahme funktioniert wieder für Browser-Audio (WebM/Opus).
+> Speaker-Diarization im `/transcribe`-Flow profitiert mit — der gleiche
+> latente Decoder-Bug war dort silent unter `try/except` versteckt und
+> ist jetzt ebenfalls weg.
+>
+> **Was v0.1.44 konkret geändert hat:**
+>
+> - **`services/whisper/app/diarize.py`** — beide `sf.read()`-Aufrufe
+>   (in `embed_voice_sample()` und `diarize()`) ersetzt durch
+>   `faster_whisper.audio.decode_audio(path, sampling_rate=TARGET_SR)`.
+>   Akzeptiert WebM/Opus/MP4/OGG/WAV via gebundeltes PyAV/ffmpeg.
+>   Liefert direkt float32 mono auf 16 kHz — `_to_mono()` und
+>   `_resample_if_needed()` waren danach tot und sind gelöscht.
+> - **Dependency-Cleanup:** `soundfile` und `librosa` aus
+>   `services/whisper/pyproject.toml` entfernt (~5 MB + Wheel-Bauzeit
+>   gespart).
+> - **`services/whisper/app/main.py:198`** — `except`-Block beim
+>   Diarization-Try loggt jetzt `filename` + `bytes`, damit ein
+>   zukünftiger Decoder-Bug nicht wieder still durchfällt.
+>
+> **Smoke-Test bestanden:** Stimmprobe-Modal → Nordwind sprechen →
+> „Stopp & speichern" → 200, Voiceprint persistiert. Whisper-Pod-Log
+> ohne `LibsndfileError`. (Kein neuer Migration-Drift, Helm-Rev 30
+> kommt nur durch das Image-Tag-Bump.)
+>
 > # 🚀 v0.1.43 — i18n-Foundation (15. Mai 2026, spät)
 >
-> **Aktueller Stand:** Box läuft auf **v0.1.43**, Helm-Revision 29.
-> Insilo hat jetzt einen **5-Sprachen-Switch** (DE/EN/FR/ES/IT). Phase 1
-> der vollständigen Internationalisierung — UI-Foundation steht,
-> einzelne Komponenten sind übersetzt, Restliche kommen in v0.1.44.
+> **Stand bei v0.1.43:** Helm-Revision 29. Insilo hat einen
+> **5-Sprachen-Switch** (DE/EN/FR/ES/IT). Phase 1 der vollständigen
+> Internationalisierung — UI-Foundation steht, einzelne Komponenten
+> sind übersetzt, Restliche kommen in v0.1.45.
 >
 > **Was die letzten Iterationen v0.1.40 → v0.1.43 gebracht haben:**
 >
@@ -45,49 +73,34 @@
 >   `Accept-Language`-Fallback. Übersetzt in dieser Iteration:
 >   Navigation (Header-Tabs), `recording-block.tsx`, `LocaleSwitcher`.
 >
-> # 🐞 Bekannter Bug v0.1.43: `/embed-only` bricht bei WebM-Stimmproben
->
-> **Symptom:** Modal „Stimmprobe für X" → „Aufnahme starten" → Text
-> sprechen → „Stopp & speichern" → **HTTP 502 → „Whisper-Service
-> antwortete mit HTTP 500"**.
->
-> **Root cause** (im Whisper-Pod-Log gefunden):
-> ```
-> File "/app/app/diarize.py", line 246, in embed_voice_sample
-> soundfile.LibsndfileError: Error opening '/tmp/tmpXXX.bin':
-> Format not recognised.
-> ```
->
-> `embed_voice_sample()` in `services/whisper/app/diarize.py` öffnet
-> das hochgeladene Audio direkt mit `soundfile.read()`. Der Browser
-> nimmt aber `audio/webm;codecs=opus` auf — und libsndfile kann WebM
-> nicht parsen. Der `/transcribe`-Endpoint funktioniert weiterhin,
-> weil faster-whisper intern ffmpeg nutzt; `/embed-only` umgeht das.
->
-> **Fix-Path für nächste Session (~30 min):**
->
-> 1. In `services/whisper/app/diarize.py:embed_voice_sample()`:
->    statt `sf.read(audio_path)` direkt → `faster_whisper.audio.decode_audio(audio_path, sampling_rate=TARGET_SR)` nutzen. Liefert das gleiche numpy-Array, akzeptiert aber WebM/Opus/MP4/OGG/WAV via ffmpeg.
-> 2. Alternativ: shell-out zu ffmpeg + temp .wav (mehr Boilerplate, weniger Deps-Risiko).
-> 3. Test: lokal `curl -X POST -F "audio=@test.webm" http://localhost:8001/embed-only` → 200.
-> 4. Pod-Logs verifizieren beim ersten Release.
->
 > # 🎯 Nächste Story-Optionen
 >
-> 1. **v0.1.44 — Bug-Fix + i18n Phase 2:** den `/embed-only`-WebM-Bug
->    fixen (oben beschrieben) + restliche Komponenten übersetzen
+> 1. **v0.1.45 — i18n Phase 2:** restliche Komponenten übersetzen
 >    (`template-prompts`, `webhook-manager`, `speaker-catalog`,
 >    `summary-view`, `transcript-view`, `cluster-assignment-panel`,
 >    `voice-enrollment-dialog`, `meeting-dispatch-dialog`,
->    `meeting-title-edit`, `tag-manager`, About-Page) + Backend-
->    Fehlermeldungen lokalisieren.
-> 2. **v0.1.45 — i18n Phase 3 (LLM + Whisper + Stimmprobe-Texte):**
+>    `meeting-title-edit`, `tag-manager`, `tag-picker`, `tag-filter-bar`,
+>    `tag-pill`, `recent-meetings`, `api-key-manager`,
+>    `recording-indicator`, `status-pill`, `toast`, About-Page).
+>    Backend-Fehlermeldungen via `Accept-Language` + DE/EN-Dict
+>    (vorerst nur DE+EN, FR/ES/IT in v0.1.46), bestehender
+>    `backend/app/locale.py`-Resolver wiederverwenden.
+> 2. **v0.1.46 — i18n Phase 3 (LLM + Whisper + Stimmprobe-Texte):**
 >    `templates.system_prompts JSONB` mit `{de,en,fr,es,it}`,
 >    Whisper `language=auto|de|en|fr|es|it` per Meeting,
 >    Stimmprobe-Texte pro Sprache (Nordwind/North-Wind/La-Bise/etc.).
 > 3. **Duo-Receiver in `duo.aimighty.de`:** der Webhook-Empfänger
 >    ist immer noch offen — Insilo-Seite ist seit v0.1.39 komplett
 >    bereit (manueller Dispatch + signierter POST).
+>
+> **Lesson aus v0.1.44:** Browser-Audio ist immer WebM/Opus. Wenn
+> wir je wieder Audio-Bytes in Python aufschlagen, **direkt
+> `faster_whisper.audio.decode_audio()`** nehmen — nie `soundfile`
+> oder rohes libsndfile. ffmpeg ist der einzig portable Decoder für
+> alles, was ein MediaRecorder produziert. Und: silent `except`-Blöcke
+> mindestens mit Input-Metadaten loggen, sonst verschluckt man
+> Wochen lang stille Regressionen (s. Diarize-Bug, der wahrscheinlich
+> seit v0.1.31 durchrutschte).
 >
 > # 📚 v0.1.39 — Manueller Webhook + Template-Rename + Title-Edit (15. Mai 2026)
 >
@@ -281,13 +294,18 @@
 >   Dialog haben jetzt fixierten Footer, „Aufnahme starten" immer sichtbar.
 > - **v0.1.43** — **i18n-Foundation:** Migration 0011, next-intl@4,
 >   5 Message-Files, Locale-Switcher, Header-Nav + recording-block
->   übersetzt. **Bekannter Bug**: `/embed-only` bricht bei WebM-Audio
->   (siehe Bug-Sektion oben). UI-Vollständigkeit kommt in v0.1.44.
+>   übersetzt. UI-Vollständigkeit kommt in v0.1.45.
+> - **v0.1.44** — **WebM-Stimmproben-Bug behoben:** `sf.read()` in
+>   `embed_voice_sample()` und `diarize()` durch
+>   `faster_whisper.audio.decode_audio()` ersetzt — Browser-WebM/Opus
+>   funktioniert wieder, libsndfile + librosa raus. Diarize-`except` in
+>   `main.py` loggt jetzt Filename + Bytes (silent failure war seit v0.1.31
+>   möglich). Kein Schema-Drift, keine neue Migration.
 >
-> **Box-State (Stand 15. Mai, spät):** alle 5 Pods Ready auf **v0.1.43**
-> (Helm-Revision 29). System-PostgreSQL + KVRocks-Redis via Olares-
-> Middleware. LLM via per-Org-Einstellungen (Default: Olares-LiteLLM,
-> aber jeder OpenAI-kompatible Endpoint geht). **11 Migrationen
+> **Box-State (Stand 15. Mai, später Abend):** alle 5 Pods Ready auf
+> **v0.1.44** (Helm-Revision 30). System-PostgreSQL + KVRocks-Redis via
+> Olares-Middleware. LLM via per-Org-Einstellungen (Default: Olares-
+> LiteLLM, aber jeder OpenAI-kompatible Endpoint geht). **11 Migrationen
 > angewendet** (0001 Schema, 0002 RLS, 0003 org_settings, 0004
 > template_customizations, 0005 webhooks+api_keys, 0006 org_speakers,
 > 0007 speaker_enrollment, 0008 manual_webhooks_template_overrides,

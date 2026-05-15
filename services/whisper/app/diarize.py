@@ -55,6 +55,15 @@ class DiarizedSegment:
     speaker: str | None
 
 
+@dataclass
+class EmbeddingResult:
+    """Result of a one-shot voice-enrollment embedding."""
+
+    embedding: list[float]            # 192 floats, L2-normalised
+    voiced_seconds: float             # active speech duration after VAD
+    total_seconds: float              # raw audio duration as decoded
+
+
 _embedder: EncoderClassifier | None = None
 _vad_model = None  # silero-vad: pytorch jit-Modell
 
@@ -213,6 +222,60 @@ class DiarizationResult:
     speaker_labels: list[str | None]            # "SPEAKER_00", … (one per segment)
     cluster_indices: list[int | None]           # 0,1,2,… (one per segment) or None
     cluster_centroids: list[list[float]]        # N × 192 floats, L2-normalised
+
+
+def embed_voice_sample(
+    audio_path: str,
+    *,
+    min_voiced_seconds: float = 3.0,
+) -> EmbeddingResult | None:
+    """One-shot voice enrollment: load audio, VAD-trim, ECAPA-embed.
+
+    Returns None if either of:
+      - the embedder isn't loaded
+      - the audio file can't be decoded
+      - the VAD finds fewer than `min_voiced_seconds` of active speech
+
+    The result's `embedding` is L2-normalised and directly comparable to
+    `cluster_centroids[i]` from `diarize()` (same model, same norm).
+    """
+    if _embedder is None:
+        log.warning("embed_voice_sample() called before load_embedder()")
+        return None
+
+    audio, sr = sf.read(audio_path, always_2d=False)
+    audio = _to_mono(audio)
+    audio_16k = _resample_if_needed(audio, sr).astype(np.float32)
+    total_seconds = float(len(audio_16k) / TARGET_SR)
+
+    # VAD trim — speakers reading the Nordwind passage typically have
+    # ~30 s clean speech, but we cap nothing here. The embedder is happy
+    # with up to ~60 s; longer just gets truncated by ECAPA naturally.
+    voiced = _vad_trim(audio_16k)
+    if voiced is None:
+        log.info("voice enrollment: no usable speech detected (total=%.1fs)", total_seconds)
+        return None
+
+    voiced_seconds = float(len(voiced) / TARGET_SR)
+    if voiced_seconds < min_voiced_seconds:
+        log.info(
+            "voice enrollment: only %.1fs voiced (< %.1fs minimum)",
+            voiced_seconds, min_voiced_seconds,
+        )
+        return None
+
+    tensor = torch.from_numpy(voiced).float().unsqueeze(0)
+    with torch.no_grad():
+        emb = _embedder.encode_batch(tensor).squeeze().cpu().numpy()
+    norm = np.linalg.norm(emb)
+    if norm > 0:
+        emb = emb / norm
+
+    return EmbeddingResult(
+        embedding=emb.astype(float).tolist(),
+        voiced_seconds=voiced_seconds,
+        total_seconds=total_seconds,
+    )
 
 
 def diarize(

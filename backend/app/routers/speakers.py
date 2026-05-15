@@ -22,10 +22,12 @@ import json
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+import httpx
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
+from app.config import settings as env_settings
 from app.db import acquire
 from app.speaker_matcher import append_voiceprint_sample
 from app.tasks.notify import enqueue as enqueue_webhook
@@ -421,6 +423,115 @@ async def assign_cluster(
         "org_speaker_id": str(target_id) if target_id else None,
         "display_name": target_name,
     }
+
+
+# ─── Voice enrollment ──────────────────────────────────────────────────
+
+
+class EnrollResult(BaseModel):
+    status: str
+    voiced_seconds: float
+    total_seconds: float
+    sample_count: int
+    speaker_id: str
+    display_name: str
+
+
+@router.post("/speakers/{speaker_id}/enroll", response_model=EnrollResult)
+async def enroll_speaker(
+    speaker_id: UUID,
+    audio: UploadFile = File(...),
+    min_voiced_seconds: float = Form(default=5.0),
+    user: CurrentUser = Depends(get_current_user),
+) -> EnrollResult:
+    """Attach a dedicated voice sample (e.g. read aloud "Der Nordwind und
+    die Sonne") to a speaker. Goes through the whisper /embed-only
+    endpoint, runs VAD-trim + ECAPA-TDNN, and stores the result as a
+    `source='enrollment'` voiceprint sample.
+
+    Validation:
+    - `min_voiced_seconds` (default 5.0) — at least this much active
+      speech must remain after VAD trimming. Stops short uploads from
+      polluting the voiceprint mean.
+    - whisper returns 422 if its own VAD finds insufficient signal — we
+      forward that as 422 with a German user-facing message.
+    """
+    # 1. Verify the speaker belongs to this org.
+    async with acquire() as conn:
+        speaker = await conn.fetchrow(
+            """
+            select id, display_name
+            from public.org_speakers
+            where id = $1 and org_id = $2
+            """,
+            speaker_id,
+            user.org_id,
+        )
+    if speaker is None:
+        raise HTTPException(404, "speaker not found")
+
+    # 2. Read upload + forward to whisper /embed-only.
+    payload = await audio.read()
+    if not payload:
+        raise HTTPException(400, "empty audio upload")
+
+    mime = audio.content_type or "audio/webm"
+    embed_url = f"{env_settings.whisper_url}/embed-only"
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
+            resp = await client.post(
+                embed_url,
+                files={"audio": ("enrollment.bin", payload, mime)},
+                data={"min_voiced_seconds": str(min_voiced_seconds)},
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            503, f"Whisper-Service nicht erreichbar: {exc.__class__.__name__}"
+        ) from None
+
+    if resp.status_code == 422:
+        # Forward whisper's "not enough speech" verdict in German.
+        raise HTTPException(
+            422,
+            "Die Aufnahme enthält zu wenig erkennbare Sprache. Bitte "
+            "sprechen Sie mindestens 5 Sekunden klar und nahe am Mikrofon.",
+        )
+    if resp.status_code != 200:
+        raise HTTPException(
+            502,
+            f"Whisper-Service antwortete mit HTTP {resp.status_code}",
+        )
+
+    embed_data = resp.json()
+    embedding: list[float] = embed_data["embedding"]
+    voiced_sec: float = float(embed_data["voiced_seconds"])
+    total_sec: float = float(embed_data["total_seconds"])
+
+    # 3. Persist as voiceprint sample. Enrollment samples have no
+    # meeting/cluster — migration 0007 made those columns nullable.
+    async with acquire() as conn:
+        await append_voiceprint_sample(
+            conn,
+            org_speaker_id=speaker_id,
+            meeting_id=None,
+            cluster_idx=None,
+            embedding=embedding,
+            source="enrollment",
+            created_by=user.user_id,
+        )
+        sample_count = await conn.fetchval(
+            "select sample_count from public.org_speakers where id = $1",
+            speaker_id,
+        )
+
+    return EnrollResult(
+        status="ok",
+        voiced_seconds=voiced_sec,
+        total_seconds=total_sec,
+        sample_count=int(sample_count or 0),
+        speaker_id=str(speaker_id),
+        display_name=speaker["display_name"],
+    )
 
 
 # ─── Re-Diarize ────────────────────────────────────────────────────────

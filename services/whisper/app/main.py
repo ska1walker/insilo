@@ -21,7 +21,7 @@ from faster_whisper import WhisperModel
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.diarize import diarize, load_embedder, load_vad
+from app.diarize import diarize, embed_voice_sample, load_embedder, load_vad
 
 
 class Settings(BaseSettings):
@@ -73,6 +73,14 @@ class TranscribeResponse(BaseModel):
     # Reihenfolge = sortierte Cluster-Indices, also entspricht
     # centroids[i] dem Cluster mit cluster_idx == i.
     cluster_centroids: list[list[float]] = []
+
+
+class EmbedResponse(BaseModel):
+    """Response of the /embed-only endpoint (voice enrollment)."""
+
+    embedding: list[float]            # 192 floats, L2-normalised
+    voiced_seconds: float             # active speech duration after VAD
+    total_seconds: float              # raw decoded audio duration
 
 
 _model: WhisperModel | None = None
@@ -197,4 +205,43 @@ async def transcribe(
         segments=segments,
         model=settings.model,
         cluster_centroids=centroids,
+    )
+
+
+@app.post("/embed-only", response_model=EmbedResponse)
+async def embed_only(
+    audio: UploadFile = File(...),
+    min_voiced_seconds: float = Form(default=3.0),
+) -> EmbedResponse:
+    """One-shot voice-enrollment endpoint.
+
+    Skips transcription entirely — runs Silero-VAD trim + ECAPA-TDNN
+    encode over the entire upload. Returns the 192-d L2-normalised
+    embedding plus the voiced-speech duration so the caller can apply
+    quality gates (e.g. "reject samples with <5 s voiced").
+    """
+    if not settings.diarization_enabled:
+        raise HTTPException(503, "diarization disabled in this deployment")
+    if not audio.filename:
+        raise HTTPException(400, "audio file required")
+
+    payload = await audio.read()
+    if len(payload) == 0:
+        raise HTTPException(400, "empty audio")
+
+    with tempfile.NamedTemporaryFile(suffix=".bin", delete=True) as tmp:
+        tmp.write(payload)
+        tmp.flush()
+        result = embed_voice_sample(tmp.name, min_voiced_seconds=min_voiced_seconds)
+
+    if result is None:
+        raise HTTPException(
+            422,
+            "no usable speech detected — please record at least "
+            f"{min_voiced_seconds:.0f} seconds of clear speech",
+        )
+    return EmbedResponse(
+        embedding=result.embedding,
+        voiced_seconds=result.voiced_seconds,
+        total_seconds=result.total_seconds,
     )

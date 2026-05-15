@@ -80,3 +80,28 @@ export function assignCluster(
 export function reDiarizeMeeting(meetingId: string): Promise<{ status: string }> {
   return apiPost(`/api/v1/meetings/${meetingId}/re-diarize`);
 }
+
+export type EnrollResult = {
+  status: string;
+  voiced_seconds: number;
+  total_seconds: number;
+  sample_count: number;
+  speaker_id: string;
+  display_name: string;
+};
+
+export async function enrollSpeaker(
+  speakerId: string,
+  audio: Blob,
+  mimeType: string,
+): Promise<EnrollResult> {
+  const form = new FormData();
+  form.append("audio", audio, "enrollment.bin");
+  form.append("min_voiced_seconds", "5.0");
+
+  // We use apiPost via FormData so the X-Bfl-User header is included.
+  return (await import("./client")).apiPost<EnrollResult>(
+    `/api/v1/speakers/${speakerId}/enroll`,
+    form,
+  );
+}

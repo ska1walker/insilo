@@ -1,8 +1,9 @@
 "use client";
 
-import { Pencil, Plus, Star, Trash2, UserRound, X } from "lucide-react";
+import { Mic, Pencil, Plus, Star, Trash2, UserRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
+import { VoiceEnrollmentDialog } from "@/components/voice-enrollment-dialog";
 import {
   createSpeaker,
   deleteSpeaker,
@@ -27,6 +28,7 @@ export function SpeakerCatalog() {
   const [speakers, setSpeakers] = useState<OrgSpeaker[] | null>(null);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSpeakers().then(setSpeakers).catch(() => setSpeakers([]));
@@ -104,12 +106,31 @@ export function SpeakerCatalog() {
                 key={s.id}
                 speaker={s}
                 onEdit={() => setEditingId(s.id)}
+                onEnroll={() => setEnrollingId(s.id)}
                 onAfterDelete={refresh}
               />
             ),
           )}
         </div>
       )}
+
+      {enrollingId !== null && (() => {
+        const target = speakers.find((s) => s.id === enrollingId);
+        if (!target) return null;
+        return (
+          <VoiceEnrollmentDialog
+            speaker={target}
+            onClose={() => setEnrollingId(null)}
+            onSuccess={() => {
+              refresh();
+              toast.show({
+                message: `Stimmprobe für „${target.display_name}" gespeichert.`,
+                variant: "success",
+              });
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -117,10 +138,12 @@ export function SpeakerCatalog() {
 function SpeakerRow({
   speaker,
   onEdit,
+  onEnroll,
   onAfterDelete,
 }: {
   speaker: OrgSpeaker;
   onEdit: () => void;
+  onEnroll: () => void;
   onAfterDelete: () => void;
 }) {
   const toast = useToast();
@@ -187,6 +210,19 @@ function SpeakerRow({
       </div>
 
       <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onEnroll}
+          className="btn-tertiary inline-flex items-center gap-1"
+          title={
+            speaker.has_voiceprint
+              ? "Zusätzliche Stimmprobe aufnehmen (verbessert den Voiceprint)"
+              : "Stimmprobe aufnehmen (Nordwind & Sonne, ~40 s)"
+          }
+        >
+          <Mic className="h-3.5 w-3.5" strokeWidth={1.75} />
+          {speaker.has_voiceprint ? "Probe nachlegen" : "Stimmprobe aufnehmen"}
+        </button>
         <button
           type="button"
           onClick={onEdit}

@@ -1,15 +1,59 @@
-# Handoff — Stand & Learnings (Mai 2026, **letzte Aktualisierung: 15. Mai**)
+# Handoff — Stand & Learnings (Mai 2026, **letzte Aktualisierung: 16. Mai**)
 
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🚀 v0.1.47 — About-Page Refresh (16. Mai 2026, Mittag)
+>
+> **Aktueller Stand:** Box läuft auf **v0.1.47**, Helm-Revision 33.
+> Die `/ueber`-Seite ist von editorial-flach auf landing-page-Hybrid
+> aufgewertet — Mock-Product-Hero links/rechts, eigene
+> Sprecher-Erkennungs-Sektion, Architektur-Diagramm + Compliance-
+> Bullets in der Sicherheits-Sektion. Reines Frontend-Refactor, kein
+> Schema-Drift.
+>
+> **Was v0.1.47 gebracht hat:**
+>
+> - **Hero im Split-Layout** (`md:grid-cols-[1.1fr_1fr]`): Headline +
+>   Body + 2 CTAs links, neue Helper-Component `<TranscriptMock />`
+>   rechts. Mock ist 100 % CSS/Text, kein Bild: pulsende Gold-Linie
+>   am oberen Rand (`@keyframes pulse-line` aus globals.css), 2
+>   Speaker-Segments im Design-System-konformen Speaker-Block-Stil,
+>   Mini-Summary unten in `bg-surface-soft`.
+> - **Sicherheits-Sektion (02) deutlich aufgewertet** — 3 Schichten:
+>   Promise-Body + horizontales Architektur-Diagramm
+>   (Browser → Box-API → Whisper → PostgreSQL, mit LLM als
+>   Branch unter Box-API) + Compliance-Bullets (§ 203 StGB, DSGVO,
+>   § 53 StPO, keine externen Fonts). Diagramm ist reines
+>   Flex-Layout aus Lucide-`ArrowRight`/`ArrowDown` + 5 Mini-Boxes,
+>   responsive vertikal auf Mobile.
+> - **NEU: Sprecher-Erkennung-Sektion (03)** — bisher gar nicht in der
+>   About-Page erwähnt. Visualisierung als statischer Klon der
+>   `cluster-assignment-panel`-Rows (Gold-Speaker-Labels, Match-Score-
+>   Pill mit 92 %, Star-Icon für is_self) plus 4 Bullet-Punkte
+>   (ECAPA-TDNN, Nordwind-Stimmprobe, Voiceprint-Verfeinerung,
+>   Token-frei).
+> - **Bestehende Sektionen** (Steps / Personas / Architektur / Signatur /
+>   Final-CTA / Footer) behalten, Eyebrow-Nummern auf 04–07 verschoben.
+> - **i18n:** `about`-Namespace um ~38 Keys erweitert in allen 5
+>   Sprach-JSONs. 550 Keys pro Sprache jetzt (vorher 511),
+>   identische Key-Trees. Stimmproben-Texte pro Sprache schon im
+>   `speakerBullet2` + `speakerBody` referenziert (Nordwind /
+>   North-Wind / La-Bise / El-viento-del-norte / La-tramontana).
+>
+> **Hinweis:** Die im NEXT_SESSION_STARTER für v0.1.47 noch
+> offenen Punkte (Whisper-Language-Selector + Stimmprobe-Texte
+> pro Sprache als echte Sample-Texte im voice-enrollment-dialog,
+> Migration 0013 zum Drop von `templates.system_prompt TEXT`)
+> bleiben für v0.1.48 stehen — User hat priorisiert die About-Page
+> zuerst zu liften.
+>
 > # 🚀 v0.1.46 — i18n Phase 3 (16. Mai 2026, früh)
 >
-> **Aktueller Stand:** Box läuft auf **v0.1.46**, Helm-Revision 32.
-> Damit ist die Internationalisierung end-to-end durch: LLM-Prompts
-> ziehen jetzt nach User-Sprache, Backend-Fehler decken alle 5
-> Sprachen ab, der UI-Locale-Override aus `/einstellungen` beeinflusst
-> auch Backend-Antworten.
+> **Stand bei v0.1.46:** Helm-Revision 32. Internationalisierung
+> end-to-end durch — LLM-Prompts pro User-Sprache, Backend-Fehler in
+> allen 5 Sprachen, UI-Locale-Override beeinflusst auch Backend-
+> Antworten.
 >
 > **Was v0.1.46 gebracht hat:**
 >
@@ -420,16 +464,25 @@
 >   sprachenunabhängig dieselbe JSON-Struktur zurück, nur Content wird
 >   lokalisiert; UI mapped die deutschen Keys via `summaryLabels` auf
 >   localized Display-Labels.
+> - **v0.1.47** — **About-Page Mock-Product-Hero + Speaker-Sektion +
+>   Sicherheits-Beweis-Erweiterung:** `/ueber` neu strukturiert,
+>   Split-Layout-Hero mit statischem Transkript-Mock rechts, eigene
+>   Sprecher-Erkennungs-Sektion (Mock-Cluster-Liste mit 92 %-Match),
+>   Architektur-Diagramm (Browser→Box-API→Whisper→PostgreSQL+LLM-Branch)
+>   + Compliance-Bullets in der Sicherheits-Sektion. 38 neue Keys ×
+>   5 Sprachen (550 total pro JSON, identische Trees). Reines Frontend,
+>   kein Backend-Drift, keine Migration. TS clean, alle JSONs parsen.
 >
-> **Box-State (Stand 16. Mai, früh):** alle 5 Pods Ready auf
-> **v0.1.46** (Helm-Revision 32). System-PostgreSQL + KVRocks-Redis via
+> **Box-State (Stand 16. Mai, Mittag):** alle 5 Pods Ready auf
+> **v0.1.47** (Helm-Revision 33). System-PostgreSQL + KVRocks-Redis via
 > Olares-Middleware. LLM via per-Org-Einstellungen (Default: Olares-
 > LiteLLM, aber jeder OpenAI-kompatible Endpoint geht). **12 Migrationen
 > angewendet** (0001 Schema, 0002 RLS, 0003 org_settings, 0004
 > template_customizations, 0005 webhooks+api_keys, 0006 org_speakers,
 > 0007 speaker_enrollment, 0008 manual_webhooks_template_overrides,
 > 0009 template_few_shot, 0010 template_custom_fields, 0011 ui_locale,
-> 0012 template_locale_prompts).
+> 0012 template_locale_prompts). Kein Schema-Drift in v0.1.47 — pure
+> Frontend-Iteration.
 >
 > # 🎯 Vision für die nächste Phase: Duo-Integration (v0.1.35+)
 >

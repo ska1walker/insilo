@@ -13,10 +13,10 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.46** auf der Olares-Box
+**Stand:** Insilo läuft als **v0.1.47** auf der Olares-Box
 `olares@192.168.112.125` (Olares-User `kaivostudio`,
 Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
-**Helm-Revision 32**, 12 Migrationen angewendet. Feature-Set:
+**Helm-Revision 33**, 12 Migrationen angewendet. Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
 - **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
@@ -39,8 +39,14 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
   Backend-Calls, Backend-Errors decken alle 5 Sprachen. Schema-Keys
   bleiben deutsch (LLM-Output sprachenunabhängig), Display-Labels
   kommen über die neue `summaryLabels`-Namespace.
+- **About-Page-Refresh (v0.1.47)** — `/ueber` mit Mock-Product-Hero
+  (Transkript-Snippet + Pulse-Linie + Mini-Summary rechts), eigener
+  Sprecher-Erkennungs-Sektion (Mock-Cluster-Liste mit 92 %-Match),
+  Architektur-Diagramm (Browser→Box-API→Whisper→PostgreSQL+LLM-Branch)
+  + Compliance-Bullets in der Sicherheits-Sektion. 550 Keys × 5
+  Sprachen jetzt (+38 neu).
 
-**Nächste geplante Iteration: v0.1.47 — Audio-i18n + legacy cleanup**
+**Nächste geplante Iteration: v0.1.48 — Audio-i18n + legacy cleanup**
 
 1. **Whisper-Language pro Meeting:** aktuell `language='de'`
    hardcoded in `backend/app/routers/meetings.py` (POST /recordings)
@@ -51,6 +57,8 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
    deutsch. Pro Sprache ein kanonischer phonetisch ausgewogener Text
    (North-Wind / La-Bise et le Soleil / El viento del norte y el
    Sol / La tramontana e il Sole). Auswahl folgt User-UI-Locale.
+   Die i18n-Keys für die Stimmproben-Texte sind in v0.1.47 schon im
+   `about.speakerBullet2`-Body referenziert, aber im Modal noch nicht.
 3. **Legacy `templates.system_prompt TEXT` droppen** in Migration
    0013, sobald sicher ist dass nichts mehr darauf liest. Backend-
    Resolver in v0.1.46 depriorisiert sie schon, aber `seed.sql`
@@ -58,9 +66,6 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
 
 **Alternativ Duo-Receiver:** der Webhook-Empfänger in `duo.aimighty.de`
 ist seit v0.1.39 offen — Insilo-Seite komplett bereit.
-
-**Alternativ Duo-Receiver:** der Webhook-Empfänger in `duo.aimighty.de`
-fehlt noch. Insilo-Seite seit v0.1.39 vollständig bereit.
 
 Die Vision (vom User):
 > Insilo schreibt nach jeder Transkription Meeting-Minutes als Markdown
@@ -181,7 +186,7 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.46** (alle 5 Pods Ready, Helm-Rev 32) |
+| Version | **v0.1.47** (alle 5 Pods Ready, Helm-Rev 33) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
@@ -222,10 +227,10 @@ git log --oneline -5
 gh run list --workflow=release.yml --limit 3
 ```
 
-Sollte **v0.1.46** als jüngsten Tag zeigen. Tag-Liste seit
+Sollte **v0.1.47** als jüngsten Tag zeigen. Tag-Liste seit
 v0.1.34: 0.1.35 → 0.1.36 → 0.1.37 → 0.1.38 → 0.1.39 → 0.1.40 →
-0.1.41 → 0.1.42 → 0.1.43 → 0.1.44 → 0.1.45 → 0.1.46.
-Box läuft auf v0.1.46 (Helm-Rev 32).
+0.1.41 → 0.1.42 → 0.1.43 → 0.1.44 → 0.1.45 → 0.1.46 → 0.1.47.
+Box läuft auf v0.1.47 (Helm-Rev 33).
 
 ## Cmd-Shift-R nicht vergessen
 

@@ -63,7 +63,11 @@ spec:
             # Defensive: `helm upgrade --reuse-values` against an older
             # install can leave `.Values.whisper` as nil — use (...) to
             # tolerate missing parent map.
-            - name: BEAM_SIZE
+            #
+            # v0.1.52+: env_prefix="WHISPER_" greift jetzt in Settings,
+            # daher mit dem prefix (vorher BEAM_SIZE ohne prefix als
+            # Workaround für fehlenden env_prefix).
+            - name: WHISPER_BEAM_SIZE
               value: "{{ (.Values.whisper).beamSize | default 5 }}"
 
           volumeMounts:

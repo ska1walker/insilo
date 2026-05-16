@@ -44,6 +44,33 @@ async def _set_status(
     )
 
 
+def _unwrap_json_codeblock(content: str) -> str:
+    """Strip ```json ... ``` (or plain ``` ... ```) markdown fences.
+
+    Many LLMs (Qwen2.5/3.x, GPT-4 variants, Gemma) wrap their JSON output
+    in a markdown code-fence even when `response_format=json_object` is
+    requested. The wrapper makes `json.loads()` fail at "line 1 column 1
+    char 0". This helper trims the fence so the parser sees raw JSON.
+
+    Conservative: only strips when the content starts with ``` and ends
+    with ``` (after trimming whitespace). Leaves untouched content alone.
+    """
+    s = content.strip()
+    if not (s.startswith("```") and s.endswith("```")):
+        return content
+    # Drop leading fence including optional language tag (```json\n or ```\n)
+    after_open = s[3:]
+    nl = after_open.find("\n")
+    if nl == -1:
+        # No newline — entire string is fence; nothing to unwrap.
+        return content
+    inner = after_open[nl + 1 :]
+    # Drop trailing fence
+    if inner.endswith("```"):
+        inner = inner[:-3]
+    return inner.strip()
+
+
 def _resolve_prompt(template: dict[str, Any], locale: str) -> str | None:
     """Pick the right prompt body for `locale` from a template row.
 
@@ -542,7 +569,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         raise RuntimeError("LLM returned empty content")
 
     try:
-        structured = json.loads(content)
+        structured = json.loads(_unwrap_json_codeblock(content))
     except json.JSONDecodeError as exc:
         log.error("ollama returned non-JSON content: %r", content[:500])
         raise RuntimeError(f"ollama returned non-JSON: {exc}") from exc

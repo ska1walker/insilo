@@ -25,7 +25,19 @@ from app.diarize import diarize, embed_voice_sample, load_embedder, load_vad
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # env_prefix="WHISPER_" (v0.1.52+) — alle Felder werden aus
+    # `WHISPER_<FIELD_NAME>` env vars gelesen. Vorher fehlte der Prefix,
+    # dadurch waren WHISPER_MODEL/DEVICE/COMPUTE_TYPE im Helm-Deployment
+    # dead-letter und der Service fiel auf die Code-Defaults zurück
+    # (model="tiny" obwohl values.yaml=large-v3). Bemerkt v0.1.51 anhand
+    # eines "TINY · DE"-Status-Strings im Transkript.
+    #
+    # host/port-Felder bewusst entfernt — würden mit Kubernetes-injizierten
+    # WHISPER_PORT=tcp://... kollidieren (pydantic-Parse-Fail). uvicorn
+    # bekommt host/port aus dem Dockerfile-CMD (--host 0.0.0.0 --port 8001).
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="WHISPER_", extra="ignore"
+    )
 
     # Whisper model name as understood by faster-whisper.
     # Examples: tiny, base, small, medium, large-v3
@@ -49,11 +61,8 @@ class Settings(BaseSettings):
     # Decoder beam search width. 1 = fastest (good for local dev), 5 =
     # standard-quality (measurably better recognition, especially for German
     # compounds and quickly spoken sentences). Worst-case ~2-3x slower than
-    # beam_size=1 on CPU. Override with BEAM_SIZE env if needed.
+    # beam_size=1 on CPU. Override with WHISPER_BEAM_SIZE env if needed.
     beam_size: int = 5
-
-    host: str = "0.0.0.0"
-    port: int = 8001
 
 
 settings = Settings()

@@ -3,6 +3,95 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🚀 v0.1.52 — Whisper-env-prefix + LLM-JSON-Unwrap (16. Mai 2026, Abend)
+>
+> **Zwei substanzielle Bug-Fixes, die User-sichtbare Auswirkungen hatten:**
+>
+> **1. Whisper lief als `tiny` statt `large-v3`** — `pydantic-settings`
+> war ohne `env_prefix` konfiguriert. Die deployment-whisper.yaml setzt
+> `WHISPER_MODEL=large-v3`, aber pydantic hat ohne prefix nur nach
+> `MODEL` gesucht → Fallback auf Code-Default `model="tiny"`. Sichtbar
+> wurde es im Transcript-Header ("TINY · DE · 196 WÖRTER") und an der
+> mittelmäßigen Erkennungsqualität. Fix: `env_prefix="WHISPER_"` in der
+> Settings-Klasse, plus `host`/`port`-Felder entfernt (würden sonst mit
+> Kubernetes-injizierten `WHISPER_PORT=tcp://...`-env kollidieren —
+> uvicorn-CMD setzt die eh hart in deployment).
+>
+> Der vorherige Workaround-Env `BEAM_SIZE` (ohne prefix) wird mit dem
+> Fix obsolet — Helm-Template jetzt konsistent `WHISPER_BEAM_SIZE`.
+>
+> **2. LLM-Output mit Markdown-Code-Fence-Wrap zerschoss JSON-Parser** —
+> Qwen3.6 (und viele andere LLMs) wrappen ihre Antwort trotz
+> `response_format=json_object` in ` ```json ... ``` `-Codeblocks. Unser
+> `json.loads(content)` failed dann mit "Expecting value: line 1 column 1
+> (char 0)". User sah „VERARBEITUNG FEHLGESCHLAGEN" auf Meeting-
+> Detail-Seiten, obwohl der LLM eigentlich brauchbaren Output geliefert
+> hat. Fix: neuer Helper `_unwrap_json_codeblock(content)` in
+> `summarize.py` strippt führende/nachgestellte Triple-Backticks
+> (mit oder ohne `json`-Sprach-Tag), bevor `json.loads` rangelassen
+> wird. Konservativ: nur wenn Content mit ``` startet UND endet.
+>
+> **Wie wir's gefunden haben:** Ein User-Smoke-Test einer Schauerfunktion-
+> Aufnahme zeigte beide Probleme auf einem Screenshot (Transkript-Status
+> "TINY" + roter Error-Block mit dem JSON-Parser-Fehler). Worker-Logs
+> hatten den vollen LLM-Response geloggt (`log.error("ollama returned
+> non-JSON content: %r", content[:500])`), so dass der `` ```json ``-
+> Wrapper sofort sichtbar war.
+>
+> **Verification:** alle 103 Backend-Pytests grün, manueller Helper-Test
+> mit 5 Fenced/Unfenced-Varianten, Frontend tsc clean, check-chart ✓.
+>
+> # 🚀 v0.1.51 — Hotfix Migration 0012 Idempotency (16. Mai 2026, Abend)
+>
+> **Stand bei v0.1.51:** Hotfix für ein lange schlummerndes Migration-
+> Idempotency-Problem, das sich beim v0.1.49-Deploy gerächt hat.
+>
+> **Was passiert ist:** Der v0.1.49-Helm-Upgrade hat den Migration-
+> Init-Container des Backend-Pods in CrashLoopBackOff getrieben:
+> `column "system_prompt" does not exist`. Ursache: der Init-Runner
+> versucht ALLE Migrations-Files in Reihenfolge erneut (try-and-
+> skip-on-DuplicateError-Pattern). Migration 0012 enthält ein
+> `update ... set system_prompts = jsonb_build_object('de', system_prompt)`,
+> das beim ersten Run die JSONB-Map befüllt. Migration 0013 (v0.1.48)
+> hat die Legacy-Spalte gedroppt. Beim zweiten 0012-Run referenziert
+> das UPDATE eine nicht-existente Spalte → SQL-Fehler → init fail →
+> CrashLoop.
+>
+> **Was v0.1.51 gebracht hat:**
+>
+> - **0012 nachträglich idempotent** — das UPDATE ist jetzt in einen
+>   `DO $$ ... if exists (information_schema check) then execute ... end $$`-
+>   Block gewrapped. Bei First-Install (Spalte existiert noch beim
+>   0012-Run, 0013 droppt erst danach) läuft der Backfill normal durch.
+>   Bei Re-Run nach v0.1.48+ (Spalte ist weg) wird der UPDATE
+>   übersprungen.
+> - **Rolling-Update hat uns gerettet:** die alten v0.1.48-Backend-Pods
+>   blieben aktiv weil die neuen v0.1.49-Pods nie Ready wurden. Box-
+>   Funktion war zu keinem Zeitpunkt beeinträchtigt.
+>
+> **Architektur-Lesson für die Zukunft:**
+>
+> Der aktuelle Migration-Runner versucht JEDE Migration bei jedem
+> Init-Container-Start erneut. Das funktioniert nur solange ALLE
+> Migrationen idempotent sind UND keine spätere Migration die
+> Voraussetzungen einer früheren entfernt. Die saubere Lösung wäre
+> eine `schema_migrations`-Tabelle, die trackt welche IDs schon
+> applied wurden — separate Story, kommt später. Bis dahin:
+> **jede neue Migration muss self-idempotent bleiben, auch wenn eine
+> spätere Migration ihre Voraussetzungen entfernt**. Pattern:
+> `do $$ begin if exists (...check...) then execute $sql$ ... $sql$; end if; end $$;`
+>
+> **Versions-Sprung-Erklärung:**
+>
+> - v0.1.49 (Audio-Quality) wurde gebaut, gepusht, aber konnte wegen
+>   diesem Bug nicht stabil deployen → Box blieb auf v0.1.48 mit
+>   v0.1.49-Pods im CrashLoop.
+> - v0.1.50 (Schauerfunktion) wurde während der Diagnose committed +
+>   gepusht — hätte das selbe Problem gehabt wenn deployed.
+> - v0.1.51 enthält den 0012-Fix UND die Schauerfunktion UND
+>   Audio-Quality-Improvements. Box-Upgrade von v0.1.48 direkt auf
+>   v0.1.51 überspringt die kaputten Zwischenversionen.
+>
 > # 🚀 v0.1.50 — Schauerfunktion (Quick-Capture / Car-Mode) (16. Mai 2026, Abend)
 >
 > **Stand bei v0.1.50:** Neue dedizierte Aufnahme-UX für unterwegs —

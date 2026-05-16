@@ -29,12 +29,41 @@ alter table public.template_customizations
 
 -- Backfill: bestehende deutschen Prompts in die JSONB-Map heben.
 -- Nur, wo das Ziel noch leer ist — idempotent bei Re-Runs.
-update public.templates
-   set system_prompts = jsonb_build_object('de', system_prompt)
- where system_prompt is not null
-   and (system_prompts = '{}'::jsonb or system_prompts is null);
-
-update public.template_customizations
-   set system_prompts = jsonb_build_object('de', system_prompt)
- where system_prompt is not null
-   and (system_prompts = '{}'::jsonb or system_prompts is null);
+--
+-- ACHTUNG (nachträglich angepasst in v0.1.50): das Backfill-UPDATE wird
+-- in eine DO-Block gewrapped, der prüft ob die Legacy-Spalte überhaupt
+-- noch existiert. Hintergrund: Migration 0013 dropt `system_prompt`.
+-- Der Init-Container-Runner versucht beim Re-Deploy alle SQL-Files in
+-- Reihenfolge erneut — ohne diesen Guard schlägt 0012 dann fehl, weil
+-- die referenzierte Spalte weg ist. Bei First-Install (Spalte existiert
+-- noch beim 0012-Run, 0013 droppt erst danach) läuft der Backfill
+-- normal durch.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'templates'
+      and column_name = 'system_prompt'
+  ) then
+    execute $sql$
+      update public.templates
+         set system_prompts = jsonb_build_object('de', system_prompt)
+       where system_prompt is not null
+         and (system_prompts = '{}'::jsonb or system_prompts is null)
+    $sql$;
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'template_customizations'
+      and column_name = 'system_prompt'
+  ) then
+    execute $sql$
+      update public.template_customizations
+         set system_prompts = jsonb_build_object('de', system_prompt)
+       where system_prompt is not null
+         and (system_prompts = '{}'::jsonb or system_prompts is null)
+    $sql$;
+  end if;
+end $$;

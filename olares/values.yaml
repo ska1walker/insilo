@@ -16,22 +16,22 @@
 images:
   frontend:
     repository: ghcr.io/ska1walker/insilo-frontend
-    tag: 0.1.50
+    tag: 0.1.51
     pullPolicy: IfNotPresent
 
   backend:
     repository: ghcr.io/ska1walker/insilo-backend
-    tag: 0.1.50
+    tag: 0.1.51
     pullPolicy: IfNotPresent
 
   whisper:
     repository: ghcr.io/ska1walker/insilo-whisper
-    tag: 0.1.50
+    tag: 0.1.51
     pullPolicy: IfNotPresent
 
   embeddings:
     repository: ghcr.io/ska1walker/insilo-embeddings
-    tag: 0.1.50
+    tag: 0.1.51
     pullPolicy: IfNotPresent
 
 # ---- KI-Modelle ------------------------------------------------------------

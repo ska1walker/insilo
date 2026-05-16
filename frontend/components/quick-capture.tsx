@@ -56,10 +56,13 @@ const COLORS = {
   recording: "var(--recording)",
 } as const;
 
-const BG_GRADIENT_IDLE =
-  "radial-gradient(circle at 50% 42%, rgba(201, 169, 97, 0.10) 0%, transparent 55%), var(--black)";
-const BG_GRADIENT_ACTIVE =
-  "radial-gradient(circle at 50% 42%, rgba(201, 169, 97, 0.22) 0%, transparent 60%), var(--black)";
+// Gradient als Image-Layer; backgroundColor wird separat als Insilo-Black
+// gesetzt. Sicherer als Multi-Layer-`background`-Shorthand mit CSS-vars als
+// background-color (Browser-Parser handhabt das uneinheitlich).
+const BG_GRADIENT_IDLE_IMG =
+  "radial-gradient(circle at 50% 42%, rgba(201, 169, 97, 0.10) 0%, transparent 55%)";
+const BG_GRADIENT_ACTIVE_IMG =
+  "radial-gradient(circle at 50% 42%, rgba(201, 169, 97, 0.22) 0%, transparent 60%)";
 
 /**
  * Schauerfunktion — Car-Mode-Aufnahme für unterwegs (auto, walking, shower).
@@ -260,9 +263,10 @@ export function QuickCapture() {
 
   const isActive = phase === "recording" || phase === "saving";
   const bgStyle = {
-    background: isActive ? BG_GRADIENT_ACTIVE : BG_GRADIENT_IDLE,
+    backgroundColor: COLORS.black,
+    backgroundImage: isActive ? BG_GRADIENT_ACTIVE_IMG : BG_GRADIENT_IDLE_IMG,
     color: COLORS.white,
-    transition: "background 600ms var(--ease-out)",
+    transition: "background-image 600ms var(--ease-out)",
   };
 
   return (

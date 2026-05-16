@@ -3,6 +3,73 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🚀 v0.1.50 — Schauerfunktion (Quick-Capture / Car-Mode) (16. Mai 2026, Abend)
+>
+> **Stand bei v0.1.50:** Neue dedizierte Aufnahme-UX für unterwegs —
+> „die besten Ideen hat man unter der Dusche". Eine Route, ein Riesen-
+> Button, kein Template-Picker, kein Save-Klick, automatischer Webhook-
+> Dispatch zu Duo (sobald Duo-Receiver bereit ist).
+>
+> **Was v0.1.50 gebracht hat:**
+>
+> - **Neue Route `/idee` mit Car-Mode-UI** ([components/quick-capture.tsx](frontend/components/quick-capture.tsx)).
+>   Spotify-Car-Mode-Style: vollflächiger schwarzer BG via `position: fixed inset-0`
+>   (overlay über das normale Sticky-Header-Layout), Riesen-Mic-Button
+>   mittig (176/224 px), eine Status-Zeile, ein Footer-Hint. State-Maschine
+>   `idle → requesting → recording → saving → saved (5 s Auto-Reset) → idle` —
+>   bleibt im Car-Mode für Serial-Capture (mehrere Ideen am Stück). Wake-Lock
+>   API verhindert Bildschirm-Auszeit. Vibrations-Feedback beim Start/Stopp.
+> - **Neues System-Template „Schnellnotiz"** (ID `00000000-0000-0000-0000-000000000005`,
+>   [supabase/seed.sql](supabase/seed.sql)). Schlankes Schema:
+>   `_analyse` (1 Satz), `kerninhalt` (Bullet-Punkte), `naechste_schritte`
+>   (Verb-Phrasen), `kontext` (optional). Prompts in 5 Sprachen mit Fokus
+>   auf Solo-Stream-of-Consciousness → strukturierte Bullet-Notiz
+>   (keine Beschlüsse, keine Verantwortlichen). Few-Shot-Beispiel ist eine
+>   echte Pitch-Idee, damit das LLM den Ton kalibriert.
+> - **Backend Quick-Mode Form-Field** ([backend/app/routers/meetings.py](backend/app/routers/meetings.py)).
+>   `POST /api/v1/recordings` akzeptiert `quick_mode: bool = False`.
+>   Wenn `true`: template_id wird hart auf 00000005 gesetzt (Frontend kann
+>   nicht überschreiben), `metadata.quick_mode = true` wird persistiert.
+> - **Webhook-Dispatcher respektiert Quick-Mode** ([backend/app/tasks/notify.py](backend/app/tasks/notify.py)).
+>   `_do_notify` liest `metadata.quick_mode` und überspringt bei `true`
+>   den `trigger_mode='auto'`-Filter — Quick-Notes feuern an ALLE
+>   konfigurierten Webhooks für das `meeting.ready`-Event, unabhängig
+>   davon ob der User den Webhook auf `manual` gestellt hat. Genau das
+>   ist der Friction-Free-Effekt: nach Stopp muss nichts mehr geklickt
+>   werden. Duo-Receiver ist noch nicht gebaut (separate Story) — bis
+>   dahin landen Dispatches in der Retry-Queue (existing exponential
+>   backoff).
+> - **Frontend-Plumbing:** [meetings.ts](frontend/lib/api/meetings.ts:84)
+>   um `quickMode?: boolean` erweitert. Header-Nav um „Idee"-Link
+>   ergänzt (md+ only). [manifest.json](frontend/public/manifest.json)
+>   bekommt einen zweiten PWA-Shortcut „Idee aufnehmen" → `/idee`,
+>   damit ein iOS/Android-Home-Screen-Long-Press direkt dort landet.
+> - **i18n:** 5×JSON um `quickCapture`-Namespace (19 Keys) +
+>   `nav.idee`-Key erweitert. Key-Trees aller 5 Files identisch
+>   (jq-Diff leer).
+> - **Verification:** Frontend tsc ✓, Backend pytest 103/103 ✓,
+>   check-chart alle 9 Checks ✓, regen-migrations sauber.
+>
+> **Wichtige Implementierungs-Notiz für künftige Reader:**
+> Das root layout (app/layout.tsx) hat den Header eingebaut und kann
+> in Next.js App Router nicht überschrieben werden. Der Car-Mode löst
+> das mit `position: fixed inset-0 z-50` — die Page liegt visuell
+> ÜBER dem Header. Sauberer wäre Route-Groups-Refactor (Layout-Splitting
+> nach `(default)`/`(immersive)`), das ist aber invasiv für alle
+> bestehenden Pages. Pragmatismus für jetzt: overlay.
+>
+> **Smoke-Test-Checkliste fürs Box-Deploy:**
+> 1. Cmd-Shift-R + Service-Worker-Bust.
+> 2. `/idee` aufrufen → schwarzer Vollbild, weißer Mic-Button, sonst nichts.
+> 3. Tap → Mic-Permission → Recording-State mit rotem Button + pulsierender Animation + Timer.
+> 4. Tap nochmal → Saving-Spinner → Saved-CheckCircle → nach 5 s zurück auf idle (Button wieder weiß).
+> 5. DevTools → Network → POST `/api/v1/recordings` hat Form-Feld `quick_mode=true`.
+> 6. psql: `select template_id, metadata from public.meetings order by recorded_at desc limit 1;`
+>    → `template_id = 00000000-0000-0000-0000-000000000005`, `metadata->>'quick_mode' = 'true'`.
+> 7. Wenn ein `auto`-Webhook konfiguriert ist: Dispatch geht raus.
+>    Wenn nur `manual`-Webhooks: feuert trotzdem (das ist der ganze Punkt).
+> 8. PWA-Shortcut testen: Home-Screen-Icon Long-Press → „Idee aufnehmen" sollte sichtbar sein.
+>
 > # 🚀 v0.1.49 — Audio-Quality Sweep (16. Mai 2026, später Nachmittag)
 >
 > **Stand bei v0.1.49:** Browser-DSP entschärft, MediaRecorder mit

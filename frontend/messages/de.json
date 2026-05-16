@@ -5,6 +5,7 @@
     "settings": "Einstellungen",
     "about": "Über Insilo",
     "record": "Aufnahme",
+    "idee": "Idee",
     "logoAlt": "Insilo",
     "homeAria": "Insilo — zur Übersicht"
   },
@@ -606,5 +607,26 @@
     "entscheider": "Entscheider",
     "need": "Bedarf",
     "timing": "Timing"
+  },
+  "quickCapture": {
+    "eyebrow": "Schnellnotiz",
+    "statusReady": "Bereit",
+    "statusRecording": "Aufnahme",
+    "statusSaving": "Wird strukturiert und an Duo gesendet",
+    "statusSaved": "An Duo gesendet",
+    "idleHint": "Tippen Sie auf das Mikrofon und sprechen Sie Ihre Idee. Wir strukturieren sie automatisch.",
+    "recordAnotherHint": "Tippen Sie für die nächste Idee.",
+    "footerHint": "Volle Datensouveränität — alles bleibt auf Ihrer Box.",
+    "tapToStart": "Aufnahme starten",
+    "tapToStop": "Aufnahme beenden",
+    "requestingMic": "Mikrofon wird angefragt …",
+    "saving": "Wird verarbeitet …",
+    "recordAnother": "Neue Idee aufnehmen",
+    "defaultTitlePrefix": "Idee vom",
+    "deniedBody": "Mikrofon-Zugriff verweigert. Bitte erlauben Sie Insilo den Zugriff in den Browser-Einstellungen.",
+    "unsupportedBody": "Dieser Browser unterstützt keine Audio-Aufnahme. Bitte nutzen Sie Chrome oder Safari.",
+    "micStartFailed": "Mikrofon konnte nicht gestartet werden. Bitte Browser-Berechtigungen prüfen.",
+    "uploadFailedHttp": "Senden fehlgeschlagen (HTTP {status}). Box erreichbar?",
+    "uploadFailedTryAgain": "Senden fehlgeschlagen. Bitte erneut versuchen."
   }
 }

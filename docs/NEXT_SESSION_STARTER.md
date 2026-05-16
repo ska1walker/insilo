@@ -13,10 +13,10 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.49** im Repo. v0.1.48 ist auf der Box
-deployed (Helm-Rev 34, Migration 0013 erfolgreich). v0.1.49-Deploy steht
-noch aus. Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`,
-Box-URL `https://e5d605f3.kaivostudio.olares.de`). Feature-Set:
+**Stand:** Insilo läuft als **v0.1.50** im Repo. v0.1.49 ist auf der
+Box deployed (Helm-Rev 35). v0.1.50-Deploy steht noch aus. Olares-Box:
+`olares@192.168.112.125` (Olares-User `kaivostudio`, Box-URL
+`https://e5d605f3.kaivostudio.olares.de`). Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
 - **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
@@ -61,6 +61,15 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Feature-Set:
   EchoCancellation an), 128 kbps Opus, 48 kHz mono. Whisper auf
   `beam_size=5` (war 1, „dev-speed default"). Dateien jetzt ~1 MB/min
   statt ~250 kB/min, deutsche Frikative gehen nicht mehr verloren.
+- **Schauerfunktion / Quick-Capture (v0.1.50)** — neue Route `/idee`
+  mit Car-Mode-UI (schwarzer Vollbild, Riesen-Mic-Button,
+  Single-Tap-Toggle, Wake-Lock, Vibration). Neues System-Template
+  „Schnellnotiz" (00000005) mit schlankem Schema (`kerninhalt`,
+  `naechste_schritte`, `kontext`). Backend-`quick_mode`-Flag setzt
+  Template hart + zwingt Webhook-Auto-Dispatch (für Friction-Free-UX).
+  PWA-Shortcut „Idee aufnehmen" für Home-Screen-Long-Press.
+  Volle Pipeline → Duo (sobald Duo-Receiver bereit; bis dahin
+  Retry-Queue).
 
 **Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**
 
@@ -187,11 +196,11 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.49** (Repo; Box läuft v0.1.48, Helm-Rev 34) |
+| Version | **v0.1.50** (Repo; Box läuft v0.1.49, Helm-Rev 35) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.49` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.50` |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
@@ -229,10 +238,11 @@ git log --oneline -5
 gh run list --workflow=release.yml --limit 3
 ```
 
-Sollte **v0.1.49** als jüngsten Tag zeigen. Tag-Liste seit
-v0.1.34: 0.1.35 → … → 0.1.47 → 0.1.48 → 0.1.49. Box läuft
-(Stand Doku-Update) noch auf v0.1.48 (Helm-Rev 34) — v0.1.49 ist
-nur Frontend+Whisper-Code-Change, keine Migration nötig.
+Sollte **v0.1.50** als jüngsten Tag zeigen. Tag-Liste seit
+v0.1.34: 0.1.35 → … → 0.1.48 → 0.1.49 → 0.1.50. Box läuft
+(Stand Doku-Update) noch auf v0.1.49 (Helm-Rev 35) — v0.1.50 ist
+Frontend+Backend-Code + seed.sql-Add (Template 00000005), keine
+Schema-Migration nötig.
 
 ## Cmd-Shift-R nicht vergessen
 

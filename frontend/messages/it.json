@@ -5,6 +5,7 @@
     "settings": "Impostazioni",
     "about": "Informazioni su Insilo",
     "record": "Registra",
+    "idee": "Idea",
     "logoAlt": "Insilo",
     "homeAria": "Insilo — torna alla panoramica"
   },
@@ -606,5 +607,26 @@
     "entscheider": "Decisore",
     "need": "Esigenza",
     "timing": "Tempistica"
+  },
+  "quickCapture": {
+    "eyebrow": "Nota rapida",
+    "statusReady": "Pronto",
+    "statusRecording": "Registrazione",
+    "statusSaving": "Strutturazione e invio a Duo",
+    "statusSaved": "Inviato a Duo",
+    "idleHint": "Tocchi il microfono e dica la Sua idea. La struttureremo automaticamente.",
+    "recordAnotherHint": "Tocchi per la prossima idea.",
+    "footerHint": "Sovranità totale dei dati — tutto resta sul Suo box.",
+    "tapToStart": "Avviare registrazione",
+    "tapToStop": "Interrompere registrazione",
+    "requestingMic": "Richiesta del microfono …",
+    "saving": "Elaborazione …",
+    "recordAnother": "Catturare un'altra idea",
+    "defaultTitlePrefix": "Idea del",
+    "deniedBody": "Accesso al microfono negato. Conceda l'accesso a Insilo nelle impostazioni del browser.",
+    "unsupportedBody": "Questo browser non supporta la registrazione audio. Utilizzi Chrome o Safari.",
+    "micStartFailed": "Impossibile avviare il microfono. Verifichi i permessi del browser.",
+    "uploadFailedHttp": "Invio non riuscito (HTTP {status}). Il box è raggiungibile?",
+    "uploadFailedTryAgain": "Invio non riuscito. Riprovi."
   }
 }

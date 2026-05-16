@@ -401,30 +401,54 @@ async def _do_notify(meeting_id: UUID, event: str) -> dict[str, Any]:
     conn = await _connect()
     try:
         org_row = await conn.fetchrow(
-            "select org_id from public.meetings where id = $1",
+            """
+            select org_id,
+                   coalesce((metadata->>'quick_mode')::boolean, false) as quick_mode
+            from public.meetings where id = $1
+            """,
             meeting_id,
         )
         if org_row is None:
             return {"status": "skipped", "reason": "no meeting"}
         org_id = org_row["org_id"]
+        quick_mode = org_row["quick_mode"]
 
         # Auto-Filter: bei meeting.ready werden manual-Webhooks
         # übersprungen — der User triggert sie per "An externe Systeme
         # senden"-Button auf der Meeting-Detail-Page. Alle anderen
         # Events (created/failed/updated/deleted) feuern immer
         # automatisch, unabhängig von trigger_mode.
-        webhook_rows = await conn.fetch(
-            """
-            select id
-            from public.org_webhooks
-            where org_id = $1
-              and is_active = true
-              and $2 = any(events)
-              and ($2 <> 'meeting.ready' or trigger_mode = 'auto')
-            """,
-            org_id,
-            event,
-        )
+        #
+        # Ausnahme: Schauerfunktion / Quick-Capture (v0.1.50). Wenn die
+        # Aufnahme im Car-Mode entstanden ist (metadata.quick_mode=true),
+        # forcieren wir auch bei meeting.ready den Auto-Fan-Out — der
+        # ganze UX-Punkt ist, dass nach "Stopp" nichts mehr geklickt
+        # werden muss.
+        if quick_mode:
+            webhook_rows = await conn.fetch(
+                """
+                select id
+                from public.org_webhooks
+                where org_id = $1
+                  and is_active = true
+                  and $2 = any(events)
+                """,
+                org_id,
+                event,
+            )
+        else:
+            webhook_rows = await conn.fetch(
+                """
+                select id
+                from public.org_webhooks
+                where org_id = $1
+                  and is_active = true
+                  and $2 = any(events)
+                  and ($2 <> 'meeting.ready' or trigger_mode = 'auto')
+                """,
+                org_id,
+                event,
+            )
         if not webhook_rows:
             return {"status": "ok", "fanout": 0, "reason": "no subscribers"}
 

@@ -5,6 +5,7 @@
     "settings": "Paramètres",
     "about": "À propos d'Insilo",
     "record": "Enregistrer",
+    "idee": "Idée",
     "logoAlt": "Insilo",
     "homeAria": "Insilo — retour à l'aperçu"
   },
@@ -606,5 +607,26 @@
     "entscheider": "Décideur",
     "need": "Besoin",
     "timing": "Calendrier"
+  },
+  "quickCapture": {
+    "eyebrow": "Note rapide",
+    "statusReady": "Prêt",
+    "statusRecording": "Enregistrement",
+    "statusSaving": "Structuration et envoi vers Duo",
+    "statusSaved": "Envoyé à Duo",
+    "idleHint": "Appuyez sur le microphone et dites votre idée. Nous la structurerons automatiquement.",
+    "recordAnotherHint": "Appuyez pour l'idée suivante.",
+    "footerHint": "Souveraineté totale des données — tout reste sur votre boîtier.",
+    "tapToStart": "Démarrer l'enregistrement",
+    "tapToStop": "Arrêter l'enregistrement",
+    "requestingMic": "Demande d'accès au microphone …",
+    "saving": "Traitement …",
+    "recordAnother": "Capturer une nouvelle idée",
+    "defaultTitlePrefix": "Idée du",
+    "deniedBody": "Accès au microphone refusé. Veuillez autoriser Insilo dans les paramètres du navigateur.",
+    "unsupportedBody": "Ce navigateur ne prend pas en charge l'enregistrement audio. Veuillez utiliser Chrome ou Safari.",
+    "micStartFailed": "Impossible de démarrer le microphone. Vérifiez les autorisations du navigateur.",
+    "uploadFailedHttp": "Envoi échoué (HTTP {status}). Le boîtier est-il accessible ?",
+    "uploadFailedTryAgain": "Envoi échoué. Veuillez réessayer."
   }
 }

@@ -5,6 +5,7 @@
     "settings": "Settings",
     "about": "About Insilo",
     "record": "Record",
+    "idee": "Idea",
     "logoAlt": "Insilo",
     "homeAria": "Insilo — back to overview"
   },
@@ -606,5 +607,26 @@
     "entscheider": "Decision maker",
     "need": "Need",
     "timing": "Timing"
+  },
+  "quickCapture": {
+    "eyebrow": "Quick note",
+    "statusReady": "Ready",
+    "statusRecording": "Recording",
+    "statusSaving": "Structuring and sending to Duo",
+    "statusSaved": "Sent to Duo",
+    "idleHint": "Tap the microphone and speak your idea. We'll structure it automatically.",
+    "recordAnotherHint": "Tap for the next idea.",
+    "footerHint": "Fully data-sovereign — everything stays on your box.",
+    "tapToStart": "Start recording",
+    "tapToStop": "Stop recording",
+    "requestingMic": "Requesting microphone …",
+    "saving": "Processing …",
+    "recordAnother": "Capture another idea",
+    "defaultTitlePrefix": "Idea from",
+    "deniedBody": "Microphone access denied. Please allow Insilo access in the browser settings.",
+    "unsupportedBody": "This browser does not support audio recording. Please use Chrome or Safari.",
+    "micStartFailed": "Could not start the microphone. Please check browser permissions.",
+    "uploadFailedHttp": "Sending failed (HTTP {status}). Is the box reachable?",
+    "uploadFailedTryAgain": "Sending failed. Please try again."
   }
 }

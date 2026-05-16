@@ -60,8 +60,11 @@ spec:
             # env var `BEAM_SIZE` (uppercased). The WHISPER_* vars above
             # follow the OlaresManifest naming convention but are nominal —
             # the running service uses the pydantic defaults for those.
+            # Defensive: `helm upgrade --reuse-values` against an older
+            # install can leave `.Values.whisper` as nil — use (...) to
+            # tolerate missing parent map.
             - name: BEAM_SIZE
-              value: "{{ .Values.whisper.beamSize | default 5 }}"
+              value: "{{ (.Values.whisper).beamSize | default 5 }}"
 
           volumeMounts:
             - name: app-cache

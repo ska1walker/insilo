@@ -36,6 +36,13 @@
       "short_name": "Aufnahme",
       "url": "/aufnahme",
       "icons": [{ "src": "/icons/record-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Idee aufnehmen",
+      "short_name": "Idee",
+      "description": "Schauerfunktion — eine Idee unterwegs strukturieren und an Duo senden.",
+      "url": "/idee",
+      "icons": [{ "src": "/icons/record-96.png", "sizes": "96x96" }]
     }
   ],
   "screenshots": [],

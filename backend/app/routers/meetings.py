@@ -3,6 +3,7 @@
 import json
 import re
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
@@ -227,6 +228,11 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
 
 _ALLOWED_RECORDING_LANGS: frozenset[str] = frozenset({"de", "en", "fr", "es", "it"})
 
+# System-Template-ID for the Schauerfunktion / Quick-Capture flow.
+# Defined in supabase/seed.sql. The /idee Car-Mode UI doesn't expose a
+# template picker; quick-mode recordings always use this template.
+_QUICK_NOTE_TEMPLATE_ID = UUID("00000000-0000-0000-0000-000000000005")
+
 
 @router.post("/recordings", status_code=201)
 async def create_recording(
@@ -236,6 +242,7 @@ async def create_recording(
     mime_type: str = Form(...),
     template_id: str | None = Form(default=None),
     language: str | None = Form(default=None),
+    quick_mode: bool = Form(default=False),
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     # Normalize the language input:
@@ -260,7 +267,19 @@ async def create_recording(
 
     duration_sec = max(1, duration_ms // 1000)
 
-    tpl_uuid: UUID | None = UUID(template_id) if template_id else None
+    # Quick-mode locks the template to the Schnellnotiz preset (a frontend
+    # passing both `quick_mode=true` AND a template_id loses the picker —
+    # we treat the quick flag as authoritative since the /idee UI has no
+    # template selector anyway).
+    tpl_uuid: UUID | None
+    if quick_mode:
+        tpl_uuid = _QUICK_NOTE_TEMPLATE_ID
+    else:
+        tpl_uuid = UUID(template_id) if template_id else None
+
+    metadata: dict[str, Any] = {"mime_type": mime_type}
+    if quick_mode:
+        metadata["quick_mode"] = True
 
     async with acquire() as conn:
         # Validate template visibility if one was passed (otherwise the
@@ -289,7 +308,7 @@ async def create_recording(
             values (
                 $1, $2, $3, $4, 'queued',
                 $5, $6, $7,
-                $8, $9, jsonb_build_object('mime_type', $10::text)
+                $8, $9, $10::jsonb
             )
             returning id, title, recorded_at, duration_sec, audio_size_bytes,
                      audio_path, status, template_id,
@@ -304,7 +323,7 @@ async def create_recording(
             len(blob),
             db_language,
             tpl_uuid,
-            mime_type,
+            json.dumps(metadata),
         )
 
     # Hand off transcription to the Celery worker. The HTTP response returns

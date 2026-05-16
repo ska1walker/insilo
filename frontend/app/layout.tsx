@@ -83,6 +83,9 @@ export default async function RootLayout({
                   <Link href="/ueber" className="btn-tertiary hidden md:inline-flex">
                     {t("about")}
                   </Link>
+                  <Link href="/idee" className="btn-tertiary hidden md:inline-flex">
+                    {t("idee")}
+                  </Link>
                   <Link href="/aufnahme" className="btn-primary">
                     {t("record")}
                   </Link>

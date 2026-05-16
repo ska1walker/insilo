@@ -1791,6 +1791,139 @@ data:
       true,
       true,
       2
+    ),
+    
+    -- ============================================================
+    -- 5) Schnellnotiz (Schauerfunktion / Solo-Brainstorm)
+    -- ============================================================
+    -- Für den /idee-Car-Mode: ein Sprecher, unterwegs, denkt laut.
+    -- LLM verwandelt Stream-of-Consciousness in scanbare Bullet-Notiz.
+    -- Kein Meeting-Vokabular, keine Verantwortlichkeiten, kein
+    -- Wiedervorlage-Datum — fokussiert auf den kerninhalt + optionale
+    -- naechste_schritte.
+    (
+      '00000000-0000-0000-0000-000000000005',
+      null,
+      'Schnellnotiz',
+      'Strukturiert eine spontane Sprachnotiz (Schauerfunktion) als scanbare Bullet-Notiz.',
+      'general',
+      jsonb_build_object(
+        'de', $de$## Aufgabe
+    Strukturiere die folgende spontan diktierte Sprachnotiz zu einer knappen, scanbaren Notiz.
+    
+    ## Eingabeformat
+    Das Transkript ist ein einzelner Sprecher, der unterwegs eine Idee oder einen Gedanken festhält. Es enthält Füllwörter, Umwege, Selbstkorrekturen. Filtriere die Substanz heraus.
+    
+    ## Regeln
+    - Verdichte auf den Kerngedanken — kein Wort des Originals muss erhalten bleiben.
+    - Wenn der Sprecher konkrete Schritte oder Aktionen erwähnt („ich sollte X tun", „erst mal Y"), liste sie als `naechste_schritte` (Verb-Phrasen, knapp).
+    - Wenn der Sprecher Kontext gibt („für das Projekt Z", „Gespräch mit A"), packe ihn in `kontext`.
+    - Erfinde nichts. Wenn keine konkreten Schritte oder kein Kontext genannt sind, lass die Felder leer (`[]` bzw. `null`).
+    - Halte den Ton sachlich und in der zweiten Person formell — der Sprecher liest die Notiz später selbst.
+    
+    ## Ausgabe
+    Gib ausschließlich ein JSON-Objekt nach dem Schema zurück. Beginne mit `_analyse` (1 Satz: Worum geht es?), dann `kerninhalt` (2-5 Bullet-Punkte mit dem Eigentlichen), dann `naechste_schritte` und `kontext` falls vorhanden.$de$,
+        'en', $en$## Task
+    Structure the following spontaneously dictated voice note into a concise, scannable note.
+    
+    ## Input format
+    The transcript is a single speaker capturing an idea or thought while on the go. It contains filler words, detours, self-corrections. Extract the substance.
+    
+    ## Rules
+    - Compress to the core thought — no word from the original needs to be preserved.
+    - If the speaker mentions concrete steps or actions ("I should do X", "first Y"), list them in `naechste_schritte` (verb phrases, terse).
+    - If the speaker gives context ("for project Z", "conversation with A"), put it in `kontext`.
+    - Invent nothing. If no concrete steps or context are mentioned, leave the fields empty (`[]` or `null`).
+    - Keep the tone factual and in the second person formal — the speaker will read this note later themselves.
+    
+    ## Output
+    Return only a JSON object matching the schema. Keep JSON field names exactly as in the schema (they are in German). Start with `_analyse` (one sentence: what is this about?), then `kerninhalt` (2-5 bullet points with the substance), then `naechste_schritte` and `kontext` if present.$en$,
+        'fr', $fr$## Tâche
+    Structurez la note vocale spontanée suivante en une note concise et facile à parcourir.
+    
+    ## Format d'entrée
+    La transcription est celle d'un seul locuteur qui capte une idée ou une pensée en déplacement. Elle contient des mots de remplissage, des détours, des autocorrections. Extrayez la substance.
+    
+    ## Règles
+    - Condensez à l'idée centrale — aucun mot de l'original ne doit être conservé.
+    - Si le locuteur mentionne des étapes ou actions concrètes (« je devrais faire X », « d'abord Y »), listez-les dans `naechste_schritte` (locutions verbales, brèves).
+    - Si le locuteur donne un contexte (« pour le projet Z », « entretien avec A »), placez-le dans `kontext`.
+    - N'inventez rien. Si aucune étape ou aucun contexte concrets ne sont mentionnés, laissez les champs vides (`[]` ou `null`).
+    - Maintenez un ton factuel et utilisez le vouvoiement formel — le locuteur relira lui-même cette note plus tard.
+    
+    ## Sortie
+    Renvoyez uniquement un objet JSON conforme au schéma. Conservez les noms de champs JSON exactement comme dans le schéma (ils sont en allemand). Commencez par `_analyse` (une phrase : de quoi s'agit-il ?), puis `kerninhalt` (2-5 puces avec la substance), puis `naechste_schritte` et `kontext` le cas échéant.$fr$,
+        'es', $es$## Tarea
+    Estructure la siguiente nota de voz dictada espontáneamente en una nota concisa y fácil de revisar.
+    
+    ## Formato de entrada
+    La transcripción es de un único hablante que captura una idea o un pensamiento en movimiento. Contiene muletillas, rodeos, autocorrecciones. Extraiga la sustancia.
+    
+    ## Reglas
+    - Condense hasta la idea central — no es necesario conservar ninguna palabra del original.
+    - Si el hablante menciona pasos o acciones concretas («debería hacer X», «primero Y»), enumérelos en `naechste_schritte` (frases verbales, breves).
+    - Si el hablante aporta contexto («para el proyecto Z», «conversación con A»), colóquelo en `kontext`.
+    - No invente nada. Si no se mencionan pasos o contexto concretos, deje los campos vacíos (`[]` o `null`).
+    - Mantenga un tono objetivo y trate de usted al hablante — relerá esta nota usted mismo más tarde.
+    
+    ## Salida
+    Devuelva únicamente un objeto JSON conforme al esquema. Mantenga los nombres de los campos JSON exactamente como aparecen en el esquema (están en alemán). Comience por `_analyse` (una frase: ¿de qué trata?), después `kerninhalt` (2-5 viñetas con la sustancia), después `naechste_schritte` y `kontext` si proceden.$es$,
+        'it', $it$## Compito
+    Strutturi la seguente nota vocale dettata spontaneamente in una nota concisa e facile da scorrere.
+    
+    ## Formato di ingresso
+    La trascrizione è di un singolo parlante che cattura un'idea o un pensiero in movimento. Contiene parole di riempimento, deviazioni, autocorrezioni. Estragga la sostanza.
+    
+    ## Regole
+    - Condensi all'idea centrale — nessuna parola dell'originale deve essere conservata.
+    - Se il parlante menziona passi o azioni concreti («dovrei fare X», «prima Y»), li elenchi in `naechste_schritte` (locuzioni verbali, brevi).
+    - Se il parlante fornisce un contesto («per il progetto Z», «colloquio con A»), lo metta in `kontext`.
+    - Non inventi nulla. Se non vengono menzionati passi o contesto concreti, lasci i campi vuoti (`[]` o `null`).
+    - Mantenga un tono oggettivo e si rivolga al parlante con la forma di cortesia («Lei») — sarà Lei stesso a rileggere questa nota più tardi.
+    
+    ## Output
+    Restituisca esclusivamente un oggetto JSON conforme allo schema. Mantenga i nomi dei campi JSON esattamente come nello schema (sono in tedesco). Inizi con `_analyse` (una frase: di cosa si tratta?), poi `kerninhalt` (2-5 punti elenco con la sostanza), poi `naechste_schritte` e `kontext` se presenti.$it$
+      )::jsonb,
+      $schema${
+        "type": "object",
+        "properties": {
+          "_analyse": {
+            "type": "string",
+            "description": "Ein Satz: Worum geht es bei der Notiz?"
+          },
+          "kerninhalt": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "2-5 Bullet-Punkte mit der Essenz der Notiz, knapp und ohne Füllwörter."
+          },
+          "naechste_schritte": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Konkrete Aktionen/TODOs, falls erwähnt. Leeres Array wenn nichts genannt."
+          },
+          "kontext": {
+            "type": ["string", "null"],
+            "description": "Projekt, Person oder Situation auf die sich die Notiz bezieht, falls erwähnt."
+          }
+        },
+        "required": ["_analyse", "kerninhalt"]
+      }$schema$::jsonb,
+      $few$Also, mir kam gerade die Idee — wir sollten für den Insilo-Pitch nicht nur die Compliance betonen, sondern auch dass die Box bei Strom-Aus offline weiterläuft. Das hatte ich beim Termin mit Müller letzte Woche schon gesehen, dass das ein Argument ist. Müsste ich vielleicht mal in die nächste Demo einbauen, so eine kleine Folie dazu.$few$,
+      $few${
+        "_analyse": "Idee für den Insilo-Pitch: Offline-Verfügbarkeit als Argument neben Compliance ausspielen.",
+        "kerninhalt": [
+          "Compliance allein reicht nicht als Pitch-Differenzierung",
+          "Offline-Weiterbetrieb der Box bei Strom-Aus ist ein bisher unbenutztes Argument",
+          "Beim Termin mit Müller letzte Woche bereits als relevant erkannt"
+        ],
+        "naechste_schritte": [
+          "Folie zur Offline-Verfügbarkeit für die nächste Demo erstellen"
+        ],
+        "kontext": "Insilo-Pitch / Demo-Vorbereitung"
+      }$few$::jsonb,
+      true,
+      true,
+      1
     )
     on conflict (id) do update set
       name             = excluded.name,

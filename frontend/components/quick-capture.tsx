@@ -44,16 +44,17 @@ type Phase =
 
 const SAVED_AUTO_RESET_MS = 5000;
 
-// Insilo brand tokens for the dark Car-Mode palette. CSS vars live in
-// globals.css (`--gold`, `--gold-light`, `--gold-deep`, `--black`,
-// `--recording`). Centralised here so we don't pepper inline styles.
+// Insilo brand tokens for the dark Car-Mode palette. Direct hex values
+// (not CSS vars) because inline style + var() showed parse issues in
+// some browser/build combinations — caused the BG to render white in
+// v0.1.53/.54. Hex bypasses any var-resolution path.
 const COLORS = {
-  black: "var(--black)",
+  black: "#0A0A0A",
   white: "#ffffff",
-  gold: "var(--gold)",
-  goldLight: "var(--gold-light)",
-  goldDeep: "var(--gold-deep)",
-  recording: "var(--recording)",
+  gold: "#C9A961",
+  goldLight: "#E6D4A3",
+  goldDeep: "#9C8147",
+  recording: "#C84A3F",
 } as const;
 
 // Gradient als Image-Layer; backgroundColor wird separat als Insilo-Black
@@ -271,7 +272,10 @@ export function QuickCapture() {
 
   return (
     <div
-      className="immersive-in fixed inset-0 z-50 flex flex-col"
+      // Belt-and-suspenders: Tailwind-class für BG plus inline-style
+      // mit Gradient. Falls inline-style nicht greift, hat die class
+      // immer noch ein definitives Schwarz.
+      className="immersive-in fixed inset-0 z-50 flex flex-col bg-[#0A0A0A]"
       style={bgStyle}
     >
       {/* Top bar — minimal, just a back-arrow + eyebrow label */}

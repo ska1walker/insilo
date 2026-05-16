@@ -197,14 +197,102 @@
     box-shadow: 0 2px 4px rgba(10, 10, 10, 0.05);
   }
 
+  /* ── Schauerfunktion / Quick-Capture (v0.1.53) ───────────────────────
+   * Header-Icon-Button mit ShowerHead, dezenter Gold-Hover, sichtbar
+   * auf allen Viewports (Mobile-first). Body-Class-Toggle wechselt die
+   * gesamte App in den Dark-Modus während /idee aktiv ist — smooth fade.
+   */
+
+  .quick-capture-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    color: var(--text-primary);
+    background: transparent;
+    transition:
+      background var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      transform 80ms ease-out;
+  }
+  .quick-capture-trigger:hover {
+    background: rgba(201, 169, 97, 0.10);
+    color: var(--gold-deep);
+  }
+  .quick-capture-trigger:active {
+    transform: scale(0.94);
+  }
+  .quick-capture-trigger:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  /* Touch-Geräte ohne Hover: subtiler Hint-Pulse alle 6 s, damit
+     der Button entdeckt wird. Wird durch reduced-motion deaktiviert. */
+  @media (hover: none) {
+    .quick-capture-trigger {
+      animation: quick-capture-hint 6s ease-in-out infinite;
+    }
+  }
+  @keyframes quick-capture-hint {
+    0%, 88%, 100% { box-shadow: 0 0 0 0 rgba(201, 169, 97, 0); }
+    94% { box-shadow: 0 0 0 6px rgba(201, 169, 97, 0.12); }
+  }
+
+  /* Dark-Mode-Transition: triggered durch QuickCapture-useEffect
+     (body.classList.add("quick-capture-active")). Header verstecken,
+     Body-BG fade-to-black. */
+  body.quick-capture-active {
+    background: var(--black);
+    transition: background 280ms var(--ease-out);
+  }
+  body.quick-capture-active header {
+    display: none;
+  }
+
+  /* Page-Mount-Animation für die /idee-Component selbst. */
+  @keyframes immersive-in {
+    from { opacity: 0; transform: scale(0.98); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .immersive-in {
+    animation: immersive-in 320ms var(--ease-out) both;
+  }
+  .immersive-in-delayed {
+    animation: immersive-in 360ms 80ms var(--ease-out) both;
+  }
+
+  /* Stärkerer Pulse für den Recording-State im Car-Mode (mehrere
+     ausstrahlende Ringe, analog .btn-record.recording aber prominenter). */
+  @keyframes pulse-gold-strong {
+    0%, 100% {
+      box-shadow:
+        0 0 0 0 rgba(201, 169, 97, 0.55),
+        0 0 0 0 rgba(201, 169, 97, 0.30),
+        0 0 60px rgba(201, 169, 97, 0.35);
+    }
+    50% {
+      box-shadow:
+        0 0 0 16px rgba(201, 169, 97, 0),
+        0 0 0 32px rgba(201, 169, 97, 0),
+        0 0 80px rgba(201, 169, 97, 0.55);
+    }
+  }
+
   /* Reduced-Motion-User respektieren */
   @media (prefers-reduced-motion: reduce) {
     .page-in,
     .stagger-in,
     .btn-record,
     .btn-record.recording,
-    .recording-indicator {
+    .recording-indicator,
+    .quick-capture-trigger,
+    .immersive-in,
+    .immersive-in-delayed,
+    body.quick-capture-active {
       animation: none !important;
+      transition: none !important;
     }
     .lift-on-hover { transition: none; }
     .btn-primary:active,

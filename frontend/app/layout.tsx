@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend_Deca, Inter, JetBrains_Mono } from "next/font/google";
+import { ShowerHead } from "lucide-react";
 import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
@@ -83,8 +84,13 @@ export default async function RootLayout({
                   <Link href="/ueber" className="btn-tertiary hidden md:inline-flex">
                     {t("about")}
                   </Link>
-                  <Link href="/idee" className="btn-tertiary hidden md:inline-flex">
-                    {t("idee")}
+                  <Link
+                    href="/idee"
+                    aria-label={t("idee")}
+                    title={t("idee")}
+                    className="quick-capture-trigger"
+                  >
+                    <ShowerHead className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                   </Link>
                   <Link href="/aufnahme" className="btn-primary">
                     {t("record")}

@@ -1,14 +1,20 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, Loader2, Mic, Square } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  Mic,
+  ShieldCheck,
+  Square,
+} from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/api/client";
 import { createMeeting } from "@/lib/api/meetings";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
-import { useLocale } from "next-intl";
 
 const PREFERRED_MIME_TYPES = [
   "audio/webm;codecs=opus",
@@ -38,17 +44,39 @@ type Phase =
 
 const SAVED_AUTO_RESET_MS = 5000;
 
+// Insilo brand tokens for the dark Car-Mode palette. CSS vars live in
+// globals.css (`--gold`, `--gold-light`, `--gold-deep`, `--black`,
+// `--recording`). Centralised here so we don't pepper inline styles.
+const COLORS = {
+  black: "var(--black)",
+  white: "#ffffff",
+  gold: "var(--gold)",
+  goldLight: "var(--gold-light)",
+  goldDeep: "var(--gold-deep)",
+  recording: "var(--recording)",
+} as const;
+
+const BG_GRADIENT_IDLE =
+  "radial-gradient(circle at 50% 42%, rgba(201, 169, 97, 0.10) 0%, transparent 55%), var(--black)";
+const BG_GRADIENT_ACTIVE =
+  "radial-gradient(circle at 50% 42%, rgba(201, 169, 97, 0.22) 0%, transparent 60%), var(--black)";
+
 /**
  * Schauerfunktion — Car-Mode-Aufnahme für unterwegs (auto, walking, shower).
  *
- * UX-Ziel: Spotify Car-Mode. Dunkler Vollbild-BG, ein einziger Riesen-Button
- * mittig, sonst nur die nötigsten Statuszeilen. State-Maschine:
+ * UX-Ziel: Spotify Car-Mode auf Insilo-Niveau. Dunkler Vollbild-BG mit
+ * subtilem Gold-Vignette, ein einziger Riesen-Button mittig (Gold), sonst
+ * nur die nötigsten Statuszeilen. State-Maschine:
  *   idle → recording → saving → saved (5 s Auto-Reset) → idle
  *
  * Kein Template-Picker, keine Sprach-Auswahl, kein Save-Button. Aufnahme
  * landet als `quick_mode=true` im Backend, das Backend setzt das
  * Schnellnotiz-Template (00000005) automatisch und forciert die
  * Webhook-Auto-Dispatch (siehe notify.py).
+ *
+ * Dark-Mode-Transition: `body.quick-capture-active`-Klasse wird beim
+ * Mount toggled, CSS in globals.css macht den smooth Fade-to-Black und
+ * blendet den Insilo-Header aus. Reduced-motion respektieren.
  *
  * Vibrations-Feedback auf mobilen Geräten beim Start/Stopp + Wake-Lock,
  * damit der Bildschirm während der Aufnahme nicht ausgeht.
@@ -68,6 +96,13 @@ export function QuickCapture() {
   const tickRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const savedResetRef = useRef<number | null>(null);
+
+  // Dark-Mode-Transition: body-class steuert globalen Fade. globals.css
+  // versteckt zusätzlich den normalen Insilo-Header während aktiv.
+  useEffect(() => {
+    document.body.classList.add("quick-capture-active");
+    return () => document.body.classList.remove("quick-capture-active");
+  }, []);
 
   // Cleanup all browser resources on unmount.
   useEffect(() => {
@@ -224,19 +259,30 @@ export function QuickCapture() {
   }
 
   const isActive = phase === "recording" || phase === "saving";
+  const bgStyle = {
+    background: isActive ? BG_GRADIENT_ACTIVE : BG_GRADIENT_IDLE,
+    color: COLORS.white,
+    transition: "background 600ms var(--ease-out)",
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#0A0A0A] text-white">
-      {/* Top bar — minimal, just a back-arrow */}
+    <div
+      className="immersive-in fixed inset-0 z-50 flex flex-col"
+      style={bgStyle}
+    >
+      {/* Top bar — minimal, just a back-arrow + eyebrow label */}
       <header className="flex items-center justify-between px-6 pt-[max(env(safe-area-inset-top),1.5rem)] pb-2 sm:px-12">
         <Link
           href="/"
           aria-label={tCommon("back")}
-          className="flex h-12 w-12 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          className="flex h-12 w-12 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-[rgba(201,169,97,0.12)] hover:text-[color:var(--gold-light)]"
         >
           <ArrowLeft className="h-6 w-6" strokeWidth={1.5} />
         </Link>
-        <p className="mono text-[0.6875rem] uppercase tracking-[0.12em] text-white/40">
+        <p
+          className="mono text-[0.6875rem] uppercase tracking-[0.18em]"
+          style={{ color: COLORS.goldLight, opacity: 0.7 }}
+        >
           {t("eyebrow")}
         </p>
         <div className="w-12" aria-hidden />
@@ -247,91 +293,150 @@ export function QuickCapture() {
         <StatusLine phase={phase} elapsed={elapsed} t={t} />
 
         {phase === "idle" || phase === "error" ? (
-          <button
-            type="button"
+          <MicButton
             onClick={startRecording}
-            aria-label={t("tapToStart")}
-            className="mt-12 flex h-44 w-44 items-center justify-center rounded-full bg-white text-black shadow-[0_0_60px_rgba(255,255,255,0.15)] transition-transform active:scale-95 sm:h-56 sm:w-56"
-          >
-            <Mic className="h-20 w-20 sm:h-24 sm:w-24" strokeWidth={1.5} />
-          </button>
+            ariaLabel={t("tapToStart")}
+            kind="idle"
+          />
         ) : phase === "requesting" ? (
-          <button
-            type="button"
-            disabled
-            aria-label={t("requestingMic")}
-            className="mt-12 flex h-44 w-44 items-center justify-center rounded-full bg-white/20 text-white sm:h-56 sm:w-56"
-          >
-            <Loader2 className="h-20 w-20 animate-spin sm:h-24 sm:w-24" strokeWidth={1.5} />
-          </button>
+          <MicButton ariaLabel={t("requestingMic")} kind="loading" />
         ) : phase === "recording" ? (
-          <button
-            type="button"
+          <MicButton
             onClick={stopAndSave}
-            aria-label={t("tapToStop")}
-            className="mt-12 flex h-44 w-44 items-center justify-center rounded-full bg-recording text-white shadow-[0_0_80px_rgba(220,38,38,0.45)] transition-transform active:scale-95 sm:h-56 sm:w-56"
-            style={{ animation: "pulse-quick 1.6s ease-in-out infinite" }}
-          >
-            <Square className="h-16 w-16 sm:h-20 sm:w-20" strokeWidth={0} fill="currentColor" />
-          </button>
+            ariaLabel={t("tapToStop")}
+            kind="recording"
+          />
         ) : phase === "saving" ? (
-          <button
-            type="button"
-            disabled
-            aria-label={t("saving")}
-            className="mt-12 flex h-44 w-44 items-center justify-center rounded-full bg-white/20 text-white sm:h-56 sm:w-56"
-          >
-            <Loader2 className="h-20 w-20 animate-spin sm:h-24 sm:w-24" strokeWidth={1.5} />
-          </button>
+          <MicButton ariaLabel={t("saving")} kind="loading" />
         ) : phase === "saved" ? (
-          <button
-            type="button"
+          <MicButton
             onClick={startRecording}
-            aria-label={t("recordAnother")}
-            className="mt-12 flex h-44 w-44 items-center justify-center rounded-full bg-white text-black shadow-[0_0_60px_rgba(255,255,255,0.15)] transition-transform active:scale-95 sm:h-56 sm:w-56"
-          >
-            <Mic className="h-20 w-20 sm:h-24 sm:w-24" strokeWidth={1.5} />
-          </button>
+            ariaLabel={t("recordAnother")}
+            kind="idle"
+          />
         ) : phase === "denied" ? (
-          <div className="mt-12 max-w-sm text-center">
-            <p className="text-lg text-white/80">{t("deniedBody")}</p>
+          <div className="mt-16 max-w-sm text-center">
+            <p className="text-lg" style={{ color: "rgba(255,255,255,0.8)" }}>
+              {t("deniedBody")}
+            </p>
             <button
               type="button"
               onClick={startRecording}
-              className="mt-8 rounded-full bg-white px-8 py-4 text-base font-medium text-black"
+              className="mt-8 rounded-full px-8 py-4 text-base font-medium transition-transform active:scale-95"
+              style={{ background: COLORS.gold, color: COLORS.black }}
             >
               {tCommon("tryAgain")}
             </button>
           </div>
         ) : (
-          <div className="mt-12 max-w-sm text-center">
-            <p className="text-lg text-white/80">{t("unsupportedBody")}</p>
+          <div className="mt-16 max-w-sm text-center">
+            <p className="text-lg" style={{ color: "rgba(255,255,255,0.8)" }}>
+              {t("unsupportedBody")}
+            </p>
           </div>
         )}
 
         {error && (
-          <p className="mt-10 max-w-sm text-center text-base text-recording" role="alert">
+          <p
+            className="mt-10 max-w-sm text-center text-base"
+            role="alert"
+            style={{ color: COLORS.recording }}
+          >
             {error}
           </p>
         )}
       </main>
 
-      {/* Bottom — tagline + version of friendly help text */}
-      <footer className="px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-2 sm:px-12">
-        <p className="text-center text-sm text-white/40">{t("footerHint")}</p>
+      {/* Bottom — trust hint with ShieldCheck */}
+      <footer className="flex items-center justify-center gap-2 px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-2 sm:px-12">
+        <ShieldCheck
+          className="h-3.5 w-3.5 shrink-0"
+          strokeWidth={1.75}
+          style={{ color: COLORS.goldDeep, opacity: 0.8 }}
+          aria-hidden
+        />
+        <p
+          className="text-center text-xs"
+          style={{ color: COLORS.goldLight, opacity: 0.6 }}
+        >
+          {t("footerHint")}
+        </p>
       </footer>
-
-      <style jsx>{`
-        @keyframes pulse-quick {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.04);
-          }
-        }
-      `}</style>
     </div>
+  );
+}
+
+function MicButton({
+  onClick,
+  ariaLabel,
+  kind,
+}: {
+  onClick?: () => void;
+  ariaLabel: string;
+  kind: "idle" | "recording" | "loading";
+}) {
+  const baseClasses =
+    "immersive-in-delayed mt-12 flex h-44 w-44 items-center justify-center rounded-full transition-transform sm:h-56 sm:w-56";
+
+  if (kind === "idle") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={ariaLabel}
+        className={`${baseClasses} active:scale-95`}
+        style={{
+          background: COLORS.gold,
+          color: COLORS.black,
+          boxShadow:
+            "0 0 0 1px rgba(201, 169, 97, 0.45), 0 0 80px rgba(201, 169, 97, 0.25)",
+        }}
+      >
+        <Mic className="h-24 w-24 sm:h-28 sm:w-28" strokeWidth={1.5} />
+      </button>
+    );
+  }
+
+  if (kind === "recording") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={ariaLabel}
+        aria-pressed
+        className={`${baseClasses} active:scale-95`}
+        style={{
+          background: COLORS.goldDeep,
+          color: COLORS.white,
+          animation: "pulse-gold-strong 1.8s ease-in-out infinite",
+        }}
+      >
+        <Square
+          className="h-20 w-20 sm:h-24 sm:w-24"
+          strokeWidth={0}
+          fill="currentColor"
+        />
+      </button>
+    );
+  }
+
+  // loading (requesting / saving)
+  return (
+    <button
+      type="button"
+      disabled
+      aria-label={ariaLabel}
+      className={baseClasses}
+      style={{
+        background: "rgba(201, 169, 97, 0.18)",
+        color: COLORS.goldLight,
+      }}
+    >
+      <Loader2
+        className="h-24 w-24 animate-spin sm:h-28 sm:w-28"
+        strokeWidth={1.5}
+      />
+    </button>
   );
 }
 
@@ -347,12 +452,16 @@ function StatusLine({
   if (phase === "recording") {
     return (
       <div className="text-center">
-        <p className="mono text-[0.6875rem] uppercase tracking-[0.12em] text-recording">
+        <p
+          className="mono text-[0.6875rem] uppercase tracking-[0.18em]"
+          style={{ color: COLORS.goldLight, opacity: 0.7 }}
+        >
           {t("statusRecording")}
         </p>
         <p
-          className="mono mt-3 text-5xl font-medium tabular-nums sm:text-6xl"
+          className="mono mt-4 text-7xl font-medium tabular-nums sm:text-8xl"
           aria-live="polite"
+          style={{ color: COLORS.goldLight }}
         >
           {formatDuration(elapsed)}
         </p>
@@ -361,30 +470,59 @@ function StatusLine({
   }
   if (phase === "saving") {
     return (
-      <p className="text-center text-lg text-white/70">{t("statusSaving")}</p>
+      <p
+        className="text-center text-lg"
+        style={{ color: "rgba(255,255,255,0.75)" }}
+      >
+        {t("statusSaving")}
+      </p>
     );
   }
   if (phase === "saved") {
     return (
       <div className="flex flex-col items-center text-center">
-        <CheckCircle2 className="h-10 w-10 text-emerald-400" strokeWidth={1.5} />
-        <p className="mt-3 text-xl text-white">{t("statusSaved")}</p>
-        <p className="mt-2 text-sm text-white/50">{t("recordAnotherHint")}</p>
+        <CheckCircle2
+          className="h-12 w-12"
+          strokeWidth={1.5}
+          style={{ color: COLORS.goldLight }}
+        />
+        <p className="mt-4 text-2xl" style={{ color: COLORS.white }}>
+          {t("statusSaved")}
+        </p>
+        <p
+          className="mt-2 text-sm"
+          style={{ color: COLORS.goldLight, opacity: 0.7 }}
+        >
+          {t("recordAnotherHint")}
+        </p>
       </div>
     );
   }
   if (phase === "requesting") {
     return (
-      <p className="text-center text-lg text-white/70">{t("requestingMic")}</p>
+      <p
+        className="text-center text-lg"
+        style={{ color: "rgba(255,255,255,0.75)" }}
+      >
+        {t("requestingMic")}
+      </p>
     );
   }
   // idle / error / denied / unsupported
   return (
     <div className="text-center">
-      <p className="mono text-[0.6875rem] uppercase tracking-[0.12em] text-white/40">
+      <p
+        className="mono text-[0.6875rem] uppercase tracking-[0.18em]"
+        style={{ color: COLORS.goldLight, opacity: 0.7 }}
+      >
         {t("statusReady")}
       </p>
-      <p className="mt-3 max-w-sm text-base text-white/60">{t("idleHint")}</p>
+      <p
+        className="mt-4 max-w-sm text-base"
+        style={{ color: "rgba(255,255,255,0.65)" }}
+      >
+        {t("idleHint")}
+      </p>
     </div>
   );
 }

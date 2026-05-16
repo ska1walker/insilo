@@ -242,13 +242,23 @@
 
   /* Dark-Mode-Transition: triggered durch QuickCapture-useEffect
      (body.classList.add("quick-capture-active")). Header verstecken,
-     Body-BG fade-to-black. */
+     Body-BG fade-to-black. !important damit der base-layer body{...}
+     definitiv überschrieben wird (war v0.1.53-54 ein Problem). */
   body.quick-capture-active {
-    background: var(--black);
+    background: #0A0A0A !important;
     transition: background 280ms var(--ease-out);
   }
   body.quick-capture-active header {
     display: none;
+  }
+
+  /* Hard-locked Dark-Shell für die /idee-Page. Tailwind-Classes und
+     inline-styles haben in v0.1.53-55 trotz Bundle-Fix nicht durchgesetzt
+     (Tailwind 4 JIT, layer-cascade oder service-worker-cache — Ursache
+     nicht endgültig isoliert). Dedizierte Klasse mit !important = idiot-proof. */
+  .quick-capture-shell {
+    background-color: #0A0A0A !important;
+    color: #ffffff;
   }
 
   /* Page-Mount-Animation für die /idee-Component selbst. */

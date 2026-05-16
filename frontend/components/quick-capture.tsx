@@ -272,24 +272,32 @@ export function QuickCapture() {
 
   return (
     <div
-      // Belt-and-suspenders: Tailwind-class für BG plus inline-style
-      // mit Gradient. Falls inline-style nicht greift, hat die class
-      // immer noch ein definitives Schwarz.
-      className="immersive-in fixed inset-0 z-50 flex flex-col bg-[#0A0A0A]"
+      // .quick-capture-shell in globals.css setzt background-color via
+      // !important — Tailwind-Class und inline-style haben in v0.1.53-55
+      // trotz korrektem Bundle nicht durchgesetzt. Diese Klasse ist
+      // idiot-proof. Inline-style enthält weiterhin den Gradient-Overlay.
+      className="quick-capture-shell immersive-in fixed inset-0 z-50 flex flex-col"
       style={bgStyle}
     >
-      {/* Top bar — minimal, just a back-arrow + eyebrow label */}
+      {/* Top bar — minimal, back-arrow links + eyebrow label.
+          Back-Arrow mit explizitem Border + helleren Fill, sodass er
+          auch dann sichtbar ist wenn der Dark-BG nicht durchschlägt. */}
       <header className="flex items-center justify-between px-6 pt-[max(env(safe-area-inset-top),1.5rem)] pb-2 sm:px-12">
         <Link
           href="/"
           aria-label={tCommon("back")}
-          className="flex h-12 w-12 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-[rgba(201,169,97,0.12)] hover:text-[color:var(--gold-light)]"
+          className="flex h-12 w-12 items-center justify-center rounded-full transition-transform active:scale-95"
+          style={{
+            color: COLORS.goldLight,
+            background: "rgba(201, 169, 97, 0.10)",
+            border: "1px solid rgba(201, 169, 97, 0.35)",
+          }}
         >
           <ArrowLeft className="h-6 w-6" strokeWidth={1.5} />
         </Link>
         <p
           className="mono text-[0.6875rem] uppercase tracking-[0.18em]"
-          style={{ color: COLORS.goldLight, opacity: 0.7 }}
+          style={{ color: COLORS.goldLight }}
         >
           {t("eyebrow")}
         </p>

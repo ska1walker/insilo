@@ -47,13 +47,11 @@ async def _set_status(
 def _resolve_prompt(template: dict[str, Any], locale: str) -> str | None:
     """Pick the right prompt body for `locale` from a template row.
 
-    Resolution order (v0.1.46+):
+    Resolution order (v0.1.48+, legacy TEXT slots dropped in Migration 0013):
       1. Customization's locale-specific prompt (`c.system_prompts->>locale`)
       2. Customization's DE prompt (`c.system_prompts->>'de'`)
-      3. Customization's legacy TEXT prompt (`c.system_prompt`)
-      4. System template's locale-specific prompt (`t.system_prompts->>locale`)
-      5. System template's DE prompt
-      6. System template's legacy TEXT prompt
+      3. System template's locale-specific prompt (`t.system_prompts->>locale`)
+      4. System template's DE prompt
 
     Returns the first non-empty string, or None if nothing usable exists.
     """
@@ -73,10 +71,8 @@ def _resolve_prompt(template: dict[str, Any], locale: str) -> str | None:
     candidates = [
         _from(template.get("c_system_prompts"), locale),
         _from(template.get("c_system_prompts"), "de"),
-        template.get("c_system_prompt"),
         _from(template.get("t_system_prompts"), locale),
         _from(template.get("t_system_prompts"), "de"),
-        template.get("t_system_prompt"),
     ]
     for c in candidates:
         if isinstance(c, str) and c.strip():
@@ -449,13 +445,13 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
 
         # Pick template: explicit on meeting, else the system default. Apply
         # the org's prompt customization (from /einstellungen) if present —
-        # otherwise the seeded `system_prompt` is used.
+        # otherwise the seeded system prompt is used.
         #
-        # v0.1.46+: prompts can be authored per locale in `system_prompts JSONB`.
+        # v0.1.46+: prompts are authored per locale in `system_prompts JSONB`.
         # We resolve the meeting-creator's UI locale (with org-default + 'de'
         # fallback) and pick the matching prompt. If no locale-specific entry
         # exists for either the customization or the system template, we fall
-        # back to DE, then to the legacy `system_prompt TEXT` column.
+        # back to DE. (Legacy TEXT columns dropped in Migration 0013.)
         template_id = meeting["template_id"] or UUID(settings.default_template_id)
         locale_row = await conn.fetchrow(
             """
@@ -471,9 +467,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         template = await conn.fetchrow(
             """
             select t.id, t.version, t.output_schema,
-                   t.system_prompt          as t_system_prompt,
                    t.system_prompts         as t_system_prompts,
-                   c.system_prompt          as c_system_prompt,
                    c.system_prompts         as c_system_prompts,
                    t.few_shot_input,
                    t.few_shot_output,

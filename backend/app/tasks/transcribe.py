@@ -58,7 +58,8 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     try:
         row = await conn.fetchrow(
             """
-            select audio_path, org_id, metadata->>'mime_type' as mime
+            select audio_path, org_id, language,
+                   metadata->>'mime_type' as mime
             from public.meetings
             where id = $1
             """,
@@ -77,15 +78,23 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     # loop briefly is fine.
     audio_bytes = _storage_get_bytes(row["audio_path"])
     mime = row["mime"] or "audio/webm"
-    log.info("transcribing meeting %s (%d bytes, %s)", meeting_id, len(audio_bytes), mime)
+    requested_language = row["language"]  # NULL = auto-detect (caller's choice)
+    log.info(
+        "transcribing meeting %s (%d bytes, %s, language=%s)",
+        meeting_id, len(audio_bytes), mime, requested_language or "auto",
+    )
 
-    # Call the Whisper service.
+    # Call the Whisper service. Omit the `language` form field entirely when
+    # NULL so faster-whisper auto-detects (its `language=None` default).
     transcribe_url = f"{settings.whisper_url}/transcribe"
+    form_data: dict[str, str] = {}
+    if requested_language:
+        form_data["language"] = requested_language
     async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 25)) as client:
         resp = await client.post(
             transcribe_url,
             files={"audio": ("recording.bin", audio_bytes, mime)},
-            data={"language": settings.app_lang},
+            data=form_data,
         )
         resp.raise_for_status()
         result = resp.json()

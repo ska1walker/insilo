@@ -107,6 +107,13 @@ ERRORS: dict[str, dict[str, str]] = {
         "es": "El segmento {idx} hace referencia a un hablante desconocido {sid}.",
         "it": "Il segmento {idx} fa riferimento al parlante sconosciuto {sid}.",
     },
+    "meeting.invalid_language": {
+        "de": "Ungültige Aufnahmesprache: {lang} (erwartet wird auto, de, en, fr, es oder it).",
+        "en": "Invalid recording language: {lang} (expected auto, de, en, fr, es or it).",
+        "fr": "Langue d'enregistrement invalide : {lang} (attendu : auto, de, en, fr, es ou it).",
+        "es": "Idioma de grabación no válido: {lang} (se espera auto, de, en, fr, es o it).",
+        "it": "Lingua di registrazione non valida: {lang} (atteso: auto, de, en, fr, es o it).",
+    },
     # ── templates ──────────────────────────────────────────────────
     "template.not_found": {
         "de": "Vorlage nicht gefunden.",

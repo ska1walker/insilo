@@ -3,6 +3,45 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🚀 v0.1.48 — Audio-i18n + Legacy Cleanup (16. Mai 2026, Nachmittag)
+>
+> **Stand bei v0.1.48:** Migration 0013 angelegt (12 → 13). Aufnahme-
+> Sprache jetzt User-gesteuert mit Auto-Detect-Default. Stimmproben-
+> Texte folgen UI-Locale. Legacy `templates.system_prompt TEXT` +
+> `template_customizations.system_prompt TEXT` aus DB und Code raus.
+>
+> **Was v0.1.48 gebracht hat:**
+>
+> - **Whisper-Language pro Meeting:** Dropdown unter der Template-Liste
+>   in `RecordingBlock` mit Optionen Auto-Detect (Default) + DE/EN/FR/
+>   ES/IT. `POST /api/v1/recordings` akzeptiert `language` Form-Field
+>   (`""` / `"auto"` → NULL → faster-whisper auto-detect). `transcribe.py`
+>   liest `meetings.language` und lässt das Form-Field bei NULL weg.
+>   `settings.app_lang`-Hardcode raus. Neuer Error-Key
+>   `meeting.invalid_language` (5 Sprachen). Migration 0013 droppt zusätzlich
+>   den `'de'`-Default auf `meetings.language` — NULL = User-Wahl Auto.
+> - **Stimmproben-Standardtexte pro Sprache:** `NORDWIND_TEXT`-Konstante
+>   im `voice-enrollment-dialog.tsx` raus. Neuer i18n-Key
+>   `voiceEnrollment.nordwindBody` mit der Aesop-„North Wind and the
+>   Sun"-Fabel pro Sprache (IPA-Handbook-Standardvorlagen, gemeinfrei).
+>   `useTranslations` resolved automatisch — kein `useLocale`-Hook nötig.
+> - **Legacy `system_prompt TEXT`-Spalten gedroppt:** Migration 0013
+>   `drop column if exists system_prompt` auf `templates` und
+>   `template_customizations`. Resolver-Chain in `summarize.py:_resolve_prompt`
+>   von 6 auf 4 Kandidaten verkürzt. `_normalize_system_prompts` in
+>   `templates.py` von Tuple-Return auf einfaches `dict[str,str]` umgestellt,
+>   alle 3 Pydantic-Models (`PromptUpdate`, `TemplateCreate`,
+>   `TemplateUpdate`) tragen kein `system_prompt: str | None`-Feld mehr,
+>   alle SQL-INSERT/UPDATE/UPSERT-Statements + `get_template`-SELECT
+>   bereinigt. `seed.sql` schreibt nur noch die JSONB-Map. Frontend-DTO
+>   `TemplateDetail` ohne `default_prompt`/`custom_prompt`. Tests in
+>   `test_prompt_quality.py` brauchen keine Änderung — der dortige
+>   `system_prompt`-Key ist die IN-MEMORY-Übergabe an `build_llm_payload`
+>   (gesetzt auf Z.492 in summarize.py), nicht der DB-Spaltenname.
+> - **Verification grün:** Backend pytest 103/103, Frontend `tsc --noEmit`
+>   clean, `bash scripts/check-chart.sh` alle Checks ✓, key-tree-diff
+>   über alle 5 messages-JSONs leer.
+>
 > # 🚀 v0.1.47 — About-Page Refresh (16. Mai 2026, Mittag)
 >
 > **Aktueller Stand:** Box läuft auf **v0.1.47**, Helm-Revision 33.

@@ -61,7 +61,10 @@
     "defaultTitlePrefix": "Registrazione del",
     "micStartFailed": "Impossibile avviare il microfono. Verifichi i permessi del browser.",
     "uploadFailedHttp": "Upload non riuscito (HTTP {status}). Il backend è raggiungibile?",
-    "uploadFailedTryAgain": "Upload non riuscito. Riprovi."
+    "uploadFailedTryAgain": "Upload non riuscito. Riprovi.",
+    "audioLanguageLabel": "Lingua della registrazione",
+    "audioLanguageAuto": "Rilevamento automatico",
+    "audioLanguageHint": "Suggerimento inviato a Whisper per la trascrizione. Il formato del verbale segue comunque la lingua della Sua interfaccia."
   },
   "meeting": {
     "listTitle": "Riunioni",
@@ -434,6 +437,7 @@
     "titlePrefix": "Campione vocale di",
     "intro": "Legga il testo standard seguente a voce alta e chiara. Dura circa 35–45 secondi e contiene tutti i fonemi importanti del tedesco — così Insilo apprende la voce con particolare precisione.",
     "nordwindTitle": "Il vento del Nord e il Sole",
+    "nordwindBody": "Si bisticciavano un giorno il vento di tramontana e il sole, l'uno pretendendo d'esser più forte dell'altro, quando videro un viaggiatore, che veniva innanzi avvolto nel mantello. I due litiganti convennero allora che si sarebbe ritenuto più forte chi fosse riuscito a far sì che il viaggiatore si togliesse il mantello di dosso. Il vento di tramontana cominciò a soffiare con violenza; ma più soffiava, più il viaggiatore si stringeva nel mantello; tanto che alla fine il povero vento dovette desistere dal suo proposito. Il sole allora si mostrò nel cielo, e poco dopo il viaggiatore, che sentiva caldo, si tolse il mantello. E la tramontana fu costretta così a riconoscere che il sole era più forte di lei.",
     "recordingHeader": "Registrazione in corso",
     "processing": "Il campione vocale è in elaborazione …",
     "successHeader": "Campione vocale salvato",

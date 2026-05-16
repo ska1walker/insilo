@@ -61,7 +61,10 @@
     "defaultTitlePrefix": "Enregistrement du",
     "micStartFailed": "Impossible de démarrer le microphone. Veuillez vérifier les autorisations du navigateur.",
     "uploadFailedHttp": "Échec de l'envoi (HTTP {status}). Le backend est-il joignable ?",
-    "uploadFailedTryAgain": "Échec de l'envoi. Veuillez réessayer."
+    "uploadFailedTryAgain": "Échec de l'envoi. Veuillez réessayer.",
+    "audioLanguageLabel": "Langue de l'enregistrement",
+    "audioLanguageAuto": "Détection automatique",
+    "audioLanguageHint": "Indication transmise à Whisper pour la transcription. Le format du compte-rendu suit indépendamment la langue de votre interface."
   },
   "meeting": {
     "listTitle": "Réunions",
@@ -434,6 +437,7 @@
     "titlePrefix": "Échantillon vocal de",
     "intro": "Lisez le texte standard suivant à haute voix et distinctement. Il dure environ 35–45 secondes et contient tous les phonèmes importants de l'allemand — Insilo apprend ainsi la voix avec une grande précision.",
     "nordwindTitle": "La bise et le soleil",
+    "nordwindBody": "La bise et le soleil se disputaient, chacun assurant qu'il était le plus fort, quand ils ont vu un voyageur qui s'avançait, enveloppé dans son manteau. Ils sont tombés d'accord que celui qui arriverait le premier à faire ôter son manteau au voyageur serait regardé comme le plus fort. Alors, la bise s'est mise à souffler de toute sa force, mais plus elle soufflait, plus le voyageur serrait son manteau autour de lui ; et à la fin, la bise a renoncé à le lui faire ôter. Alors le soleil a commencé à briller, et au bout d'un moment, le voyageur, réchauffé, a ôté son manteau. Ainsi, la bise a dû reconnaître que le soleil était le plus fort des deux.",
     "recordingHeader": "Enregistrement en cours",
     "processing": "L'échantillon vocal est en cours de traitement …",
     "successHeader": "Échantillon vocal enregistré",

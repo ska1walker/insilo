@@ -61,7 +61,10 @@
     "defaultTitlePrefix": "Recording of",
     "micStartFailed": "The microphone could not be started. Please check the browser permissions.",
     "uploadFailedHttp": "Upload failed (HTTP {status}). Is the backend reachable?",
-    "uploadFailedTryAgain": "Upload failed. Please try again."
+    "uploadFailedTryAgain": "Upload failed. Please try again.",
+    "audioLanguageLabel": "Recording language",
+    "audioLanguageAuto": "Auto-detect",
+    "audioLanguageHint": "Hint passed to Whisper for transcription. The summary format still follows your UI language."
   },
   "meeting": {
     "listTitle": "Meetings",
@@ -434,6 +437,7 @@
     "titlePrefix": "Voice sample for",
     "intro": "Read the following standard text aloud and clearly. It takes about 35–45 seconds and contains all important German phonemes — that way Insilo learns the voice particularly accurately.",
     "nordwindTitle": "The North Wind and the Sun",
+    "nordwindBody": "The North Wind and the Sun were disputing which was the stronger, when a traveller came along wrapped in a warm cloak. They agreed that the one who first succeeded in making the traveller take his cloak off should be considered stronger than the other. Then the North Wind blew as hard as he could, but the more he blew the more closely did the traveller fold his cloak around him; and at last the North Wind gave up the attempt. Then the Sun shone out warmly, and immediately the traveller took off his cloak. And so the North Wind was obliged to confess that the Sun was the stronger of the two.",
     "recordingHeader": "Recording in progress",
     "processing": "Voice sample is being processed …",
     "successHeader": "Voice sample saved",

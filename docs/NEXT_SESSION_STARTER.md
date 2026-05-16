@@ -13,10 +13,13 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.47** auf der Olares-Box
-`olares@192.168.112.125` (Olares-User `kaivostudio`,
-Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
-**Helm-Revision 33**, 12 Migrationen angewendet. Feature-Set:
+**Stand:** Insilo läuft als **v0.1.48** im Repo (Box-Deploy steht noch
+aus). Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`,
+Box-URL `https://e5d605f3.kaivostudio.olares.de`). Auf der Box läuft
+aktuell **v0.1.47** (Helm-Revision 33). Nach Deploy von v0.1.48 wird
+Migration 0013 vom Init-Container ausgeführt — droppt
+`templates.system_prompt`, `template_customizations.system_prompt` und
+den `meetings.language`-Default. Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
 - **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
@@ -45,27 +48,21 @@ Box-URL `https://e5d605f3.kaivostudio.olares.de`). Alle 5 Pods Ready,
   Architektur-Diagramm (Browser→Box-API→Whisper→PostgreSQL+LLM-Branch)
   + Compliance-Bullets in der Sicherheits-Sektion. 550 Keys × 5
   Sprachen jetzt (+38 neu).
+- **Audio-i18n + Legacy-Cleanup (v0.1.48)** — Whisper-Sprach-Dropdown
+  in `RecordingBlock` (Auto-Detect Default + DE/EN/FR/ES/IT),
+  Backend pipet `language` vom Form-Field via `meetings.language` zu
+  faster-whisper durch (NULL → auto-detect). `voice-enrollment-dialog`
+  zieht den North-Wind-Standardtext jetzt pro UI-Locale aus
+  `voiceEnrollment.nordwindBody`. **Migration 0013** droppt
+  `templates.system_prompt`, `template_customizations.system_prompt`
+  und den `meetings.language`-Default; Backend-Resolver, Pydantic-
+  Models, seed.sql und Frontend-DTO komplett bereinigt.
 
-**Nächste geplante Iteration: v0.1.48 — Audio-i18n + legacy cleanup**
+**Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**
 
-1. **Whisper-Language pro Meeting:** aktuell `language='de'`
-   hardcoded in `backend/app/routers/meetings.py` (POST /recordings)
-   und in `backend/app/tasks/transcribe.py`. Ziel: Dropdown an der
-   Aufnahme mit Default aus `users.ui_locale` + Auto-Detect-Option.
-2. **Stimmprobe-Standardtexte pro Sprache:** aktuell `NORDWIND_TEXT`
-   in `frontend/components/voice-enrollment-dialog.tsx` hardcoded
-   deutsch. Pro Sprache ein kanonischer phonetisch ausgewogener Text
-   (North-Wind / La-Bise et le Soleil / El viento del norte y el
-   Sol / La tramontana e il Sole). Auswahl folgt User-UI-Locale.
-   Die i18n-Keys für die Stimmproben-Texte sind in v0.1.47 schon im
-   `about.speakerBullet2`-Body referenziert, aber im Modal noch nicht.
-3. **Legacy `templates.system_prompt TEXT` droppen** in Migration
-   0013, sobald sicher ist dass nichts mehr darauf liest. Backend-
-   Resolver in v0.1.46 depriorisiert sie schon, aber `seed.sql`
-   schreibt sie noch fürs Backward-Compat.
-
-**Alternativ Duo-Receiver:** der Webhook-Empfänger in `duo.aimighty.de`
-ist seit v0.1.39 offen — Insilo-Seite komplett bereit.
+Insilo-Seite ist seit v0.1.39 fertig: Webhook-Manager mit HMAC,
+Fan-Out, Backoff, REST-API + Markdown-Export. Fehlt nur noch der
+Empfänger in `duo.aimighty.de`.
 
 Die Vision (vom User):
 > Insilo schreibt nach jeder Transkription Meeting-Minutes als Markdown
@@ -186,22 +183,23 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.47** (alle 5 Pods Ready, Helm-Rev 33) |
+| Version | **v0.1.48** (Repo; Box noch auf v0.1.47, Helm-Rev 33) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.46` |
-| LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot, **5-Sprachen-Prompts seit v0.1.46** |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.48` |
+| LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
-| Stimmprobe | „Nordwind und Sonne"-Standardtext (DE only — pro Sprache kommt in v0.1.47), Whisper `/embed-only`-Endpoint |
-| UI-i18n | 511 Keys × 5 Sprachen, alle UI-Strings + LLM-Output-Labels lokalisiert (`summaryLabels`-Namespace) |
-| Backend-i18n | `app/errors.py` jetzt mit allen 5 Sprachen; ContextVar-Resolution via Accept-Language + `insilo-locale`-Cookie aus `api/client.ts` |
-| Prompts | `templates.system_prompts JSONB` (Migration 0012), pro Locale; `summarize.py` resolved `users.ui_locale → org_settings.ui_locale → 'de'` |
+| Stimmprobe | „North Wind"-Fabel pro Sprache (v0.1.48), Whisper `/embed-only`-Endpoint |
+| Whisper-Sprache | Per-Meeting wählbar via Dropdown (v0.1.48); NULL in `meetings.language` → faster-whisper auto-detect |
+| UI-i18n | 551 Keys × 5 Sprachen, alle UI-Strings + LLM-Output-Labels lokalisiert (`summaryLabels`-Namespace) |
+| Backend-i18n | `app/errors.py` mit allen 5 Sprachen; ContextVar-Resolution via Accept-Language + `insilo-locale`-Cookie aus `api/client.ts` |
+| Prompts | `templates.system_prompts JSONB` (Migration 0012) — Legacy TEXT-Spalte gedroppt in 0013 (v0.1.48); Resolver pro Locale mit DE-Fallback |
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
-| Migrationen | 11 angewendet (0001–0011) |
+| Migrationen | 13 im Repo (0001–0013); nach Deploy auch auf der Box |
 
 ## Offene Issues / Bekannte Stolpersteine
 
@@ -227,10 +225,12 @@ git log --oneline -5
 gh run list --workflow=release.yml --limit 3
 ```
 
-Sollte **v0.1.47** als jüngsten Tag zeigen. Tag-Liste seit
+Sollte **v0.1.48** als jüngsten Tag zeigen. Tag-Liste seit
 v0.1.34: 0.1.35 → 0.1.36 → 0.1.37 → 0.1.38 → 0.1.39 → 0.1.40 →
-0.1.41 → 0.1.42 → 0.1.43 → 0.1.44 → 0.1.45 → 0.1.46 → 0.1.47.
-Box läuft auf v0.1.47 (Helm-Rev 33).
+0.1.41 → 0.1.42 → 0.1.43 → 0.1.44 → 0.1.45 → 0.1.46 → 0.1.47 →
+0.1.48. Box läuft (Stand Doku-Update) noch auf v0.1.47 — der
+v0.1.48-Deploy braucht Migration 0013, der Init-Container erledigt
+das idempotent.
 
 ## Cmd-Shift-R nicht vergessen
 

@@ -10,9 +10,10 @@
 -- v0.1.46+: `system_prompts JSONB` enthält Prompts pro UI-Locale
 -- (`de`/`en`/`fr`/`es`/`it`). Die JSON-Schema-Feldnamen bleiben Deutsch
 -- (z. B. `zusammenfassung`, `kernpunkte`) — übersetzt wird nur der
--- Inhalt, nicht das Schema. Der legacy `system_prompt TEXT`-Slot bleibt
--- mit der deutschen Variante befüllt (Backward-Compat für ältere
--- Code-Pfade, bis er in einer späteren Migration entfällt).
+-- Inhalt, nicht das Schema.
+--
+-- v0.1.48: Legacy `system_prompt TEXT`-Slot in Migration 0013 entfernt.
+-- Seed schreibt nur noch die JSONB-Map.
 --
 -- ON CONFLICT DO UPDATE: idempotent — jeder Init-Container-Run schreibt
 -- die neuesten Defaults. User-Overrides leben in template_customizations
@@ -21,7 +22,7 @@
 
 insert into public.templates (
   id, org_id, name, description, category,
-  system_prompt, system_prompts, output_schema, few_shot_input, few_shot_output,
+  system_prompts, output_schema, few_shot_input, few_shot_output,
   is_system, is_active, version
 )
 values
@@ -34,20 +35,6 @@ values
   'Allgemeine Besprechung',
   'Standard-Zusammenfassung für interne und externe Meetings.',
   'general',
-  $prompt$## Aufgabe
-Erstelle ein strukturiertes Protokoll des folgenden Geschäftsmeetings.
-
-## Eingabeformat
-Das Transkript zeigt jeden Sprecherbeitrag als `[Sprecher]: Text`. Die Namen sind verlässlich — attributiere Aussagen, Beschlüsse und Aufgaben den jeweiligen Personen.
-
-## Regeln
-- Verwende ausschließlich Informationen aus dem Transkript.
-- Wenn eine Information nicht im Transkript steht, lass das Feld leer oder setze es auf `null` — erfinde nichts.
-- Schreibe in formellem Deutsch, sachlich und prägnant. Keine Marketing-Floskeln, keine Superlative.
-- Bei Beschlüssen mit Verantwortlichkeit und Frist: nur eintragen, was wörtlich vereinbart wurde.
-
-## Ausgabe
-Gib ausschließlich ein JSON-Objekt nach dem definierten Schema zurück. Beginne mit dem Feld `_analyse` (2-3 Sätze zu Schwerpunkt und Feldabdeckung), arbeite dann die Hauptfelder ab.$prompt$,
   jsonb_build_object(
     'de', $de$## Aufgabe
 Erstelle ein strukturiertes Protokoll des folgenden Geschäftsmeetings.
@@ -202,21 +189,6 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   'Mandantengespräch',
   'Strukturiertes Aktenprotokoll für anwaltliche und steuerliche Mandantengespräche.',
   'legal',
-  $prompt$## Aufgabe
-Erstelle ein Aktenprotokoll des folgenden Mandantengesprächs.
-
-## Eingabeformat
-Das Transkript zeigt jeden Sprecherbeitrag als `[Sprecher]: Text`. Trenne klar zwischen Mandantenangaben (Sachverhalt aus erster Hand) und den Einordnungen der Beraterin/des Beraters.
-
-## Regeln
-- Strikt wahren: anwaltliche/steuerliche Schweigepflicht. Keine wertenden Adjektive über Mandanten oder Dritte.
-- Keine eigenen rechtlichen Wertungen, keine Empfehlungen, kein Mandatsgeheimnis-Sprung. Nur dokumentieren, was im Gespräch gesagt wurde.
-- Bei Beträgen, Daten, Fristen und Aktenzeichen: exakte wörtliche Wiedergabe. Keine Annäherungen.
-- Wenn eine Angabe nicht im Transkript steht (z. B. Honorar wurde nicht thematisiert), lass das Feld leer oder setze es auf `null` — erfinde nichts.
-- Schreibe in formellem Deutsch.
-
-## Ausgabe
-Gib ausschließlich ein JSON-Objekt nach dem definierten Schema zurück. Beginne mit dem Feld `_analyse` (2-3 Sätze zum Gesprächsschwerpunkt und welche Felder mangels Datenlage leer bleiben), arbeite dann die Hauptfelder ab.$prompt$,
   jsonb_build_object(
     'de', $de$## Aufgabe
 Erstelle ein Aktenprotokoll des folgenden Mandantengesprächs.
@@ -373,22 +345,6 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   'Vertriebsgespräch',
   'Discovery Call oder Kundentermin im Vertrieb, ausgewertet im BANT-Schema.',
   'sales',
-  $prompt$## Aufgabe
-Werte das folgende Vertriebsgespräch nach dem BANT-Schema aus.
-
-## Eingabeformat
-Das Transkript zeigt jeden Sprecherbeitrag als `[Sprecher]: Text`. Identifiziere klar, wer auf Kunden- und wer auf Vertriebsseite spricht, und attribuiere Aussagen entsprechend.
-
-## Regeln
-- Strikt nüchtern: keine vertriebliche Übertreibung, keine Wunschdenken-Interpretationen.
-- BANT-Felder: nur ausfüllen, wenn das Transkript konkrete Angaben liefert. Wurde ein Punkt nicht erfragt oder beantwortet, schreibe wörtlich „nicht erfragt" — nicht raten.
-- `verkaufschance_einschaetzung`: nur einer der vier Enum-Werte ist erlaubt. Stütze die Wahl auf konkrete Signale aus dem Transkript (zitierbar).
-- Einwände wörtlich oder eng paraphrasiert wiedergeben.
-- Wenn eine Information fehlt: leer oder `null` — nicht erfinden.
-- Schreibe in formellem Deutsch.
-
-## Ausgabe
-Gib ausschließlich ein JSON-Objekt nach dem definierten Schema zurück. Beginne mit dem Feld `_analyse` (2-3 Sätze zum Gesprächsverlauf und worauf die Einschätzung fußt), arbeite dann die Hauptfelder ab.$prompt$,
   jsonb_build_object(
     'de', $de$## Aufgabe
 Werte das folgende Vertriebsgespräch nach dem BANT-Schema aus.
@@ -549,21 +505,6 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   'Jahresgespräch',
   'Strukturiertes Protokoll für jährliche Kunden- oder Bestandsgespräche.',
   'consulting',
-  $prompt$## Aufgabe
-Erstelle ein Protokoll des folgenden Jahresgesprächs für die Kundenakte.
-
-## Eingabeformat
-Das Transkript zeigt jeden Sprecherbeitrag als `[Sprecher]: Text`. Die Namen sind verlässlich — attribuiere Aussagen, Beschlüsse und Wünsche den richtigen Personen.
-
-## Regeln
-- Risikoveränderungen seit dem Vorjahr klar herausarbeiten: gestiegen, gesunken, neu, weggefallen.
-- Cross-Selling-Potenziale notieren, ohne aufdringlich oder verkäuferisch zu wirken — neutrale Beobachtung.
-- Wiedervorlage-Datum sinnvoll setzen (typisch: nächstes Jahresgespräch in 12 Monaten, früher wenn das Transkript es nahelegt).
-- Wenn eine Information nicht im Transkript steht, lass das Feld leer oder setze es auf `null` — nicht erfinden.
-- Schreibe in formellem Deutsch.
-
-## Ausgabe
-Gib ausschließlich ein JSON-Objekt nach dem definierten Schema zurück. Beginne mit dem Feld `_analyse` (2-3 Sätze zum Gesundheitszustand der Kundenbeziehung), arbeite dann die Hauptfelder ab.$prompt$,
   jsonb_build_object(
     'de', $de$## Aufgabe
 Erstelle ein Protokoll des folgenden Jahresgesprächs für die Kundenakte.
@@ -715,7 +656,6 @@ on conflict (id) do update set
   name             = excluded.name,
   description      = excluded.description,
   category         = excluded.category,
-  system_prompt    = excluded.system_prompt,
   system_prompts   = excluded.system_prompts,
   output_schema    = excluded.output_schema,
   few_shot_input   = excluded.few_shot_input,

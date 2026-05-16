@@ -16,8 +16,6 @@ const PREFERRED_MIME_TYPES = [
   "audio/ogg;codecs=opus",
 ];
 
-const NORDWIND_TEXT = `Einst stritten sich Nordwind und Sonne, wer von ihnen beiden wohl der Stärkere wäre, als ein Wanderer, der in einen warmen Mantel gehüllt war, des Weges daherkam. Sie wurden einig, dass derjenige für den Stärkeren gelten sollte, der den Wanderer zwingen würde, seinen Mantel abzunehmen. Der Nordwind blies mit aller Macht, aber je mehr er blies, desto fester hüllte sich der Wanderer in seinen Mantel ein. Endlich gab der Nordwind den Kampf auf. Nun erwärmte die Sonne die Luft mit ihren freundlichen Strahlen, und schon nach wenigen Augenblicken zog der Wanderer seinen Mantel aus. Da musste der Nordwind zugeben, dass die Sonne von ihnen beiden der Stärkere war.`;
-
 function pickMimeType(): string | null {
   if (typeof MediaRecorder === "undefined") return null;
   for (const t of PREFERRED_MIME_TYPES) {
@@ -233,7 +231,7 @@ export function VoiceEnrollmentDialog({
               <p className="mono mb-2 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
                 {t("nordwindTitle")}
               </p>
-              <p>{NORDWIND_TEXT}</p>
+              <p>{t("nordwindBody")}</p>
             </div>
           )}
 
@@ -253,7 +251,7 @@ export function VoiceEnrollmentDialog({
                   {formatDuration(elapsed * 1000)}
                 </p>
               </div>
-              <p>{NORDWIND_TEXT}</p>
+              <p>{t("nordwindBody")}</p>
             </div>
           )}
 

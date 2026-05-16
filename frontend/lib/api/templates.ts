@@ -40,9 +40,7 @@ export type TemplateDto = {
 };
 
 export type TemplateDetail = TemplateDto & {
-  /** Legacy DE-only flavors — retained for backward compat. */
-  default_prompt: string;
-  custom_prompt: string | null;
+  /** Convenience: effective DE prompt, picked from `effective_prompts`. */
   effective_prompt: string;
   /** Locale-aware prompt maps (v0.1.46+). DE is always present in defaults. */
   default_prompts: LocalePromptMap;

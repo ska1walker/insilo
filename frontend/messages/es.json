@@ -61,7 +61,10 @@
     "defaultTitlePrefix": "Grabación del",
     "micStartFailed": "No se ha podido iniciar el micrófono. Compruebe los permisos del navegador.",
     "uploadFailedHttp": "Error al subir (HTTP {status}). ¿Está accesible el backend?",
-    "uploadFailedTryAgain": "Error al subir. Inténtelo de nuevo."
+    "uploadFailedTryAgain": "Error al subir. Inténtelo de nuevo.",
+    "audioLanguageLabel": "Idioma de la grabación",
+    "audioLanguageAuto": "Detección automática",
+    "audioLanguageHint": "Pista enviada a Whisper para la transcripción. El formato del acta sigue, no obstante, el idioma de su interfaz."
   },
   "meeting": {
     "listTitle": "Reuniones",
@@ -434,6 +437,7 @@
     "titlePrefix": "Muestra de voz de",
     "intro": "Lea el siguiente texto estándar en voz alta y con claridad. Dura unos 35–45 segundos y contiene todos los fonemas importantes del alemán — así Insilo aprende la voz con especial precisión.",
     "nordwindTitle": "El viento del norte y el sol",
+    "nordwindBody": "El viento del norte y el sol porfiaban sobre cuál de ellos era el más fuerte, cuando acertó a pasar un viajero envuelto en ancha capa. Convinieron en que quien antes obligara al viajero a quitarse la capa sería considerado más poderoso. El viento del norte sopló con gran furia, pero cuanto más soplaba, más se arrebujaba en su capa el viajero; por fin el viento del norte abandonó la empresa. Entonces brilló el sol con ardor, e inmediatamente se despojó de su capa el viajero; por lo que el viento del norte hubo de reconocer la superioridad del sol.",
     "recordingHeader": "Grabación en curso",
     "processing": "La muestra de voz se está procesando …",
     "successHeader": "Muestra de voz guardada",

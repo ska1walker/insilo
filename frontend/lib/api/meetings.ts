@@ -87,6 +87,8 @@ export async function createMeeting(args: {
   durationMs: number;
   mimeType: string;
   templateId?: string;
+  /** "auto" (or undefined) lets Whisper auto-detect. ISO 639-1: de/en/fr/es/it. */
+  audioLanguage?: string;
 }): Promise<MeetingDto> {
   const form = new FormData();
   form.append("audio", args.blob, "recording");
@@ -94,6 +96,7 @@ export async function createMeeting(args: {
   form.append("duration_ms", String(args.durationMs));
   form.append("mime_type", args.mimeType);
   if (args.templateId) form.append("template_id", args.templateId);
+  if (args.audioLanguage) form.append("language", args.audioLanguage);
   return apiRequest<MeetingDto>("/api/v1/recordings", {
     method: "POST",
     body: form,

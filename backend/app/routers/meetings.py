@@ -225,6 +225,9 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
     return dto
 
 
+_ALLOWED_RECORDING_LANGS: frozenset[str] = frozenset({"de", "en", "fr", "es", "it"})
+
+
 @router.post("/recordings", status_code=201)
 async def create_recording(
     audio: UploadFile = File(...),
@@ -232,8 +235,22 @@ async def create_recording(
     duration_ms: int = Form(...),
     mime_type: str = Form(...),
     template_id: str | None = Form(default=None),
+    language: str | None = Form(default=None),
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
+    # Normalize the language input:
+    #   - missing / "" / "auto" → NULL (faster-whisper auto-detects)
+    #   - "de"/"en"/"fr"/"es"/"it" → stored verbatim
+    #   - anything else → 400
+    db_language: str | None
+    raw_lang = (language or "").strip().lower()
+    if raw_lang in ("", "auto"):
+        db_language = None
+    elif raw_lang in _ALLOWED_RECORDING_LANGS:
+        db_language = raw_lang
+    else:
+        raise http_error(400, "meeting.invalid_language", lang=raw_lang)
+
     blob = await audio.read()
     meeting_id = uuid4()
     key = _audio_key(user.org_id, meeting_id, mime_type)
@@ -272,7 +289,7 @@ async def create_recording(
             values (
                 $1, $2, $3, $4, 'queued',
                 $5, $6, $7,
-                'de', $8, jsonb_build_object('mime_type', $9::text)
+                $8, $9, jsonb_build_object('mime_type', $10::text)
             )
             returning id, title, recorded_at, duration_sec, audio_size_bytes,
                      audio_path, status, template_id,
@@ -285,6 +302,7 @@ async def create_recording(
             duration_sec,
             key,
             len(blob),
+            db_language,
             tpl_uuid,
             mime_type,
         )

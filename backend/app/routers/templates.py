@@ -149,10 +149,8 @@ async def get_template(
             """
             select t.id, t.name, t.description, t.category, t.is_system,
                    t.version, t.output_schema,
-                   t.system_prompt as default_prompt,
                    t.system_prompts as default_prompts,
                    t.few_shot_input, t.few_shot_output,
-                   c.system_prompt as custom_prompt,
                    c.system_prompts as custom_prompts,
                    c.display_name, c.display_description, c.custom_fields,
                    c.updated_at as custom_updated_at
@@ -181,23 +179,13 @@ async def get_template(
 
     default_prompts = _parse_jsonb_dict(row["default_prompts"])
     custom_prompts = _parse_jsonb_dict(row["custom_prompts"])
-
-    # Backfill DE from the legacy TEXT column when JSONB is missing it —
-    # keeps the UI editor populated for templates seeded pre-0012.
-    if "de" not in default_prompts and row["default_prompt"]:
-        default_prompts["de"] = row["default_prompt"]
-    if not custom_prompts and row["custom_prompt"]:
-        custom_prompts = {"de": row["custom_prompt"]}
-
     effective_prompts = {**default_prompts, **custom_prompts}
 
     dto = _base_dto(row)
-    dto["default_prompt"] = row["default_prompt"]
-    dto["custom_prompt"] = row["custom_prompt"]
     dto["default_prompts"] = default_prompts
     dto["custom_prompts"] = custom_prompts or None
     dto["effective_prompts"] = effective_prompts
-    dto["is_customized"] = bool(row["custom_prompt"]) or bool(custom_prompts)
+    dto["is_customized"] = bool(custom_prompts)
     dto["effective_prompt"] = (
         effective_prompts.get("de")
         or (next(iter(effective_prompts.values())) if effective_prompts else "")
@@ -226,17 +214,16 @@ _LOCALE_KEYS: tuple[str, ...] = ("de", "en", "fr", "es", "it")
 
 def _normalize_system_prompts(
     system_prompts: dict[str, str] | None,
-    legacy_system_prompt: str | None,
-) -> tuple[dict[str, str], str]:
-    """Validate caller-supplied per-locale prompts and derive the legacy
-    DE column value.
+) -> dict[str, str]:
+    """Validate caller-supplied per-locale prompts.
 
-    The caller may send either:
-      - `system_prompts={"de": "...", "en": "..."}` — the v0.1.46+ shape.
-      - `system_prompt="..."` — legacy, treated as the DE prompt.
+    The caller sends `system_prompts={"de": "...", "en": "..."}` — the
+    v0.1.46+ shape. The DE entry is the canonical fallback the resolver
+    in summarize.py reaches for when the requested locale is missing;
+    if the caller omits it, we synthesize it from the first available
+    locale so the row stays usable.
 
-    Returns `(prompts_jsonb, de_prompt_for_legacy_column)`. Raises
-    HTTPException on validation errors.
+    Raises HTTPException on validation errors.
     """
     out: dict[str, str] = {}
     if system_prompts:
@@ -254,26 +241,17 @@ def _normalize_system_prompts(
                         400, f"prompt for locale {code!r} is too long (>20000 chars)"
                     )
                 out[code] = stripped
-    if legacy_system_prompt:
-        legacy_stripped = legacy_system_prompt.strip()
-        if legacy_stripped and "de" not in out:
-            out["de"] = legacy_stripped
     if not out:
-        raise HTTPException(400, "at least one of system_prompt / system_prompts.de is required")
+        raise HTTPException(400, "system_prompts must contain at least one locale")
     if "de" not in out:
-        # DE is the canonical fallback that the legacy column + the
-        # summarize.py resolution chain both rely on. Synthesize it from
-        # the first available locale (typically EN) so the row stays valid.
         out["de"] = next(iter(out.values()))
-    return out, out["de"]
+    return out
 
 
 class PromptUpdate(BaseModel):
     """Customize a (system) template for this org.
 
-    Either `system_prompt` (legacy, treated as the DE prompt) or
-    `system_prompts` (per-locale map, v0.1.46+) is required. Sending
-    both is allowed — `system_prompts.de` wins.
+    `system_prompts` (per-locale map, v0.1.46+) is required.
 
     The optional `display_name` / `display_description` let the org
     rename a system template — pass `""` (empty string) to clear an
@@ -285,7 +263,6 @@ class PromptUpdate(BaseModel):
     untouched, an empty list `[]` clears all custom fields.
     """
 
-    system_prompt: str | None = Field(default=None, max_length=20_000)
     system_prompts: dict[str, str] | None = None
     display_name: str | None = Field(default=None, max_length=120)
     display_description: str | None = Field(default=None, max_length=500)
@@ -356,34 +333,30 @@ async def upsert_template_prompt(
         # primitive, so we use COALESCE($x, existing_col) — but for the
         # initial INSERT case we just write payload values (NULL if
         # absent in payload).
-        prompts_dict, legacy_de_prompt = _normalize_system_prompts(
-            payload.system_prompts, payload.system_prompt
-        )
+        prompts_dict = _normalize_system_prompts(payload.system_prompts)
 
         await conn.execute(
             """
             insert into public.template_customizations (
-                org_id, template_id, system_prompt, system_prompts,
+                org_id, template_id, system_prompts,
                 display_name, display_description, custom_fields, updated_by
             )
-            values ($1, $2, $3, $4::jsonb, $5, $6, coalesce($7::jsonb, '[]'::jsonb), $8)
+            values ($1, $2, $3::jsonb, $4, $5, coalesce($6::jsonb, '[]'::jsonb), $7)
             on conflict (org_id, template_id) do update set
-                system_prompt = excluded.system_prompt,
                 system_prompts = excluded.system_prompts,
                 display_name =
-                    case when $9 then excluded.display_name
+                    case when $8 then excluded.display_name
                          else public.template_customizations.display_name end,
                 display_description =
-                    case when $10 then excluded.display_description
+                    case when $9 then excluded.display_description
                          else public.template_customizations.display_description end,
                 custom_fields =
-                    case when $11 then excluded.custom_fields
+                    case when $10 then excluded.custom_fields
                          else public.template_customizations.custom_fields end,
                 updated_by = excluded.updated_by
             """,
             user.org_id,
             template_id,
-            legacy_de_prompt,
             json.dumps(prompts_dict),
             new_name,
             new_description,
@@ -419,14 +392,12 @@ async def reset_template_prompt(
 class TemplateCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
     description: str = Field(default="", max_length=500)
-    system_prompt: str | None = Field(default=None, max_length=20_000)
     system_prompts: dict[str, str] | None = None
 
 
 class TemplateUpdate(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
     description: str = Field(default="", max_length=500)
-    system_prompt: str | None = Field(default=None, max_length=20_000)
     system_prompts: dict[str, str] | None = None
 
 
@@ -436,24 +407,21 @@ async def create_template(
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     """Create a new org-owned template with the flexible default schema."""
-    prompts_dict, legacy_de_prompt = _normalize_system_prompts(
-        payload.system_prompts, payload.system_prompt
-    )
+    prompts_dict = _normalize_system_prompts(payload.system_prompts)
     async with acquire() as conn:
         row = await conn.fetchrow(
             """
             insert into public.templates (
                 org_id, name, description, category,
-                system_prompt, system_prompts, output_schema,
+                system_prompts, output_schema,
                 is_system, is_active, version, created_by
             )
-            values ($1, $2, $3, 'custom', $4, $5::jsonb, $6::jsonb, false, true, 1, $7)
+            values ($1, $2, $3, 'custom', $4::jsonb, $5::jsonb, false, true, 1, $6)
             returning id, name, description, category, is_system, version, output_schema
             """,
             user.org_id,
             payload.name.strip(),
             payload.description.strip(),
-            legacy_de_prompt,
             json.dumps(prompts_dict),
             json.dumps(DEFAULT_USER_SCHEMA),
             user.user_id,
@@ -491,22 +459,19 @@ async def update_template(
                 "description are fixed",
             )
 
-        prompts_dict, legacy_de_prompt = _normalize_system_prompts(
-            payload.system_prompts, payload.system_prompt
-        )
+        prompts_dict = _normalize_system_prompts(payload.system_prompts)
         row = await conn.fetchrow(
             """
             update public.templates
             set name = $2, description = $3,
-                system_prompt = $4, system_prompts = $5::jsonb,
+                system_prompts = $4::jsonb,
                 version = version + 1, updated_at = now()
-            where id = $1 and org_id = $6 and is_active = true
+            where id = $1 and org_id = $5 and is_active = true
             returning id, name, description, category, is_system, version, output_schema
             """,
             template_id,
             payload.name.strip(),
             payload.description.strip(),
-            legacy_de_prompt,
             json.dumps(prompts_dict),
             user.org_id,
         )

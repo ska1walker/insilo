@@ -12,6 +12,9 @@ import { defaultMeetingTitle, formatDuration } from "@/lib/format";
 
 const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
 
+const AUDIO_LANGUAGE_OPTIONS = ["auto", "de", "en", "fr", "es", "it"] as const;
+type AudioLanguage = (typeof AUDIO_LANGUAGE_OPTIONS)[number];
+
 type Phase =
   | "idle"
   | "requesting"
@@ -49,6 +52,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   const router = useRouter();
   const t = useTranslations("recording");
   const tCommon = useTranslations("common");
+  const tLocale = useTranslations("locale");
   const locale = useLocale();
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
@@ -63,6 +67,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   const [templates, setTemplates] = useState<TemplateDto[] | null>(null);
   const [selectedTemplate, setSelectedTemplate] =
     useState<string>(DEFAULT_TEMPLATE_ID);
+  const [audioLanguage, setAudioLanguage] = useState<AudioLanguage>("auto");
 
   useEffect(() => {
     listTemplates()
@@ -150,6 +155,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         durationMs,
         mimeType,
         templateId: selectedTemplate,
+        audioLanguage,
       });
       router.push(`/m/${meeting.id}`);
     } catch (err) {
@@ -309,6 +315,34 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
                 </label>
               ))}
             </div>
+          </div>
+        )}
+
+        {phase === "idle" && (
+          <div className="mt-8 text-left">
+            <label
+              htmlFor="audio-language"
+              className="mb-3 block text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta"
+            >
+              {t("audioLanguageLabel")}
+            </label>
+            <select
+              id="audio-language"
+              value={audioLanguage}
+              onChange={(e) => setAudioLanguage(e.target.value as AudioLanguage)}
+              className="w-full rounded-lg border border-border-subtle bg-white px-4 py-3 text-text-primary focus:border-text-primary focus:outline-none"
+            >
+              {AUDIO_LANGUAGE_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt === "auto"
+                    ? t("audioLanguageAuto")
+                    : tLocale(`names.${opt}` as "names.de")}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs text-text-meta">
+              {t("audioLanguageHint")}
+            </p>
           </div>
         )}
 

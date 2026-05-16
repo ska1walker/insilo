@@ -8,6 +8,7 @@ import { RecordingIndicator } from "@/components/recording-indicator";
 import { ApiError } from "@/lib/api/client";
 import { createMeeting } from "@/lib/api/meetings";
 import { listTemplates, type TemplateDto } from "@/lib/api/templates";
+import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
 
 const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
@@ -99,10 +100,15 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
     }
     setPhase("requesting");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: ASR_AUDIO_CONSTRAINTS,
+      });
       streamRef.current = stream;
       chunksRef.current = [];
-      const recorder = new MediaRecorder(stream, { mimeType: mime });
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mime,
+        ...ASR_RECORDER_OPTIONS,
+      });
       recorder.ondataavailable = (ev) => {
         if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data);
       };

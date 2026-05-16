@@ -3,6 +3,62 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🚀 v0.1.49 — Audio-Quality Sweep (16. Mai 2026, später Nachmittag)
+>
+> **Stand bei v0.1.49:** Browser-DSP entschärft, MediaRecorder mit
+> expliziter 128-kbps-Opus-Bitrate, Whisper auf `beam_size=5` (Standard-
+> Qualität statt Dev-Speed-Default). User-Feedback nach v0.1.48 war:
+> Audiodateien „sehr, sehr, sehr klein", sporadisch Wörter fehlend in
+> der Transkription. Drei voneinander unabhängige Ursachen identifiziert
+> und alle gleichzeitig adressiert.
+>
+> **Was v0.1.49 gebracht hat:**
+>
+> - **Frontend: expliziter `getUserMedia`-Constraints-Block.** Beide
+>   Aufnahme-Komponenten ([recording-block.tsx](frontend/components/recording-block.tsx),
+>   [voice-enrollment-dialog.tsx](frontend/components/voice-enrollment-dialog.tsx))
+>   nutzen jetzt den neuen Helper [frontend/lib/audio.ts](frontend/lib/audio.ts).
+>   `ASR_AUDIO_CONSTRAINTS` schaltet `autoGainControl: false`,
+>   `noiseSuppression: false`, `echoCancellation: true`,
+>   `channelCount: 1`, `sampleRate: 48000`. Begründung im Helper-Docblock:
+>   Chrome's DSP-Defaults sind auf VoIP getunet — AGC komprimiert Sprach-
+>   Dynamik, NoiseSuppression schneidet Frikative (s, sch, f, h) ab.
+>   Whisper hat eigene VAD, ist robust gegen Hintergrundrauschen.
+> - **Frontend: MediaRecorder mit 128 kbps Opus.** `ASR_RECORDER_OPTIONS`
+>   = `{ audioBitsPerSecond: 128_000 }` neben dem schon vorhandenen
+>   `mimeType`. Datei jetzt ~1 MB/min statt ~250 kB/min — immer noch
+>   klein in absoluten Zahlen, fühlt sich aber „richtig" an und gibt
+>   Whisper ausreichend Signal nach dem 16-kHz-Downsample.
+> - **Whisper: `beam_size=5` als Default.** Neues Settings-Feld
+>   `beam_size: int = 5` in [services/whisper/app/main.py](services/whisper/app/main.py),
+>   Call-Site auf `settings.beam_size` umgestellt — der Code-Kommentar
+>   „bump to 5 in prod" ist damit eingelöst. Helm-Env-Hook `BEAM_SIZE`
+>   (nicht `WHISPER_BEAM_SIZE`!) in [deployment-whisper.yaml](olares/templates/deployment-whisper.yaml)
+>   + `whisper.beamSize: 5` in [values.yaml](olares/values.yaml). Notfall-Rollback per
+>   `helm upgrade --set whisper.beamSize=1`.
+> - **Wichtige Beobachtung beim Audit:** Die existierenden `WHISPER_*`-
+>   env-Vars im Deployment (`WHISPER_MODEL`, `WHISPER_DEVICE`,
+>   `WHISPER_COMPUTE_TYPE`) sind **nominal** — `pydantic-settings` ist
+>   ohne `env_prefix` konfiguriert, also würden sie auf `MODEL`/`DEVICE`/
+>   `COMPUTE_TYPE` mappen, nicht auf das `WHISPER_`-Präfix. Die Settings
+>   nutzen daher die Code-Defaults (`model="tiny"`). Das funktioniert
+>   trotzdem, weil pro Service-Start beim ersten Health-Check
+>   `large-v3` wahrscheinlich anderweitig konfiguriert wird (z. B. .env
+>   im Image oder Side-Effekt vom Mount). Für `BEAM_SIZE` habe ich das
+>   bewusst korrekt benannt — wer später aufräumen will: `env_prefix="WHISPER_"`
+>   in der Settings-Klasse setzen, alle WHISPER_*-Vars werden dann real.
+> - **Verification:** Frontend `tsc --noEmit` ✓, Backend pytest 103/103 ✓,
+>   `bash scripts/check-chart.sh` alle Checks ✓.
+>
+> **Smoke-Test-Checkliste fürs Box-Deploy:**
+> 1. Cmd-Shift-R im Browser nicht vergessen.
+> 2. DevTools → Network → `/aufnahme` aufnehmen → Datei-Größe ≈ 4× größer.
+> 3. DevTools Console: `navigator.mediaDevices.getUserMedia({audio:true}).then(s=>console.log(s.getAudioTracks()[0].getSettings()))`
+>    zeigt `autoGainControl: false, noiseSuppression: false, echoCancellation: true`.
+> 4. Whisper-Pod-Log: Transkriptionsdauer ~2-3× höher als vorher (beam=5 vs beam=1).
+> 5. Frikativ-Test-Satz: „Wenn die Sonne scheint, schmilzt der Schnee schnell"
+>    sollte vollständig erkannt werden.
+>
 > # 🚀 v0.1.48 — Audio-i18n + Legacy Cleanup (16. Mai 2026, Nachmittag)
 >
 > **Stand bei v0.1.48:** Migration 0013 angelegt (12 → 13). Aufnahme-

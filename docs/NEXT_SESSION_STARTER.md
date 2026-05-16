@@ -13,13 +13,10 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.48** im Repo (Box-Deploy steht noch
-aus). Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`,
-Box-URL `https://e5d605f3.kaivostudio.olares.de`). Auf der Box läuft
-aktuell **v0.1.47** (Helm-Revision 33). Nach Deploy von v0.1.48 wird
-Migration 0013 vom Init-Container ausgeführt — droppt
-`templates.system_prompt`, `template_customizations.system_prompt` und
-den `meetings.language`-Default. Feature-Set:
+**Stand:** Insilo läuft als **v0.1.49** im Repo. v0.1.48 ist auf der Box
+deployed (Helm-Rev 34, Migration 0013 erfolgreich). v0.1.49-Deploy steht
+noch aus. Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`,
+Box-URL `https://e5d605f3.kaivostudio.olares.de`). Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
 - **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
@@ -57,6 +54,13 @@ den `meetings.language`-Default. Feature-Set:
   `templates.system_prompt`, `template_customizations.system_prompt`
   und den `meetings.language`-Default; Backend-Resolver, Pydantic-
   Models, seed.sql und Frontend-DTO komplett bereinigt.
+- **Audio-Quality-Sweep (v0.1.49)** — neuer Helper
+  [frontend/lib/audio.ts](frontend/lib/audio.ts) zentralisiert
+  `getUserMedia`-Constraints und MediaRecorder-Bitrate. Browser-DSP
+  hart auf ASR-Posture umgestellt (AGC/NoiseSuppression aus,
+  EchoCancellation an), 128 kbps Opus, 48 kHz mono. Whisper auf
+  `beam_size=5` (war 1, „dev-speed default"). Dateien jetzt ~1 MB/min
+  statt ~250 kB/min, deutsche Frikative gehen nicht mehr verloren.
 
 **Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**
 
@@ -183,11 +187,11 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.48** (Repo; Box noch auf v0.1.47, Helm-Rev 33) |
+| Version | **v0.1.49** (Repo; Box läuft v0.1.48, Helm-Rev 34) |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.48` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.49` |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
@@ -225,12 +229,10 @@ git log --oneline -5
 gh run list --workflow=release.yml --limit 3
 ```
 
-Sollte **v0.1.48** als jüngsten Tag zeigen. Tag-Liste seit
-v0.1.34: 0.1.35 → 0.1.36 → 0.1.37 → 0.1.38 → 0.1.39 → 0.1.40 →
-0.1.41 → 0.1.42 → 0.1.43 → 0.1.44 → 0.1.45 → 0.1.46 → 0.1.47 →
-0.1.48. Box läuft (Stand Doku-Update) noch auf v0.1.47 — der
-v0.1.48-Deploy braucht Migration 0013, der Init-Container erledigt
-das idempotent.
+Sollte **v0.1.49** als jüngsten Tag zeigen. Tag-Liste seit
+v0.1.34: 0.1.35 → … → 0.1.47 → 0.1.48 → 0.1.49. Box läuft
+(Stand Doku-Update) noch auf v0.1.48 (Helm-Rev 34) — v0.1.49 ist
+nur Frontend+Whisper-Code-Change, keine Migration nötig.
 
 ## Cmd-Shift-R nicht vergessen
 

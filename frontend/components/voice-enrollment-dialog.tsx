@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
 import { ApiError } from "@/lib/api/client";
 import { enrollSpeaker, type EnrollResult, type OrgSpeaker } from "@/lib/api/speakers";
+import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
 import { formatDuration } from "@/lib/format";
 
 const PREFERRED_MIME_TYPES = [
@@ -97,10 +98,15 @@ export function VoiceEnrollmentDialog({
     mimeRef.current = mime;
     setPhase("requesting");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: ASR_AUDIO_CONSTRAINTS,
+      });
       streamRef.current = stream;
       chunksRef.current = [];
-      const recorder = new MediaRecorder(stream, { mimeType: mime });
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mime,
+        ...ASR_RECORDER_OPTIONS,
+      });
       recorder.ondataavailable = (ev) => {
         if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data);
       };

@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     diarization_enabled: bool = True
     diarization_cache_dir: str = "/app/cache/spkrec-ecapa"
 
+    # Decoder beam search width. 1 = fastest (good for local dev), 5 =
+    # standard-quality (measurably better recognition, especially for German
+    # compounds and quickly spoken sentences). Worst-case ~2-3x slower than
+    # beam_size=1 on CPU. Override with BEAM_SIZE env if needed.
+    beam_size: int = 5
+
     host: str = "0.0.0.0"
     port: int = 8001
 
@@ -170,7 +176,7 @@ async def transcribe(
             language=language,
             vad_filter=True,
             word_timestamps=False,
-            beam_size=1,  # speed > absolute accuracy for dev; bump to 5 in prod via env
+            beam_size=settings.beam_size,
         )
 
         segments = [

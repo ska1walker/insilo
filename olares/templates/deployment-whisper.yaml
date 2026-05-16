@@ -54,6 +54,14 @@ spec:
               value: "int8"
             - name: MODELS_DIR
               value: "/app/cache/models"
+            # Decoder beam search width — see services/whisper/app/main.py
+            # Settings.beam_size. NOTE: pydantic-settings has no env_prefix
+            # configured, so the field name `beam_size` maps to the plain
+            # env var `BEAM_SIZE` (uppercased). The WHISPER_* vars above
+            # follow the OlaresManifest naming convention but are nominal —
+            # the running service uses the pydantic defaults for those.
+            - name: BEAM_SIZE
+              value: "{{ .Values.whisper.beamSize | default 5 }}"
 
           volumeMounts:
             - name: app-cache

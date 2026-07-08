@@ -8,10 +8,13 @@ Lokal mocken wir den Header im Frontend.
 
 from contextlib import asynccontextmanager
 
+import httpx
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import CurrentUser, get_current_user
+from app.config import settings
 from app.db import close_pool, init_pool
 from app.errors import locale_middleware
 from app.routers import (
@@ -81,20 +84,35 @@ async def health_db() -> dict:
 
 @app.get("/health/whisper")
 async def health_whisper() -> dict:
-    # TODO Phase 2: GET http://insilo-whisper:8001/health
-    return {"status": "skipped", "service": "whisper", "reason": "phase 2"}
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(f"{settings.whisper_url}/health")
+            return {"status": "ok" if r.status_code == 200 else "error", "service": "whisper"}
+    except Exception as exc:
+        return {"status": "error", "service": "whisper", "detail": str(exc)}
 
 
-@app.get("/health/ollama")
-async def health_ollama() -> dict:
-    # TODO Phase 2: GET http://insilo-ollama:11434/
-    return {"status": "skipped", "service": "ollama", "reason": "phase 2"}
+@app.get("/health/llm")
+async def health_llm() -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(
+                settings.llm_base_url.replace("/v1", ""),
+                headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+            )
+            return {"status": "ok" if r.status_code < 500 else "error", "service": "llm"}
+    except Exception as exc:
+        return {"status": "error", "service": "llm", "detail": str(exc)}
 
 
 @app.get("/health/embeddings")
 async def health_embeddings() -> dict:
-    # TODO Phase 3: GET http://insilo-embeddings:8002/health
-    return {"status": "skipped", "service": "embeddings", "reason": "phase 3"}
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(f"{settings.embeddings_url}/health")
+            return {"status": "ok" if r.status_code == 200 else "error", "service": "embeddings"}
+    except Exception as exc:
+        return {"status": "error", "service": "embeddings", "detail": str(exc)}
 
 
 # ----------------------------------------------------------------------------

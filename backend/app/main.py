@@ -95,9 +95,9 @@ async def health_whisper() -> dict:
 @app.get("/health/llm")
 async def health_llm() -> dict:
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=3) as client:
             r = await client.get(
-                settings.llm_base_url.replace("/v1", ""),
+                f"{settings.llm_base_url}/models",
                 headers={"Authorization": f"Bearer {settings.llm_api_key}"},
             )
             return {"status": "ok" if r.status_code < 500 else "error", "service": "llm"}

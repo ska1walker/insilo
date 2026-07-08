@@ -81,6 +81,13 @@ async def get_settings(user: CurrentUser = Depends(get_current_user)) -> Setting
     return _row_to_read(dict(row) if row else None)
 
 
+class TestRequest(BaseModel):
+    """Optional override values for testing without saving."""
+    llm_base_url: str = ""
+    llm_api_key: str = ""
+    llm_model: str = ""
+
+
 class TestResult(BaseModel):
     ok: bool
     detail: str
@@ -89,22 +96,31 @@ class TestResult(BaseModel):
 
 
 @router.post("/settings/test", response_model=TestResult)
-async def test_settings(user: CurrentUser = Depends(get_current_user)) -> TestResult:
-    """Send a tiny chat-completion ping to the currently-configured LLM.
+async def test_settings(
+    body: TestRequest | None = None,
+    user: CurrentUser = Depends(get_current_user),
+) -> TestResult:
+    """Test LLM connection — uses form values if provided, otherwise DB values."""
+    use_url = ""
+    use_key = ""
+    use_model = ""
 
-    Uses whatever's in the DB (or the env fallback). Returns ok=False with
-    a human-readable detail if the endpoint is unreachable, returns an
-    error, or behaves incompatibly. Keep total time bounded — the UI is
-    blocking on this.
-    """
-    async with acquire() as conn:
-        cfg = await load_llm_config(conn, user.org_id)
+    if body and (body.llm_base_url.strip() or body.llm_api_key.strip() or body.llm_model.strip()):
+        use_url = body.llm_base_url.strip()
+        use_key = body.llm_api_key.strip()
+        use_model = body.llm_model.strip()
+    else:
+        async with acquire() as conn:
+            cfg = await load_llm_config(conn, user.org_id)
+            use_url = cfg.base_url or ""
+            use_key = cfg.api_key or ""
+            use_model = cfg.model or ""
 
-    if not cfg.base_url:
+    if not use_url:
         return TestResult(ok=False, detail="Keine Endpunkt-URL konfiguriert.")
 
     payload = {
-        "model": cfg.model or "test",
+        "model": use_model or "test",
         "messages": [{"role": "user", "content": "Antworte mit OK."}],
         "max_tokens": 4,
         "stream": False,
@@ -112,11 +128,11 @@ async def test_settings(user: CurrentUser = Depends(get_current_user)) -> TestRe
     started = asyncio.get_event_loop().time()
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
-            resp = await client.post(
-                f"{cfg.base_url}/chat/completions",
-                json=payload,
-                headers={"Authorization": f"Bearer {cfg.api_key}"},
-            )
+                resp = await client.post(
+                    f"{use_url}/chat/completions",
+                    json=payload,
+                    headers={"Authorization": f"Bearer {use_key}"},
+                )
     except httpx.ConnectError as exc:
         return TestResult(
             ok=False,
@@ -142,7 +158,7 @@ async def test_settings(user: CurrentUser = Depends(get_current_user)) -> TestRe
 
     try:
         data = resp.json()
-        used_model = data.get("model") or cfg.model
+        used_model = data.get("model") or use_model
         # Any choices present = compatible OpenAI shape.
         if not data.get("choices"):
             return TestResult(

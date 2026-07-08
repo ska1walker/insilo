@@ -33,6 +33,14 @@ export type TestResult = {
   elapsed_ms?: number | null;
 };
 
-export function testSettings(): Promise<TestResult> {
-  return apiPost<TestResult>("/api/v1/settings/test");
+export function testSettings(payload?: {
+  baseUrl?: string;
+  apiKey?: string;
+  model?: string;
+}): Promise<TestResult> {
+  return apiPost<TestResult>("/api/v1/settings/test", {
+    llm_base_url: payload?.baseUrl ?? "",
+    llm_api_key: payload?.apiKey ?? "",
+    llm_model: payload?.model ?? "",
+  });
 }

@@ -74,7 +74,11 @@ export default function EinstellungenPage() {
     setTesting(true);
     setTestResult(null);
     try {
-      const r = await testSettings();
+      const r = await testSettings({
+        baseUrl: form.baseUrl,
+        apiKey: form.apiKey,
+        model: form.model,
+      });
       setTestResult(r);
     } catch (err: unknown) {
       console.error("settings test failed", err);
@@ -256,7 +260,7 @@ export default function EinstellungenPage() {
         </Field>
 
         <div className="rounded-md bg-surface-soft px-4 py-3 text-xs text-text-secondary">
-          <p className="font-medium text-text-primary">Aktiv beim Speichern</p>
+          <p className="font-medium text-text-primary">Wird getestet / gespeichert</p>
           <p className="mt-1">
             Endpunkt: <span className="font-mono">{effectiveBaseUrl || "—"}</span>
           </p>

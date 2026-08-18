@@ -239,6 +239,281 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Bauteile — AImighty-Designsystem
+   1:1 aus dem Referenzblatt (InSilo_Design-Paket.html) übernommen.
+   Deutsche Klassennamen; die englischen Alt-Bauteile weiter unten bleiben
+   stehen, bis alle Seiten umgezogen sind.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* ── Buttons ──────────────────────────────────────────────────────
+     Primär genau eine Handlung je Ansicht. Sekundär und still beliebig
+     oft. Höhe ist die Zielgröße, nicht Padding-Zufall. */
+  .btn-reihe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--am-raum-4);
+    align-items: center;
+  }
+
+  .btn {
+    font-family: var(--am-schrift-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border-radius: var(--am-radius-mittel);
+    border: var(--am-rand-ruhend) solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--am-raum-2);
+    transition:
+      background var(--am-dauer-kurz) ease,
+      color var(--am-dauer-kurz) ease,
+      border-color var(--am-dauer-kurz) ease;
+    height: var(--am-ziel-zeiger);
+    padding: 0 var(--am-raum-6);
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 1px;
+  }
+
+  .btn-klein {
+    height: 2rem;
+    padding: 0 var(--am-raum-4);
+    font-size: 0.8125rem;
+  }
+
+  .btn-gross {
+    height: var(--am-ziel-beruehrung);
+    padding: 0 var(--am-raum-8);
+    font-size: 1rem;
+  }
+
+  .btn-primaer {
+    background: var(--am-handlung-ruhend);
+    color: var(--am-handlung-text);
+  }
+  .btn-primaer:hover { background: var(--am-handlung-hover); }
+  .btn-primaer:active { background: var(--am-handlung-aktiv); }
+
+  .btn-sekundaer {
+    background: transparent;
+    color: var(--am-handlung-ruhend);
+    border-color: var(--am-rand-betont-farbe);
+  }
+  .btn-sekundaer:hover { background: var(--am-flaeche-2); }
+
+  .btn-still {
+    background: transparent;
+    color: var(--am-text-sekundaer);
+  }
+  .btn-still:hover {
+    background: var(--am-flaeche-1);
+    color: var(--am-text-primaer);
+  }
+
+  .btn-gesperrt,
+  .btn:disabled {
+    background: var(--am-flaeche-2);
+    color: var(--am-text-deaktiviert);
+    cursor: not-allowed;
+    border-color: transparent;
+  }
+  .btn:disabled:hover { background: var(--am-flaeche-2); }
+
+  /* Berührung: 44px ohne Ausnahme — auch die kleinen Varianten. */
+  @media (pointer: coarse) {
+    .btn,
+    .btn-klein,
+    .btn-gross {
+      height: var(--am-ziel-beruehrung);
+    }
+    .btn-reihe { gap: var(--am-ziel-abstand-beruehrung); }
+  }
+
+  /* ── Formularfelder ───────────────────────────────────────────────── */
+  .feld { margin-bottom: var(--am-raum-6); }
+
+  .feld label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: var(--am-raum-2);
+    color: var(--am-text-primaer);
+  }
+
+  .feld label .optional {
+    font-weight: 400;
+    color: var(--am-text-gedaempft);
+  }
+
+  .feld input,
+  .feld select,
+  .feld textarea {
+    width: 100%;
+    min-height: var(--am-ziel-zeiger);
+    padding: 0 var(--am-raum-4);
+    border: var(--am-rand-ruhend) solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.9375rem;
+  }
+
+  .feld textarea {
+    padding: var(--am-raum-3) var(--am-raum-4);
+    line-height: 1.6;
+    resize: vertical;
+  }
+
+  .feld input:focus-visible,
+  .feld select:focus-visible,
+  .feld textarea:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 1px;
+  }
+
+  .feld.fehler input,
+  .feld.fehler select,
+  .feld.fehler textarea {
+    border-color: var(--am-fehler-rand);
+    border-width: var(--am-rand-betont);
+  }
+
+  .feld-fehlertext {
+    color: var(--am-fehler);
+    font-size: 0.8125rem;
+    margin-top: var(--am-raum-2);
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+  }
+
+  .feld-hinweis {
+    color: var(--am-text-gedaempft);
+    font-size: 0.8125rem;
+    margin-top: var(--am-raum-2);
+  }
+
+  @media (pointer: coarse) {
+    .feld input,
+    .feld select,
+    .feld textarea { min-height: var(--am-ziel-beruehrung); }
+  }
+
+  /* ── Zustandsstreifen ─────────────────────────────────────────────
+     Farbe ist nie das einzige Merkmal — jede Meldung trägt Zeichen und
+     Satz. Das `zeichen`-Element ist Pflicht, nicht Dekoration. */
+  .streifen {
+    display: flex;
+    gap: var(--am-raum-3);
+    align-items: flex-start;
+    padding: var(--am-raum-4);
+    border-radius: var(--am-radius-mittel);
+    border: 1px solid;
+    font-size: 0.9375rem;
+  }
+
+  .streifen .zeichen {
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .streifen-erfolg {
+    background: var(--am-erfolg-flaeche);
+    border-color: var(--am-erfolg-rand);
+    color: var(--am-text-primaer);
+  }
+  .streifen-erfolg .zeichen { color: var(--am-erfolg); }
+
+  .streifen-hinweis {
+    background: var(--am-hinweis-flaeche);
+    border-color: var(--am-hinweis-rand);
+    color: var(--am-text-primaer);
+  }
+  .streifen-hinweis .zeichen { color: var(--am-hinweis); }
+
+  .streifen-achtung {
+    background: var(--am-achtung-flaeche);
+    border-color: var(--am-achtung-rand);
+    color: var(--am-text-primaer);
+  }
+  .streifen-achtung .zeichen { color: var(--am-achtung); }
+
+  .streifen-fehler {
+    background: var(--am-fehler-flaeche);
+    border-color: var(--am-fehler-rand);
+    color: var(--am-text-primaer);
+  }
+  .streifen-fehler .zeichen { color: var(--am-fehler); }
+
+  /* ── Karte ────────────────────────────────────────────────────────── */
+  .karte {
+    background: var(--am-flaeche-1);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    padding: var(--am-raum-6);
+  }
+
+  /* ── Tabelle ──────────────────────────────────────────────────────── */
+  .tabelle-rahmen {
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    overflow: hidden;
+  }
+
+  table.am-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+
+  table.am-tabelle th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--am-text-sekundaer);
+    background: var(--am-flaeche-1);
+    padding: 0 var(--am-raum-4);
+    height: var(--am-raum-12);
+    border-bottom: 1px solid var(--am-trennlinie);
+  }
+
+  table.am-tabelle td {
+    padding: 0 var(--am-raum-4);
+    height: var(--am-zeile-tabelle);
+    border-bottom: 1px solid var(--am-trennlinie);
+    color: var(--am-text-primaer);
+  }
+
+  table.am-tabelle tr:last-child td { border-bottom: none; }
+
+  /* ── Leerzustand ──────────────────────────────────────────────────── */
+  .leerzustand {
+    text-align: center;
+    padding: var(--am-raum-16) var(--am-raum-8);
+    color: var(--am-text-sekundaer);
+  }
+  .leerzustand svg {
+    color: var(--am-blau-300);
+    margin-bottom: var(--am-raum-4);
+  }
+  .leerzustand h4 {
+    color: var(--am-text-primaer);
+    font-size: 1rem;
+    margin-bottom: var(--am-raum-2);
+  }
+  .leerzustand p {
+    max-width: 320px;
+    margin: 0 auto var(--am-raum-6);
+  }
+}
+
 @layer components {
   .btn-primary {
     background: var(--black);

@@ -175,8 +175,7 @@ spec:
 
     **Betrieb**
     - Health-Endpoints für alle Services (Backend, DB, Whisper, LLM, Embeddings)
-    - Pod-Disruption-Budget für Rolling-Update-Sicherheit
-    - LLM-Verbindungstest vor dem Speichern der Einstellungen
+    - LLM-Verbindungstest mit den aktuellen Formularwerten vor dem Speichern
 
   developer: kaivo.studio
   website: https://kaivo.studio

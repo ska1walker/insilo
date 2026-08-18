@@ -1,7 +1,116 @@
-# Handoff — Stand & Learnings (Mai 2026, **letzte Aktualisierung: 16. Mai**)
+# Handoff — Stand & Learnings (Mai–August 2026, **letzte Aktualisierung: 18. August**)
 
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
+>
+> # 🧹 Doku-Nachzug + Manifest-Drift-Fix (18. August 2026)
+>
+> **Kein Release** — reine Repo-Hygiene. Drei Commits auf `main`
+> (`03b08fa`, `7284088`, `28f7e63`), CI danach erstmals seit v0.1.58
+> wieder grün.
+>
+> **1. Root-`OlaresManifest.yaml` war aus dem Release-Prozess gefallen.**
+> Der Olares-Markt verlangt **zwei** Manifest-Kopien (siehe
+> [docs/MARKET_SOURCE_PLAYBOOK.md](MARKET_SOURCE_PLAYBOOK.md) §„How to Add a New App"):
+> Root für Store-Metadaten, `olares/` für die Installation — beide mit
+> identischer Version und identischem `upgradeDescription`.
+> `scripts/release.sh` hat aber nur `olares/OlaresManifest.yaml` gebumpt.
+>
+> Die Historie der Root-Kopie (`git log --follow -- OlaresManifest.yaml`)
+> zeigt das Muster: nach v0.1.12 45 Releases lang gar nicht angefasst,
+> dann bei v0.1.57/58/59 **manuell** mitgezogen — und bei v0.1.60 wieder
+> vergessen. Genau deshalb ist Handarbeit hier die falsche Lösung.
+>
+> Fix in drei Teilen:
+> - `release.sh` bumpt jetzt beide Manifeste (`for mf in ...`-Loop) und
+>   staged die Root-Datei mit.
+> - `check-chart.sh` hat eine neue Section „root manifest ↔ chart manifest
+>   sync" — vergleicht `metadata.version` + `spec.versionName` und failt
+>   bei Drift. Läuft auch in CI, blockt also künftige Releases.
+> - Beide `upgradeDescription`-Blöcke von v0.1.17-Stand auf einen
+>   konsolidierten v0.1.60-Changelog gehoben (Sprecher-Intelligenz, i18n,
+>   Audio-Qualität, Vorlagen, /idee, Integrationen, Archiv, Editorial,
+>   Betrieb).
+>
+> **2. `AGENTS.md` committed** (war seit 8. Juli untracked). Tabellarische
+> Kurzreferenz für AI-Agents, ergänzt `CLAUDE.md`. Beim Commit die
+> veraltete Box-IP korrigiert: stand auf `192.168.1.17`, überall sonst im
+> Repo steht `192.168.112.125`.
+>
+> **3. Ruff-Blocker beseitigt.** Der `ci`-Workflow war **seit v0.1.59 rot** —
+> 4 auto-fixable Violations (unused `fastapi.HTTPException` in
+> `routers/search.py`, I001-Import-Order in `main.py`, `auth_api.py`,
+> `tests/test_error_i18n.py`). `ruff check --fix` hat alle vier erledigt,
+> kein Verhalten geändert. Der `release`-Workflow lief die ganze Zeit grün
+> durch, deshalb ist es niemandem aufgefallen.
+>
+> **⚠️ Beim Doku-Nachzug entdeckt: das PDB existiert nicht.**
+> `olares/templates/pdb.yaml` ist eine **0-Byte-Datei**. v0.1.57 hat das
+> PodDisruptionBudget eingeführt, v0.1.58 hat den Inhalt wieder entfernt —
+> aber die leere Datei blieb liegen, und die Commit-Message von v0.1.58
+> lautet weiterhin „health checks, **PDB**, numpy fix". `helm template`
+> rendert erwartungsgemäß kein PDB.
+>
+> Warum es entfernt wurde, ist aus der Git-Historie nicht rekonstruierbar
+> (kein erklärender Commit). Plausibelster Verdacht: das Template hatte
+> `minAvailable: 1` bei `matchLabels: app: insilo` — das matcht *alle*
+> Insilo-Pods statt einer Komponente, und bei `replicas: 1` blockiert ein
+> solches PDB Node-Drains vollständig. **Für die nächste Session:** Kai
+> fragen, ob das PDB zurück soll (dann korrekt per-Komponente) oder ob die
+> leere Datei gelöscht wird.
+>
+> # 🚀 v0.1.57 → v0.1.60 — Health-Checks, LLM-Verbindungstest (8. Juli 2026)
+>
+> **Vier Releases an einem Vormittag**, alle rund um Betriebs-Sichtbarkeit
+> für das LLM-Setup.
+>
+> - **v0.1.57 — echte Health-Checks** ([backend/app/main.py](../backend/app/main.py)).
+>   `/health/whisper`, `/health/llm` und `/health/embeddings` waren bis
+>   dahin `{"status": "skipped", "reason": "phase 2"}`-Platzhalter. Jetzt
+>   pingen sie die realen Services per `httpx` mit 5 s Timeout.
+>   `/health/ollama` ist ersatzlos weg — das gebündelte Ollama ist seit
+>   dem LiteLLM-Umstieg Geschichte, der Endpoint hat nur noch verwirrt.
+> - **v0.1.58 — numpy-Dependency** ([backend/pyproject.toml](../backend/pyproject.toml)).
+>   `speaker_matcher` importiert numpy, hatte es aber nie deklariert —
+>   lief nur, weil eine transitive Dependency es mitbrachte. Im selben
+>   Release wurde `pdb.yaml` geleert (siehe Warnung oben).
+> - **v0.1.59 — LLM-Health auf `/v1/models`** ([backend/app/main.py](../backend/app/main.py)).
+>   Der v0.1.57-Check rief die Base-URL ohne `/v1` auf, was bei LiteLLM
+>   nicht zuverlässig antwortet. Jetzt `GET {llm_base_url}/models` mit
+>   Bearer-Token und Timeout runter auf 3 s — ein Health-Check, der 5 s
+>   hängt, fühlt sich in der UI wie ein Fehler an.
+> - **v0.1.60 — Verbindungstest mit Formularwerten**
+>   ([backend/app/routers/settings.py](../backend/app/routers/settings.py),
+>   [frontend/app/einstellungen/page.tsx](../frontend/app/einstellungen/page.tsx)).
+>   „Verbindung testen" hat vorher die **gespeicherten** Settings getestet.
+>   Wer eine neue LLM-URL eintippte und testen wollte, bekam das Ergebnis
+>   für die alte URL. Jetzt nimmt der Test die aktuellen Formularwerte
+>   entgegen — testen vor dem Speichern funktioniert wie erwartet.
+>
+> # 🚀 v0.1.53 → v0.1.56 — /idee Car-Mode Visual-Polish (16. Mai 2026)
+>
+> **Ein Feature-Commit, dann drei Anläufe gegen denselben CSS-Bug.**
+>
+> - **v0.1.53** — `ShowerHead`-Icon als Header-Trigger für `/idee`,
+>   Gold-Akzent, Immersive-In-Transition, größere Typo.
+>   ([quick-capture.tsx](../frontend/components/quick-capture.tsx),
+>   [layout.tsx](../frontend/app/layout.tsx))
+> - **v0.1.54–v0.1.56** — drei Fixes für **einen** Bug: der schwarze
+>   Vollbild-Hintergrund des Car-Mode wurde nicht gemalt.
+>   1. `background`-Shorthand in `backgroundColor` + `backgroundImage`
+>      gesplittet (der Shorthand überschrieb die Farbe mit dem Gradient).
+>   2. Hex-Literale statt CSS-Variablen im inline-`style` (CSS-Vars
+>      resolvten im inline-Kontext nicht zuverlässig) + Background-Klasse
+>      als zweite Absicherung.
+>   3. Eigene `.quick-capture-shell`-Klasse in
+>      [globals.css](../frontend/app/globals.css) mit `!important`, plus
+>      Back-Button robuster gemacht (Border + `gold-light`-Füllung statt
+>      nur Kontrast gegen den BG).
+>
+> **Lesson:** drei Releases für ein Hintergrund-Rendering zeigen, dass
+> „fix, deployen, im Browser gucken" hier die teure Schleife war. Bei
+> reinen CSS-Fragen lohnt der lokale `next dev`-Durchlauf vor dem Release
+> — besonders wenn der Service-Worker jedes Mal ein Cmd-Shift-R erzwingt.
 >
 > # 🚀 v0.1.52 — Whisper-env-prefix + LLM-JSON-Unwrap (16. Mai 2026, Abend)
 >

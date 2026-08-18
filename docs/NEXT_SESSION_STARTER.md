@@ -13,9 +13,12 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo läuft als **v0.1.50** im Repo. v0.1.49 ist auf der
-Box deployed (Helm-Rev 35). v0.1.50-Deploy steht noch aus. Olares-Box:
-`olares@192.168.112.125` (Olares-User `kaivostudio`, Box-URL
+**Stand:** Insilo steht als **v0.1.60** im Repo (Tag + Chart).
+Box-Version **nicht verifiziert** — der letzte dokumentierte Box-Stand
+ist v0.1.49 (Helm-Rev 35), seitdem wurde kein Deploy in der Doku
+festgehalten. **Vor jeder Box-Arbeit erst prüfen:**
+`ssh olares@192.168.112.125 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm list -n insilo-kaivostudio'`.
+Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`, Box-URL
 `https://e5d605f3.kaivostudio.olares.de`). Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
@@ -70,6 +73,32 @@ Box deployed (Helm-Rev 35). v0.1.50-Deploy steht noch aus. Olares-Box:
   PWA-Shortcut „Idee aufnehmen" für Home-Screen-Long-Press.
   Volle Pipeline → Duo (sobald Duo-Receiver bereit; bis dahin
   Retry-Queue).
+- **Whisper-env-prefix + JSON-Unwrap (v0.1.52)** — `env_prefix="WHISPER_"`
+  in den Whisper-Settings (lief vorher als `tiny` statt `large-v3`!),
+  `_unwrap_json_codeblock()` strippt Markdown-Code-Fences aus
+  LLM-Antworten vor `json.loads`.
+- **/idee Visual-Polish (v0.1.53–v0.1.56)** — ShowerHead-Header-Trigger,
+  und drei Anläufe gegen einen CSS-Bug (schwarzer Vollbild-BG wurde nicht
+  gemalt): `background`-Shorthand gesplittet → Hex-Literale statt CSS-Vars
+  → `.quick-capture-shell` mit `!important` in globals.css.
+- **Health-Checks + LLM-Verbindungstest (v0.1.57–v0.1.60)** —
+  `/health/{whisper,llm,embeddings}` pingen jetzt echte Services statt
+  `"status": "skipped"` zurückzugeben; `/health/ollama` ersatzlos weg
+  (LiteLLM-Umstieg). LLM-Check nutzt `GET {llm_base_url}/models` mit 3 s
+  Timeout. „Verbindung testen" in `/einstellungen` testet die **aktuellen
+  Formularwerte** statt der gespeicherten — testen vor dem Speichern
+  funktioniert. numpy als explizite Backend-Dependency nachgetragen.
+- **Repo-Hygiene (18. August 2026, kein Release)** — Root-`OlaresManifest.yaml`
+  war aus dem Release-Prozess gefallen (Markt verlangt zwei synchrone
+  Kopien); `release.sh` bumpt jetzt beide, `check-chart.sh` failt bei
+  Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
+  `ci`-Workflow seit v0.1.59 rot hielten.
+
+**⚠️ Offene Frage aus der Doku-Session:** `olares/templates/pdb.yaml` ist
+eine 0-Byte-Datei — v0.1.57 hat ein PodDisruptionBudget eingeführt,
+v0.1.58 den Inhalt wieder entfernt, die leere Hülle blieb liegen. Es
+rendert kein PDB. Entweder korrekt per-Komponente zurückbauen oder die
+Datei löschen. Details im HANDOFF-Header.
 
 **Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**
 
@@ -196,11 +225,12 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.50** (Repo; Box läuft v0.1.49, Helm-Rev 35) |
+| Version | **v0.1.60** (Repo); Box-Stand unverifiziert — zuletzt dokumentiert v0.1.49, Helm-Rev 35. `helm list -n insilo-kaivostudio` prüfen. |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.50` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.60` |
+| Health | `/health`, `/health/db`, `/health/whisper`, `/health/llm`, `/health/embeddings` — alle echt seit v0.1.57 |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
@@ -219,34 +249,45 @@ ssh olares@192.168.112.125 \
 - **Online-Builds dauern** ~6-9 min weil Whisper-Image ~1.2 GB (torch + speechbrain). Akzeptabel.
 - **GHCR-Login kann timeout** machen (transient). Re-run der failed jobs reicht meist (`gh run rerun <id> --failed`).
 - **Service-Worker-Cache** im Browser: nach jedem Frontend-Deploy einmal Cmd-Shift-R, sonst sieht User alte Version.
+- **`olares/templates/pdb.yaml` ist eine 0-Byte-Datei** — PDB wurde in
+  v0.1.57 eingeführt, in v0.1.58 wieder entfernt, die leere Hülle blieb.
+  Entscheidung offen: korrekt per-Komponente zurückbauen oder löschen.
+- **Box-Version läuft der Repo-Version davon.** Seit v0.1.49 ist kein
+  Deploy mehr in der Doku festgehalten. Nach jedem Box-Update den Stand
+  hier und im HANDOFF nachtragen — sonst rät die nächste Session.
 
 ## Wichtige Dateien zum Lesen vor dem ersten Commit
 
 1. `CLAUDE.md` — Briefing (insbes. neue Sprachregel)
-2. `docs/HANDOFF.md` — Status + Lessons (v0.1.44-Block oben für Decoder-Lesson)
+2. `docs/HANDOFF.md` — Status + Lessons (Header-Block oben: Manifest-Drift +
+   PDB-Warnung; v0.1.44-Block für die Decoder-Lesson)
 3. `docs/DESIGN.md` — Designsystem (Weiß/Schwarz/Gold, formelle Anrede)
 4. `frontend/messages/de.json` — Master für Übersetzungs-Keys; pull-up bei jeder neuen UI-String
 5. `frontend/i18n/request.ts` — Locale-Resolution & Cookie-Logik
 6. `backend/app/locale.py` + `backend/app/errors.py` — Backend-i18n (Resolver + DE/EN-Dict mit ContextVar-Middleware)
-7. `olares/OlaresManifest.yaml` — Plattform-Spec
-8. `scripts/check-chart.sh` — die 9 Phase-4-Lessons als Code
+7. `OlaresManifest.yaml` **und** `olares/OlaresManifest.yaml` — Plattform-Spec.
+   Zwei Kopien, müssen synchron bleiben (Markt-Anforderung, siehe
+   MARKET_SOURCE_PLAYBOOK). `release.sh` bumpt beide, `check-chart.sh` prüft es.
+8. `scripts/check-chart.sh` — die Phase-4-Lessons als Code (inkl. Manifest-Sync)
 
 ## Letzter Commit + GH State (zum Stand dieses Handoffs)
 
 ```bash
 git log --oneline -5
-gh run list --workflow=release.yml --limit 3
+gh run list --limit 5
 ```
 
-Sollte **v0.1.50** als jüngsten Tag zeigen. Tag-Liste seit
-v0.1.34: 0.1.35 → … → 0.1.48 → 0.1.49 → 0.1.50. Box läuft
-(Stand Doku-Update) noch auf v0.1.49 (Helm-Rev 35) — v0.1.50 ist
-Frontend+Backend-Code + seed.sql-Add (Template 00000005), keine
-Schema-Migration nötig.
+Sollte **v0.1.60** als jüngsten Tag zeigen (Tag-Liste seit v0.1.50:
+0.1.51 → … → 0.1.59 → 0.1.60). Danach liegen drei Nicht-Release-Commits
+auf `main`: `03b08fa` (Manifest-Drift-Fix), `7284088` (AGENTS.md),
+`28f7e63` (Ruff-Fix). **Der `ci`-Workflow ist seit `28f7e63` wieder
+grün** — er war von v0.1.59 bis dahin durchgehend rot (4 Ruff-Violations),
+während `release.yml` unbeeindruckt weiter Images baute. Wenn `ci` rot
+ist: `gh run view <id> --log-failed` und nicht darauf verlassen, dass ein
+grüner `release`-Run Entwarnung bedeutet.
 
 ## Cmd-Shift-R nicht vergessen
 
 Nach jedem Frontend-Deploy: **Browser-Cache hard-reloaden**
 (Cmd-Shift-R / Ctrl-Shift-R). Der Service-Worker hält sonst das alte
-Bundle. (v0.1.44 ist reines Whisper-Service-Update — Frontend-Bundle
-unverändert, hard-reload trotzdem nicht schaden.)
+Bundle.

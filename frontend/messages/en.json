@@ -7,7 +7,8 @@
     "record": "Record",
     "idee": "Idea",
     "logoAlt": "Insilo",
-    "homeAria": "Insilo — back to overview"
+    "homeAria": "Insilo — back to overview",
+    "navAria": "Main navigation"
   },
   "common": {
     "save": "Save",

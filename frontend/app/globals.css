@@ -493,6 +493,183 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
 
   table.am-tabelle tr:last-child td { border-bottom: none; }
 
+  /* ── Die Hülle ────────────────────────────────────────────────────
+     Zeiger (≥1024px): Navigation links, Inhalt, Ablage rechts.
+     Berührung (<1024px): Navigation als untere Leiste, Ablage unter dem
+     Inhalt. Der mobile Fall steht nicht im Referenzblatt — Insilo ist
+     aber primär eine Smartphone-PWA, und 220px Seitenspalte gehen auf
+     375px nicht auf. */
+  .huelle {
+    display: grid;
+    /* minmax(0, …), nicht 1fr: sonst darf ein breites Kind die Spalte
+       aufdehnen und der Inhalt läuft seitlich aus dem Viewport. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 100dvh;
+    background: var(--am-seite);
+  }
+
+  .huelle-nav {
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: var(--am-raum-1);
+    background: var(--am-flaeche-1);
+    border-top: 1px solid var(--am-trennlinie);
+    padding: var(--am-raum-2) var(--am-raum-2);
+    padding-bottom: max(var(--am-raum-2), env(safe-area-inset-bottom));
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+  }
+
+  /* Kopfecke und die Gruppierung tragen erst ab der Seitenspalte. */
+  .huelle-kopfecke,
+  .huelle-nav-spacer {
+    display: none;
+  }
+
+  .huelle-nav-gruppe {
+    display: contents;
+  }
+
+  .huelle-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--am-raum-1);
+    padding: var(--am-raum-2);
+    min-width: var(--am-ziel-beruehrung);
+    min-height: var(--am-ziel-beruehrung);
+    border-radius: var(--am-radius-klein);
+    font-size: 0.6875rem;
+    color: var(--am-text-sekundaer);
+    text-align: center;
+    transition: color var(--am-dauer-kurz) ease;
+  }
+
+  .huelle-nav-item:hover { color: var(--am-text-primaer); }
+
+  .huelle-nav-item.aktiv {
+    color: var(--am-gold-800);
+    font-weight: 600;
+  }
+
+  /* Auf der Leiste ist Platz für fünf Ziele. „Über Insilo" ist eine
+     Infoseite und war auch in der alten Kopfzeile mobil ausgeblendet —
+     erreichbar bleibt sie über die Einstellungen. */
+  .huelle-nav-item[data-nachrangig="true"] {
+    display: none;
+  }
+
+  .huelle-inhalt {
+    grid-row: 1;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .huelle-ablage {
+    grid-row: 3;
+    background: var(--am-flaeche-1);
+    border-top: 1px solid var(--am-trennlinie);
+    padding: var(--am-raum-4);
+    font-size: 0.8125rem;
+    color: var(--am-text-sekundaer);
+  }
+
+  @media (min-width: 1024px) {
+    .huelle {
+      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-rows: 1fr;
+    }
+
+    .huelle.hat-ablage {
+      grid-template-columns: 220px minmax(0, 1fr) 280px;
+    }
+
+    .huelle-nav {
+      grid-row: 1;
+      grid-column: 1;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: var(--am-raum-1);
+      background: var(--am-flaeche-1);
+      border-top: none;
+      border-right: 1px solid var(--am-trennlinie);
+      padding: var(--am-raum-4);
+      position: sticky;
+      top: 0;
+      bottom: auto;
+      height: 100dvh;
+    }
+
+    .huelle-kopfecke {
+      display: flex;
+      align-items: center;
+      gap: var(--am-raum-3);
+      padding-bottom: var(--am-raum-4);
+      margin-bottom: var(--am-raum-4);
+      border-bottom: 1px solid var(--am-trennlinie);
+    }
+
+    .huelle-wappen-link {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .huelle-wappen {
+      height: 28px;
+      width: auto;
+    }
+
+    .huelle-nav-gruppe {
+      display: flex;
+      flex-direction: column;
+      gap: var(--am-raum-1);
+    }
+
+    .huelle-nav-spacer {
+      display: block;
+      flex: 1;
+    }
+
+    .huelle-nav-item {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: var(--am-raum-3);
+      padding: var(--am-raum-2) var(--am-raum-3);
+      min-height: var(--am-ziel-zeiger);
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    /* In der Seitenspalte ist Platz für alle Ziele. */
+    .huelle-nav-item[data-nachrangig="true"] {
+      display: flex;
+    }
+
+    .huelle-nav-item:hover { background: var(--am-flaeche-2); }
+
+    .huelle-inhalt {
+      grid-row: 1;
+      grid-column: 2;
+      overflow-y: auto;
+      max-height: 100dvh;
+    }
+
+    .huelle-ablage {
+      grid-row: 1;
+      grid-column: 3;
+      border-top: none;
+      border-left: 1px solid var(--am-trennlinie);
+      overflow-y: auto;
+      max-height: 100dvh;
+    }
+  }
+
   /* ── Leerzustand ──────────────────────────────────────────────────── */
   .leerzustand {
     text-align: center;

@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { ShowerHead } from "lucide-react";
-import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
+import { Huelle } from "@/components/huelle";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { ToastProvider } from "@/components/toast";
 import "./globals.css";
@@ -46,7 +45,6 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   const messages = await getMessages();
-  const t = await getTranslations("nav");
 
   return (
     <html
@@ -57,45 +55,7 @@ export default async function RootLayout({
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ToastProvider>
-            <header className="sticky top-0 z-40 border-b border-border-subtle bg-white/90 backdrop-blur">
-              <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 md:px-12">
-                <Link href="/" aria-label={t("homeAria")} className="inline-flex items-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/insilo_logo.svg"
-                    alt={t("logoAlt")}
-                    height={28}
-                    className="h-7 w-auto"
-                  />
-                </Link>
-                <nav className="flex items-center gap-2">
-                  <Link href="/besprechungen" className="btn-tertiary">
-                    {t("meetings")}
-                  </Link>
-                  <Link href="/archiv" className="btn-tertiary">
-                    {t("archive")}
-                  </Link>
-                  <Link href="/einstellungen" className="btn-tertiary">
-                    {t("settings")}
-                  </Link>
-                  <Link href="/ueber" className="btn-tertiary hidden md:inline-flex">
-                    {t("about")}
-                  </Link>
-                  <Link
-                    href="/idee"
-                    aria-label={t("idee")}
-                    title={t("idee")}
-                    className="quick-capture-trigger"
-                  >
-                    <ShowerHead className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                  </Link>
-                  <Link href="/aufnahme" className="btn-primary">
-                    {t("record")}
-                  </Link>
-                </nav>
-              </div>
-            </header>
-            {children}
+            <Huelle>{children}</Huelle>
             <ServiceWorkerRegister />
           </ToastProvider>
         </NextIntlClientProvider>

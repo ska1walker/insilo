@@ -74,7 +74,7 @@
 > rekonstruierbar (kein erklärender Commit) — plausibel ist ein hängendes
 > `helm upgrade` direkt nach dem v0.1.57-Deploy.
 >
-> # 🚀 v0.1.62 / v0.1.63 — Markt-Upload-Validierung (18. August 2026)
+> # 🚀 v0.1.62 → v0.1.65 — Markt-Upload-Validierung (18. August 2026)
 >
 > **Der erste ernsthafte Markt-Upload seit v0.1.17 — und er ist zweimal
 > abgeflogen.** Beide Male HTTP 400 mit brauchbarer Fehlermeldung. Beide
@@ -171,7 +171,42 @@
 > kreuzvalidiert (gleiche Zahlen) und per Negativtest gegen die
 > Original-Ablehnung geprüft.
 >
-> **Meta-Lesson aus drei Ablehnungen hintereinander:** die Markt-Validierung
+> **Ablehnung 4 (v0.1.64) — root-Init-Container auf Fremd-Image.**
+> ```
+> non-beclab image "busybox:1.36" runs with root-equivalent securityContext:
+> Deployment insilo-backend, container init-chown
+> ```
+> Betraf alle vier `init-chown`-Container. Diese Ablehnung ist qualitativ
+> anders als die drei davor: sie trifft keinen Metadaten-Wert, sondern einen
+> Container, der ein **reales** Problem löst — ohne ihn crashen Whisper,
+> Embeddings, Backend und Worker mit `PermissionError: '/app/cache/…'`
+> (hostPath ist root-owned, App läuft als uid 1000, siehe Tabelle in §7g).
+>
+> **Nicht geraten, sondern nachgesehen.** Die Olares-Doku schweigt zu
+> securityContext-Regeln. Aufschluss gab das offizielle `beclab/apps`-Repo:
+> `whisperservicev3/templates/server.yaml` und `n8n/templates/n8n.yaml`
+> benutzen **exakt unser Muster** — `init-chown` mit `runAsUser: 0` — nur
+> mit einem vertrauenswürdigen Image:
+>
+> ```yaml
+> - name: init-chown
+>   image: docker.io/beclab/aboveos-busybox:1.37.0
+>   securityContext:
+>     runAsUser: 0
+> ```
+>
+> Root ist also **erlaubt**, nur nicht aus einem beliebigen Image. Unser
+> Ansatz war richtig, das Image war falsch. Fix: `busybox:1.36` →
+> `docker.io/beclab/aboveos-busybox:1.37.0` in allen vier Deployments.
+> Existenz des Images vorher gegen die Docker-Hub-Registry geprüft
+> (HTTP 200), damit der Pull auf der Box nicht auf ein Phantom läuft.
+>
+> **Nebenbefund:** `n8n` setzt zusätzlich Pod-Level `fsGroup: 1000` und
+> braucht den init-chown **trotzdem** — Bestätigung, dass `fsGroup` bei
+> hostPath-Volumes nicht greift. Falls jemand später auf die Idee kommt,
+> den Init-Container durch `fsGroup` zu ersetzen: funktioniert nicht.
+>
+> **Meta-Lesson aus vier Ablehnungen hintereinander:** die Markt-Validierung
 > prüft deutlich mehr als der Olares-Linter und als unser bisheriges
 > `check-chart.sh`. Alle drei Regeln waren lokal prüfbar — sie standen nur
 > nirgends. Wer das nächste Mal eine Ablehnung sieht: **erst den Guard

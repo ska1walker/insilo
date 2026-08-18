@@ -243,6 +243,37 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 1g. Root containers must use a beclab image
+#     The Market rejects "non-beclab image ... runs with root-equivalent
+#     securityContext" (cost us the v0.1.64 upload — our init-chown used
+#     plain busybox:1.36). Official Olares apps use the same init-chown
+#     pattern but with docker.io/beclab/aboveos-busybox — root is allowed,
+#     just not from an arbitrary image.
+#     Assumes `image:` precedes `securityContext:` within a container block,
+#     which holds for every template here.
+# ---------------------------------------------------------------------------
+
+section "root containers use a beclab image"
+
+if command -v helm >/dev/null 2>&1; then
+  ROOT_VIOLATIONS="$(helm template insilo olares/ -f olares/values-olares-stub.yaml 2>/dev/null | awk '
+    /^[[:space:]]*-[[:space:]]*name:/ { img=""; cname=$3 }
+    /^[[:space:]]*image:/ { img=$2; gsub(/["'"'"']/,"",img) }
+    /^[[:space:]]*runAsUser:[[:space:]]*0[[:space:]]*$/ {
+      if (img != "" && img !~ /beclab/) print cname " -> " img
+    }
+  ')"
+  if [[ -z "$ROOT_VIOLATIONS" ]]; then
+    ok "no root container on a non-beclab image"
+  else
+    fail "root container(s) on non-beclab image — Market upload will 400:"
+    echo "$ROOT_VIOLATIONS" | sed 's/^/      /'
+  fi
+else
+  yellow "  ! helm not installed — skipping root-image check"
+fi
+
+# ---------------------------------------------------------------------------
 # 2. NEVER use .Files.Get — Olares chart renderer doesn't support it
 #    (HANDOFF §7g.2)
 # ---------------------------------------------------------------------------

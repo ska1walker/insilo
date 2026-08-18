@@ -32,7 +32,7 @@ spec:
       initContainers:
         # See deployment-worker.yaml for why this is needed.
         - name: init-chown
-          image: busybox:1.36
+          image: docker.io/beclab/aboveos-busybox:1.37.0
           command: ['sh', '-c', 'chown -R 1000:1000 /app/cache']
           securityContext:
             runAsUser: 0

@@ -1,6 +1,18 @@
 import type { Config } from "tailwindcss";
+// Preset kommt als JS aus dem Design-Paket und wird bewusst unverändert
+// gelassen — Änderungen gehören in die Quelle, nicht in unsere Kopie.
+// Der Cast ist nötig, weil TS `darkMode: ["class", "dunkel"]` als string[]
+// inferiert statt als Tupel.
+import insiloPreset from "./tailwind.insilo.preset";
+
+const insilo = insiloPreset as unknown as Config;
 
 const config: Config = {
+  // AImighty-Designsystem. Das Preset dupliziert keine Werte, es liest die
+  // CSS-Variablen aus app/globals.css. Neue Bauteile nutzen die deutschen
+  // Klassen (bg-flaeche-1, text-primaer, …); die englischen Alt-Klassen
+  // darunter bleiben stehen, bis alle Bauteile umgezogen sind.
+  presets: [insilo],
   content: [
     "./src/**/*.{ts,tsx,mdx}",
     "./app/**/*.{ts,tsx,mdx}",

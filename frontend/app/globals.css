@@ -1,6 +1,184 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
+/* ═══════════════════════════════════════════════════════════════════════
+   AImighty-Designsystem — Quelle der Werte
+   Übernommen aus dem InSilo_Design-Paket (tokens/globals.css), abgeleitet
+   aus AImighty claude/Marke-Regeln.md und claude/Anwendung.md.
+
+   Wer einen Wert ändert, ändert ihn HIER, nicht am Bauteil.
+
+   Die Schriften lädt next/font/local in app/layout.tsx (self-hosted,
+   nie vom Google-CDN) und reicht sie als --font-geist-* herein.
+
+   Migrationsstand: die alten Insilo-Tokens (--gold, --surface-soft, …)
+   stehen weiter unten noch parallel, bis alle Bauteile umgezogen sind.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Schrift ─────────────────────────────────────────────────────── */
+  --am-schrift-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --am-schrift-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  /* ── Dichte — ein Hebel, keine zweite Wertetabelle ──────────────────
+     weit (Vorgabe) 1,1 · normal 1,0 · kompakt 0,9.
+     Auf Berührung greift automatisch `normal`. */
+  --am-skalierung: 1.1;
+  --am-einheit: 0.25rem; /* 4px */
+
+  /* ── Abstandsstufen — 4·8·12·16·24·32·48·64, an die Dichte gebunden ─ */
+  --am-raum-1: calc(var(--am-einheit) * 1 * var(--am-skalierung));
+  --am-raum-2: calc(var(--am-einheit) * 2 * var(--am-skalierung));
+  --am-raum-3: calc(var(--am-einheit) * 3 * var(--am-skalierung));
+  --am-raum-4: calc(var(--am-einheit) * 4 * var(--am-skalierung));
+  --am-raum-6: calc(var(--am-einheit) * 6 * var(--am-skalierung));
+  --am-raum-8: calc(var(--am-einheit) * 8 * var(--am-skalierung));
+  --am-raum-12: calc(var(--am-einheit) * 12 * var(--am-skalierung));
+  --am-raum-16: calc(var(--am-einheit) * 16 * var(--am-skalierung));
+
+  /* ── Lesespalte — App-Profil, hergeleitet, nicht gesetzt ──────────── */
+  --am-spur-inhalt: 27.75rem; /* 444px — 60 Zeichen bei 16px Grundgrad */
+
+  /* ── Zielgrößen ──────────────────────────────────────────────────── */
+  --am-ziel-zeiger: 2.5rem;      /* 40px */
+  --am-ziel-beruehrung: 2.75rem; /* 44px, ohne Ausnahme */
+  --am-ziel-abstand: 0.5rem;
+  --am-ziel-abstand-beruehrung: 0.75rem;
+
+  /* ── Zeilenhöhe Tabellen, an Dichte gebunden: 56·48·40 ────────────── */
+  --am-zeile-tabelle: 3.5rem;
+
+  /* ── Radien — Vorschlag, siehe Paket-README "Was noch fehlt" ──────── */
+  --am-radius-klein: 0.25rem;
+  --am-radius-mittel: 0.5rem;
+  --am-radius-gross: 0.75rem;
+  --am-radius-voll: 999px;
+
+  /* ── Randstärken ─────────────────────────────────────────────────── */
+  --am-rand-ruhend: 1px;
+  --am-rand-betont: 2px;
+
+  /* ── Bewegung — nur die dokumentierten Ausnahmen ──────────────────── */
+  --am-dauer-kurz: 120ms;
+  --am-dauer-lang: 200ms;
+
+  /* ── Hanseatenblau — Flächenleiter, Farbton 249,9 ─────────────────── */
+  --am-blau-25: #f5f9fc;
+  --am-blau-50: #eff4f9;
+  --am-blau-100: #e3eaf3;
+  --am-blau-200: #cfdbe7;
+  --am-blau-300: #afc0d2;
+  --am-blau-400: #819bb7;
+  --am-blau-500: #587898; /* Wendepunkt — als Text in beiden Modi lesbar */
+  --am-blau-600: #335578;
+  --am-blau-700: #142e47;
+  --am-blau-800: #0a2238;
+  --am-blau-900: #051729; /* Grundfläche */
+  --am-blau-950: #010c1a;
+
+  /* ── Gold — Auszeichnung, Farbton 85,7 ────────────────────────────── */
+  --am-gold-200: #ebddbd;
+  --am-gold-300: #dfc896;
+  --am-gold-400: #d7ba7b;
+  --am-gold-500: #caa960; /* das eine Markengold */
+  --am-gold-600: #b7974e;
+  --am-gold-700: #a4843a;
+  --am-gold-800: #8b6c1f; /* Gold als Text auf Weiß, 4,93:1 */
+  --am-gold-900: #71560f;
+
+  /* ── Zustandsfarben — Text und Rand, keine Fläche außer im Formular ─ */
+  --am-erfolg: #007e46;
+  --am-hinweis: #066bb8;
+  --am-achtung: #9f5100;
+  --am-fehler: #ad3f38;
+  --am-erfolg-flaeche: #e7f6eb;
+  --am-erfolg-rand: #b5dcc1;
+  --am-hinweis-flaeche: #e8f3ff;
+  --am-hinweis-rand: #b6d5f4;
+  --am-achtung-flaeche: #feeee4;
+  --am-achtung-rand: #eec8af;
+  --am-fehler-flaeche: #ffedeb;
+  --am-fehler-rand: #f3c4be;
+
+  /* ── Halbsemantische Ebene, Hellmodus (Vorgabe) ───────────────────── */
+  --am-seite: #ffffff;
+  --am-flaeche-1: var(--am-blau-25);   /* Karte, Tafel */
+  --am-flaeche-2: var(--am-blau-50);   /* Menü, Aufklapper */
+  --am-flaeche-3: var(--am-blau-100);  /* Dialog, Popover */
+  --am-trennlinie: var(--am-blau-200);
+  --am-rand: var(--am-blau-200);
+  --am-rand-betont-farbe: var(--am-blau-300);
+
+  --am-text-primaer: var(--am-blau-900);
+  --am-text-sekundaer: var(--am-blau-600);
+  --am-text-gedaempft: var(--am-blau-500);
+  --am-text-deaktiviert: var(--am-blau-400);
+
+  --am-handlung-ruhend: #002f56;
+  --am-handlung-hover: #104472;
+  --am-handlung-aktiv: #002140;
+  --am-handlung-text: #ffffff;
+
+  --am-gold-auszeichnung: var(--am-gold-500);
+  --am-fokus-ring: #002f56;
+  --am-deckschicht: rgb(5 23 41 / 60%);
+}
+
+/* ── Dunkelmodus — Gold handelt, Blau trägt die Fläche ────────────────
+   Die dokumentierte Ausnahme: Blau auf Blau trägt nicht. */
+html.dunkel {
+  --am-seite: var(--am-blau-900);
+  --am-flaeche-1: var(--am-blau-800);
+  --am-flaeche-2: var(--am-blau-700);
+  --am-flaeche-3: var(--am-blau-700);
+  --am-rand-betont-farbe: var(--am-blau-600);
+  --am-trennlinie: var(--am-blau-700);
+  --am-rand: var(--am-blau-700);
+
+  --am-text-primaer: #ffffff;
+  --am-text-sekundaer: var(--am-blau-200);
+  --am-text-gedaempft: var(--am-blau-300);
+  --am-text-deaktiviert: var(--am-blau-400);
+
+  --am-handlung-ruhend: var(--am-gold-500);
+  --am-handlung-hover: var(--am-gold-400);
+  --am-handlung-aktiv: var(--am-gold-600);
+  --am-handlung-text: var(--am-blau-900);
+
+  --am-erfolg: #55c483;
+  --am-hinweis: #60b0ff;
+  --am-achtung: #ed914c;
+  --am-fehler: #f6857a;
+  --am-erfolg-flaeche: #102a1a;
+  --am-erfolg-rand: #1f4d31;
+  --am-hinweis-flaeche: #122539;
+  --am-hinweis-rand: #234566;
+  --am-achtung-flaeche: #351e0d;
+  --am-achtung-rand: #5f371a;
+  --am-fehler-flaeche: #371b18;
+  --am-fehler-rand: #62332e;
+
+  --am-fokus-ring: var(--am-gold-900);
+}
+
+/* ── Dichte — Zeiger vs. Berührung ─────────────────────────────────── */
+@media (pointer: coarse) {
+  :root {
+    --am-skalierung: 1; /* normal — die Ziele stehen ohnehin auf 44px */
+  }
+}
+
+/* Dichte-Hebel für die spätere Einstellung am <html data-dichte="…"> */
+html[data-dichte="normal"] { --am-skalierung: 1; }
+html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
+
+/* ── Zahlen: tabellarisch, rechtsbündig, Geist Mono ───────────────── */
+.am-zahl {
+  font-family: var(--am-schrift-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 @layer base {
   :root {
     --white: #ffffff;
@@ -40,7 +218,7 @@
   body {
     color: var(--text-primary);
     background: var(--white);
-    font-family: var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--am-schrift-sans);
     font-size: 1rem;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -48,7 +226,7 @@
   }
 
   h1, h2, h3, h4 {
-    font-family: var(--font-display), -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--am-schrift-sans);
     font-weight: 500;
     letter-spacing: -0.015em;
     text-wrap: balance;
@@ -57,7 +235,7 @@
   p { text-wrap: pretty; }
 
   code, .mono {
-    font-family: var(--font-mono), Menlo, monospace;
+    font-family: var(--am-schrift-mono);
   }
 }
 

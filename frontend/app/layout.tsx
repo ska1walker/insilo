@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Lexend_Deca, Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { ShowerHead } from "lucide-react";
 import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
@@ -8,24 +8,20 @@ import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { ToastProvider } from "@/components/toast";
 import "./globals.css";
 
-const lexend = Lexend_Deca({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-display",
+// Geist als Variable Fonts aus dem Repo — kein Google-CDN, auch nicht zur
+// Bauzeit. Das AImighty-Designsystem schreibt Selbst-Hosting vor, und die
+// Datensouveränitäts-Zusage duldet ohnehin keinen Fremdabruf.
+const geistSans = localFont({
+  src: "./fonts/Geist-Variable.woff2",
+  weight: "100 900",
+  variable: "--font-geist-sans",
   display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-body",
-  display: "swap",
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
+const geistMono = localFont({
+  src: "./fonts/GeistMono-Variable.woff2",
+  weight: "100 900",
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
@@ -55,7 +51,8 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${lexend.variable} ${inter.variable} ${jetbrains.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
     >
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>

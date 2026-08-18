@@ -56,8 +56,8 @@ export function WebhookManager() {
   if (webhooks === null) {
     return (
       <div className="space-y-2">
-        <div className="h-12 animate-pulse rounded bg-surface-soft" />
-        <div className="h-12 animate-pulse rounded bg-surface-soft" />
+        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
+        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
       </div>
     );
   }
@@ -77,7 +77,7 @@ export function WebhookManager() {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="btn-secondary inline-flex items-center gap-1.5"
+            className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
             {t("addNew")}
@@ -102,13 +102,13 @@ export function WebhookManager() {
       )}
 
       {webhooks.length === 0 && !adding && (
-        <p className="text-sm text-text-secondary">
+        <p className="text-sm text-text-sekundaer">
           {t("noneYet")}
         </p>
       )}
 
       {webhooks.length > 0 && (
-        <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
+        <div className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
           {webhooks.map((w) =>
             editingId === w.id ? (
               <div key={w.id} className="p-3">
@@ -219,25 +219,25 @@ function WebhookRow({
               style={{ background: `var(--${health.color})` }}
               aria-hidden
             />
-            <span className="font-mono text-sm text-text-primary break-all">
+            <span className="font-mono text-sm text-text-primaer break-all">
               {webhook.url}
             </span>
             {!webhook.is_active && (
-              <span className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-meta">
+              <span className="rounded-full bg-flaeche-1 px-2 py-0.5 text-xs text-text-gedaempft">
                 {t("inactive")}
               </span>
             )}
           </div>
           {webhook.description && (
-            <p className="mt-1 text-sm text-text-secondary">{webhook.description}</p>
+            <p className="mt-1 text-sm text-text-sekundaer">{webhook.description}</p>
           )}
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span
               className="rounded-full px-2 py-0.5 text-xs"
               style={
                 webhook.trigger_mode === "manual"
-                  ? { background: "rgba(201,169,97,0.12)", color: "var(--gold-deep)" }
-                  : { background: "var(--surface-soft)", color: "var(--text-secondary)" }
+                  ? { background: "rgba(201,169,97,0.12)", color: "var(--am-gold-800)" }
+                  : { background: "var(--am-flaeche-1)", color: "var(--am-text-sekundaer)" }
               }
               title={
                 webhook.trigger_mode === "manual"
@@ -252,20 +252,20 @@ function WebhookRow({
             {webhook.events.map((ev) => (
               <span
                 key={ev}
-                className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-secondary"
+                className="rounded-full bg-flaeche-1 px-2 py-0.5 text-xs text-text-sekundaer"
               >
                 {WEBHOOK_EVENT_LABELS[ev as WebhookEvent] ?? ev}
               </span>
             ))}
           </div>
-          <p className="mt-2 text-xs text-text-meta">{health.label}</p>
+          <p className="mt-2 text-xs text-text-gedaempft">{health.label}</p>
         </div>
 
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={handleTest}
-            className="btn-tertiary inline-flex items-center gap-1"
+            className="btn btn-still inline-flex items-center gap-1"
             disabled={testing}
             aria-label={t("testAria")}
           >
@@ -278,7 +278,7 @@ function WebhookRow({
           <button
             type="button"
             onClick={handleToggle}
-            className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+            className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={webhook.is_active ? t("deactivate") : t("activate")}
             title={webhook.is_active ? t("deactivate") : t("activate")}
           >
@@ -291,7 +291,7 @@ function WebhookRow({
           <button
             type="button"
             onClick={onEdit}
-            className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+            className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={t("editAria")}
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -299,7 +299,7 @@ function WebhookRow({
           <button
             type="button"
             onClick={handleDelete}
-            className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft"
+            className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1"
             aria-label={t("deleteAria")}
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -313,13 +313,13 @@ function WebhookRow({
           style={
             testResult.ok
               ? {
-                  borderColor: "var(--success)",
-                  color: "var(--success)",
+                  borderColor: "var(--am-erfolg)",
+                  color: "var(--am-erfolg)",
                   background: "rgba(74,124,89,0.06)",
                 }
               : {
-                  borderColor: "var(--error)",
-                  color: "var(--error)",
+                  borderColor: "var(--am-fehler)",
+                  color: "var(--am-fehler)",
                   background: "rgba(163,58,47,0.06)",
                 }
           }
@@ -343,7 +343,7 @@ function WebhookRow({
       <button
         type="button"
         onClick={() => setShowDeliveries((v) => !v)}
-        className="mt-3 inline-flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary"
+        className="mt-3 inline-flex items-center gap-1 text-xs text-text-sekundaer hover:text-text-primaer"
       >
         {showDeliveries ? (
           <ChevronUp className="h-3 w-3" strokeWidth={2} />
@@ -362,15 +362,15 @@ function getHealth(
   w: WebhookRead,
   t: (key: string, values?: Record<string, string | number>) => string,
 ): { color: string; label: string } {
-  if (!w.is_active) return { color: "text-meta", label: t("healthDeactivated") };
+  if (!w.is_active) return { color: "am-text-gedaempft", label: t("healthDeactivated") };
   const ts = (v: string | null) => (v ? new Date(v).getTime() : 0);
   const lastOk = ts(w.last_success_at);
   const lastFail = ts(w.last_failure_at);
   if (!lastOk && !lastFail)
-    return { color: "text-meta", label: t("healthNoDeliveries") };
+    return { color: "am-text-gedaempft", label: t("healthNoDeliveries") };
   if (lastFail > lastOk) {
     return {
-      color: "error",
+      color: "am-fehler",
       label: w.last_failure_msg
         ? t("healthLastFailWithMsg", {
             when: formatRelative(w.last_failure_at),
@@ -380,7 +380,7 @@ function getHealth(
     };
   }
   return {
-    color: "success",
+    color: "am-erfolg",
     label: t("healthLastOk", { when: formatRelative(w.last_success_at) }),
   };
 }
@@ -418,18 +418,18 @@ function DeliveryList({ webhookId }: { webhookId: string }) {
   }, [webhookId]);
 
   if (items === null) {
-    return <p className="mt-2 text-xs text-text-meta">{t("loadingDeliveries")}</p>;
+    return <p className="mt-2 text-xs text-text-gedaempft">{t("loadingDeliveries")}</p>;
   }
 
   if (items.length === 0) {
-    return <p className="mt-2 text-xs text-text-meta">{t("noDeliveries")}</p>;
+    return <p className="mt-2 text-xs text-text-gedaempft">{t("noDeliveries")}</p>;
   }
 
   return (
     <div className="mt-2 overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="text-text-meta">
+          <tr className="text-text-gedaempft">
             <th className="px-2 py-1 text-left font-normal">{t("colTime")}</th>
             <th className="px-2 py-1 text-left font-normal">{t("colEvent")}</th>
             <th className="px-2 py-1 text-left font-normal">{t("colStatus")}</th>
@@ -438,7 +438,7 @@ function DeliveryList({ webhookId }: { webhookId: string }) {
         </thead>
         <tbody>
           {items.map((d) => (
-            <tr key={d.id} className="border-t border-border-subtle">
+            <tr key={d.id} className="border-t border-trennlinie">
               <td className="px-2 py-1 align-top font-mono">
                 {formatRelative(d.created_at)}
               </td>
@@ -450,13 +450,13 @@ function DeliveryList({ webhookId }: { webhookId: string }) {
                 style={{
                   color:
                     d.status_code && d.status_code >= 200 && d.status_code < 300
-                      ? "var(--success)"
-                      : "var(--error)",
+                      ? "var(--am-erfolg)"
+                      : "var(--am-fehler)",
                 }}
               >
                 {d.status_code ?? "—"}
               </td>
-              <td className="px-2 py-1 align-top text-text-secondary">
+              <td className="px-2 py-1 align-top text-text-sekundaer">
                 {d.error_message
                   ? d.error_message
                   : d.response_body
@@ -544,9 +544,9 @@ function WebhookForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-md bg-surface-soft p-4">
+    <form onSubmit={submit} className="space-y-3 rounded-md bg-flaeche-1 p-4">
       <label className="block">
-        <span className="block text-xs font-medium text-text-secondary">
+        <span className="block text-xs font-medium text-text-sekundaer">
           {t("urlLabel")}
         </span>
         <input
@@ -561,7 +561,7 @@ function WebhookForm({
       </label>
 
       <label className="block">
-        <span className="block text-xs font-medium text-text-secondary">
+        <span className="block text-xs font-medium text-text-sekundaer">
           {t("descLabel")}
         </span>
         <input
@@ -576,7 +576,7 @@ function WebhookForm({
       </label>
 
       <fieldset>
-        <legend className="block text-xs font-medium text-text-secondary">
+        <legend className="block text-xs font-medium text-text-sekundaer">
           {t("eventsLegend")}
         </legend>
         <div className="mt-1 flex flex-wrap gap-3">
@@ -595,7 +595,7 @@ function WebhookForm({
       </fieldset>
 
       <fieldset>
-        <legend className="block text-xs font-medium text-text-secondary">
+        <legend className="block text-xs font-medium text-text-sekundaer">
           {t("triggerLegend")}
         </legend>
         <div className="mt-2 space-y-2">
@@ -610,8 +610,8 @@ function WebhookForm({
               className="mt-1"
             />
             <span>
-              <span className="font-medium text-text-primary">{t("manualOption")}</span>
-              <span className="ml-2 text-xs text-text-meta">
+              <span className="font-medium text-text-primaer">{t("manualOption")}</span>
+              <span className="ml-2 text-xs text-text-gedaempft">
                 {t("manualHint")}
               </span>
             </span>
@@ -627,8 +627,8 @@ function WebhookForm({
               className="mt-1"
             />
             <span>
-              <span className="font-medium text-text-primary">{t("autoOption")}</span>
-              <span className="ml-2 text-xs text-text-meta">
+              <span className="font-medium text-text-primaer">{t("autoOption")}</span>
+              <span className="ml-2 text-xs text-text-gedaempft">
                 {t("autoHint")}
               </span>
             </span>
@@ -637,21 +637,21 @@ function WebhookForm({
       </fieldset>
 
       {error && (
-        <p className="text-sm" style={{ color: "var(--error)" }}>
+        <p className="text-sm" style={{ color: "var(--am-fehler)" }}>
           {error}
         </p>
       )}
 
-      <div className="flex justify-end gap-2 border-t border-border-subtle pt-3">
+      <div className="flex justify-end gap-2 border-t border-trennlinie pt-3">
         <button
           type="button"
           onClick={onCancel}
-          className="btn-tertiary"
+          className="btn btn-still"
           disabled={saving}
         >
           {tCommon("cancel")}
         </button>
-        <button type="submit" className="btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primaer" disabled={saving}>
           {saving ? t("saving") : mode === "edit" ? t("save") : t("create")}
         </button>
       </div>
@@ -682,33 +682,33 @@ function SecretReveal({
     <div
       className="rounded-lg border p-4"
       style={{
-        borderColor: "var(--gold)",
+        borderColor: "var(--am-gold-500)",
         background: "rgba(201,169,97,0.08)",
       }}
     >
-      <h4 className="text-sm font-medium text-text-primary">
+      <h4 className="text-sm font-medium text-text-primaer">
         {t("secretTitle")}
       </h4>
-      <p className="mt-1 text-xs text-text-secondary">
+      <p className="mt-1 text-xs text-text-sekundaer">
         {t("secretHintBefore")}
-        <code className="mx-1 rounded bg-white px-1 font-mono">X-Insilo-Signature</code>
+        <code className="mx-1 rounded bg-seite px-1 font-mono">X-Insilo-Signature</code>
         {t("secretHintAfter")}
       </p>
       <div className="mt-3 flex items-center gap-2">
-        <code className="flex-1 break-all rounded-md border border-border-subtle bg-white px-2 py-1.5 font-mono text-xs">
+        <code className="flex-1 break-all rounded-md border border-trennlinie bg-seite px-2 py-1.5 font-mono text-xs">
           {webhook.secret}
         </code>
         <button
           type="button"
           onClick={copy}
-          className="btn-secondary inline-flex items-center gap-1"
+          className="btn btn-sekundaer inline-flex items-center gap-1"
         >
           <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
           {copied ? t("copied") : t("copy")}
         </button>
       </div>
       <div className="mt-3 flex justify-end">
-        <button type="button" onClick={onDismiss} className="btn-tertiary">
+        <button type="button" onClick={onDismiss} className="btn btn-still">
           {t("dismiss")}
         </button>
       </div>
@@ -726,13 +726,13 @@ function ContractDisclosure() {
   const deliveryIdHint = t("contractDeliveryIdHint");
   const upsertComment = t("contractUpsertComment");
   return (
-    <details className="group text-xs text-text-secondary">
-      <summary className="cursor-pointer select-none hover:text-text-primary">
+    <details className="group text-xs text-text-sekundaer">
+      <summary className="cursor-pointer select-none hover:text-text-primaer">
         {t("contractToggle")}
       </summary>
-      <div className="mt-3 space-y-3 rounded-md border border-border-subtle bg-surface-soft p-3 leading-relaxed">
+      <div className="mt-3 space-y-3 rounded-md border border-trennlinie bg-flaeche-1 p-3 leading-relaxed">
         <div>
-          <p className="font-medium text-text-primary">{t("contractHeader")}</p>
+          <p className="font-medium text-text-primaer">{t("contractHeader")}</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5 font-mono text-[11px]">
             <li>X-Insilo-Event: meeting.ready</li>
             <li>X-Insilo-Delivery-ID: &lt;{deliveryIdHint}&gt;</li>
@@ -740,8 +740,8 @@ function ContractDisclosure() {
           </ul>
         </div>
         <div>
-          <p className="font-medium text-text-primary">{t("contractReceiverExample")}</p>
-          <pre className="mt-1 overflow-x-auto rounded bg-white p-2 font-mono text-[11px] text-text-primary">{`raw = request.body
+          <p className="font-medium text-text-primaer">{t("contractReceiverExample")}</p>
+          <pre className="mt-1 overflow-x-auto rounded bg-seite p-2 font-mono text-[11px] text-text-primaer">{`raw = request.body
 sig = request.headers["x-insilo-signature"]
 expected = "sha256=" + hmac_sha256(secret, raw).hexdigest()
 if not hmac.compare_digest(sig, expected):
@@ -753,7 +753,7 @@ return 200`}</pre>
         </div>
         <p>
           {t("contractRetryBefore")}
-          <code className="mx-1 rounded bg-white px-1 font-mono">X-Insilo-Delivery-ID</code>
+          <code className="mx-1 rounded bg-seite px-1 font-mono">X-Insilo-Delivery-ID</code>
           {t("contractRetryAfter")}
         </p>
         <p>

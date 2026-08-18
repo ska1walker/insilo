@@ -151,12 +151,12 @@ function ToastCard({
 
   const accentColor =
     toast.variant === "error"
-      ? "var(--error)"
+      ? "var(--am-fehler)"
       : toast.variant === "success"
-        ? "var(--success)"
+        ? "var(--am-erfolg)"
         : toast.variant === "undo"
-          ? "var(--gold-deep)"
-          : "var(--text-primary)";
+          ? "var(--am-gold-800)"
+          : "var(--am-text-primaer)";
 
   return (
     <div
@@ -169,9 +169,9 @@ function ToastCard({
       }}
     >
       <div
-        className="relative overflow-hidden rounded-lg border bg-white"
+        className="relative overflow-hidden rounded-lg border bg-seite"
         style={{
-          borderColor: "var(--border-subtle)",
+          borderColor: "var(--am-trennlinie)",
           boxShadow: "0 8px 24px rgba(10, 10, 10, 0.08)",
         }}
       >
@@ -183,14 +183,14 @@ function ToastCard({
         />
 
         <div className="flex items-start gap-3 py-3 pl-5 pr-3">
-          <p className="flex-1 text-sm leading-snug text-text-primary">
+          <p className="flex-1 text-sm leading-snug text-text-primaer">
             {toast.message}
           </p>
           {toast.action && (
             <button
               type="button"
               onClick={handleAction}
-              className="btn-tertiary -my-1 shrink-0"
+              className="btn btn-still -my-1 shrink-0"
               style={{
                 color: accentColor,
                 fontWeight: 500,
@@ -202,7 +202,7 @@ function ToastCard({
           <button
             type="button"
             onClick={handleClose}
-            className="-my-1 -mr-1 shrink-0 rounded p-1.5 text-text-meta hover:bg-surface-soft hover:text-text-primary"
+            className="-my-1 -mr-1 shrink-0 rounded p-1.5 text-text-gedaempft hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={tCommon("close")}
           >
             <X className="h-3.5 w-3.5" strokeWidth={2} />
@@ -215,7 +215,7 @@ function ToastCard({
             aria-hidden
             className="absolute inset-x-0 bottom-0 h-[2px]"
             style={{
-              background: "var(--gold-deep)",
+              background: "var(--am-gold-800)",
               transformOrigin: "left",
               animation: `toastCountdown ${toast.duration}ms linear forwards`,
             }}

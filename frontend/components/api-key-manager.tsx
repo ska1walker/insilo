@@ -35,8 +35,8 @@ export function ApiKeyManager() {
   if (keys === null) {
     return (
       <div className="space-y-2">
-        <div className="h-12 animate-pulse rounded bg-surface-soft" />
-        <div className="h-12 animate-pulse rounded bg-surface-soft" />
+        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
+        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
       </div>
     );
   }
@@ -52,7 +52,7 @@ export function ApiKeyManager() {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="btn-secondary inline-flex items-center gap-1.5"
+            className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
             {t("addBtn")}
@@ -76,13 +76,13 @@ export function ApiKeyManager() {
       )}
 
       {keys.length === 0 && !adding && (
-        <p className="text-sm text-text-secondary">
+        <p className="text-sm text-text-sekundaer">
           {t("noneYet")}
         </p>
       )}
 
       {keys.length > 0 && (
-        <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
+        <div className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
           {keys.map((k) => (
             <ApiKeyRow key={k.id} apiKey={k} onAfterRevoke={refresh} />
           ))}
@@ -124,18 +124,18 @@ function ApiKeyRow({
     <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <KeyRound className="h-3.5 w-3.5 text-text-meta" strokeWidth={1.75} />
-          <span className="font-medium text-text-primary">{apiKey.name}</span>
+          <KeyRound className="h-3.5 w-3.5 text-text-gedaempft" strokeWidth={1.75} />
+          <span className="font-medium text-text-primaer">{apiKey.name}</span>
           {revoked && (
-            <span className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-meta">
+            <span className="rounded-full bg-flaeche-1 px-2 py-0.5 text-xs text-text-gedaempft">
               {t("revokedTag")}
             </span>
           )}
         </div>
-        <p className="mt-1 font-mono text-xs text-text-secondary">
+        <p className="mt-1 font-mono text-xs text-text-sekundaer">
           {apiKey.key_prefix}…
         </p>
-        <p className="mt-1 text-xs text-text-meta">
+        <p className="mt-1 text-xs text-text-gedaempft">
           {t("createdAt", { date: formatDate(apiKey.created_at) })}
           {apiKey.last_used_at && (
             <> · {t("lastUsedAt", { date: formatDate(apiKey.last_used_at) })}</>
@@ -148,7 +148,7 @@ function ApiKeyRow({
           {apiKey.scopes.map((s) => (
             <span
               key={s}
-              className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-secondary"
+              className="rounded-full bg-flaeche-1 px-2 py-0.5 text-xs text-text-sekundaer"
             >
               {s}
             </span>
@@ -160,7 +160,7 @@ function ApiKeyRow({
         <button
           type="button"
           onClick={handleRevoke}
-          className="btn-tertiary inline-flex items-center gap-1"
+          className="btn btn-still inline-flex items-center gap-1"
           aria-label={t("revokeAria")}
         >
           <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -214,9 +214,9 @@ function ApiKeyForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-md bg-surface-soft p-4">
+    <form onSubmit={submit} className="space-y-3 rounded-md bg-flaeche-1 p-4">
       <label className="block">
-        <span className="block text-xs font-medium text-text-secondary">
+        <span className="block text-xs font-medium text-text-sekundaer">
           {t("nameLabel")}
         </span>
         <input
@@ -229,27 +229,27 @@ function ApiKeyForm({
           className="input mt-1 w-full"
           disabled={saving}
         />
-        <span className="mt-1 block text-xs text-text-meta">
+        <span className="mt-1 block text-xs text-text-gedaempft">
           {t("nameHint")}
         </span>
       </label>
 
       {error && (
-        <p className="text-sm" style={{ color: "var(--error)" }}>
+        <p className="text-sm" style={{ color: "var(--am-fehler)" }}>
           {error}
         </p>
       )}
 
-      <div className="flex justify-end gap-2 border-t border-border-subtle pt-3">
+      <div className="flex justify-end gap-2 border-t border-trennlinie pt-3">
         <button
           type="button"
           onClick={onCancel}
-          className="btn-tertiary"
+          className="btn btn-still"
           disabled={saving}
         >
           {t("cancel")}
         </button>
-        <button type="submit" className="btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primaer" disabled={saving}>
           {saving ? t("creating") : t("create")}
         </button>
       </div>
@@ -278,33 +278,33 @@ function TokenReveal({
     <div
       className="rounded-lg border p-4"
       style={{
-        borderColor: "var(--gold)",
+        borderColor: "var(--am-gold-500)",
         background: "rgba(201,169,97,0.08)",
       }}
     >
-      <h4 className="text-sm font-medium text-text-primary">
+      <h4 className="text-sm font-medium text-text-primaer">
         {t("tokenTitle", { name: token.name })}
       </h4>
-      <p className="mt-1 text-xs text-text-secondary">
+      <p className="mt-1 text-xs text-text-sekundaer">
         {t("tokenHintBefore")}
-        <code className="mx-1 rounded bg-white px-1 font-mono">Authorization</code>
+        <code className="mx-1 rounded bg-seite px-1 font-mono">Authorization</code>
         {t("tokenHintAfter")}
       </p>
       <div className="mt-3 flex items-center gap-2">
-        <code className="flex-1 break-all rounded-md border border-border-subtle bg-white px-2 py-1.5 font-mono text-xs">
+        <code className="flex-1 break-all rounded-md border border-trennlinie bg-seite px-2 py-1.5 font-mono text-xs">
           {token.token}
         </code>
         <button
           type="button"
           onClick={copy}
-          className="btn-secondary inline-flex items-center gap-1"
+          className="btn btn-sekundaer inline-flex items-center gap-1"
         >
           <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
           {copied ? t("copied") : t("copy")}
         </button>
       </div>
       <div className="mt-3 flex justify-end">
-        <button type="button" onClick={onDismiss} className="btn-tertiary">
+        <button type="button" onClick={onDismiss} className="btn btn-still">
           {t("dismiss")}
         </button>
       </div>

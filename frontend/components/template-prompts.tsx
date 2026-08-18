@@ -95,8 +95,8 @@ export function TemplatePrompts() {
   if (list === null) {
     return (
       <div className="space-y-2">
-        <div className="h-14 animate-pulse rounded bg-surface-soft" />
-        <div className="h-14 animate-pulse rounded bg-surface-soft" />
+        <div className="h-14 animate-pulse rounded bg-flaeche-1" />
+        <div className="h-14 animate-pulse rounded bg-flaeche-1" />
       </div>
     );
   }
@@ -108,7 +108,7 @@ export function TemplatePrompts() {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="btn-secondary inline-flex items-center gap-1.5"
+            className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
             {t("newTemplate")}
@@ -132,9 +132,9 @@ export function TemplatePrompts() {
       )}
 
       {list.length === 0 ? (
-        <p className="text-sm text-text-secondary">{t("noneYet")}</p>
+        <p className="text-sm text-text-sekundaer">{t("noneYet")}</p>
       ) : (
-        <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
+        <div className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
           {list.map((tpl) => (
             <TemplateRow
               key={tpl.id}
@@ -175,7 +175,7 @@ function LocaleTabs({
     <div
       role="tablist"
       aria-label="Locale"
-      className="flex flex-wrap gap-1 border-b border-border-subtle"
+      className="flex flex-wrap gap-1 border-b border-trennlinie"
     >
       {LOCALES.map((loc) => {
         const isActive = loc === active;
@@ -190,8 +190,8 @@ function LocaleTabs({
             className={
               "relative -mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-medium transition " +
               (isActive
-                ? "border-text-primary text-text-primary"
-                : "border-transparent text-text-meta hover:text-text-primary")
+                ? "border-rand-betont text-text-primaer"
+                : "border-transparent text-text-gedaempft hover:text-text-primaer")
             }
             title={tLocale(loc)}
           >
@@ -199,7 +199,7 @@ function LocaleTabs({
             {isEmpty && loc !== "de" && (
               <span
                 aria-hidden
-                className="inline-block h-1 w-1 rounded-full bg-text-meta opacity-50"
+                className="inline-block h-1 w-1 rounded-full bg-text-gedaempft opacity-50"
               />
             )}
           </button>
@@ -258,16 +258,16 @@ function CreateTemplateForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-lg border border-border-strong bg-white p-5"
+      className="space-y-4 rounded-lg border border-rand-betont bg-seite p-5"
     >
       <div className="flex items-baseline justify-between">
-        <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+        <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
           {t("createHeader")}
         </p>
       </div>
 
       <label className="block">
-        <span className="block text-sm font-medium text-text-primary">{t("nameLabel")}</span>
+        <span className="block text-sm font-medium text-text-primaer">{t("nameLabel")}</span>
         <input
           type="text"
           className="input mt-1 w-full"
@@ -281,10 +281,10 @@ function CreateTemplateForm({
       </label>
 
       <label className="block">
-        <span className="block text-sm font-medium text-text-primary">
+        <span className="block text-sm font-medium text-text-primaer">
           {t("descLabel")}
         </span>
-        <span className="mt-1 mb-2 block text-xs text-text-secondary">
+        <span className="mt-1 mb-2 block text-xs text-text-sekundaer">
           {t("descHint")}
         </span>
         <input
@@ -299,13 +299,13 @@ function CreateTemplateForm({
       </label>
 
       <div>
-        <span className="block text-sm font-medium text-text-primary">
+        <span className="block text-sm font-medium text-text-primaer">
           {t("promptLabel")}
         </span>
-        <span className="mt-1 mb-2 block text-xs text-text-secondary">
+        <span className="mt-1 mb-2 block text-xs text-text-sekundaer">
           {t("promptHintCreate")}
         </span>
-        <span className="mb-2 block text-xs text-text-meta">
+        <span className="mb-2 block text-xs text-text-gedaempft">
           {t("localeHint")}
         </span>
         <LocaleTabs
@@ -331,21 +331,21 @@ function CreateTemplateForm({
       </div>
 
       {error && (
-        <p className="text-sm" style={{ color: "var(--error)" }}>
+        <p className="text-sm" style={{ color: "var(--am-fehler)" }}>
           {error}
         </p>
       )}
 
-      <div className="flex flex-wrap justify-end gap-2 border-t border-border-subtle pt-4">
+      <div className="flex flex-wrap justify-end gap-2 border-t border-trennlinie pt-4">
         <button
           type="button"
           onClick={onCancel}
-          className="btn-tertiary"
+          className="btn btn-still"
           disabled={saving}
         >
           {tCommon("cancel")}
         </button>
-        <button type="submit" className="btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primaer" disabled={saving}>
           {saving ? t("creating") : t("createBtn")}
         </button>
       </div>
@@ -570,41 +570,41 @@ function TemplateRow({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-surface-soft"
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-flaeche-1"
         aria-expanded={open}
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-2">
-            <p className="font-medium text-text-primary">{template.name}</p>
+            <p className="font-medium text-text-primaer">{template.name}</p>
             {template.is_system && (
-              <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+              <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
                 {t("tagSystem")}
               </span>
             )}
             {template.is_customized && (
               <span
                 className="mono text-[0.6875rem] uppercase tracking-[0.08em]"
-                style={{ color: "var(--gold-deep)" }}
+                style={{ color: "var(--am-gold-800)" }}
               >
                 {t("tagCustomized")}
               </span>
             )}
           </div>
           {template.description && (
-            <p className="mt-1 text-sm text-text-secondary">{template.description}</p>
+            <p className="mt-1 text-sm text-text-sekundaer">{template.description}</p>
           )}
         </div>
-        <span className="mono text-xs text-text-meta" aria-hidden>
+        <span className="mono text-xs text-text-gedaempft" aria-hidden>
           {open ? "▾" : "▸"}
         </span>
       </button>
 
       {open && (
-        <div className="border-t border-border-subtle px-5 py-5">
+        <div className="border-t border-trennlinie px-5 py-5">
           {state.kind === "loading" && (
             <div className="space-y-2">
-              <div className="h-4 w-1/4 animate-pulse rounded bg-surface-soft" />
-              <div className="h-40 animate-pulse rounded bg-surface-soft" />
+              <div className="h-4 w-1/4 animate-pulse rounded bg-flaeche-1" />
+              <div className="h-40 animate-pulse rounded bg-flaeche-1" />
             </div>
           )}
 
@@ -612,18 +612,18 @@ function TemplateRow({
             <>
               <div className="space-y-4">
                 <label className="block">
-                  <span className="block text-sm font-medium text-text-primary">
+                  <span className="block text-sm font-medium text-text-primaer">
                     {t("nameLabel")}
                   </span>
                   {!isOrgOwned && detail?.default_name && (
-                    <span className="mt-0.5 block text-xs text-text-meta">
+                    <span className="mt-0.5 block text-xs text-text-gedaempft">
                       {t("defaultName")}{" "}
                       <span className="font-mono">{detail.default_name}</span>
                       {detail.display_name && (
                         <button
                           type="button"
                           onClick={() => setName(detail.default_name ?? "")}
-                          className="ml-2 underline hover:text-text-primary"
+                          className="ml-2 underline hover:text-text-primaer"
                         >
                           {t("resetToDefaultLink")}
                         </button>
@@ -642,11 +642,11 @@ function TemplateRow({
                   />
                 </label>
                 <label className="block">
-                  <span className="block text-sm font-medium text-text-primary">
+                  <span className="block text-sm font-medium text-text-primaer">
                     {t("descLabel")}
                   </span>
                   {!isOrgOwned && detail?.default_description && (
-                    <span className="mt-0.5 block text-xs text-text-meta">
+                    <span className="mt-0.5 block text-xs text-text-gedaempft">
                       {t("defaultDesc", { value: detail.default_description })}
                     </span>
                   )}
@@ -662,20 +662,20 @@ function TemplateRow({
                   />
                 </label>
                 {!isOrgOwned && (
-                  <div className="rounded-md bg-surface-soft px-3 py-2 text-xs text-text-secondary">
+                  <div className="rounded-md bg-flaeche-1 px-3 py-2 text-xs text-text-sekundaer">
                     {t("systemNote")}
                   </div>
                 )}
               </div>
 
               <div className="mt-4">
-                <span className="block text-sm font-medium text-text-primary">
+                <span className="block text-sm font-medium text-text-primaer">
                   {t("promptLabel")}
                 </span>
-                <span className="mt-1 mb-2 block text-xs text-text-secondary">
+                <span className="mt-1 mb-2 block text-xs text-text-sekundaer">
                   {t("promptHintEdit")}
                 </span>
-                <span className="mb-2 block text-xs text-text-meta">
+                <span className="mb-2 block text-xs text-text-gedaempft">
                   {t("localeHint")}
                 </span>
                 <LocaleTabs
@@ -716,27 +716,27 @@ function TemplateRow({
               )}
 
               {detail.few_shot_input && detail.few_shot_output && (
-                <details className="mt-4 rounded-md border border-border-subtle bg-surface-soft p-3 text-xs">
-                  <summary className="cursor-pointer select-none font-medium text-text-primary">
+                <details className="mt-4 rounded-md border border-trennlinie bg-flaeche-1 p-3 text-xs">
+                  <summary className="cursor-pointer select-none font-medium text-text-primaer">
                     {t("fewShotTitle")}
                   </summary>
-                  <p className="mt-2 text-text-secondary">
+                  <p className="mt-2 text-text-sekundaer">
                     {t("fewShotIntro")}
                   </p>
                   <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div>
-                      <p className="mono text-[0.625rem] uppercase tracking-[0.08em] text-text-meta">
+                      <p className="mono text-[0.625rem] uppercase tracking-[0.08em] text-text-gedaempft">
                         {t("fewShotInput")}
                       </p>
-                      <pre className="mt-1 max-h-[200px] overflow-auto rounded bg-white p-2 font-mono text-[0.75rem] text-text-primary">
+                      <pre className="mt-1 max-h-[200px] overflow-auto rounded bg-seite p-2 font-mono text-[0.75rem] text-text-primaer">
                         {detail.few_shot_input}
                       </pre>
                     </div>
                     <div>
-                      <p className="mono text-[0.625rem] uppercase tracking-[0.08em] text-text-meta">
+                      <p className="mono text-[0.625rem] uppercase tracking-[0.08em] text-text-gedaempft">
                         {t("fewShotOutput")}
                       </p>
-                      <pre className="mt-1 max-h-[200px] overflow-auto rounded bg-white p-2 font-mono text-[0.75rem] text-text-primary">
+                      <pre className="mt-1 max-h-[200px] overflow-auto rounded bg-seite p-2 font-mono text-[0.75rem] text-text-primaer">
                         {JSON.stringify(detail.few_shot_output, null, 2)}
                       </pre>
                     </div>
@@ -745,13 +745,13 @@ function TemplateRow({
               )}
 
               {error && (
-                <p className="mt-3 text-sm" style={{ color: "var(--error)" }}>
+                <p className="mt-3 text-sm" style={{ color: "var(--am-fehler)" }}>
                   {error}
                 </p>
               )}
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="text-xs text-text-meta">
+                <div className="text-xs text-text-gedaempft">
                   {detail.is_customized && detail.custom_updated_at ? (
                     <>
                       {t("customizedAt", {
@@ -775,8 +775,8 @@ function TemplateRow({
                     <button
                       type="button"
                       onClick={handleDeleteRequest}
-                      className="btn-tertiary inline-flex items-center gap-1.5"
-                      style={{ color: "var(--error)" }}
+                      className="btn btn-still inline-flex items-center gap-1.5"
+                      style={{ color: "var(--am-fehler)" }}
                       disabled={
                         state.kind === "saving" || state.kind === "deleting"
                       }
@@ -789,7 +789,7 @@ function TemplateRow({
                     <button
                       type="button"
                       onClick={handleReset}
-                      className="btn-tertiary"
+                      className="btn btn-still"
                       disabled={
                         state.kind === "saving" || state.kind === "resetting"
                       }
@@ -803,7 +803,7 @@ function TemplateRow({
                     <button
                       type="button"
                       onClick={handleResetDraftsToDefault}
-                      className="btn-tertiary"
+                      className="btn btn-still"
                       disabled={state.kind !== "idle"}
                     >
                       {t("revertDrafts")}
@@ -812,7 +812,7 @@ function TemplateRow({
                   <button
                     type="button"
                     onClick={handleSave}
-                    className="btn-primary"
+                    className="btn btn-primaer"
                     disabled={
                       !dirty ||
                       state.kind === "saving" ||
@@ -868,20 +868,20 @@ function CustomFieldsEditor({
   }
 
   return (
-    <section className="mt-6 rounded-md border border-border-subtle bg-surface-soft p-4">
+    <section className="mt-6 rounded-md border border-trennlinie bg-flaeche-1 p-4">
       <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="text-sm font-medium text-text-primary">
+          <p className="text-sm font-medium text-text-primaer">
             {t("title")}
           </p>
-          <p className="mt-0.5 text-xs text-text-secondary">
+          <p className="mt-0.5 text-xs text-text-sekundaer">
             {t("hint")}
           </p>
         </div>
         <button
           type="button"
           onClick={add}
-          className="btn-tertiary inline-flex items-center gap-1.5"
+          className="btn btn-still inline-flex items-center gap-1.5"
           disabled={disabled}
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2} />
@@ -890,7 +890,7 @@ function CustomFieldsEditor({
       </header>
 
       {fields.length === 0 && (
-        <p className="text-xs text-text-meta">
+        <p className="text-xs text-text-gedaempft">
           {t("none")}
         </p>
       )}
@@ -899,11 +899,11 @@ function CustomFieldsEditor({
         {fields.map((cf, idx) => (
           <div
             key={idx}
-            className="rounded-md border border-border-subtle bg-white p-3"
+            className="rounded-md border border-trennlinie bg-seite p-3"
           >
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <label className="block">
-                <span className="block text-xs font-medium text-text-secondary">
+                <span className="block text-xs font-medium text-text-sekundaer">
                   {t("internalName")}
                 </span>
                 <input
@@ -924,7 +924,7 @@ function CustomFieldsEditor({
                 />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-text-secondary">
+                <span className="block text-xs font-medium text-text-sekundaer">
                   {t("labelLabel")}
                 </span>
                 <input
@@ -941,7 +941,7 @@ function CustomFieldsEditor({
 
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               <label className="block">
-                <span className="block text-xs font-medium text-text-secondary">
+                <span className="block text-xs font-medium text-text-sekundaer">
                   {t("typeLabel")}
                 </span>
                 <select
@@ -960,7 +960,7 @@ function CustomFieldsEditor({
                 </select>
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-text-secondary">
+                <span className="block text-xs font-medium text-text-sekundaer">
                   {t("hintAi")}
                 </span>
                 <input
@@ -979,8 +979,8 @@ function CustomFieldsEditor({
               <button
                 type="button"
                 onClick={() => remove(idx)}
-                className="btn-tertiary inline-flex items-center gap-1 text-xs"
-                style={{ color: "var(--error)" }}
+                className="btn btn-still inline-flex items-center gap-1 text-xs"
+                style={{ color: "var(--am-fehler)" }}
                 disabled={disabled}
               >
                 <Trash2 className="h-3 w-3" strokeWidth={1.75} />

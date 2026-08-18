@@ -59,17 +59,17 @@ export function LocaleSwitcher() {
   }
 
   if (state === null) {
-    return <div className="h-24 animate-pulse rounded bg-surface-soft" />;
+    return <div className="h-24 animate-pulse rounded bg-flaeche-1" />;
   }
 
   const activeIsUser = state.user_setting !== null;
   const activeIsOrg = state.user_setting === null && state.org_setting !== null;
 
   return (
-    <div className="space-y-4 rounded-lg border border-border-subtle bg-white p-6">
+    <div className="space-y-4 rounded-lg border border-trennlinie bg-seite p-6">
       <header>
-        <h3 className="text-sm font-medium text-text-primary">{t("switcherTitle")}</h3>
-        <p className="mt-1 text-xs text-text-secondary">{t("switcherHint")}</p>
+        <h3 className="text-sm font-medium text-text-primaer">{t("switcherTitle")}</h3>
+        <p className="mt-1 text-xs text-text-sekundaer">{t("switcherHint")}</p>
       </header>
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
@@ -135,27 +135,27 @@ function LocaleOption({
       disabled={loading}
       className={`flex items-start gap-3 rounded-md border px-4 py-3 text-left transition ${
         selected
-          ? "border-gold-deep bg-gold-faint"
-          : "border-border-subtle bg-white hover:bg-surface-soft"
+          ? "border-gold-600 bg-gold-200"
+          : "border-trennlinie bg-seite hover:bg-flaeche-1"
       }`}
       style={
         selected
-          ? { borderColor: "var(--gold-deep)", background: "var(--gold-faint)" }
+          ? { borderColor: "var(--am-gold-800)", background: "var(--am-gold-200)" }
           : undefined
       }
     >
       <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center">
         {loading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-text-meta" strokeWidth={1.75} />
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-text-gedaempft" strokeWidth={1.75} />
         ) : selected ? (
-          <Check className="h-3.5 w-3.5" strokeWidth={2} style={{ color: "var(--gold-deep)" }} />
+          <Check className="h-3.5 w-3.5" strokeWidth={2} style={{ color: "var(--am-gold-800)" }} />
         ) : (
-          <span className="h-3 w-3 rounded-full border border-border-strong" />
+          <span className="h-3 w-3 rounded-full border border-rand-betont" />
         )}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-text-primary">{label}</span>
-        {hint && <span className="mt-0.5 block text-xs text-text-meta">{hint}</span>}
+        <span className="block text-sm font-medium text-text-primaer">{label}</span>
+        {hint && <span className="mt-0.5 block text-xs text-text-gedaempft">{hint}</span>}
       </span>
     </button>
   );

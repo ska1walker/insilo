@@ -55,7 +55,7 @@ export default function Home() {
       <div className="mb-10 flex items-baseline justify-between">
         <h1 className="text-3xl font-medium md:text-4xl">Besprechungen</h1>
         {state.kind === "ok" && state.meetings.length > 0 && (
-          <p className="mono text-xs uppercase tracking-[0.08em] text-text-meta">
+          <p className="mono text-xs uppercase tracking-[0.08em] text-text-gedaempft">
             {state.meetings.length}{" "}
             {state.meetings.length === 1 ? "Aufnahme" : "Aufnahmen"}
           </p>
@@ -75,7 +75,7 @@ export default function Home() {
         (selectedTagIds.length > 0 ? <FilteredEmpty /> : <EmptyState />)}
 
       {state.kind === "ok" && state.meetings.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-border-subtle bg-white">
+        <div className="overflow-hidden rounded-lg border border-trennlinie bg-seite">
           {state.meetings.map((m, i) => (
             <Link
               key={m.id}
@@ -85,10 +85,10 @@ export default function Home() {
             >
               <div className="meeting-row">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-medium text-text-primary">
+                  <p className="truncate text-base font-medium text-text-primaer">
                     {m.title}
                   </p>
-                  <p className="mt-1 text-[0.8125rem] text-text-meta">
+                  <p className="mt-1 text-[0.8125rem] text-text-gedaempft">
                     {formatMeetingDate(Date.parse(m.created_at))}
                   </p>
                   {m.tags && m.tags.length > 0 && (
@@ -99,7 +99,7 @@ export default function Home() {
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
                   <StatusPill status={m.status} />
-                  <p className="mono text-[0.8125rem] font-medium text-text-meta">
+                  <p className="mono text-[0.8125rem] font-medium text-text-gedaempft">
                     {formatDuration(m.duration_ms)}
                   </p>
                 </div>
@@ -114,9 +114,9 @@ export default function Home() {
 
 function FilteredEmpty() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-white p-12 text-center">
+    <div className="rounded-lg border border-trennlinie bg-seite p-12 text-center">
       <p className="font-display text-xl font-medium">Keine Treffer</p>
-      <p className="mx-auto mt-3 max-w-[420px] text-text-secondary">
+      <p className="mx-auto mt-3 max-w-[420px] text-text-sekundaer">
         Keine Besprechung enthält alle ausgewählten Tags. Lösen Sie einen
         Filter oder versuchen Sie es mit weniger Tags.
       </p>
@@ -130,7 +130,7 @@ function ListSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="h-[72px] animate-pulse rounded-lg bg-surface-soft"
+          className="h-[72px] animate-pulse rounded-lg bg-flaeche-1"
         />
       ))}
     </div>
@@ -139,13 +139,13 @@ function ListSkeleton() {
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-white p-12 text-center">
+    <div className="rounded-lg border border-trennlinie bg-seite p-12 text-center">
       <p className="font-display text-xl font-medium">Noch keine Aufnahmen</p>
-      <p className="mx-auto mt-3 max-w-[420px] text-text-secondary">
+      <p className="mx-auto mt-3 max-w-[420px] text-text-sekundaer">
         Starten Sie Ihre erste Besprechung. Audio wird auf der Olares-Box
         gespeichert — lokal auf Ihrer Hardware, niemals in der Cloud.
       </p>
-      <Link href="/aufnahme" className="btn-primary mt-8 inline-flex">
+      <Link href="/aufnahme" className="btn btn-primaer mt-8 inline-flex">
         Aufnahme starten
       </Link>
     </div>
@@ -154,13 +154,13 @@ function EmptyState() {
 
 function ErrorState({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-border-subtle bg-white p-12 text-center">
+    <div className="rounded-lg border border-trennlinie bg-seite p-12 text-center">
       <p className="font-display text-xl font-medium">Verbindung unterbrochen</p>
-      <p className="mx-auto mt-3 max-w-[480px] text-text-secondary">{message}</p>
+      <p className="mx-auto mt-3 max-w-[480px] text-text-sekundaer">{message}</p>
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="btn-secondary mt-8 inline-flex"
+        className="btn btn-sekundaer mt-8 inline-flex"
       >
         Erneut versuchen
       </button>

@@ -29,9 +29,9 @@ export function TagPill({
   onClick?: () => void;
 }) {
   const t = useTranslations("tags");
-  const bg = active ? withAlpha(color, 0.12) : "var(--white)";
-  const border = active ? withAlpha(color, 0.35) : "var(--border-subtle)";
-  const text = active ? color : "var(--text-meta)";
+  const bg = active ? withAlpha(color, 0.12) : "var(--am-seite)";
+  const border = active ? withAlpha(color, 0.35) : "var(--am-trennlinie)";
+  const text = active ? color : "var(--am-text-gedaempft)";
 
   const Component: "button" | "span" = onClick ? "button" : "span";
 
@@ -55,7 +55,7 @@ export function TagPill({
             e.stopPropagation();
             onRemove();
           }}
-          className="-mr-0.5 rounded-full p-0.5 hover:bg-black/5"
+          className="-mr-0.5 rounded-full p-0.5 hover:bg-flaeche-2"
           aria-label={t("removeAria", { name })}
         >
           <X className="h-2.5 w-2.5" strokeWidth={2.5} />
@@ -82,7 +82,7 @@ export function TagPillRow({
         <TagPill key={t.id} name={t.name} color={t.color} />
       ))}
       {overflow > 0 && (
-        <span className="text-[0.6875rem] uppercase tracking-[0.04em] text-text-meta">
+        <span className="text-[0.6875rem] uppercase tracking-[0.04em] text-text-gedaempft">
           +{overflow}
         </span>
       )}

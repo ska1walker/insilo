@@ -195,7 +195,7 @@ export function VoiceEnrollmentDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center deckschicht p-4"
       role="dialog"
       aria-modal
       aria-label={t("dialogAria")}
@@ -207,22 +207,22 @@ export function VoiceEnrollmentDialog({
         sticky Footer unten. Damit bleibt der „Aufnahme starten"-Button
         immer sichtbar — auch bei kleinen Viewports und langem Nordwind-Text.
       */}
-      <div className="relative flex max-h-[90vh] w-full max-w-[640px] flex-col rounded-lg border border-border-subtle bg-white shadow-2xl">
+      <div className="relative flex max-h-[90vh] w-full max-w-[640px] flex-col rounded-lg border border-trennlinie bg-seite shadow-2xl">
         {/* Header — fix */}
-        <div className="flex-shrink-0 border-b border-border-subtle p-6 pr-12">
+        <div className="flex-shrink-0 border-b border-trennlinie p-6 pr-12">
           <button
             type="button"
             onClick={handleClose}
-            className="absolute right-4 top-4 rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+            className="absolute right-4 top-4 rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={t("closeAria")}
           >
             <X className="h-4 w-4" strokeWidth={1.75} />
           </button>
           <h2 className="font-display text-2xl font-medium tracking-tight">
             {t("titlePrefix")}{" "}
-            <span style={{ color: "var(--gold-deep)" }}>{speaker.display_name}</span>
+            <span style={{ color: "var(--am-gold-800)" }}>{speaker.display_name}</span>
           </h2>
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="mt-2 text-sm text-text-sekundaer">
             {t("intro")}
           </p>
         </div>
@@ -233,8 +233,8 @@ export function VoiceEnrollmentDialog({
             phase === "requesting" ||
             phase === "denied" ||
             phase === "unsupported") && (
-            <div className="rounded-md border border-border-subtle bg-surface-soft p-4 text-sm leading-relaxed text-text-primary">
-              <p className="mono mb-2 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+            <div className="rounded-md border border-trennlinie bg-flaeche-1 p-4 text-sm leading-relaxed text-text-primaer">
+              <p className="mono mb-2 text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
                 {t("nordwindTitle")}
               </p>
               <p>{t("nordwindBody")}</p>
@@ -243,13 +243,13 @@ export function VoiceEnrollmentDialog({
 
           {phase === "recording" && (
             <div
-              className="rounded-md border bg-surface-soft p-4 text-sm leading-relaxed text-text-primary"
-              style={{ borderColor: "var(--gold)" }}
+              className="rounded-md border bg-flaeche-1 p-4 text-sm leading-relaxed text-text-primaer"
+              style={{ borderColor: "var(--am-gold-500)" }}
             >
               <div className="mb-3 flex items-center justify-between">
                 <p
                   className="mono text-[0.6875rem] uppercase tracking-[0.08em]"
-                  style={{ color: "var(--gold-deep)" }}
+                  style={{ color: "var(--am-gold-800)" }}
                 >
                   {t("recordingHeader")}
                 </p>
@@ -262,7 +262,7 @@ export function VoiceEnrollmentDialog({
           )}
 
           {phase === "uploading" && (
-            <div className="flex items-center gap-3 rounded-md bg-surface-soft p-4 text-sm text-text-secondary">
+            <div className="flex items-center gap-3 rounded-md bg-flaeche-1 p-4 text-sm text-text-sekundaer">
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
               {t("processing")}
             </div>
@@ -272,9 +272,9 @@ export function VoiceEnrollmentDialog({
             <div
               className="rounded-md border p-4 text-sm"
               style={{
-                borderColor: "var(--success)",
+                borderColor: "var(--am-erfolg)",
                 background: "rgba(74,124,89,0.06)",
-                color: "var(--success)",
+                color: "var(--am-erfolg)",
               }}
             >
               <div className="flex items-center gap-2 font-medium">
@@ -295,9 +295,9 @@ export function VoiceEnrollmentDialog({
             <div
               className="rounded-md border p-4 text-sm"
               style={{
-                borderColor: "var(--error)",
+                borderColor: "var(--am-fehler)",
                 background: "rgba(163,58,47,0.06)",
-                color: "var(--error)",
+                color: "var(--am-fehler)",
               }}
             >
               <p className="font-medium">{t("errorHeader")}</p>
@@ -309,9 +309,9 @@ export function VoiceEnrollmentDialog({
             <div
               className="rounded-md border p-4 text-sm"
               style={{
-                borderColor: "var(--error)",
+                borderColor: "var(--am-fehler)",
                 background: "rgba(163,58,47,0.06)",
-                color: "var(--error)",
+                color: "var(--am-fehler)",
               }}
             >
               <p className="font-medium">{t("deniedHeader")}</p>
@@ -325,9 +325,9 @@ export function VoiceEnrollmentDialog({
             <div
               className="rounded-md border p-4 text-sm"
               style={{
-                borderColor: "var(--error)",
+                borderColor: "var(--am-fehler)",
                 background: "rgba(163,58,47,0.06)",
-                color: "var(--error)",
+                color: "var(--am-fehler)",
               }}
             >
               <p className="font-medium">{t("unsupportedHeader")}</p>
@@ -339,20 +339,20 @@ export function VoiceEnrollmentDialog({
         </div>
 
         {/* Footer — sticky, immer sichtbar */}
-        <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border-subtle bg-white p-6">
-          <p className="text-xs text-text-meta">
+        <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-trennlinie bg-seite p-6">
+          <p className="text-xs text-text-gedaempft">
             {t("footerNote")}
           </p>
           <div className="flex gap-2">
             {phase === "intro" && (
               <>
-                <button type="button" onClick={handleClose} className="btn-tertiary">
+                <button type="button" onClick={handleClose} className="btn btn-still">
                   {t("cancel")}
                 </button>
                 <button
                   type="button"
                   onClick={startRecording}
-                  className="btn-primary inline-flex items-center gap-2"
+                  className="btn btn-primaer inline-flex items-center gap-2"
                 >
                   <Mic className="h-4 w-4" strokeWidth={1.75} />
                   {t("start")}
@@ -360,7 +360,7 @@ export function VoiceEnrollmentDialog({
               </>
             )}
             {phase === "requesting" && (
-              <button type="button" disabled className="btn-primary">
+              <button type="button" disabled className="btn btn-primaer">
                 {t("requesting")}
               </button>
             )}
@@ -368,30 +368,30 @@ export function VoiceEnrollmentDialog({
               <button
                 type="button"
                 onClick={stopRecording}
-                className="btn-primary inline-flex items-center gap-2"
-                style={{ background: "var(--gold-deep)" }}
+                className="btn btn-primaer inline-flex items-center gap-2"
+                style={{ background: "var(--am-gold-800)" }}
               >
                 <Square className="h-4 w-4 fill-current" strokeWidth={1.75} />
                 {t("stop")}
               </button>
             )}
             {phase === "uploading" && (
-              <button type="button" disabled className="btn-primary">
+              <button type="button" disabled className="btn btn-primaer">
                 {t("uploading")}
               </button>
             )}
             {(phase === "error" || phase === "denied") && (
               <>
-                <button type="button" onClick={handleClose} className="btn-tertiary">
+                <button type="button" onClick={handleClose} className="btn btn-still">
                   {t("close")}
                 </button>
-                <button type="button" onClick={handleRetry} className="btn-primary">
+                <button type="button" onClick={handleRetry} className="btn btn-primaer">
                   {t("retry")}
                 </button>
               </>
             )}
             {phase === "success" && (
-              <button type="button" onClick={handleClose} className="btn-primary">
+              <button type="button" onClick={handleClose} className="btn btn-primaer">
                 {t("done")}
               </button>
             )}

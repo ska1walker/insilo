@@ -145,9 +145,9 @@ export default function MeetingDetail() {
   if (state.kind === "loading") {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-16 md:px-12">
-        <div className="h-8 w-1/2 animate-pulse rounded bg-surface-soft" />
-        <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-surface-soft" />
-        <div className="mt-12 h-14 w-full animate-pulse rounded bg-surface-soft" />
+        <div className="h-8 w-1/2 animate-pulse rounded bg-flaeche-1" />
+        <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-flaeche-1" />
+        <div className="mt-12 h-14 w-full animate-pulse rounded bg-flaeche-1" />
       </main>
     );
   }
@@ -156,10 +156,10 @@ export default function MeetingDetail() {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-24 text-center md:px-12">
         <p className="font-display text-xl font-medium">Aufnahme nicht gefunden</p>
-        <p className="mx-auto mt-3 max-w-[420px] text-text-secondary">
+        <p className="mx-auto mt-3 max-w-[420px] text-text-sekundaer">
           Diese Aufnahme existiert nicht oder wurde bereits gelöscht.
         </p>
-        <Link href="/" className="btn-primary mt-8 inline-flex">
+        <Link href="/" className="btn btn-primaer mt-8 inline-flex">
           Zur Übersicht
         </Link>
       </main>
@@ -170,11 +170,11 @@ export default function MeetingDetail() {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-24 text-center md:px-12">
         <p className="font-display text-xl font-medium">Verbindung unterbrochen</p>
-        <p className="mx-auto mt-3 max-w-[420px] text-text-secondary">{state.message}</p>
+        <p className="mx-auto mt-3 max-w-[420px] text-text-sekundaer">{state.message}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="btn-secondary mt-8 inline-flex"
+          className="btn btn-sekundaer mt-8 inline-flex"
         >
           Erneut versuchen
         </button>
@@ -186,7 +186,7 @@ export default function MeetingDetail() {
 
   return (
     <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12 md:py-16">
-      <Link href="/" className="btn-tertiary -ml-3 mb-8 inline-flex">
+      <Link href="/" className="btn btn-still -ml-3 mb-8 inline-flex">
         ← Übersicht
       </Link>
 
@@ -201,7 +201,7 @@ export default function MeetingDetail() {
         <StatusPill status={meeting.status} />
       </div>
 
-      <div className="mono mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-meta">
+      <div className="mono mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-gedaempft">
         <span>{formatMeetingDate(Date.parse(meeting.created_at))}</span>
         <span>·</span>
         <span>{formatDuration(meeting.duration_ms)}</span>
@@ -226,22 +226,22 @@ export default function MeetingDetail() {
       </div>
 
       {meeting.audio_url && (
-        <div className="mt-10 rounded-lg border border-border-subtle bg-white p-6">
+        <div className="mt-10 rounded-lg border border-trennlinie bg-seite p-6">
           <audio src={meeting.audio_url} controls preload="metadata" className="w-full" />
         </div>
       )}
 
       {meeting.status === "failed" && (
-        <section className="mt-10 rounded-lg border border-border-subtle bg-white p-6">
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-recording">
+        <section className="mt-10 rounded-lg border border-trennlinie bg-seite p-6">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-fehler">
             Verarbeitung fehlgeschlagen
           </p>
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="mt-2 text-sm text-text-sekundaer">
             {meeting.error_message ?? "Unbekannter Fehler."}
           </p>
           {meeting.transcript && (
-            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4">
-              <p className="text-xs text-text-secondary">
+            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-trennlinie pt-4">
+              <p className="text-xs text-text-sekundaer">
                 Transkript ist vorhanden. Sie können die Zusammenfassung
                 erneut anstoßen — z.&nbsp;B. nachdem Sie unter{" "}
                 <Link href="/einstellungen" className="underline">
@@ -253,7 +253,7 @@ export default function MeetingDetail() {
                 type="button"
                 onClick={onRetrySummary}
                 disabled={retrying}
-                className="btn-secondary"
+                className="btn btn-sekundaer"
               >
                 {retrying ? "Wird angestoßen…" : "Erneut zusammenfassen"}
               </button>
@@ -263,11 +263,11 @@ export default function MeetingDetail() {
       )}
 
       {POLLING_STATUS.has(meeting.status) && (
-        <section className="mt-10 rounded-lg border border-border-subtle bg-surface-soft p-6">
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+        <section className="mt-10 rounded-lg border border-trennlinie bg-flaeche-1 p-6">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
             Verarbeitung
           </p>
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="mt-2 text-sm text-text-sekundaer">
             Die Aufnahme wird transkribiert. Diese Ansicht aktualisiert sich automatisch.
           </p>
         </section>
@@ -276,14 +276,14 @@ export default function MeetingDetail() {
       {meeting.summary && (
         <section className="mt-12">
           <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
-            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
               Zusammenfassung · {meeting.summary.template_name}
             </p>
-            <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+            <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
               {meeting.summary.llm_model} · {Math.round(meeting.summary.generation_time_ms / 1000)}s
             </p>
           </div>
-          <div className="rounded-lg border border-border-subtle bg-white p-8">
+          <div className="rounded-lg border border-trennlinie bg-seite p-8">
             <SummaryView summary={meeting.summary} />
           </div>
         </section>
@@ -298,7 +298,7 @@ export default function MeetingDetail() {
           <button
             type="button"
             onClick={() => setShowDispatch(true)}
-            className="btn-secondary inline-flex items-center gap-2"
+            className="btn btn-sekundaer inline-flex items-center gap-2"
             title="Diese Besprechung manuell an externe Systeme schicken (z. B. Duo)"
           >
             <Send className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -307,7 +307,7 @@ export default function MeetingDetail() {
         ) : (
           <span />
         )}
-        <button type="button" onClick={onDelete} className="btn-tertiary text-recording">
+        <button type="button" onClick={onDelete} className="btn btn-still text-fehler">
           Aufnahme löschen
         </button>
       </div>

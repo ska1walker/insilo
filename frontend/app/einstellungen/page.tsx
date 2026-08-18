@@ -131,7 +131,7 @@ export default function EinstellungenPage() {
   if (phase === "loading") {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12">
-        <p className="text-sm text-text-secondary">Wird geladen…</p>
+        <p className="text-sm text-text-sekundaer">Wird geladen…</p>
       </main>
     );
   }
@@ -139,7 +139,7 @@ export default function EinstellungenPage() {
   if (phase === "error" && !settings) {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12">
-        <p className="text-sm text-error">{error}</p>
+        <p className="text-sm text-fehler">{error}</p>
       </main>
     );
   }
@@ -151,7 +151,7 @@ export default function EinstellungenPage() {
 
   return (
     <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12">
-      <Link href="/" className="text-sm text-text-secondary hover:text-text-primary">
+      <Link href="/" className="text-sm text-text-sekundaer hover:text-text-primaer">
         ← Übersicht
       </Link>
 
@@ -159,7 +159,7 @@ export default function EinstellungenPage() {
         <h1 className="font-display text-4xl font-medium tracking-tight">
           Einstellungen
         </h1>
-        <p className="mt-3 max-w-prose text-text-secondary">
+        <p className="mt-3 max-w-prose text-text-sekundaer">
           Verbinden Sie Insilo mit Ihrem bevorzugten Sprachmodell. Jeder
           OpenAI-kompatible Endpunkt funktioniert — die lokale Olares-LiteLLM,
           ein eigener Ollama-Server oder ein externer Anbieter. Wenn ein Feld
@@ -173,11 +173,11 @@ export default function EinstellungenPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-7 rounded-lg border border-border-subtle bg-white p-7"
+        className="space-y-7 rounded-lg border border-trennlinie bg-seite p-7"
       >
         <header>
           <h2 className="font-display text-xl font-medium">Sprachmodell</h2>
-          <p className="mt-1 text-sm text-text-secondary">
+          <p className="mt-1 text-sm text-text-sekundaer">
             Wird für Zusammenfassungen und die „Fragen"-Funktion verwendet.
           </p>
         </header>
@@ -227,7 +227,7 @@ export default function EinstellungenPage() {
             {s.llm_api_key_set && (
               <button
                 type="button"
-                className="btn-tertiary"
+                className="btn btn-still"
                 onClick={() =>
                   setForm({
                     ...form,
@@ -259,8 +259,8 @@ export default function EinstellungenPage() {
           />
         </Field>
 
-        <div className="rounded-md bg-surface-soft px-4 py-3 text-xs text-text-secondary">
-          <p className="font-medium text-text-primary">Wird getestet / gespeichert</p>
+        <div className="rounded-md bg-flaeche-1 px-4 py-3 text-xs text-text-sekundaer">
+          <p className="font-medium text-text-primaer">Wird getestet / gespeichert</p>
           <p className="mt-1">
             Endpunkt: <span className="font-mono">{effectiveBaseUrl || "—"}</span>
           </p>
@@ -275,13 +275,13 @@ export default function EinstellungenPage() {
             style={
               testResult.ok
                 ? {
-                    borderColor: "var(--success)",
-                    color: "var(--success)",
+                    borderColor: "var(--am-erfolg)",
+                    color: "var(--am-erfolg)",
                     background: "rgba(74,124,89,0.06)",
                   }
                 : {
-                    borderColor: "var(--error)",
-                    color: "var(--error)",
+                    borderColor: "var(--am-fehler)",
+                    color: "var(--am-fehler)",
                     background: "rgba(163,58,47,0.06)",
                   }
             }
@@ -301,24 +301,24 @@ export default function EinstellungenPage() {
           </div>
         )}
 
-        {error && <p className="text-sm text-error">{error}</p>}
+        {error && <p className="text-sm text-fehler">{error}</p>}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-5">
-          <p className="text-xs text-text-secondary">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-trennlinie pt-5">
+          <p className="text-xs text-text-sekundaer">
             {savedAt && phase === "ready" ? "Gespeichert." : " "}
           </p>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleTest}
-              className="btn-secondary"
+              className="btn btn-sekundaer"
               disabled={testing || phase === "saving"}
             >
               {testing ? "Teste…" : "Verbindung testen"}
             </button>
             <button
               type="submit"
-              className="btn-primary"
+              className="btn btn-primaer"
               disabled={phase === "saving"}
             >
               {phase === "saving" ? "Wird gespeichert…" : "Speichern"}
@@ -327,7 +327,7 @@ export default function EinstellungenPage() {
         </div>
       </form>
 
-      <p className="mt-6 text-xs text-text-secondary">
+      <p className="mt-6 text-xs text-text-sekundaer">
         Hinweis: Bestehende Zusammenfassungen werden nicht neu generiert. Die
         neuen Einstellungen gelten für künftige Aufnahmen und Fragen.
       </p>
@@ -337,7 +337,7 @@ export default function EinstellungenPage() {
           <h2 className="font-display text-xl font-medium">
             Vorlagen für Zusammenfassungen
           </h2>
-          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+          <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
             Jede Vorlage steuert über einen System-Prompt, wie das Sprachmodell
             das Transkript strukturiert. Passen Sie die Prompts an Ihre
             Fachsprache an — z.&nbsp;B. anwaltliche Formulierungen für
@@ -352,7 +352,7 @@ export default function EinstellungenPage() {
       <section className="mt-14">
         <header className="mb-5">
           <h2 className="font-display text-xl font-medium">Sprecher-Katalog</h2>
-          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+          <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
             Personen, deren Stimme Insilo wiedererkennt. Sobald Sie einer
             Stimme im Transkript einen Namen geben, lernt das System die
             Stimm-Charakteristik — beim nächsten Meeting derselben Person
@@ -367,7 +367,7 @@ export default function EinstellungenPage() {
       <section className="mt-14">
         <header className="mb-5">
           <h2 className="font-display text-xl font-medium">Tags</h2>
-          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+          <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
             Markieren Sie Besprechungen mit thematischen Tags, um sie
             später leicht zu finden — z.&nbsp;B. „Mandant Müller",
             „Q2 Strategie" oder „Vertriebs-Pipeline". Im Archiv können
@@ -381,12 +381,12 @@ export default function EinstellungenPage() {
       <section className="mt-14">
         <header className="mb-5">
           <h2 className="font-display text-xl font-medium">Webhooks</h2>
-          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+          <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
             Lassen Sie sich von Insilo benachrichtigen, wenn sich der
             Status einer Besprechung ändert — z.&nbsp;B. wenn eine
             Zusammenfassung fertig ist. Insilo schickt dann einen
             signierten POST-Request an die hinterlegte URL. Bei
-            <code className="mx-1 rounded bg-surface-soft px-1 font-mono">meeting.ready</code>
+            <code className="mx-1 rounded bg-flaeche-1 px-1 font-mono">meeting.ready</code>
             enthält der Payload zusätzlich das vollständige Meeting-Markdown.
           </p>
         </header>
@@ -397,10 +397,10 @@ export default function EinstellungenPage() {
       <section className="mt-14 pb-12">
         <header className="mb-5">
           <h2 className="font-display text-xl font-medium">API-Schlüssel</h2>
-          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+          <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
             Schlüssel erlauben externen Systemen, Besprechungen lesend
             über die REST-API abzurufen
-            (<code className="mx-1 rounded bg-surface-soft px-1 font-mono">/api/external/v1/meetings</code>).
+            (<code className="mx-1 rounded bg-flaeche-1 px-1 font-mono">/api/external/v1/meetings</code>).
             Jeder Schlüssel ist auf Ihre Organisation beschränkt — die
             Daten verlassen Ihre Box nur dorthin, wohin Sie den Schlüssel
             aushändigen.
@@ -425,9 +425,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-text-primary">{label}</span>
+      <span className="block text-sm font-medium text-text-primaer">{label}</span>
       {hint && (
-        <span className="mt-1 mb-2 block text-xs text-text-secondary">{hint}</span>
+        <span className="mt-1 mb-2 block text-xs text-text-sekundaer">{hint}</span>
       )}
       {children}
     </label>

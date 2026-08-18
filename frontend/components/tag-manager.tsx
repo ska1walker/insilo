@@ -37,8 +37,8 @@ export function TagManager() {
   if (tags === null) {
     return (
       <div className="space-y-2">
-        <div className="h-12 animate-pulse rounded bg-surface-soft" />
-        <div className="h-12 animate-pulse rounded bg-surface-soft" />
+        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
+        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
       </div>
     );
   }
@@ -50,7 +50,7 @@ export function TagManager() {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="btn-secondary inline-flex items-center gap-1.5"
+            className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
             {t("addNew")}
@@ -74,13 +74,13 @@ export function TagManager() {
       )}
 
       {tags.length === 0 && !adding && (
-        <p className="text-sm text-text-secondary">
+        <p className="text-sm text-text-sekundaer">
           {t("noneYet")}
         </p>
       )}
 
       {tags.length > 0 && (
-        <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
+        <div className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
           {tags.map((tag) =>
             editingId === tag.id ? (
               <div key={tag.id} className="p-3">
@@ -104,7 +104,7 @@ export function TagManager() {
                   <button
                     type="button"
                     onClick={() => setEditingId(tag.id)}
-                    className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+                    className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
                     aria-label={t("renameAria", { name: tag.name })}
                   >
                     <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -138,8 +138,8 @@ export function TagManager() {
                         },
                       });
                     }}
-                    className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft"
-                    style={{ color: "var(--text-meta)" }}
+                    className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1"
+                    style={{ color: "var(--am-text-gedaempft)" }}
                     aria-label={t("deleteAria", { name: tag.name })}
                   >
                     <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -207,10 +207,10 @@ function TagForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-md bg-surface-soft p-3">
+    <form onSubmit={submit} className="space-y-3 rounded-md bg-flaeche-1 p-3">
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex-1 min-w-[160px]">
-          <span className="block text-xs font-medium text-text-secondary">
+          <span className="block text-xs font-medium text-text-sekundaer">
             {t("nameLabel")}
           </span>
           <input
@@ -225,7 +225,7 @@ function TagForm({
           />
         </label>
         <div>
-          <span className="block text-xs font-medium text-text-secondary">
+          <span className="block text-xs font-medium text-text-sekundaer">
             {t("colorLabel")}
           </span>
           <div className="mt-1 flex flex-wrap gap-1">
@@ -238,10 +238,10 @@ function TagForm({
                 style={{
                   background: c.value,
                   borderColor:
-                    color === c.value ? "var(--text-primary)" : "var(--border-subtle)",
+                    color === c.value ? "var(--am-text-primaer)" : "var(--am-trennlinie)",
                   boxShadow:
                     color === c.value
-                      ? "0 0 0 2px var(--white) inset"
+                      ? "0 0 0 2px var(--am-seite) inset"
                       : undefined,
                 }}
                 title={c.label}
@@ -250,7 +250,7 @@ function TagForm({
                 {color === c.value && (
                   <Check
                     className="mx-auto h-3.5 w-3.5"
-                    style={{ color: "var(--white)" }}
+                    style={{ color: "var(--am-seite)" }}
                     strokeWidth={3}
                   />
                 )}
@@ -261,22 +261,22 @@ function TagForm({
       </div>
 
       {error && (
-        <p className="text-sm" style={{ color: "var(--error)" }}>
+        <p className="text-sm" style={{ color: "var(--am-fehler)" }}>
           {error}
         </p>
       )}
 
-      <div className="flex justify-end gap-2 border-t border-border-subtle pt-3">
+      <div className="flex justify-end gap-2 border-t border-trennlinie pt-3">
         <button
           type="button"
           onClick={onCancel}
-          className="btn-tertiary inline-flex items-center gap-1"
+          className="btn btn-still inline-flex items-center gap-1"
           disabled={saving}
         >
           <X className="h-3.5 w-3.5" strokeWidth={2} />
           {tCommon("cancel")}
         </button>
-        <button type="submit" className="btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primaer" disabled={saving}>
           {saving ? tCommon("saving") : mode === "edit" ? tCommon("save") : t("create")}
         </button>
       </div>

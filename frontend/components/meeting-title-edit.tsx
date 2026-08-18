@@ -89,7 +89,7 @@ export function MeetingTitleEdit({
         <button
           type="button"
           onClick={commit}
-          className="rounded-md p-2 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+          className="rounded-md p-2 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={tCommon("save")}
           disabled={saving}
         >
@@ -98,7 +98,7 @@ export function MeetingTitleEdit({
         <button
           type="button"
           onClick={cancel}
-          className="rounded-md p-2 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+          className="rounded-md p-2 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={tCommon("cancel")}
           disabled={saving}
         >
@@ -114,7 +114,7 @@ export function MeetingTitleEdit({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="rounded-md p-1.5 text-text-meta opacity-0 transition hover:bg-surface-soft hover:text-text-primary group-hover:opacity-100 focus:opacity-100"
+        className="rounded-md p-1.5 text-text-gedaempft opacity-0 transition hover:bg-flaeche-1 hover:text-text-primaer group-hover:opacity-100 focus:opacity-100"
         aria-label={tMeeting("renameAria")}
         title={tMeeting("renameAria")}
       >

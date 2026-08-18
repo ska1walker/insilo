@@ -206,7 +206,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
         {(phase === "recording" || phase === "saving") && (
           <p
-            className={`mono mt-3 mb-10 ${timerSize} font-medium tabular-nums text-text-primary`}
+            className={`mono mt-3 mb-10 ${timerSize} font-medium tabular-nums text-text-primaer`}
             aria-live="polite"
           >
             {formatDuration(elapsed)}
@@ -215,7 +215,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
         {phase === "idle" && (
           <p
-            className={`mono mt-3 mb-10 ${timerSize} font-medium tabular-nums text-text-disabled`}
+            className={`mono mt-3 mb-10 ${timerSize} font-medium tabular-nums text-text-deaktiviert`}
             aria-hidden
           >
             00:00
@@ -278,12 +278,12 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         )}
 
         {phase === "idle" && (
-          <p className="mt-5 text-sm text-text-meta">{t("phaseIdle")}</p>
+          <p className="mt-5 text-sm text-text-gedaempft">{t("phaseIdle")}</p>
         )}
 
         {(phase === "idle" || phase === "recording") && cancelGoesHome && (
           <div className="mt-10">
-            <button type="button" onClick={cancel} className="btn-tertiary">
+            <button type="button" onClick={cancel} className="btn btn-still">
               {tCommon("cancel")}
             </button>
           </div>
@@ -291,16 +291,16 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
         {phase === "idle" && templates && templates.length > 0 && (
           <div className={`${isFull ? "mt-16" : "mt-12"} text-left`}>
-            <p className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+            <p className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
               {t("templateLabel")}
             </p>
-            <div className="rounded-lg border border-border-subtle bg-white">
+            <div className="rounded-lg border border-trennlinie bg-seite">
               {templates.map((t, i) => (
                 <label
                   key={t.id}
                   className={`flex cursor-pointer items-start gap-3 p-4 ${
-                    i > 0 ? "border-t border-border-subtle" : ""
-                  } ${selectedTemplate === t.id ? "bg-gold-faint" : ""}`}
+                    i > 0 ? "border-t border-trennlinie" : ""
+                  } ${selectedTemplate === t.id ? "bg-gold-200" : ""}`}
                 >
                   <input
                     type="radio"
@@ -311,9 +311,9 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
                     className="mt-1 accent-black"
                   />
                   <div className="min-w-0">
-                    <p className="font-medium text-text-primary">{t.name}</p>
+                    <p className="font-medium text-text-primaer">{t.name}</p>
                     {t.description && (
-                      <p className="mt-1 text-sm text-text-secondary">
+                      <p className="mt-1 text-sm text-text-sekundaer">
                         {t.description}
                       </p>
                     )}
@@ -328,7 +328,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
           <div className="mt-8 text-left">
             <label
               htmlFor="audio-language"
-              className="mb-3 block text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta"
+              className="mb-3 block text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft"
             >
               {t("audioLanguageLabel")}
             </label>
@@ -336,7 +336,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
               id="audio-language"
               value={audioLanguage}
               onChange={(e) => setAudioLanguage(e.target.value as AudioLanguage)}
-              className="w-full rounded-lg border border-border-subtle bg-white px-4 py-3 text-text-primary focus:border-text-primary focus:outline-none"
+              className="w-full rounded-lg border border-trennlinie bg-seite px-4 py-3 text-text-primaer focus:border-rand-betont focus:outline-none"
             >
               {AUDIO_LANGUAGE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -346,7 +346,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
                 </option>
               ))}
             </select>
-            <p className="mt-2 text-xs text-text-meta">
+            <p className="mt-2 text-xs text-text-gedaempft">
               {t("audioLanguageHint")}
             </p>
           </div>
@@ -372,7 +372,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         )}
 
         {error && (
-          <p className="mt-8 text-sm text-recording" role="alert">
+          <p className="mt-8 text-sm text-fehler" role="alert">
             {error}
           </p>
         )}
@@ -382,21 +382,21 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             <div
               className="flex h-10 w-10 items-center justify-center rounded-full"
               style={{
-                background: "var(--gold-faint)",
+                background: "var(--am-gold-200)",
                 border: "1px solid rgba(201, 169, 97, 0.4)",
               }}
             >
               <ShieldCheck
                 className="h-5 w-5"
-                style={{ color: "var(--gold-deep)" }}
+                style={{ color: "var(--am-gold-800)" }}
                 strokeWidth={1.75}
               />
             </div>
             <div className="max-w-[360px] text-center">
-              <p className="text-sm font-medium text-text-primary">
+              <p className="text-sm font-medium text-text-primaer">
                 {t("trustBadge")}
               </p>
-              <p className="mt-1 text-sm text-text-meta">
+              <p className="mt-1 text-sm text-text-gedaempft">
                 {t("trustBadgeHint")}
               </p>
             </div>
@@ -426,16 +426,16 @@ function StatusEyebrow({ phase }: { phase: Phase }) {
     phase === "recording"
       ? "var(--recording)"
       : phase === "saving"
-        ? "var(--gold-deep)"
+        ? "var(--am-gold-800)"
         : phase === "denied" || phase === "unsupported"
-          ? "var(--error)"
-          : "var(--text-disabled)";
+          ? "var(--am-fehler)"
+          : "var(--am-text-deaktiviert)";
 
   const pulsing =
     phase === "recording" || phase === "requesting" || phase === "saving";
 
   return (
-    <p className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-meta">
+    <p className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
       <span
         aria-hidden
         className="inline-block h-1.5 w-1.5 rounded-full"
@@ -461,14 +461,14 @@ function Notice({
   onAction?: () => void;
 }) {
   return (
-    <div className="mt-8 rounded-lg border border-border-subtle bg-white p-6 text-left">
+    <div className="mt-8 rounded-lg border border-trennlinie bg-seite p-6 text-left">
       <p className="font-display text-lg font-medium">{title}</p>
-      <p className="mt-2 text-sm text-text-secondary">{body}</p>
+      <p className="mt-2 text-sm text-text-sekundaer">{body}</p>
       {actionLabel && onAction && (
         <button
           type="button"
           onClick={onAction}
-          className="btn-secondary mt-4"
+          className="btn btn-sekundaer mt-4"
         >
           {actionLabel}
         </button>

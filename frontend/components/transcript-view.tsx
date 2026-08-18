@@ -117,16 +117,16 @@ export function TranscriptView({
   return (
     <section className="mt-12">
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-4">
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
           {t("label")}
         </p>
         <div className="flex items-center gap-3">
           {savedAt && mode === "view" && (
-            <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-success">
+            <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-erfolg">
               {t("savedFlag")}
             </span>
           )}
-          <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+          <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
             {t("stats", {
               model: initial.whisper_model,
               language: initial.language,
@@ -138,7 +138,7 @@ export function TranscriptView({
               <button
                 type="button"
                 onClick={() => setMode("edit")}
-                className="btn-tertiary"
+                className="btn btn-still"
               >
                 {t("assignSpeakers")}
               </button>
@@ -148,7 +148,7 @@ export function TranscriptView({
               <button
                 type="button"
                 onClick={handleCancel}
-                className="btn-tertiary"
+                className="btn btn-still"
                 disabled={saving}
               >
                 {tCommon("cancel")}
@@ -156,7 +156,7 @@ export function TranscriptView({
               <button
                 type="button"
                 onClick={handleSave}
-                className="btn-primary"
+                className="btn btn-primaer"
                 disabled={saving || !dirty}
               >
                 {saving ? tCommon("saving") : tCommon("save")}
@@ -186,14 +186,14 @@ export function TranscriptView({
       )}
 
       {error && (
-        <p className="mb-4 text-sm" style={{ color: "var(--error)" }}>
+        <p className="mb-4 text-sm" style={{ color: "var(--am-fehler)" }}>
           {error}
         </p>
       )}
 
-      <div className="rounded-lg border border-border-subtle bg-white p-8">
+      <div className="rounded-lg border border-trennlinie bg-seite p-8">
         {segments.length === 0 && (
-          <p className="text-sm text-text-meta">{t("noSpeech")}</p>
+          <p className="text-sm text-text-gedaempft">{t("noSpeech")}</p>
         )}
 
         {segments.map((seg, i) => {
@@ -204,9 +204,9 @@ export function TranscriptView({
               key={i}
               className={`grid grid-cols-[100px_1fr] gap-4 py-3 md:grid-cols-[120px_1fr] md:gap-6 ${
                 mode === "edit"
-                  ? "rounded-md hover:bg-surface-soft -mx-2 px-2 cursor-pointer transition"
+                  ? "rounded-md hover:bg-flaeche-1 -mx-2 px-2 cursor-pointer transition"
                   : ""
-              } ${pickerIdx === i ? "bg-surface-soft -mx-2 px-2 rounded-md" : ""}`}
+              } ${pickerIdx === i ? "bg-flaeche-1 -mx-2 px-2 rounded-md" : ""}`}
               onClick={() => {
                 if (mode === "edit") {
                   setPickerIdx(pickerIdx === i ? null : i);
@@ -214,26 +214,26 @@ export function TranscriptView({
               }}
             >
               <div>
-                <p className="mono text-[0.8125rem] font-medium text-text-meta">
+                <p className="mono text-[0.8125rem] font-medium text-text-gedaempft">
                   [{formatTime(seg.start)}]
                 </p>
                 {speakerLabel ? (
                   <p
                     className="mono mt-1 text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
-                    style={{ color: "var(--gold-deep)" }}
+                    style={{ color: "var(--am-gold-800)" }}
                   >
                     {speakerLabel}
                   </p>
                 ) : (
                   mode === "edit" && (
-                    <p className="mono mt-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-disabled">
+                    <p className="mono mt-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-deaktiviert">
                       {t("tapHint")}
                     </p>
                   )
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-base leading-relaxed text-text-primary">
+                <p className="text-base leading-relaxed text-text-primaer">
                   {seg.text}
                 </p>
                 {mode === "edit" && pickerIdx === i && (
@@ -255,7 +255,7 @@ export function TranscriptView({
       </div>
 
       {mode === "edit" && (
-        <p className="mt-4 text-xs text-text-meta">{t("editTip")}</p>
+        <p className="mt-4 text-xs text-text-gedaempft">{t("editTip")}</p>
       )}
     </section>
   );
@@ -293,16 +293,16 @@ function SpeakerRoster({
   }
 
   return (
-    <div className="mb-5 rounded-lg border border-border-subtle bg-surface-soft p-4">
+    <div className="mb-5 rounded-lg border border-trennlinie bg-flaeche-1 p-4">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+        <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
           {t("rosterLabel", { count: speakers.length })}
         </p>
         {!adding && (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="btn-tertiary inline-flex items-center gap-1.5"
+            className="btn btn-still inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
             {t("addSpeaker")}
@@ -325,16 +325,16 @@ function SpeakerRoster({
           ) : (
             <div
               key={s.id}
-              className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-white py-1 pl-3 pr-1"
+              className="inline-flex items-center gap-2 rounded-full border border-trennlinie bg-seite py-1 pl-3 pr-1"
             >
               <span className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
-                style={{ color: "var(--gold-deep)" }}>
+                style={{ color: "var(--am-gold-800)" }}>
                 {s.name}
               </span>
               <button
                 type="button"
                 onClick={() => setEditingId(s.id)}
-                className="rounded-full p-1 text-text-meta hover:bg-surface-soft hover:text-text-primary"
+                className="rounded-full p-1 text-text-gedaempft hover:bg-flaeche-1 hover:text-text-primaer"
                 aria-label={t("renameAria", { name: s.name })}
               >
                 <Pencil className="h-3 w-3" strokeWidth={2} />
@@ -342,7 +342,7 @@ function SpeakerRoster({
               <button
                 type="button"
                 onClick={() => onRemove(s.id)}
-                className="rounded-full p-1 text-text-meta hover:bg-surface-soft hover:text-error"
+                className="rounded-full p-1 text-text-gedaempft hover:bg-flaeche-1 hover:text-fehler"
                 aria-label={t("removeAria", { name: s.name })}
               >
                 <Trash2 className="h-3 w-3" strokeWidth={2} />
@@ -352,7 +352,7 @@ function SpeakerRoster({
         )}
 
         {adding && (
-          <div className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-white py-1 pl-3 pr-1">
+          <div className="inline-flex items-center gap-1 rounded-full border border-rand-betont bg-seite py-1 pl-3 pr-1">
             <input
               autoFocus
               type="text"
@@ -367,8 +367,8 @@ function SpeakerRoster({
               }}
               onBlur={commitAdd}
               placeholder={t("namePlaceholder")}
-              className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-disabled"
-              style={{ color: "var(--gold-deep)", width: "120px" }}
+              className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-deaktiviert"
+              style={{ color: "var(--am-gold-800)", width: "120px" }}
             />
             <button
               type="button"
@@ -380,7 +380,7 @@ function SpeakerRoster({
                 setAdding(false);
                 setNewName("");
               }}
-              className="rounded-full p-1 text-text-meta hover:bg-surface-soft"
+              className="rounded-full p-1 text-text-gedaempft hover:bg-flaeche-1"
               aria-label={tCommon("cancel")}
             >
               <X className="h-3 w-3" strokeWidth={2} />
@@ -389,7 +389,7 @@ function SpeakerRoster({
         )}
 
         {speakers.length === 0 && !adding && (
-          <p className="text-sm text-text-meta">{t("rosterEmpty")}</p>
+          <p className="text-sm text-text-gedaempft">{t("rosterEmpty")}</p>
         )}
       </div>
     </div>
@@ -407,7 +407,7 @@ function SpeakerInlineEdit({
 }) {
   const [val, setVal] = useState(initial);
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-white py-1 pl-3 pr-1">
+    <div className="inline-flex items-center gap-1 rounded-full border border-rand-betont bg-seite py-1 pl-3 pr-1">
       <input
         autoFocus
         type="text"
@@ -419,7 +419,7 @@ function SpeakerInlineEdit({
         }}
         onBlur={() => onCommit(val)}
         className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none"
-        style={{ color: "var(--gold-deep)", width: "120px" }}
+        style={{ color: "var(--am-gold-800)", width: "120px" }}
       />
     </div>
   );
@@ -451,17 +451,17 @@ function SegmentPicker({
 
   return (
     <div
-      className="mt-3 rounded-md border border-border-strong bg-white p-3"
+      className="mt-3 rounded-md border border-rand-betont bg-seite p-3"
       onClick={handleClick}
     >
       <div className="mb-2 flex items-baseline justify-between">
-        <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+        <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
           {t("pickerTitle")}
         </p>
         <button
           type="button"
           onClick={onClose}
-          className="text-text-meta hover:text-text-primary"
+          className="text-text-gedaempft hover:text-text-primaer"
           aria-label={tCommon("close")}
         >
           <X className="h-3.5 w-3.5" strokeWidth={2} />
@@ -476,17 +476,17 @@ function SegmentPicker({
             onClick={() => onPick(s.id)}
             className={`mono inline-flex rounded-full border px-3 py-1 text-[0.8125rem] font-medium uppercase tracking-[0.02em] transition ${
               current === s.id
-                ? "border-gold-deep bg-gold-faint"
-                : "border-border-subtle bg-white hover:bg-surface-soft"
+                ? "border-gold-600 bg-gold-200"
+                : "border-trennlinie bg-seite hover:bg-flaeche-1"
             }`}
             style={
               current === s.id
                 ? {
-                    color: "var(--gold-deep)",
-                    background: "var(--gold-faint)",
-                    borderColor: "var(--gold-deep)",
+                    color: "var(--am-gold-800)",
+                    background: "var(--am-gold-200)",
+                    borderColor: "var(--am-gold-800)",
                   }
-                : { color: "var(--gold-deep)" }
+                : { color: "var(--am-gold-800)" }
             }
           >
             {s.name}
@@ -497,7 +497,7 @@ function SegmentPicker({
           <button
             type="button"
             onClick={() => onPick(null)}
-            className="inline-flex rounded-full border border-border-subtle bg-white px-3 py-1 text-[0.8125rem] text-text-meta transition hover:bg-surface-soft"
+            className="inline-flex rounded-full border border-trennlinie bg-seite px-3 py-1 text-[0.8125rem] text-text-gedaempft transition hover:bg-flaeche-1"
           >
             {t("unassign")}
           </button>
@@ -507,12 +507,12 @@ function SegmentPicker({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border-strong bg-white px-3 py-1 text-[0.8125rem] text-text-meta transition hover:bg-surface-soft"
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-rand-betont bg-seite px-3 py-1 text-[0.8125rem] text-text-gedaempft transition hover:bg-flaeche-1"
           >
             <Plus className="h-3 w-3" strokeWidth={2} /> {t("createNew")}
           </button>
         ) : (
-          <div className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-white py-1 pl-3 pr-1">
+          <div className="inline-flex items-center gap-1 rounded-full border border-rand-betont bg-seite py-1 pl-3 pr-1">
             <input
               autoFocus
               type="text"
@@ -531,8 +531,8 @@ function SegmentPicker({
                 }
               }}
               placeholder={t("namePlaceholder")}
-              className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-disabled"
-              style={{ color: "var(--gold-deep)", width: "120px" }}
+              className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-deaktiviert"
+              style={{ color: "var(--am-gold-800)", width: "120px" }}
             />
           </div>
         )}

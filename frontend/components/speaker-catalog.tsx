@@ -43,8 +43,8 @@ export function SpeakerCatalog() {
   if (speakers === null) {
     return (
       <div className="space-y-2">
-        <div className="h-12 animate-pulse rounded bg-surface-soft" />
-        <div className="h-12 animate-pulse rounded bg-surface-soft" />
+        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
+        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
       </div>
     );
   }
@@ -56,7 +56,7 @@ export function SpeakerCatalog() {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="btn-secondary inline-flex items-center gap-1.5"
+            className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
             {t("addBtn")}
@@ -80,13 +80,13 @@ export function SpeakerCatalog() {
       )}
 
       {speakers.length === 0 && !adding && (
-        <p className="text-sm text-text-secondary">
+        <p className="text-sm text-text-sekundaer">
           {t("noneYet")}
         </p>
       )}
 
       {speakers.length > 0 && (
-        <div className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
+        <div className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
           {speakers.map((s) =>
             editingId === s.id ? (
               <div key={s.id} className="p-3">
@@ -168,34 +168,34 @@ function SpeakerRow({
             <Star
               className="h-3.5 w-3.5"
               strokeWidth={2}
-              style={{ color: "var(--gold)" }}
+              style={{ color: "var(--am-gold-500)" }}
               aria-label={t("isSelfAria")}
             />
           ) : (
             <UserRound
-              className="h-3.5 w-3.5 text-text-meta"
+              className="h-3.5 w-3.5 text-text-gedaempft"
               strokeWidth={1.75}
             />
           )}
-          <span className="font-medium text-text-primary">
+          <span className="font-medium text-text-primaer">
             {speaker.display_name}
           </span>
           {speaker.has_voiceprint ? (
-            <span className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-secondary">
+            <span className="rounded-full bg-flaeche-1 px-2 py-0.5 text-xs text-text-sekundaer">
               {t("samplesPlural", { count: speaker.sample_count })}
             </span>
           ) : (
-            <span className="rounded-full bg-surface-soft px-2 py-0.5 text-xs text-text-meta">
+            <span className="rounded-full bg-flaeche-1 px-2 py-0.5 text-xs text-text-gedaempft">
               {t("noVoiceprintLabel")}
             </span>
           )}
         </div>
         {speaker.description && (
-          <p className="mt-1 text-sm text-text-secondary">
+          <p className="mt-1 text-sm text-text-sekundaer">
             {speaker.description}
           </p>
         )}
-        <p className="mt-1 text-xs text-text-meta">
+        <p className="mt-1 text-xs text-text-gedaempft">
           {t("createdAt", { date: formatDate(speaker.created_at) })}
           {speaker.last_heard_at && (
             <> · {t("lastHeardAt", { date: formatDate(speaker.last_heard_at) })}</>
@@ -207,7 +207,7 @@ function SpeakerRow({
         <button
           type="button"
           onClick={onEnroll}
-          className="btn-tertiary inline-flex items-center gap-1"
+          className="btn btn-still inline-flex items-center gap-1"
           title={
             speaker.has_voiceprint
               ? t("addSampleTitleAddon")
@@ -220,7 +220,7 @@ function SpeakerRow({
         <button
           type="button"
           onClick={onEdit}
-          className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+          className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={t("editAria")}
         >
           <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -228,7 +228,7 @@ function SpeakerRow({
         <button
           type="button"
           onClick={handleDelete}
-          className="rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft"
+          className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1"
           aria-label={t("deleteAria")}
         >
           <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -307,9 +307,9 @@ function SpeakerForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-md bg-surface-soft p-4">
+    <form onSubmit={submit} className="space-y-3 rounded-md bg-flaeche-1 p-4">
       <label className="block">
-        <span className="block text-xs font-medium text-text-secondary">
+        <span className="block text-xs font-medium text-text-sekundaer">
           {t("name")}
         </span>
         <input
@@ -325,7 +325,7 @@ function SpeakerForm({
       </label>
 
       <label className="block">
-        <span className="block text-xs font-medium text-text-secondary">
+        <span className="block text-xs font-medium text-text-sekundaer">
           {t("descLabel")}
         </span>
         <input
@@ -348,7 +348,7 @@ function SpeakerForm({
         />
         <span>
           {t("isSelf")}
-          <span className="ml-2 text-xs text-text-meta">
+          <span className="ml-2 text-xs text-text-gedaempft">
             {t("isSelfHint")}
           </span>
         </span>
@@ -364,7 +364,7 @@ function SpeakerForm({
           />
           <span>
             {t("clearVoiceprint")}
-            <span className="ml-2 text-xs text-text-meta">
+            <span className="ml-2 text-xs text-text-gedaempft">
               {t("clearVoiceprintHint", { count: initial.sample_count })}
             </span>
           </span>
@@ -372,22 +372,22 @@ function SpeakerForm({
       )}
 
       {error && (
-        <p className="text-sm" style={{ color: "var(--error)" }}>
+        <p className="text-sm" style={{ color: "var(--am-fehler)" }}>
           {error}
         </p>
       )}
 
-      <div className="flex justify-end gap-2 border-t border-border-subtle pt-3">
+      <div className="flex justify-end gap-2 border-t border-trennlinie pt-3">
         <button
           type="button"
           onClick={onCancel}
-          className="btn-tertiary inline-flex items-center gap-1"
+          className="btn btn-still inline-flex items-center gap-1"
           disabled={saving}
         >
           <X className="h-3.5 w-3.5" strokeWidth={2} />
           {t("cancel")}
         </button>
-        <button type="submit" className="btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primaer" disabled={saving}>
           {saving
             ? t("saving")
             : mode === "edit"

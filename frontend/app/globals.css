@@ -452,6 +452,11 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
   .streifen-fehler .zeichen { color: var(--am-fehler); }
 
+  /* ── Deckschicht hinter Dialogen ──────────────────────────────────── */
+  .deckschicht {
+    background: var(--am-deckschicht);
+  }
+
   /* ── Karte ────────────────────────────────────────────────────────── */
   .karte {
     background: var(--am-flaeche-1);

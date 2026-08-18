@@ -51,13 +51,13 @@ export default function AskPage() {
   return (
     <main className="mx-auto max-w-[860px] px-6 py-12 md:px-12 md:py-16">
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-meta">
+      <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
         Archiv-Suche · Grounded Q&amp;A
       </p>
       <h1 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
         Fragen Sie Ihr Meeting-Archiv.
       </h1>
-      <p className="mt-4 max-w-[640px] text-text-secondary">
+      <p className="mt-4 max-w-[640px] text-text-sekundaer">
         Stellen Sie eine Frage in natürlicher Sprache. Insilo durchsucht die
         Transkripte und Zusammenfassungen aller Besprechungen Ihrer
         Organisation und antwortet mit Quellenangaben.
@@ -71,7 +71,7 @@ export default function AskPage() {
           submit(question);
         }}
       >
-        <div className="rounded-lg border border-border-subtle bg-white p-2 transition focus-within:border-text-primary">
+        <div className="rounded-lg border border-trennlinie bg-seite p-2 transition focus-within:border-rand-betont">
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -83,17 +83,17 @@ export default function AskPage() {
             }}
             placeholder="Worüber möchten Sie etwas wissen?"
             rows={3}
-            className="block w-full resize-none bg-transparent px-3 py-2 text-base leading-relaxed text-text-primary outline-none placeholder:text-text-disabled"
+            className="block w-full resize-none bg-transparent px-3 py-2 text-base leading-relaxed text-text-primaer outline-none placeholder:text-text-deaktiviert"
             disabled={phase === "asking"}
           />
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle px-2 pt-2">
-            <p className="text-xs text-text-meta">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-trennlinie px-2 pt-2">
+            <p className="text-xs text-text-gedaempft">
               <span className="mono">⌘ ↵</span> zum Absenden · Antwort
               dauert je nach Modell 5–20 Sekunden
             </p>
             <button
               type="submit"
-              className="btn-primary inline-flex items-center gap-1.5"
+              className="btn btn-primaer inline-flex items-center gap-1.5"
               disabled={phase === "asking" || question.trim().length < 4}
             >
               {phase === "asking" ? (
@@ -117,10 +117,10 @@ export default function AskPage() {
         <section className="mt-12">
           <div className="mb-4 flex items-baseline gap-2">
             <MessageSquareQuote
-              className="h-3.5 w-3.5 text-text-meta"
+              className="h-3.5 w-3.5 text-text-gedaempft"
               strokeWidth={1.75}
             />
-            <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+            <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
               Beispiel-Fragen
             </p>
           </div>
@@ -133,13 +133,13 @@ export default function AskPage() {
                   setQuestion(ex);
                   submit(ex);
                 }}
-                className="group flex items-center justify-between gap-4 rounded-lg border border-border-subtle bg-white px-5 py-4 text-left transition hover:border-text-primary hover:bg-surface-soft"
+                className="group flex items-center justify-between gap-4 rounded-lg border border-trennlinie bg-seite px-5 py-4 text-left transition hover:border-rand-betont hover:bg-flaeche-1"
               >
-                <span className="text-sm leading-relaxed text-text-primary">
+                <span className="text-sm leading-relaxed text-text-primaer">
                   {ex}
                 </span>
                 <ArrowRight
-                  className="h-4 w-4 shrink-0 text-text-meta transition group-hover:translate-x-0.5 group-hover:text-text-primary"
+                  className="h-4 w-4 shrink-0 text-text-gedaempft transition group-hover:translate-x-0.5 group-hover:text-text-primaer"
                   strokeWidth={1.75}
                 />
               </button>
@@ -151,29 +151,29 @@ export default function AskPage() {
       {/* ── Error ─────────────────────────────────────────────────── */}
       {error && (
         <div
-          className="mt-10 rounded-lg border bg-white p-6"
+          className="mt-10 rounded-lg border bg-seite p-6"
           style={{
-            borderColor: "var(--error)",
+            borderColor: "var(--am-fehler)",
             background: "rgba(163, 58, 47, 0.04)",
           }}
         >
           <p
             className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em]"
-            style={{ color: "var(--error)" }}
+            style={{ color: "var(--am-fehler)" }}
           >
             Fehler
           </p>
-          <p className="mt-2 text-sm text-text-secondary">{error}</p>
+          <p className="mt-2 text-sm text-text-sekundaer">{error}</p>
         </div>
       )}
 
       {/* ── Loading skeleton ─────────────────────────────────────── */}
       {phase === "asking" && (
         <div className="mt-10 space-y-3" aria-busy="true">
-          <div className="h-4 w-1/3 animate-pulse rounded bg-surface-soft" />
-          <div className="h-40 w-full animate-pulse rounded-lg bg-surface-soft" />
-          <div className="h-4 w-1/4 animate-pulse rounded bg-surface-soft" />
-          <div className="h-24 w-full animate-pulse rounded-lg bg-surface-soft" />
+          <div className="h-4 w-1/3 animate-pulse rounded bg-flaeche-1" />
+          <div className="h-40 w-full animate-pulse rounded-lg bg-flaeche-1" />
+          <div className="h-4 w-1/4 animate-pulse rounded bg-flaeche-1" />
+          <div className="h-24 w-full animate-pulse rounded-lg bg-flaeche-1" />
         </div>
       )}
 
@@ -187,15 +187,15 @@ function AnswerCard({ result }: { result: AskResponse }) {
     <section className="mt-12 space-y-10">
       <div>
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-          <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+          <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
             Antwort
           </p>
-          <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+          <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
             {result.llm_model} · {Math.round(result.elapsed_ms / 1000)}s
           </p>
         </div>
-        <div className="rounded-lg border border-border-subtle bg-white p-8">
-          <p className="whitespace-pre-wrap text-base leading-relaxed text-text-primary">
+        <div className="rounded-lg border border-trennlinie bg-seite p-8">
+          <p className="whitespace-pre-wrap text-base leading-relaxed text-text-primaer">
             {result.answer}
           </p>
         </div>
@@ -203,7 +203,7 @@ function AnswerCard({ result }: { result: AskResponse }) {
 
       {result.sources.length > 0 && (
         <div>
-          <p className="mb-4 mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+          <p className="mb-4 mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
             Quellen · {result.sources.length}
           </p>
           <ol className="space-y-3">
@@ -223,31 +223,31 @@ function AnswerCard({ result }: { result: AskResponse }) {
 
 function SourceItem({ index, source }: { index: number; source: AskSource }) {
   return (
-    <li className="rounded-lg border border-border-subtle bg-white p-6 transition hover:border-border-strong">
+    <li className="rounded-lg border border-trennlinie bg-seite p-6 transition hover:border-rand-betont">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div className="flex items-baseline gap-3">
           <span
             className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em]"
-            style={{ color: "var(--gold-deep)" }}
+            style={{ color: "var(--am-gold-800)" }}
           >
             [#{index}]
           </span>
           <Link
             href={`/m/${source.meeting_id}`}
-            className="font-medium text-text-primary hover:underline"
+            className="font-medium text-text-primaer hover:underline"
           >
             {source.meeting_title}
           </Link>
         </div>
-        <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+        <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
           Relevanz {Math.max(0, Math.round(source.score * 100))}%
         </p>
       </div>
-      <p className="mt-1 text-[0.8125rem] text-text-meta">
+      <p className="mt-1 text-[0.8125rem] text-text-gedaempft">
         {formatMeetingDate(Date.parse(source.meeting_date))} · Abschnitt{" "}
         {source.chunk_index + 1}
       </p>
-      <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+      <p className="mt-3 text-sm leading-relaxed text-text-sekundaer">
         {source.content.length > 320
           ? source.content.slice(0, 320).trim() + " …"
           : source.content}

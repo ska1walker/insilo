@@ -65,13 +65,13 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
   return (
     <section>
       <div className="mb-4 flex items-baseline justify-between gap-4">
-        <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+        <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
           {t("recentTitle")}
         </p>
         {state.kind === "ok" && state.total > limit && (
           <Link
             href="/besprechungen"
-            className="mono inline-flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta transition hover:text-text-primary"
+            className="mono inline-flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft transition hover:text-text-primaer"
           >
             {t("viewAll")}
             <ArrowRight className="h-3 w-3" strokeWidth={2} />
@@ -84,28 +84,28 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
           {[0, 1].map((i) => (
             <div
               key={i}
-              className="h-[60px] animate-pulse rounded-lg bg-surface-soft"
+              className="h-[60px] animate-pulse rounded-lg bg-flaeche-1"
             />
           ))}
         </div>
       )}
 
       {state.kind === "error" && (
-        <div className="rounded-lg border border-border-subtle bg-white p-6 text-center">
-          <p className="text-sm text-text-secondary">{state.message}</p>
+        <div className="rounded-lg border border-trennlinie bg-seite p-6 text-center">
+          <p className="text-sm text-text-sekundaer">{state.message}</p>
         </div>
       )}
 
       {state.kind === "ok" && state.meetings.length === 0 && (
-        <div className="rounded-lg border border-border-subtle bg-white p-8 text-center">
-          <p className="text-sm text-text-secondary">
+        <div className="rounded-lg border border-trennlinie bg-seite p-8 text-center">
+          <p className="text-sm text-text-sekundaer">
             {t("listEmptyHome")}
           </p>
         </div>
       )}
 
       {state.kind === "ok" && state.meetings.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-border-subtle bg-white">
+        <div className="overflow-hidden rounded-lg border border-trennlinie bg-seite">
           {state.meetings.map((m, i) => (
             <Link
               key={m.id}
@@ -115,10 +115,10 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
             >
               <div className="meeting-row">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-medium text-text-primary">
+                  <p className="truncate text-base font-medium text-text-primaer">
                     {m.title}
                   </p>
-                  <p className="mt-1 text-[0.8125rem] text-text-meta">
+                  <p className="mt-1 text-[0.8125rem] text-text-gedaempft">
                     {formatMeetingDate(Date.parse(m.created_at))}
                   </p>
                   {m.tags && m.tags.length > 0 && (
@@ -129,7 +129,7 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
                   <StatusPill status={m.status} />
-                  <p className="mono text-[0.8125rem] font-medium text-text-meta">
+                  <p className="mono text-[0.8125rem] font-medium text-text-gedaempft">
                     {formatDuration(m.duration_ms)}
                   </p>
                 </div>

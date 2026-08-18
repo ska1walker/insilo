@@ -39,7 +39,7 @@ export function TagFilterBar({
 
   if (tags === null) {
     return (
-      <div className="mb-6 h-[34px] animate-pulse rounded-full bg-surface-soft" />
+      <div className="mb-6 h-[34px] animate-pulse rounded-full bg-flaeche-1" />
     );
   }
 
@@ -51,7 +51,7 @@ export function TagFilterBar({
 
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2">
-      <span className="mono mr-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+      <span className="mono mr-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
         {t("filterPrefix")}
       </span>
       {tags.map((t) => (
@@ -67,7 +67,7 @@ export function TagFilterBar({
         <button
           type="button"
           onClick={() => onChange([])}
-          className="ml-1 inline-flex items-center gap-1 text-[0.75rem] text-text-meta transition hover:text-text-primary"
+          className="ml-1 inline-flex items-center gap-1 text-[0.75rem] text-text-gedaempft transition hover:text-text-primaer"
         >
           <X className="h-3 w-3" strokeWidth={2} />
           {t("resetAll")}

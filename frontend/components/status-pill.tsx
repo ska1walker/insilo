@@ -24,7 +24,7 @@ export function StatusPill({ status }: { status: MeetingStatus }) {
     return (
       <span
         className="pill"
-        style={{ background: "rgba(163, 58, 47, 0.08)", color: "var(--error)" }}
+        style={{ background: "rgba(163, 58, 47, 0.08)", color: "var(--am-fehler)" }}
       >
         {label}
       </span>
@@ -34,7 +34,7 @@ export function StatusPill({ status }: { status: MeetingStatus }) {
     return (
       <span
         className="pill"
-        style={{ background: "rgba(74, 124, 89, 0.08)", color: "var(--success)" }}
+        style={{ background: "rgba(74, 124, 89, 0.08)", color: "var(--am-erfolg)" }}
       >
         {label}
       </span>

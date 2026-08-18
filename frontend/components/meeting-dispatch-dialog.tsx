@@ -81,7 +81,7 @@ export function MeetingDispatchDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center deckschicht p-4"
       role="dialog"
       aria-modal
       aria-label={t("header")}
@@ -89,12 +89,12 @@ export function MeetingDispatchDialog({
       {/* Header fix + Body scrollt + Footer sticky — selbe Struktur wie
           voice-enrollment-dialog, damit die Action-Buttons bei kleinen
           Viewports immer sichtbar bleiben. */}
-      <div className="relative flex max-h-[90vh] w-full max-w-[560px] flex-col rounded-lg border border-border-subtle bg-white shadow-2xl">
-        <div className="flex-shrink-0 border-b border-border-subtle p-6 pr-12">
+      <div className="relative flex max-h-[90vh] w-full max-w-[560px] flex-col rounded-lg border border-trennlinie bg-seite shadow-2xl">
+        <div className="flex-shrink-0 border-b border-trennlinie p-6 pr-12">
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-md p-1.5 text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+            className="absolute right-4 top-4 rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={tCommon("close")}
           >
             <X className="h-4 w-4" strokeWidth={1.75} />
@@ -102,22 +102,22 @@ export function MeetingDispatchDialog({
           <h2 className="font-display text-2xl font-medium tracking-tight">
             {t("header")}
           </h2>
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="mt-2 text-sm text-text-sekundaer">
             {t("intro", { title: meetingTitle })}
           </p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
           {webhooks === null ? (
-            <div className="flex items-center gap-3 rounded-md bg-surface-soft p-4 text-sm text-text-secondary">
+            <div className="flex items-center gap-3 rounded-md bg-flaeche-1 p-4 text-sm text-text-sekundaer">
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
               {t("loadingRecipients")}
             </div>
           ) : webhooks.length === 0 ? (
-            <div className="rounded-md border border-border-subtle bg-surface-soft p-4 text-sm text-text-secondary">
+            <div className="rounded-md border border-trennlinie bg-flaeche-1 p-4 text-sm text-text-sekundaer">
               {t.rich("noWebhooks", {
                 code: (chunks) => (
-                  <code className="rounded bg-white px-1 font-mono">
+                  <code className="rounded bg-seite px-1 font-mono">
                     {chunks}
                   </code>
                 ),
@@ -127,7 +127,7 @@ export function MeetingDispatchDialog({
               })}
             </div>
           ) : (
-            <ul className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-white">
+            <ul className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
               {webhooks.map((w) => (
                 <li key={w.id} className="px-4 py-3">
                   <label className="flex cursor-pointer items-start gap-3">
@@ -139,11 +139,11 @@ export function MeetingDispatchDialog({
                       className="mt-1"
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block font-mono text-xs text-text-primary break-all">
+                      <span className="block font-mono text-xs text-text-primaer break-all">
                         {w.url}
                       </span>
                       {w.description && (
-                        <span className="mt-1 block text-xs text-text-secondary">
+                        <span className="mt-1 block text-xs text-text-sekundaer">
                           {w.description}
                         </span>
                       )}
@@ -151,8 +151,8 @@ export function MeetingDispatchDialog({
                         className="mt-1 inline-block rounded-full px-2 py-0.5 text-[0.6875rem]"
                         style={
                           w.trigger_mode === "manual"
-                            ? { background: "rgba(201,169,97,0.12)", color: "var(--gold-deep)" }
-                            : { background: "var(--surface-soft)", color: "var(--text-secondary)" }
+                            ? { background: "rgba(201,169,97,0.12)", color: "var(--am-gold-800)" }
+                            : { background: "var(--am-flaeche-1)", color: "var(--am-text-sekundaer)" }
                         }
                       >
                         {w.trigger_mode === "manual"
@@ -167,8 +167,8 @@ export function MeetingDispatchDialog({
           )}
         </div>
 
-        <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border-subtle bg-white p-6">
-          <p className="text-xs text-text-meta">
+        <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-trennlinie bg-seite p-6">
+          <p className="text-xs text-text-gedaempft">
             {webhooks && webhooks.length > 0
               ? t("selectedCount", {
                   selected: selectedIds.size,
@@ -180,7 +180,7 @@ export function MeetingDispatchDialog({
             <button
               type="button"
               onClick={onClose}
-              className="btn-tertiary"
+              className="btn btn-still"
               disabled={sending}
             >
               {tCommon("cancel")}
@@ -189,7 +189,7 @@ export function MeetingDispatchDialog({
               type="button"
               onClick={handleSend}
               disabled={sending || selectedIds.size === 0}
-              className="btn-primary inline-flex items-center gap-2"
+              className="btn btn-primaer inline-flex items-center gap-2"
             >
               {sending ? (
                 <>

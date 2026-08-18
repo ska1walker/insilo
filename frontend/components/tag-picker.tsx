@@ -139,7 +139,7 @@ export function TagPicker({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex items-center gap-1 rounded-full border border-dashed border-border-strong px-2.5 py-0.5 text-[0.75rem] font-medium text-text-meta transition hover:bg-surface-soft hover:text-text-primary"
+          className="inline-flex items-center gap-1 rounded-full border border-dashed border-rand-betont px-2.5 py-0.5 text-[0.75rem] font-medium text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
         >
           <TagIcon className="h-3 w-3" strokeWidth={2} />
           {tags.length === 0 ? t("pickerAdd") : t("pickerShort")}
@@ -149,7 +149,7 @@ export function TagPicker({
       {open && (
         <div
           ref={popoverRef}
-          className="absolute left-0 top-full z-30 mt-2 w-[280px] rounded-lg border border-border-strong bg-white p-3 shadow-lg"
+          className="absolute left-0 top-full z-30 mt-2 w-[280px] rounded-lg border border-rand-betont bg-seite p-3 shadow-lg"
           style={{ boxShadow: "0 8px 24px rgba(10,10,10,0.08)" }}
         >
           <input
@@ -175,10 +175,10 @@ export function TagPicker({
 
           <div className="mt-3 max-h-[240px] overflow-y-auto">
             {allTags === null && (
-              <p className="text-xs text-text-meta">{t("pickerLoading")}</p>
+              <p className="text-xs text-text-gedaempft">{t("pickerLoading")}</p>
             )}
             {allTags !== null && available.length === 0 && filter.trim() === "" && (
-              <p className="text-xs text-text-meta">
+              <p className="text-xs text-text-gedaempft">
                 {t("pickerNoneMore")}
               </p>
             )}
@@ -186,7 +186,7 @@ export function TagPicker({
               <button
                 type="button"
                 onClick={() => createAndAttach(filter)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-primary hover:bg-surface-soft"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-primaer hover:bg-flaeche-1"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2} />
                 <span>{t("pickerCreateNew", { name: filter.trim() })}</span>
@@ -199,13 +199,13 @@ export function TagPicker({
                     <button
                       type="button"
                       onClick={() => attach(tag)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-surface-soft"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-flaeche-1"
                     >
                       <span
                         className="h-2 w-2 shrink-0 rounded-full"
                         style={{ background: tag.color }}
                       />
-                      <span className="truncate text-sm text-text-primary">
+                      <span className="truncate text-sm text-text-primaer">
                         {tag.name}
                       </span>
                     </button>
@@ -215,7 +215,7 @@ export function TagPicker({
             )}
           </div>
 
-          <p className="mt-2 border-t border-border-subtle pt-2 text-[0.6875rem] text-text-meta">
+          <p className="mt-2 border-t border-trennlinie pt-2 text-[0.6875rem] text-text-gedaempft">
             {t("pickerManageSuffix")}{" "}
             <a href="/einstellungen" className="underline">
               {t("pickerSettingsLink")}

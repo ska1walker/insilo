@@ -60,7 +60,7 @@ export function SummaryView({ summary }: { summary: Summary }) {
   );
 
   if (entries.length === 0 && internalEntries.length === 0) {
-    return <p className="text-sm text-text-meta">{t("emptyExtract")}</p>;
+    return <p className="text-sm text-text-gedaempft">{t("emptyExtract")}</p>;
   }
 
   return (
@@ -75,14 +75,14 @@ export function SummaryView({ summary }: { summary: Summary }) {
       ))}
 
       {internalEntries.length > 0 && (
-        <details className="group border-t border-border-subtle pt-6 text-sm">
-          <summary className="cursor-pointer select-none text-text-meta hover:text-text-primary">
+        <details className="group border-t border-trennlinie pt-6 text-sm">
+          <summary className="cursor-pointer select-none text-text-gedaempft hover:text-text-primaer">
             {t("internalThoughts")}
           </summary>
-          <div className="mt-3 space-y-3 rounded-md bg-surface-soft p-3 text-xs leading-relaxed text-text-secondary">
+          <div className="mt-3 space-y-3 rounded-md bg-flaeche-1 p-3 text-xs leading-relaxed text-text-sekundaer">
             {internalEntries.map(([key, value]) => (
               <div key={key}>
-                <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+                <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
                   {humanLabel(key.replace(/^_/, ""))}
                 </p>
                 <p className="mt-1">{String(value)}</p>
@@ -106,7 +106,7 @@ function SummarySection({
 }) {
   return (
     <section>
-      <h3 className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+      <h3 className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
         {humanLabel(keyName)}
       </h3>
       <SummaryValue value={value} humanLabel={humanLabel} />
@@ -124,10 +124,10 @@ function SummaryValue({
   if (value === null || value === undefined) return null;
 
   if (typeof value === "string") {
-    return <p className="text-base leading-relaxed text-text-primary">{value}</p>;
+    return <p className="text-base leading-relaxed text-text-primaer">{value}</p>;
   }
   if (typeof value === "number" || typeof value === "boolean") {
-    return <p className="text-base text-text-primary">{String(value)}</p>;
+    return <p className="text-base text-text-primaer">{String(value)}</p>;
   }
 
   if (Array.isArray(value)) {
@@ -136,9 +136,9 @@ function SummaryValue({
     // Array of strings → bullet list
     if (value.every((v) => typeof v === "string")) {
       return (
-        <ul className="space-y-1 pl-5 [&>li]:list-disc [&>li]:marker:text-text-meta">
+        <ul className="space-y-1 pl-5 [&>li]:list-disc [&>li]:marker:text-text-gedaempft">
           {(value as string[]).map((v, i) => (
-            <li key={i} className="text-base leading-relaxed text-text-primary">
+            <li key={i} className="text-base leading-relaxed text-text-primaer">
               {v}
             </li>
           ))}
@@ -152,7 +152,7 @@ function SummaryValue({
         {value.map((item, i) => (
           <div
             key={i}
-            className="rounded-md border border-border-subtle bg-surface-soft p-4"
+            className="rounded-md border border-trennlinie bg-flaeche-1 p-4"
           >
             <SummaryValue value={item} humanLabel={humanLabel} />
           </div>
@@ -170,7 +170,7 @@ function SummaryValue({
       <dl className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-[180px_1fr]">
         {entries.map(([k, v]) => (
           <div key={k} className="md:contents">
-            <dt className="text-[0.8125rem] font-medium text-text-meta md:py-1">
+            <dt className="text-[0.8125rem] font-medium text-text-gedaempft md:py-1">
               {humanLabel(k)}
             </dt>
             <dd className="md:py-1">

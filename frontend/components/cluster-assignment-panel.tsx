@@ -105,21 +105,21 @@ export function ClusterAssignmentPanel({
 
   if (clusters === null) {
     return (
-      <div className="mb-5 h-12 animate-pulse rounded-lg bg-surface-soft" />
+      <div className="mb-5 h-12 animate-pulse rounded-lg bg-flaeche-1" />
     );
   }
 
   if (clusters.length === 0) {
     return (
-      <div className="mb-5 rounded-lg border border-border-subtle bg-surface-soft p-4 text-xs text-text-meta">
+      <div className="mb-5 rounded-lg border border-trennlinie bg-flaeche-1 p-4 text-xs text-text-gedaempft">
         {t("emptyPre137")}
       </div>
     );
   }
 
   return (
-    <div className="mb-5 rounded-lg border border-border-subtle bg-surface-soft p-4">
-      <p className="mono mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-meta">
+    <div className="mb-5 rounded-lg border border-trennlinie bg-flaeche-1 p-4">
+      <p className="mono mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
         {t("sectionLabel", { count: clusters.length })}
       </p>
 
@@ -169,10 +169,10 @@ function ClusterRow({
     : null;
 
   return (
-    <div className="rounded-md bg-white px-3 py-2">
+    <div className="rounded-md bg-seite px-3 py-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-meta">
+          <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
             Cluster {cluster.cluster_idx.toString().padStart(2, "0")}
           </span>
           {matched ? (
@@ -181,19 +181,19 @@ function ClusterRow({
                 <Star
                   className="h-3 w-3"
                   strokeWidth={2}
-                  style={{ color: "var(--gold)" }}
+                  style={{ color: "var(--am-gold-500)" }}
                   aria-label={t("isSelfAria")}
                 />
               )}
               <span
                 className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
-                style={{ color: "var(--gold-deep)" }}
+                style={{ color: "var(--am-gold-800)" }}
               >
                 {cluster.display_name}
               </span>
               {cluster.assignment === "auto" && showScore && (
                 <span
-                  className="rounded-full bg-surface-soft px-2 py-0.5 text-[0.6875rem] uppercase tracking-[0.04em] text-text-meta"
+                  className="rounded-full bg-flaeche-1 px-2 py-0.5 text-[0.6875rem] uppercase tracking-[0.04em] text-text-gedaempft"
                   title={t("scoreTooltip")}
                 >
                   {scorePct}%
@@ -203,15 +203,15 @@ function ClusterRow({
                 className="rounded-full px-2 py-0.5 text-[0.6875rem] uppercase tracking-[0.04em]"
                 style={
                   cluster.assignment === "auto"
-                    ? { background: "rgba(74,124,89,0.08)", color: "var(--success)" }
-                    : { background: "var(--surface-soft)", color: "var(--text-meta)" }
+                    ? { background: "rgba(74,124,89,0.08)", color: "var(--am-erfolg)" }
+                    : { background: "var(--am-flaeche-1)", color: "var(--am-text-gedaempft)" }
                 }
               >
                 {cluster.assignment === "auto" ? t("automatic") : t("manual")}
               </span>
             </>
           ) : (
-            <span className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em] text-text-meta">
+            <span className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em] text-text-gedaempft">
               SPEAKER_{cluster.cluster_idx.toString().padStart(2, "0")}
             </span>
           )}
@@ -220,7 +220,7 @@ function ClusterRow({
         <button
           type="button"
           onClick={onTogglePicker}
-          className="btn-tertiary inline-flex items-center gap-1"
+          className="btn btn-still inline-flex items-center gap-1"
         >
           {matched ? t("change") : t("assign")}
           <ChevronDown className="h-3 w-3" strokeWidth={2} />
@@ -276,7 +276,7 @@ function ClusterPicker({
   });
 
   return (
-    <div className="mt-3 border-t border-border-subtle pt-3">
+    <div className="mt-3 border-t border-trennlinie pt-3">
       <div className="mb-2 flex flex-wrap gap-2">
         {sorted.map((s) => {
           const active = currentId === s.id;
@@ -289,14 +289,14 @@ function ClusterPicker({
               style={
                 active
                   ? {
-                      color: "var(--gold-deep)",
-                      background: "var(--gold-faint)",
-                      borderColor: "var(--gold-deep)",
+                      color: "var(--am-gold-800)",
+                      background: "var(--am-gold-200)",
+                      borderColor: "var(--am-gold-800)",
                     }
                   : {
-                      color: "var(--gold-deep)",
-                      borderColor: "var(--border-subtle)",
-                      background: "var(--white)",
+                      color: "var(--am-gold-800)",
+                      borderColor: "var(--am-trennlinie)",
+                      background: "var(--am-seite)",
                     }
               }
               title={
@@ -309,7 +309,7 @@ function ClusterPicker({
                 <Star
                   className="h-3 w-3"
                   strokeWidth={2}
-                  style={{ color: "var(--gold)" }}
+                  style={{ color: "var(--am-gold-500)" }}
                 />
               ) : (
                 <UserRound className="h-3 w-3" strokeWidth={1.75} />
@@ -323,13 +323,13 @@ function ClusterPicker({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border-strong bg-white px-3 py-1 text-[0.8125rem] text-text-meta transition hover:bg-surface-soft"
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-rand-betont bg-seite px-3 py-1 text-[0.8125rem] text-text-gedaempft transition hover:bg-flaeche-1"
           >
             <Plus className="h-3 w-3" strokeWidth={2} />
             {t("newSpeaker")}
           </button>
         ) : (
-          <div className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-white py-1 pl-3 pr-1">
+          <div className="inline-flex items-center gap-1 rounded-full border border-rand-betont bg-seite py-1 pl-3 pr-1">
             <input
               ref={inputRef}
               type="text"
@@ -344,8 +344,8 @@ function ClusterPicker({
               }}
               placeholder={t("namePlaceholder")}
               maxLength={120}
-              className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-disabled"
-              style={{ color: "var(--gold-deep)", width: "120px" }}
+              className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-deaktiviert"
+              style={{ color: "var(--am-gold-800)", width: "120px" }}
             />
           </div>
         )}
@@ -354,7 +354,7 @@ function ClusterPicker({
           <button
             type="button"
             onClick={onClear}
-            className="rounded-full border border-border-subtle bg-white px-3 py-1 text-[0.8125rem] text-text-meta transition hover:bg-surface-soft"
+            className="rounded-full border border-trennlinie bg-seite px-3 py-1 text-[0.8125rem] text-text-gedaempft transition hover:bg-flaeche-1"
           >
             {t("unassign")}
           </button>

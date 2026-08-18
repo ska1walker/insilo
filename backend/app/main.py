@@ -9,7 +9,6 @@ Lokal mocken wir den Header im Frontend.
 from contextlib import asynccontextmanager
 
 import httpx
-
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

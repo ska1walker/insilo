@@ -19,9 +19,8 @@ from uuid import UUID
 from fastapi import Depends, Header, HTTPException
 from passlib.context import CryptContext
 
-from app.errors import http_error
-
 from app.db import acquire
+from app.errors import http_error
 
 KEY_PREFIX = "inskey_"
 KEY_PREFIX_LEN = 14  # "inskey_" (7) + 7 chars = unique enough for an index

@@ -21,7 +21,6 @@ from app.errors import (
     translate,
 )
 
-
 # ─── resolve_error_locale ─────────────────────────────────────────────
 
 

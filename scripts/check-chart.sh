@@ -104,6 +104,30 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 1c. upgradeDescription must announce the version actually being shipped
+#     release.sh bumps the version FIELDS but not the release-notes TEXT, so
+#     the headline silently ages unless someone rewrites it. Same drift family
+#     as 1b, one level down. The notes are handwritten by design — this only
+#     checks that the version in the first line matches.
+# ---------------------------------------------------------------------------
+
+section "upgradeDescription announces current version"
+
+for mf in "$MANIFEST_FILE" "$ROOT_MANIFEST_FILE"; do
+  [[ -f "$mf" ]] || continue
+  # First non-blank line after the `upgradeDescription: |` block opener.
+  HEADLINE="$(awk '/^[[:space:]]*upgradeDescription:/{f=1;next} f&&NF{print;exit}' "$mf")"
+  if [[ -z "$HEADLINE" ]]; then
+    fail "$mf: upgradeDescription is empty"
+  elif [[ "$HEADLINE" == *"$CHART_VERSION"* ]]; then
+    ok "$mf: headline mentions $CHART_VERSION"
+  else
+    fail "$mf: upgradeDescription headline does not mention $CHART_VERSION — stale release notes?"
+    echo "      $HEADLINE" | sed 's/^/    /'
+  fi
+done
+
+# ---------------------------------------------------------------------------
 # 2. NEVER use .Files.Get — Olares chart renderer doesn't support it
 #    (HANDOFF §7g.2)
 # ---------------------------------------------------------------------------

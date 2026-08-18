@@ -15,6 +15,10 @@ metadata:
     component: whisper
 spec:
   replicas: 1
+  # Recreate wegen hostPath-Mount (/app/cache, Whisper-Modelle) — siehe
+  # deployment-backend.yaml. Markt lehnt hostPath + RollingUpdate ab.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: insilo

@@ -16,6 +16,12 @@ metadata:
     component: backend
 spec:
   replicas: 1
+  # Recreate, nicht RollingUpdate: dieses Deployment mountet hostPath
+  # (/app/data, /app/cache). Bei RollingUpdate liefen kurzzeitig zwei Pods
+  # auf demselben Host-Verzeichnis. Der Olares-Markt lehnt die Kombination
+  # hostPath + RollingUpdate beim Upload ab (HTTP 400, gesehen bei v0.1.62).
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: insilo

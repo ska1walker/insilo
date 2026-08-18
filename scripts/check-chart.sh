@@ -151,6 +151,32 @@ for mf in "$MANIFEST_FILE" "$ROOT_MANIFEST_FILE"; do
 done
 
 # ---------------------------------------------------------------------------
+# 1e. hostPath deployments must use strategy: Recreate
+#     RollingUpdate would briefly run two pods against the same host
+#     directory. The Market rejects the combination on upload with HTTP 400
+#     ("can not enable rolling update with hostpath"). Cost us the v0.1.62
+#     upload. Note k8s defaults to RollingUpdate when strategy is omitted,
+#     so "no strategy block" is a failure, not a pass.
+# ---------------------------------------------------------------------------
+
+section "hostPath deployments use strategy: Recreate"
+
+hostpath_ok=1
+for f in "$TEMPLATES_DIR"/deployment-*.yaml; do
+  grep -q "hostPath" "$f" || continue
+  name="$(basename "$f")"
+  if grep -qE "^[[:space:]]*type:[[:space:]]*Recreate[[:space:]]*$" "$f"; then
+    ok "$name: hostPath + Recreate"
+  else
+    fail "$name: mounts hostPath without 'strategy: type: Recreate' — Market upload will 400"
+    hostpath_ok=0
+  fi
+done
+if [[ "$hostpath_ok" -eq 1 ]]; then
+  : # all good, already reported per-file
+fi
+
+# ---------------------------------------------------------------------------
 # 2. NEVER use .Files.Get — Olares chart renderer doesn't support it
 #    (HANDOFF §7g.2)
 # ---------------------------------------------------------------------------

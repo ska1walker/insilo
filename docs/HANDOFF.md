@@ -74,6 +74,64 @@
 > rekonstruierbar (kein erklärender Commit) — plausibel ist ein hängendes
 > `helm upgrade` direkt nach dem v0.1.57-Deploy.
 >
+> # 🚀 v0.1.62 / v0.1.63 — Markt-Upload-Validierung (18. August 2026)
+>
+> **Der erste ernsthafte Markt-Upload seit v0.1.17 — und er ist zweimal
+> abgeflogen.** Beide Male HTTP 400 mit brauchbarer Fehlermeldung. Beide
+> Regeln sind jetzt in `check-chart.sh` codifiziert, damit sie künftig
+> lokal auffallen statt im Upload-Dialog.
+>
+> **Ablehnung 1 (v0.1.61) — offener Version-Constraint.**
+> ```
+> options.dependencies[name=olares].version ">=1.12.2" must restrict the
+> Olares system version to ">=1.12.3-0,<1.12.6" for apiVersion=v1
+> ```
+> Unser `>=1.12.2` war nach oben offen und deckte damit implizit auch
+> 1.12.6 und 2.0.0 ab — genau die Werte, die die Meldung als „außerhalb"
+> auflistet. Der Markt verlangt ein **beidseitig geschlossenes Intervall**.
+> Neu: `'>=1.12.3-0,<1.12.6'` (das `-0`-Suffix schließt Pre-Releases von
+> 1.12.3 ein, semver-Konvention). Behoben in v0.1.62.
+>
+> **Wichtig:** die konkreten Grenzen gibt der Markt vor und sie werden sich
+> mit künftigen Olares-Versionen verschieben. Der Guard prüft deshalb nur,
+> **dass** eine Obergrenze existiert — die Werte selbst nennt im Zweifel
+> die Fehlermeldung.
+>
+> **Ablehnung 2 (v0.1.62) — hostPath + RollingUpdate.**
+> ```
+> deployment insilo-backend can not enable rolling update with
+> hostpath name:app-data,path:
+> ```
+> Betraf backend, worker, whisper, embeddings (das Frontend mountet kein
+> hostPath und stand folgerichtig nicht in der Liste). Keines der
+> Deployments hatte einen `strategy`-Block — und **Kubernetes defaultet
+> auf RollingUpdate**, wenn man ihn weglässt. „Nicht gesetzt" war hier also
+> nicht neutral, sondern der abgelehnte Zustand. Behoben in v0.1.63 mit
+> `strategy: type: Recreate` in den vier betroffenen Deployments.
+>
+> Die Regel ist sachlich richtig: bei RollingUpdate liefen kurzzeitig zwei
+> Pods gegen dasselbe Host-Verzeichnis.
+>
+> **⚠️ Trade-off, der bewusst getroffen werden muss.**
+> Der v0.1.51-Block weiter unten beschreibt, wie uns RollingUpdate einmal
+> gerettet hat: der v0.1.49-Migrations-CrashLoop lief ins Leere, weil die
+> neuen Pods nie Ready wurden und **die alten weiterliefen** — die Box war
+> zu keinem Zeitpunkt beeinträchtigt.
+>
+> **Dieses Sicherheitsnetz gibt es mit `Recreate` nicht mehr.** Der alte
+> Pod wird zuerst beendet, dann startet der neue. Ein kaputtes Update
+> bedeutet ab jetzt echte Downtime statt eines stillen Fehlschlags.
+> Konsequenz für die Praxis:
+>
+> - **Migrationen müssen idempotent sein** — das war vorher schon Regel
+>   (v0.1.51), ist jetzt aber ohne Netz.
+> - **Vor einem Box-Upgrade** lohnt der Blick auf den Init-Container:
+>   `kubectl logs -n insilo-kaivostudio <pod> -c migrations`.
+> - **Rollback-Pfad kennen:** `helm rollback insilo <revision> -n insilo-kaivostudio`.
+>
+> Alternativen wären ein PVC statt hostPath (dann wäre RollingUpdate
+> erlaubt) — das ist ein größerer Umbau und steht nicht an.
+>
 > # 🚀 v0.1.61 — Manifest-Sync-Guard + `--chart-only` repariert (18. August 2026)
 >
 > **Chart-only-Release** (Images bleiben auf 0.1.60). Inhalt: korrekte

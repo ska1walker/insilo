@@ -15,6 +15,10 @@ metadata:
     component: worker
 spec:
   replicas: 1
+  # Recreate wegen hostPath-Mounts (/app/data, /app/cache) — siehe
+  # deployment-backend.yaml. Markt lehnt hostPath + RollingUpdate ab.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: insilo

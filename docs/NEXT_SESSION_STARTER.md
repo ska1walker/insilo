@@ -13,7 +13,11 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo steht als **v0.1.60** im Repo (Tag + Chart).
+**Stand:** Insilo steht als **v0.1.65** im Repo (Tag + Chart) und ist unter
+dieser Version **erfolgreich im Olares-Markt** (18.8.2026). Achtung bei der
+Versions-Buchhaltung: v0.1.61–v0.1.65 waren reine Chart-Releases für die
+Markt-Validierung — **die Container-Images stehen unverändert auf 0.1.60**.
+Der letzte Code-Stand ist also v0.1.60.
 Box-Version **nicht verifiziert** — der letzte dokumentierte Box-Stand
 ist v0.1.49 (Helm-Rev 35), seitdem wurde kein Deploy in der Doku
 festgehalten. **Vor jeder Box-Arbeit erst prüfen:**
@@ -219,7 +223,7 @@ ssh olares@192.168.112.125 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.60** (Repo); Box-Stand unverifiziert — zuletzt dokumentiert v0.1.49, Helm-Rev 35. `helm list -n insilo-kaivostudio` prüfen. |
+| Version | Chart **v0.1.65** (im Markt ✅), Images **0.1.60**. Box-Stand unverifiziert — zuletzt dokumentiert v0.1.49, Helm-Rev 35. `helm list -n insilo-kaivostudio` prüfen. |
 | Plattform | Olares OS (k3s) auf `192.168.112.125` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
@@ -273,11 +277,11 @@ git log --oneline -5
 gh run list --limit 5
 ```
 
-Sollte **v0.1.60** als jüngsten Tag zeigen (Tag-Liste seit v0.1.50:
-0.1.51 → … → 0.1.59 → 0.1.60). Danach liegen drei Nicht-Release-Commits
-auf `main`: `03b08fa` (Manifest-Drift-Fix), `7284088` (AGENTS.md),
-`28f7e63` (Ruff-Fix). **Der `ci`-Workflow ist seit `28f7e63` wieder
-grün** — er war von v0.1.59 bis dahin durchgehend rot (4 Ruff-Violations),
+Sollte **v0.1.65** als jüngsten Tag zeigen. v0.1.61–v0.1.65 sind reine
+Chart-Releases (Markt-Validierung, siehe HANDOFF-Header) — der letzte
+Release mit Code-Änderung ist v0.1.60. **Der `ci`-Workflow ist seit
+`28f7e63` wieder grün** — er war von v0.1.59 bis dahin durchgehend rot
+(4 Ruff-Violations),
 während `release.yml` unbeeindruckt weiter Images baute. Wenn `ci` rot
 ist: `gh run view <id> --log-failed` und nicht darauf verlassen, dass ein
 grüner `release`-Run Entwarnung bedeutet.

@@ -76,10 +76,26 @@
 >
 > # 🚀 v0.1.62 → v0.1.65 — Markt-Upload-Validierung (18. August 2026)
 >
-> **Der erste ernsthafte Markt-Upload seit v0.1.17 — und er ist zweimal
-> abgeflogen.** Beide Male HTTP 400 mit brauchbarer Fehlermeldung. Beide
-> Regeln sind jetzt in `check-chart.sh` codifiziert, damit sie künftig
-> lokal auffallen statt im Upload-Dialog.
+> **✅ v0.1.65 wurde erfolgreich in den Markt hochgeladen** (18.8., ~18:10).
+>
+> **Der erste ernsthafte Markt-Upload seit v0.1.17 — und er ist viermal
+> abgeflogen**, bevor v0.1.65 durchging. Jedes Mal HTTP 400 mit brauchbarer
+> Fehlermeldung. Alle vier Regeln sind jetzt in `check-chart.sh`
+> codifiziert, jede mit Negativtest verifiziert — sie fallen künftig lokal
+> und in CI auf statt im Upload-Dialog.
+>
+> | Version | Ablehnung | Fix |
+> |---|---|---|
+> | v0.1.61 | offener Version-Constraint | `>=1.12.3-0,<1.12.6` |
+> | v0.1.62 | hostPath + RollingUpdate | `strategy: Recreate` ×4 |
+> | v0.1.63 | Ressourcen-Summen > Budget | requiredCpu 4000m, limitedCpu 13000m |
+> | v0.1.64 | root auf Fremd-Image | `beclab/aboveos-busybox:1.37.0` |
+> | **v0.1.65** | — | **Upload erfolgreich** |
+>
+> **Zur Versions-Buchhaltung:** v0.1.61–v0.1.65 sind **reine Chart-Releases**.
+> Am Produkt hat sich nichts geändert, die Image-Tags in `values.yaml` stehen
+> unverändert auf **0.1.60**. Wer sich später über die Lücke wundert: die
+> fünf Nummern gingen für Verpackungsfragen drauf, nicht für Features.
 >
 > **Ablehnung 1 (v0.1.61) — offener Version-Constraint.**
 > ```

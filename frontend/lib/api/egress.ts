@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { apiGet } from "./client";
 
 export type EgressZiel = {
@@ -25,4 +28,29 @@ export type EgressRead = {
 
 export function fetchEgress(): Promise<EgressRead> {
   return apiGet<EgressRead>("/api/v1/egress");
+}
+
+/**
+ * Lädt den Egress-Zustand für eine Ansicht.
+ *
+ * `null` heißt „noch nicht da oder nicht abrufbar" — beides führt zur
+ * selben Konsequenz: nichts behaupten. Wer diesen Hook benutzt, muss den
+ * Fall abfangen, statt einen Ersatztext anzuzeigen.
+ */
+export function useEgress(): EgressRead | null {
+  const [lage, setLage] = useState<EgressRead | null>(null);
+
+  useEffect(() => {
+    let abgebrochen = false;
+    fetchEgress()
+      .then((l) => !abgebrochen && setLage(l))
+      .catch(() => {
+        /* nicht abrufbar — bleibt null, die Ansicht schweigt */
+      });
+    return () => {
+      abgebrochen = true;
+    };
+  }, []);
+
+  return lage;
 }

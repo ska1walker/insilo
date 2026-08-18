@@ -49,8 +49,6 @@
     "saving": "Salvataggio …",
     "requestingMic": "Richiesta del microfono …",
     "templateLabel": "Modello di sintesi",
-    "trustBadge": "Sovranità dei dati",
-    "trustBadgeHint": "Audio, trascrizione e indice di ricerca restano sulla Sua scatola Olares. Nessun upload cloud, nessuna terza parte.",
     "phaseIdle": "Tocchi il microfono per avviare la registrazione.",
     "statusReady": "Pronto",
     "phaseRecording": "Registrazione in corso",
@@ -66,7 +64,14 @@
     "uploadFailedTryAgain": "Upload non riuscito. Riprovi.",
     "audioLanguageLabel": "Lingua della registrazione",
     "audioLanguageAuto": "Rilevamento automatico",
-    "audioLanguageHint": "Suggerimento inviato a Whisper per la trascrizione. Il formato del verbale segue comunque la lingua della Sua interfaccia."
+    "audioLanguageHint": "Suggerimento inviato a Whisper per la trascrizione. Il formato del verbale segue comunque la lingua della Sua interfaccia.",
+    "trustAllesTitel": "Sovranità dei dati",
+    "trustAllesText": "Audio, trascrizione e indice restano su questo box. Nessun caricamento nel cloud, nessun terzo.",
+    "trustLlmTitel": "Modello linguistico fuori dal box",
+    "trustLlmText": "Audio e indice restano qui. Per il riepilogo la trascrizione viene inviata a {host}.",
+    "trustZieleTitel": "Destinazioni esterne configurate",
+    "trustZieleText": "Audio e trascrizione restano su questo box. I verbali finiti vengono inviati alle destinazioni configurate.",
+    "trustMehr": "Che cosa esce da questo box?"
   },
   "meeting": {
     "listTitle": "Riunioni",

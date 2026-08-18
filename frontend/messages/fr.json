@@ -49,8 +49,6 @@
     "saving": "Enregistrement …",
     "requestingMic": "Demande du microphone …",
     "templateLabel": "Modèle de synthèse",
-    "trustBadge": "Souveraineté des données",
-    "trustBadgeHint": "L'audio, la transcription et l'index de recherche restent sur votre boîte Olares. Aucun envoi cloud, aucun tiers.",
     "phaseIdle": "Cliquez sur le microphone pour démarrer l'enregistrement.",
     "statusReady": "Prêt",
     "phaseRecording": "Enregistrement en cours",
@@ -66,7 +64,14 @@
     "uploadFailedTryAgain": "Échec de l'envoi. Veuillez réessayer.",
     "audioLanguageLabel": "Langue de l'enregistrement",
     "audioLanguageAuto": "Détection automatique",
-    "audioLanguageHint": "Indication transmise à Whisper pour la transcription. Le format du compte-rendu suit indépendamment la langue de votre interface."
+    "audioLanguageHint": "Indication transmise à Whisper pour la transcription. Le format du compte-rendu suit indépendamment la langue de votre interface.",
+    "trustAllesTitel": "Souveraineté des données",
+    "trustAllesText": "Audio, transcription et index restent sur ce boîtier. Aucun envoi vers le cloud, aucun tiers.",
+    "trustLlmTitel": "Modèle de langage hors du boîtier",
+    "trustLlmText": "L'audio et l'index restent ici. Pour le résumé, la transcription est envoyée à {host}.",
+    "trustZieleTitel": "Destinations externes configurées",
+    "trustZieleText": "L'audio et la transcription restent sur ce boîtier. Les comptes rendus finis sont envoyés aux destinations configurées.",
+    "trustMehr": "Qu'est-ce qui quitte ce boîtier ?"
   },
   "meeting": {
     "listTitle": "Réunions",

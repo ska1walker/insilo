@@ -49,8 +49,6 @@
     "saving": "Guardando …",
     "requestingMic": "Solicitando micrófono …",
     "templateLabel": "Plantilla de resumen",
-    "trustBadge": "Soberanía de datos",
-    "trustBadgeHint": "Audio, transcripción e índice de búsqueda permanecen en su caja Olares. Sin subida a la nube, sin terceros.",
     "phaseIdle": "Toque el micrófono para iniciar la grabación.",
     "statusReady": "Listo",
     "phaseRecording": "Grabación en curso",
@@ -66,7 +64,14 @@
     "uploadFailedTryAgain": "Error al subir. Inténtelo de nuevo.",
     "audioLanguageLabel": "Idioma de la grabación",
     "audioLanguageAuto": "Detección automática",
-    "audioLanguageHint": "Pista enviada a Whisper para la transcripción. El formato del acta sigue, no obstante, el idioma de su interfaz."
+    "audioLanguageHint": "Pista enviada a Whisper para la transcripción. El formato del acta sigue, no obstante, el idioma de su interfaz.",
+    "trustAllesTitel": "Soberanía de datos",
+    "trustAllesText": "Audio, transcripción e índice permanecen en esta caja. Sin subida a la nube, sin terceros.",
+    "trustLlmTitel": "Modelo de lenguaje fuera de la caja",
+    "trustLlmText": "El audio y el índice permanecen aquí. Para resumir, la transcripción se envía a {host}.",
+    "trustZieleTitel": "Destinos externos configurados",
+    "trustZieleText": "El audio y la transcripción permanecen en esta caja. Las actas terminadas se envían a los destinos configurados.",
+    "trustMehr": "¿Qué sale de esta caja?"
   },
   "meeting": {
     "listTitle": "Reuniones",

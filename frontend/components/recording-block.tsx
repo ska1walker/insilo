@@ -1,11 +1,13 @@
 "use client";
 
-import { Loader2, Mic, ShieldCheck, Square } from "lucide-react";
+import { Loader2, Mic, ShieldAlert, ShieldCheck, Square } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
 import { ApiError } from "@/lib/api/client";
+import { useEgress } from "@/lib/api/egress";
 import { createMeeting } from "@/lib/api/meetings";
 import { listTemplates, type TemplateDto } from "@/lib/api/templates";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
@@ -379,31 +381,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
           </p>
         )}
 
-        {showTrustBadge && (
-          <div className="mt-16 flex flex-col items-center gap-3">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-full"
-              style={{
-                background: "var(--am-gold-200)",
-                border: "1px solid rgba(201, 169, 97, 0.4)",
-              }}
-            >
-              <ShieldCheck
-                className="h-5 w-5"
-                style={{ color: "var(--am-gold-beschriftung)" }}
-                strokeWidth={1.75}
-              />
-            </div>
-            <div className="max-w-[360px] text-center">
-              <p className="text-sm font-medium text-text-primaer">
-                {t("trustBadge")}
-              </p>
-              <p className="mt-1 text-sm text-text-gedaempft">
-                {t("trustBadgeHint")}
-              </p>
-            </div>
-          </div>
-        )}
+        {showTrustBadge && <Datensouveraenitaet />}
       </div>
     </>
   );
@@ -479,6 +457,90 @@ function Notice({
           {actionLabel}
         </button>
       )}
+    </div>
+  );
+}
+
+/**
+ * Die Zusage unter dem Aufnahme-Knopf — aus dem gemessenen Zustand, nicht
+ * aus einer Behauptung.
+ *
+ * Bis hierher stand an dieser Stelle pauschal „Audio, Transkript und
+ * Suchindex bleiben auf Ihrer Olares-Box". Das stimmt nur, solange das
+ * Sprachmodell in der Box liegt. Ist ein externer Endpunkt eingetragen,
+ * geht das Transkript zur Zusammenfassung hinaus — und ausgerechnet an
+ * der prominentesten Stelle stand das Gegenteil.
+ *
+ * Audio und Suchindex bleiben in jeder Konfiguration hier; nur das
+ * Transkript und die fertigen Protokolle können die Box verlassen. Die
+ * Texte trennen das sauber, statt pauschal zu beruhigen.
+ */
+function Datensouveraenitaet() {
+  const t = useTranslations("recording");
+  const lage = useEgress();
+
+  // Nicht abrufbar: nichts sagen. Eine Zusage ohne Beleg ist schlechter
+  // als gar keine — dieselbe Regel wie beim Nachweis in der Navigation.
+  if (lage === null) return null;
+
+  const { llm_extern, llm_host, alles_bleibt } = lage;
+
+  const titel = llm_extern
+    ? t("trustLlmTitel")
+    : alles_bleibt
+      ? t("trustAllesTitel")
+      : t("trustZieleTitel");
+
+  const text = llm_extern
+    ? t("trustLlmText", { host: llm_host ?? "" })
+    : alles_bleibt
+      ? t("trustAllesText")
+      : t("trustZieleText");
+
+  return (
+    <div className="mt-16 flex flex-col items-center gap-3">
+      <div
+        className="flex h-10 w-10 items-center justify-center rounded-full"
+        style={
+          llm_extern
+            ? {
+                background: "var(--am-achtung-flaeche)",
+                border: "1px solid var(--am-achtung-rand)",
+              }
+            : {
+                background: "var(--am-gold-200)",
+                border: "1px solid rgba(201, 169, 97, 0.4)",
+              }
+        }
+      >
+        {llm_extern ? (
+          <ShieldAlert
+            className="h-5 w-5"
+            style={{ color: "var(--am-achtung)" }}
+            strokeWidth={1.75}
+            aria-hidden
+          />
+        ) : (
+          <ShieldCheck
+            className="h-5 w-5"
+            style={{ color: "var(--am-gold-beschriftung)" }}
+            strokeWidth={1.75}
+            aria-hidden
+          />
+        )}
+      </div>
+      <div className="max-w-[360px] text-center">
+        <p className="text-sm font-medium text-text-primaer">{titel}</p>
+        <p className="mt-1 text-sm text-text-gedaempft">{text}</p>
+        {!alles_bleibt && (
+          <Link
+            href="/datenschutz"
+            className="mt-2 inline-block text-sm underline text-text-sekundaer hover:text-text-primaer"
+          >
+            {t("trustMehr")}
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

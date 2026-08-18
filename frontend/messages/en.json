@@ -49,8 +49,6 @@
     "saving": "Saving …",
     "requestingMic": "Requesting microphone …",
     "templateLabel": "Summary template",
-    "trustBadge": "Data-sovereign",
-    "trustBadgeHint": "Audio, transcript and search index stay on your Olares box. No cloud upload, no third parties.",
     "phaseIdle": "Tap the microphone to start the recording.",
     "statusReady": "Ready",
     "phaseRecording": "Recording in progress",
@@ -66,7 +64,14 @@
     "uploadFailedTryAgain": "Upload failed. Please try again.",
     "audioLanguageLabel": "Recording language",
     "audioLanguageAuto": "Auto-detect",
-    "audioLanguageHint": "Hint passed to Whisper for transcription. The summary format still follows your UI language."
+    "audioLanguageHint": "Hint passed to Whisper for transcription. The summary format still follows your UI language.",
+    "trustAllesTitel": "Data-sovereign",
+    "trustAllesText": "Audio, transcript and search index stay on this box. No cloud upload, no third parties.",
+    "trustLlmTitel": "Language model outside the box",
+    "trustLlmText": "Audio and search index stay here. For summarising, the transcript goes to {host}.",
+    "trustZieleTitel": "External targets configured",
+    "trustZieleText": "Audio and transcript stay on this box. Finished minutes go to configured targets.",
+    "trustMehr": "What leaves this box?"
   },
   "meeting": {
     "listTitle": "Meetings",

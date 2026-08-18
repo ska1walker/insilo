@@ -49,8 +49,6 @@
     "saving": "Wird gespeichert …",
     "requestingMic": "Mikrofon wird angefragt …",
     "templateLabel": "Vorlage für die Zusammenfassung",
-    "trustBadge": "Datensouverän",
-    "trustBadgeHint": "Audio, Transkript und Suchindex bleiben auf Ihrer Olares-Box. Kein Cloud-Upload, keine Drittanbieter.",
     "phaseIdle": "Klicken Sie auf das Mikrofon, um die Aufnahme zu starten.",
     "statusReady": "Bereit",
     "phaseRecording": "Aufnahme läuft",
@@ -66,7 +64,14 @@
     "uploadFailedTryAgain": "Upload fehlgeschlagen. Bitte erneut versuchen.",
     "audioLanguageLabel": "Aufnahmesprache",
     "audioLanguageAuto": "Automatisch erkennen",
-    "audioLanguageHint": "Hinweis an Whisper für die Transkription. Das Protokoll-Format folgt unabhängig davon Ihrer UI-Sprache."
+    "audioLanguageHint": "Hinweis an Whisper für die Transkription. Das Protokoll-Format folgt unabhängig davon Ihrer UI-Sprache.",
+    "trustAllesTitel": "Datensouverän",
+    "trustAllesText": "Audio, Transkript und Suchindex bleiben auf dieser Box. Kein Cloud-Upload, keine Drittanbieter.",
+    "trustLlmTitel": "Sprachmodell außerhalb der Box",
+    "trustLlmText": "Audio und Suchindex bleiben hier. Zur Zusammenfassung geht das Transkript an {host}.",
+    "trustZieleTitel": "Externe Ziele eingerichtet",
+    "trustZieleText": "Audio und Transkript bleiben auf dieser Box. Fertige Protokolle gehen an eingerichtete Ziele.",
+    "trustMehr": "Was verlässt diese Box?"
   },
   "meeting": {
     "listTitle": "Besprechungen",

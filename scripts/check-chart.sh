@@ -177,6 +177,72 @@ if [[ "$hostpath_ok" -eq 1 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# 1f. Container resource sums must fit the manifest's declared budget
+#     The Market adds up every container's requests/limits and rejects the
+#     upload with HTTP 400 if a sum exceeds required*/limited* (cost us the
+#     v0.1.63 upload: requests 3750m vs requiredCpu 2000m, limits 13000m vs
+#     limitedCpu 6000m). Pure awk so this needs no PyYAML in CI.
+# ---------------------------------------------------------------------------
+
+section "container resources fit manifest budget"
+
+if command -v helm >/dev/null 2>&1; then
+  SUMS="$(helm template insilo olares/ -f olares/values-olares-stub.yaml 2>/dev/null | awk '
+    function tocpu(v) { if (v ~ /m$/) { sub(/m$/,"",v); return v+0 } else { return v*1000 } }
+    function tomem(v,  n,u) {
+      if (v ~ /Gi$/) { sub(/Gi$/,"",v); return v*1024 }
+      if (v ~ /Mi$/) { sub(/Mi$/,"",v); return v }
+      if (v ~ /Ki$/) { sub(/Ki$/,"",v); return v/1024 }
+      return v/1048576
+    }
+    /^[[:space:]]*resources:[[:space:]]*$/ { inres=1; mode=""; next }
+    inres && /^[[:space:]]*requests:[[:space:]]*$/ { mode="req"; next }
+    inres && /^[[:space:]]*limits:[[:space:]]*$/   { mode="lim"; next }
+    inres && /^[[:space:]]*cpu:/ {
+      v=$2; gsub(/["'"'"']/,"",v)
+      if (mode=="req") rc+=tocpu(v); else if (mode=="lim") lc+=tocpu(v)
+      next
+    }
+    inres && /^[[:space:]]*memory:/ {
+      v=$2; gsub(/["'"'"']/,"",v)
+      if (mode=="req") rm+=tomem(v); else if (mode=="lim") lm+=tomem(v)
+      next
+    }
+    inres && !/^[[:space:]]*(requests|limits|cpu|memory):/ { inres=0; mode="" }
+    END { printf "%d %d %d %d", rc, lc, rm, lm }
+  ')"
+  read -r SUM_RC SUM_LC SUM_RM SUM_LM <<< "$SUMS"
+
+  budget() {
+    # budget <manifest-key> -> value in m (cpu) or Mi (memory)
+    local key="$1" raw
+    raw="$(grep -E "^[[:space:]]*${key}:" "$MANIFEST_FILE" | head -1 | sed -E "s/.*${key}:[[:space:]]*([^[:space:]#]+).*/\1/")"
+    case "$raw" in
+      *m)  echo "${raw%m}" ;;
+      *Gi) echo $(( ${raw%Gi} * 1024 )) ;;
+      *Mi) echo "${raw%Mi}" ;;
+      *)   echo $(( raw * 1000 )) ;;
+    esac
+  }
+
+  check_sum() {
+    # check_sum <label> <sum> <budget> <unit>
+    if [[ "$2" -le "$3" ]]; then
+      ok "$1: $2$4 <= $3$4"
+    else
+      fail "$1: $2$4 exceeds $3$4 — Market upload will 400"
+    fi
+  }
+
+  check_sum "requests.cpu vs requiredCpu"    "$SUM_RC" "$(budget requiredCpu)"    "m"
+  check_sum "limits.cpu vs limitedCpu"       "$SUM_LC" "$(budget limitedCpu)"     "m"
+  check_sum "requests.memory vs requiredMem" "$SUM_RM" "$(budget requiredMemory)" "Mi"
+  check_sum "limits.memory vs limitedMem"    "$SUM_LM" "$(budget limitedMemory)"  "Mi"
+else
+  yellow "  ! helm not installed — skipping resource-budget check"
+fi
+
+# ---------------------------------------------------------------------------
 # 2. NEVER use .Files.Get — Olares chart renderer doesn't support it
 #    (HANDOFF §7g.2)
 # ---------------------------------------------------------------------------

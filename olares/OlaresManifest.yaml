@@ -21,7 +21,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.63              # = Chart.yaml.version
+  version: 0.1.64              # = Chart.yaml.version
   categories:
     - Productivity_v112
     - Utilities_v112
@@ -96,7 +96,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.63'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.64'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
@@ -129,7 +129,7 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.63 — Sprecher-Erkennung, 5 Sprachen und Idee-Aufnahme unterwegs.
+    v0.1.64 — Sprecher-Erkennung, 5 Sprachen und Idee-Aufnahme unterwegs.
 
     **Sprecher-Intelligenz**
     - Lokale Sprecher-Erkennung (ECAPA-TDNN), token- und cloudfrei
@@ -202,13 +202,22 @@ spec:
   # LLM kommt via LiteLLM aus dem Olares-System (kein eigenes Ollama mehr),
   # daher deutlich schlanker als die ursprüngliche Schätzung.
 
-  requiredCpu: 2000m            # 2 vCPU baseline (Backend + Worker + Whisper)
-  requiredMemory: 12Gi          # Backend + Frontend + Worker + Whisper + Embeddings
+  # WICHTIG: Diese Werte müssen die SUMME der Container-Ressourcen aus
+  # olares/templates/deployment-*.yaml abdecken — der Markt rechnet beim
+  # Upload nach und lehnt mit HTTP 400 ab, wenn eine Summe überschreitet
+  # (gesehen bei v0.1.63). `bash scripts/check-chart.sh` prüft das lokal.
+  # Bei Änderung an Container-resources hier mit nachziehen.
+  #
+  # Stand v0.1.64 — Summen aus helm template:
+  #   requests: cpu 3750m, memory 8.5Gi   (whisper 2000m ist der Hauptposten)
+  #   limits:   cpu 13000m, memory 21Gi   (whisper 6000m)
+  requiredCpu: 4000m            # deckt requests-Summe 3750m
+  requiredMemory: 12Gi          # deckt requests-Summe 8.5Gi
   requiredDisk: 30Gi            # Audio (~10 GB), Whisper-Modelle (~3 GB), DB-Anteil
 
   # ---- Ressourcen-Limits ---------------------------------------------------
-  limitedCpu: 6000m
-  limitedMemory: 24Gi
+  limitedCpu: 13000m            # deckt limits-Summe 13000m
+  limitedMemory: 24Gi           # deckt limits-Summe 21Gi
   limitedDisk: 100Gi
 
 # ---- Optionen ---------------------------------------------------------------

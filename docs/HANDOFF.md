@@ -132,6 +132,52 @@
 > Alternativen wären ein PVC statt hostPath (dann wäre RollingUpdate
 > erlaubt) — das ist ein größerer Umbau und steht nicht an.
 >
+> **Ablehnung 3 (v0.1.63) — Ressourcen-Summen über dem Budget.**
+> ```
+> sum of container resources.limits.cpu (13) must be <= limitedCpu (6000m)
+> sum of container resources.requests.cpu (3750m) must be <= requiredCpu (2000m)
+> ```
+> Der Markt **addiert jeden Container** (inkl. Init-Container) und vergleicht
+> mit `requiredCpu`/`limitedCpu`/`requiredMemory`/`limitedMemory`. Ist-Stand:
+>
+> | | Summe | Manifest alt | Manifest neu |
+> |---|---|---|---|
+> | requests.cpu | 3750m | 2000m ✗ | 4000m |
+> | limits.cpu | 13000m | 6000m ✗ | 13000m |
+> | requests.memory | 8.5Gi | 12Gi ✓ | 12Gi |
+> | limits.memory | 21Gi | 24Gi ✓ | 24Gi |
+>
+> Memory passte, deshalb nannte die Meldung nur CPU. Hauptposten ist Whisper
+> (2000m request / 6000m limit) — läuft CPU-seitig, nicht auf GPU.
+>
+> **Entscheidung (Kai, 18.8.): Manifest anheben statt Container drosseln.**
+> Begründung: die Pods *fordern* diese Ressourcen real über ihre Requests.
+> Ein Manifest, das 2000m verspricht, während die Deployments 3750m
+> anfordern, verspricht etwas, das der Cluster nicht einhalten kann — die
+> Pods würden auf einer 2-Core-Box gar nicht erst schedulen. Das Manifest
+> war zu optimistisch, nicht die Container zu gierig. Transkriptions-
+> geschwindigkeit bleibt damit unverändert.
+>
+> **Beobachten:** `limitedCpu: 13000m` ist eine hohe deklarierte Obergrenze.
+> Sollte sich zeigen, dass Olares die Installation auf kleineren Boxen
+> deshalb ablehnt, ist der Gegenentwurf: Requests auf die echte Grundlast
+> senken (Whisper idled zwischen Meetings — 2000m Reservierung ist
+> großzügig) und Limits auf Summe ~8000m. Kostet Transkriptionstempo bei
+> Volllast.
+>
+> **Guard:** `check-chart.sh` rechnet die vier Summen aus dem gerenderten
+> Chart nach und vergleicht mit dem Manifest — reine awk-Arithmetik, damit
+> CI kein PyYAML braucht. Gegen ein unabhängiges Python-Skript
+> kreuzvalidiert (gleiche Zahlen) und per Negativtest gegen die
+> Original-Ablehnung geprüft.
+>
+> **Meta-Lesson aus drei Ablehnungen hintereinander:** die Markt-Validierung
+> prüft deutlich mehr als der Olares-Linter und als unser bisheriges
+> `check-chart.sh`. Alle drei Regeln waren lokal prüfbar — sie standen nur
+> nirgends. Wer das nächste Mal eine Ablehnung sieht: **erst den Guard
+> schreiben, dann den Fix**, sonst kostet die übernächste Regel wieder einen
+> Upload-Zyklus.
+>
 > # 🚀 v0.1.61 — Manifest-Sync-Guard + `--chart-only` repariert (18. August 2026)
 >
 > **Chart-only-Release** (Images bleiben auf 0.1.60). Inhalt: korrekte

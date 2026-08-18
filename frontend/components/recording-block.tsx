@@ -422,11 +422,15 @@ function StatusEyebrow({ phase }: { phase: Phase }) {
               ? t("phaseDenied")
               : t("phaseUnsupported");
 
+  // Gold zeichnet die laufende Aufnahme aus — sie ist der besondere Zustand,
+  // und das AImighty-Gold ist genau dafür da. Rot bleibt dem Fehler
+  // vorbehalten, sonst wären „nimmt auf" und „Mikrofon verweigert" zwei
+  // kaum unterscheidbare Rottöne. Das Speichern tritt als Übergang zurück.
   const dotColor =
     phase === "recording"
-      ? "var(--recording)"
+      ? "var(--am-gold-500)"
       : phase === "saving"
-        ? "var(--am-gold-800)"
+        ? "var(--am-text-gedaempft)"
         : phase === "denied" || phase === "unsupported"
           ? "var(--am-fehler)"
           : "var(--am-text-deaktiviert)";

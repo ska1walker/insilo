@@ -181,30 +181,10 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
 
 @layer base {
   :root {
-    --white: #ffffff;
-    --black: #0a0a0a;
-
-    --gold: #c9a961;
-    --gold-light: #e6d4a3;
-    --gold-deep: #9c8147;
-    --gold-faint: #f5edd9;
-
-    --surface-soft: #fafaf7;
-    --surface-warm: #f5f3ee;
-
-    --border-subtle: #e8e6e1;
-    --border-strong: #d4d1ca;
-
-    --text-primary: #0a0a0a;
-    --text-secondary: #4a4842;
-    --text-meta: #737065;
-    --text-disabled: #a8a599;
-
-    --recording: #c84a3f;
-    --success: #4a7c59;
-    --warning: #b8893c;
-    --error: #a33a2f;
-
+    /* Die früheren Insilo-Farbtoken (--gold, --surface-soft, --text-meta …)
+       sind entfallen — alle Bauteile lesen jetzt --am-*. Geblieben sind nur
+       die Bewegungswerte: das AImighty-Paket gibt Dauern vor, aber keine
+       Beschleunigungskurve. */
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --duration-fast: 150ms;
     --duration-medium: 250ms;
@@ -212,12 +192,18 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
 
   html {
     color-scheme: light;
-    background: var(--white);
+    background: var(--am-seite);
+  }
+
+  /* Der Dunkelmodus-Umschalter setzt die Klasse; color-scheme muss
+     mitziehen, sonst bleiben Scrollbalken und Formularelemente hell. */
+  html.dunkel {
+    color-scheme: dark;
   }
 
   body {
-    color: var(--text-primary);
-    background: var(--white);
+    color: var(--am-text-primaer);
+    background: var(--am-seite);
     font-family: var(--am-schrift-sans);
     font-size: 1rem;
     line-height: 1.6;
@@ -698,8 +684,8 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
 
 @layer components {
   .btn-primary {
-    background: var(--black);
-    color: var(--white);
+    background: var(--am-text-primaer);
+    color: var(--am-seite);
     padding: 12px 24px;
     border-radius: 6px;
     font-weight: 500;
@@ -708,12 +694,12 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
   .btn-primary:hover { background: #1f1f1f; }
   .btn-primary:active { background: #2a2a2a; }
-  .btn-primary:disabled { background: var(--text-disabled); cursor: not-allowed; }
+  .btn-primary:disabled { background: var(--am-text-deaktiviert); cursor: not-allowed; }
 
   .btn-secondary {
-    background: var(--white);
-    color: var(--text-primary);
-    border: 1px solid var(--border-strong);
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    border: 1px solid var(--am-rand-betont-farbe);
     padding: 12px 24px;
     border-radius: 6px;
     font-weight: 500;
@@ -721,13 +707,13 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     transition: all var(--duration-fast) ease;
   }
   .btn-secondary:hover {
-    background: var(--surface-soft);
-    border-color: var(--text-secondary);
+    background: var(--am-flaeche-1);
+    border-color: var(--am-text-sekundaer);
   }
 
   .btn-tertiary {
     background: transparent;
-    color: var(--text-primary);
+    color: var(--am-text-primaer);
     padding: 8px 12px;
     font-weight: 500;
     font-size: 0.9375rem;
@@ -740,9 +726,9 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
 
   .btn-record {
-    background: var(--white);
-    color: var(--text-primary);
-    border: 2px solid var(--gold);
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    border: 2px solid var(--am-gold-500);
     width: 120px;
     height: 120px;
     border-radius: 9999px;
@@ -758,8 +744,8 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   .btn-record:hover { transform: translateY(-1px); }
   .btn-record:disabled { animation: none; opacity: 0.6; cursor: not-allowed; }
   .btn-record.recording {
-    background: var(--gold);
-    color: var(--white);
+    background: var(--am-gold-500);
+    color: var(--am-blau-900);
     animation: pulse-gold 2s ease-in-out infinite;
   }
   .btn-record-icon { width: 36px; height: 36px; }
@@ -782,7 +768,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     left: 0;
     right: 0;
     height: 1px;
-    background: var(--gold);
+    background: var(--am-gold-500);
     animation: pulse-line 2.4s ease-in-out infinite;
     z-index: 1000;
     pointer-events: none;
@@ -845,7 +831,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     width: 40px;
     height: 40px;
     border-radius: 9999px;
-    color: var(--text-primary);
+    color: var(--am-text-primaer);
     background: transparent;
     transition:
       background var(--duration-fast) ease,
@@ -854,13 +840,13 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
   .quick-capture-trigger:hover {
     background: rgba(201, 169, 97, 0.10);
-    color: var(--gold-deep);
+    color: var(--am-gold-800);
   }
   .quick-capture-trigger:active {
     transform: scale(0.94);
   }
   .quick-capture-trigger:focus-visible {
-    outline: 2px solid var(--gold);
+    outline: 2px solid var(--am-gold-500);
     outline-offset: 2px;
   }
   /* Touch-Geräte ohne Hover: subtiler Hint-Pulse alle 6 s, damit
@@ -948,9 +934,9 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
 
   .input {
-    background: var(--white);
-    color: var(--text-primary);
-    border: 1px solid var(--border-strong);
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    border: 1px solid var(--am-rand-betont-farbe);
     padding: 10px 14px;
     border-radius: 4px;
     font-weight: 400;
@@ -960,9 +946,9 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
   .input:focus {
     outline: none;
-    border-color: var(--black);
+    border-color: var(--am-text-primaer);
   }
-  .input::placeholder { color: var(--text-disabled); }
+  .input::placeholder { color: var(--am-text-deaktiviert); }
 
   .meeting-row {
     display: flex;
@@ -970,14 +956,14 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     justify-content: space-between;
     gap: 16px;
     padding: 16px 24px;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--am-trennlinie);
     cursor: pointer;
     transition: background var(--duration-fast) ease;
   }
-  .meeting-row:hover { background: var(--surface-soft); }
+  .meeting-row:hover { background: var(--am-flaeche-1); }
   .meeting-row.selected {
-    background: var(--gold-faint);
-    border-left: 2px solid var(--gold);
+    background: var(--am-gold-200);
+    border-left: 2px solid var(--am-gold-500);
     padding-left: 22px;
   }
 
@@ -989,19 +975,20 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     border-radius: 9999px;
     font-weight: 500;
     font-size: 0.75rem;
-    background: var(--surface-soft);
-    color: var(--text-secondary);
+    background: var(--am-flaeche-1);
+    color: var(--am-text-sekundaer);
   }
+  /* Laufende Aufnahme trägt Gold — die Auszeichnung, nicht das Fehler-Rot. */
   .pill-recording {
-    background: rgba(200, 74, 63, 0.08);
-    color: var(--recording);
+    background: var(--am-gold-200);
+    color: var(--am-gold-800);
   }
   .pill-recording::before {
     content: "";
     width: 6px;
     height: 6px;
     border-radius: 9999px;
-    background: var(--recording);
+    background: var(--am-gold-500);
     animation: blink 1s ease-in-out infinite;
   }
 

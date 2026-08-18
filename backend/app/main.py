@@ -19,6 +19,7 @@ from app.errors import locale_middleware
 from app.routers import (
     api_keys,
     audio,
+    egress,
     external_api,
     locale,
     meetings,
@@ -136,6 +137,7 @@ app.include_router(meetings.router)
 app.include_router(templates.router)
 app.include_router(search.router)
 app.include_router(audio.router)
+app.include_router(egress.router)
 app.include_router(settings_router.router)
 app.include_router(tags.router)
 app.include_router(webhooks.router)

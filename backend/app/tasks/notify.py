@@ -276,9 +276,9 @@ async def _do_deliver(
                 """
                 insert into public.webhook_deliveries (
                     webhook_id, meeting_id, event, status_code,
-                    response_body, error_message, attempt
+                    response_body, error_message, attempt, request_bytes
                 )
-                values ($1, $2, $3, $4, $5, $6, $7)
+                values ($1, $2, $3, $4, $5, $6, $7, $8)
                 """,
                 webhook_id,
                 meeting_id,
@@ -287,6 +287,11 @@ async def _do_deliver(
                 response_body,
                 error_message,
                 attempt,
+                # Was tatsächlich über die Leitung ging. Grundlage für den
+                # Datenschutz-Nachweis, der gemessene Werte zeigen muss.
+                # Auch bei Fehlversuchen zählen: der Payload hat die Box
+                # verlassen, unabhängig davon was zurückkam.
+                len(body_bytes),
             )
             if ok:
                 await conn.execute(

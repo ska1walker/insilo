@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { DARSTELLUNG_SCRIPT } from "@/components/darstellung";
 import { Huelle } from "@/components/huelle";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { ToastProvider } from "@/components/toast";
@@ -52,6 +53,11 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Setzt die Klasse `dunkel` vor dem ersten Anstrich. Ohne das
+            blitzt bei dunkler Einstellung kurz die helle Fläche auf. */}
+        <script dangerouslySetInnerHTML={{ __html: DARSTELLUNG_SCRIPT }} />
+      </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ToastProvider>

@@ -11,8 +11,8 @@
    Die Schriften lädt next/font/local in app/layout.tsx (self-hosted,
    nie vom Google-CDN) und reicht sie als --font-geist-* herein.
 
-   Migrationsstand: die alten Insilo-Tokens (--gold, --surface-soft, …)
-   stehen weiter unten noch parallel, bis alle Bauteile umgezogen sind.
+   Die früheren Insilo-Tokens (--gold, --surface-soft, …) sind entfallen —
+   jedes Bauteil liest --am-*.
    ═══════════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -122,6 +122,13 @@
   --am-gold-auszeichnung: var(--am-gold-500);
   --am-fokus-ring: #002f56;
   --am-deckschicht: rgb(5 23 41 / 60%);
+
+  /* Gold als Beschriftung — Sprecher-Namen, aktiver Navigationseintrag,
+     Aufnahme-Pille. Eigene Stufe, weil --am-gold-800 laut Paket für Text
+     *auf Weiß* gerechnet ist: auf der dunklen Fläche kommt es nur auf
+     3,3:1 und fällt damit unter die Lesbarkeitsschwelle. Der Dunkelmodus
+     setzt darum weiter unten den helleren Ton. */
+  --am-gold-beschriftung: var(--am-gold-800);
 }
 
 /* ── Dunkelmodus — Gold handelt, Blau trägt die Fläche ────────────────
@@ -159,6 +166,11 @@ html.dunkel {
   --am-fehler-rand: #62332e;
 
   --am-fokus-ring: var(--am-gold-900);
+
+  /* Auf Hanseatenblau trägt das Markengold: 7,2:1 auf der Navigationsfläche,
+     8,1:1 auf der Grundfläche. Es ist zugleich die Handlungsfarbe im
+     Dunkelmodus, also bleibt die Sprache geschlossen. */
+  --am-gold-beschriftung: var(--am-gold-500);
 }
 
 /* ── Dichte — Zeiger vs. Berührung ─────────────────────────────────── */
@@ -544,7 +556,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   .huelle-nav-item:hover { color: var(--am-text-primaer); }
 
   .huelle-nav-item.aktiv {
-    color: var(--am-gold-800);
+    color: var(--am-gold-beschriftung);
     font-weight: 600;
   }
 
@@ -840,7 +852,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
   .quick-capture-trigger:hover {
     background: rgba(201, 169, 97, 0.10);
-    color: var(--am-gold-800);
+    color: var(--am-gold-beschriftung);
   }
   .quick-capture-trigger:active {
     transform: scale(0.94);
@@ -950,6 +962,35 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
   .input::placeholder { color: var(--am-text-deaktiviert); }
 
+  /* ── Auswahlfelder ────────────────────────────────────────────────
+     Der native Pfeil sitzt je nach Browser hart am Rand und ignoriert
+     das Padding. Deshalb abschalten und ein eigenes Zeichen setzen: auf
+     Abstand zur Kante (--am-raum-4, wie der Text links) und in der
+     gedämpften Textfarbe, damit es dem Feld untergeordnet bleibt.
+     Rechts wird so viel Platz freigehalten, dass lange Einträge nicht
+     unter das Zeichen laufen. */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23587898' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--am-raum-4) center;
+    background-size: 1rem 1rem;
+    padding-right: calc(var(--am-raum-4) * 2 + 1rem);
+  }
+
+  html.dunkel select {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23afc0d2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* Mehrfachauswahl und aufgeklappte Listen tragen kein Zeichen. */
+  select[multiple],
+  select[size]:not([size="1"]) {
+    background-image: none;
+    padding-right: var(--am-raum-4);
+  }
+
+
   .meeting-row {
     display: flex;
     align-items: baseline;
@@ -981,7 +1022,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   /* Laufende Aufnahme trägt Gold — die Auszeichnung, nicht das Fehler-Rot. */
   .pill-recording {
     background: var(--am-gold-200);
-    color: var(--am-gold-800);
+    color: var(--am-gold-beschriftung);
   }
   .pill-recording::before {
     content: "";

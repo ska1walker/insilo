@@ -629,5 +629,13 @@
     "micStartFailed": "Impossibile avviare il microfono. Verifichi i permessi del browser.",
     "uploadFailedHttp": "Invio non riuscito (HTTP {status}). Il box è raggiungibile?",
     "uploadFailedTryAgain": "Invio non riuscito. Riprovi."
+  },
+  "darstellung": {
+    "title": "Aspetto",
+    "hint": "Vale solo su questo dispositivo.",
+    "auto": "Come il sistema",
+    "light": "Chiaro",
+    "dark": "Scuro",
+    "saved": "Aspetto modificato."
   }
 }

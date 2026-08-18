@@ -220,7 +220,7 @@ export function VoiceEnrollmentDialog({
           </button>
           <h2 className="font-display text-2xl font-medium tracking-tight">
             {t("titlePrefix")}{" "}
-            <span style={{ color: "var(--am-gold-800)" }}>{speaker.display_name}</span>
+            <span style={{ color: "var(--am-gold-beschriftung)" }}>{speaker.display_name}</span>
           </h2>
           <p className="mt-2 text-sm text-text-sekundaer">
             {t("intro")}
@@ -249,7 +249,7 @@ export function VoiceEnrollmentDialog({
               <div className="mb-3 flex items-center justify-between">
                 <p
                   className="mono text-[0.6875rem] uppercase tracking-[0.08em]"
-                  style={{ color: "var(--am-gold-800)" }}
+                  style={{ color: "var(--am-gold-beschriftung)" }}
                 >
                   {t("recordingHeader")}
                 </p>

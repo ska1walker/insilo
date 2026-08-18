@@ -629,5 +629,13 @@
     "micStartFailed": "Impossible de démarrer le microphone. Vérifiez les autorisations du navigateur.",
     "uploadFailedHttp": "Envoi échoué (HTTP {status}). Le boîtier est-il accessible ?",
     "uploadFailedTryAgain": "Envoi échoué. Veuillez réessayer."
+  },
+  "darstellung": {
+    "title": "Affichage",
+    "hint": "S'applique uniquement à cet appareil.",
+    "auto": "Comme le système",
+    "light": "Clair",
+    "dark": "Sombre",
+    "saved": "Affichage modifié."
   }
 }

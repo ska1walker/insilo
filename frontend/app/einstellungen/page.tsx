@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiKeyManager } from "@/components/api-key-manager";
+import { DarstellungSwitcher } from "@/components/darstellung";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SpeakerCatalog } from "@/components/speaker-catalog";
 import { TagManager } from "@/components/tag-manager";
@@ -167,8 +168,9 @@ export default function EinstellungenPage() {
         </p>
       </div>
 
-      <section className="mb-10">
+      <section className="mb-10 space-y-4">
         <LocaleSwitcher />
+        <DarstellungSwitcher />
       </section>
 
       <form

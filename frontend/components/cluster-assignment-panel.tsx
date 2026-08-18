@@ -187,7 +187,7 @@ function ClusterRow({
               )}
               <span
                 className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
-                style={{ color: "var(--am-gold-800)" }}
+                style={{ color: "var(--am-gold-beschriftung)" }}
               >
                 {cluster.display_name}
               </span>
@@ -289,12 +289,12 @@ function ClusterPicker({
               style={
                 active
                   ? {
-                      color: "var(--am-gold-800)",
+                      color: "var(--am-gold-beschriftung)",
                       background: "var(--am-gold-200)",
                       borderColor: "var(--am-gold-800)",
                     }
                   : {
-                      color: "var(--am-gold-800)",
+                      color: "var(--am-gold-beschriftung)",
                       borderColor: "var(--am-trennlinie)",
                       background: "var(--am-seite)",
                     }
@@ -345,7 +345,7 @@ function ClusterPicker({
               placeholder={t("namePlaceholder")}
               maxLength={120}
               className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-deaktiviert"
-              style={{ color: "var(--am-gold-800)", width: "120px" }}
+              style={{ color: "var(--am-gold-beschriftung)", width: "120px" }}
             />
           </div>
         )}

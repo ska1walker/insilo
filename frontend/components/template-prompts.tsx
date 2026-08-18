@@ -584,7 +584,7 @@ function TemplateRow({
             {template.is_customized && (
               <span
                 className="mono text-[0.6875rem] uppercase tracking-[0.08em]"
-                style={{ color: "var(--am-gold-800)" }}
+                style={{ color: "var(--am-gold-beschriftung)" }}
               >
                 {t("tagCustomized")}
               </span>

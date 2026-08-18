@@ -629,5 +629,13 @@
     "micStartFailed": "Mikrofon konnte nicht gestartet werden. Bitte Browser-Berechtigungen prüfen.",
     "uploadFailedHttp": "Senden fehlgeschlagen (HTTP {status}). Box erreichbar?",
     "uploadFailedTryAgain": "Senden fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "darstellung": {
+    "title": "Darstellung",
+    "hint": "Gilt nur auf diesem Gerät.",
+    "auto": "Wie das System",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "saved": "Darstellung geändert."
   }
 }

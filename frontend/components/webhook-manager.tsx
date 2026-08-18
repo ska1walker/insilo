@@ -236,7 +236,7 @@ function WebhookRow({
               className="rounded-full px-2 py-0.5 text-xs"
               style={
                 webhook.trigger_mode === "manual"
-                  ? { background: "rgba(201,169,97,0.12)", color: "var(--am-gold-800)" }
+                  ? { background: "rgba(201,169,97,0.12)", color: "var(--am-gold-beschriftung)" }
                   : { background: "var(--am-flaeche-1)", color: "var(--am-text-sekundaer)" }
               }
               title={

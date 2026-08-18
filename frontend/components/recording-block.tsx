@@ -336,7 +336,9 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
               id="audio-language"
               value={audioLanguage}
               onChange={(e) => setAudioLanguage(e.target.value as AudioLanguage)}
-              className="w-full rounded-lg border border-trennlinie bg-seite px-4 py-3 text-text-primaer focus:border-rand-betont focus:outline-none"
+              // pr-12 hält rechts Platz für das Auswahlzeichen frei, damit
+              // lange Einträge nicht darunter laufen.
+              className="w-full rounded-lg border border-trennlinie bg-seite py-3 pl-4 pr-12 text-text-primaer focus:border-rand-betont focus:outline-none"
             >
               {AUDIO_LANGUAGE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -388,7 +390,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             >
               <ShieldCheck
                 className="h-5 w-5"
-                style={{ color: "var(--am-gold-800)" }}
+                style={{ color: "var(--am-gold-beschriftung)" }}
                 strokeWidth={1.75}
               />
             </div>

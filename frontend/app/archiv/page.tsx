@@ -228,7 +228,7 @@ function SourceItem({ index, source }: { index: number; source: AskSource }) {
         <div className="flex items-baseline gap-3">
           <span
             className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em]"
-            style={{ color: "var(--am-gold-800)" }}
+            style={{ color: "var(--am-gold-beschriftung)" }}
           >
             [#{index}]
           </span>

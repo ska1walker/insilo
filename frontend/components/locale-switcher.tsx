@@ -148,7 +148,7 @@ function LocaleOption({
         {loading ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin text-text-gedaempft" strokeWidth={1.75} />
         ) : selected ? (
-          <Check className="h-3.5 w-3.5" strokeWidth={2} style={{ color: "var(--am-gold-800)" }} />
+          <Check className="h-3.5 w-3.5" strokeWidth={2} style={{ color: "var(--am-gold-beschriftung)" }} />
         ) : (
           <span className="h-3 w-3 rounded-full border border-rand-betont" />
         )}

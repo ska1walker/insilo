@@ -629,5 +629,13 @@
     "micStartFailed": "No se ha podido iniciar el micrófono. Compruebe los permisos del navegador.",
     "uploadFailedHttp": "Error al enviar (HTTP {status}). ¿Está accesible la caja?",
     "uploadFailedTryAgain": "Error al enviar. Inténtelo de nuevo."
+  },
+  "darstellung": {
+    "title": "Apariencia",
+    "hint": "Se aplica solo a este dispositivo.",
+    "auto": "Como el sistema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "saved": "Apariencia cambiada."
   }
 }

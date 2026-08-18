@@ -151,7 +151,7 @@ export function MeetingDispatchDialog({
                         className="mt-1 inline-block rounded-full px-2 py-0.5 text-[0.6875rem]"
                         style={
                           w.trigger_mode === "manual"
-                            ? { background: "rgba(201,169,97,0.12)", color: "var(--am-gold-800)" }
+                            ? { background: "rgba(201,169,97,0.12)", color: "var(--am-gold-beschriftung)" }
                             : { background: "var(--am-flaeche-1)", color: "var(--am-text-sekundaer)" }
                         }
                       >

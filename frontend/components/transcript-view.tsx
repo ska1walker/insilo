@@ -220,7 +220,7 @@ export function TranscriptView({
                 {speakerLabel ? (
                   <p
                     className="mono mt-1 text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
-                    style={{ color: "var(--am-gold-800)" }}
+                    style={{ color: "var(--am-gold-beschriftung)" }}
                   >
                     {speakerLabel}
                   </p>
@@ -328,7 +328,7 @@ function SpeakerRoster({
               className="inline-flex items-center gap-2 rounded-full border border-trennlinie bg-seite py-1 pl-3 pr-1"
             >
               <span className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
-                style={{ color: "var(--am-gold-800)" }}>
+                style={{ color: "var(--am-gold-beschriftung)" }}>
                 {s.name}
               </span>
               <button
@@ -368,7 +368,7 @@ function SpeakerRoster({
               onBlur={commitAdd}
               placeholder={t("namePlaceholder")}
               className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-deaktiviert"
-              style={{ color: "var(--am-gold-800)", width: "120px" }}
+              style={{ color: "var(--am-gold-beschriftung)", width: "120px" }}
             />
             <button
               type="button"
@@ -419,7 +419,7 @@ function SpeakerInlineEdit({
         }}
         onBlur={() => onCommit(val)}
         className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none"
-        style={{ color: "var(--am-gold-800)", width: "120px" }}
+        style={{ color: "var(--am-gold-beschriftung)", width: "120px" }}
       />
     </div>
   );
@@ -482,11 +482,11 @@ function SegmentPicker({
             style={
               current === s.id
                 ? {
-                    color: "var(--am-gold-800)",
+                    color: "var(--am-gold-beschriftung)",
                     background: "var(--am-gold-200)",
                     borderColor: "var(--am-gold-800)",
                   }
-                : { color: "var(--am-gold-800)" }
+                : { color: "var(--am-gold-beschriftung)" }
             }
           >
             {s.name}
@@ -532,7 +532,7 @@ function SegmentPicker({
               }}
               placeholder={t("namePlaceholder")}
               className="bg-transparent text-[0.8125rem] font-medium uppercase tracking-[0.02em] outline-none placeholder:text-text-deaktiviert"
-              style={{ color: "var(--am-gold-800)", width: "120px" }}
+              style={{ color: "var(--am-gold-beschriftung)", width: "120px" }}
             />
           </div>
         )}

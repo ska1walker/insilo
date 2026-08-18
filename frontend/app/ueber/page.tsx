@@ -306,7 +306,7 @@ function MockSegment({
         <p className="mono text-[0.75rem] font-medium text-text-gedaempft">{time}</p>
         <p
           className="mono mt-1 text-[0.75rem] font-medium uppercase tracking-[0.04em]"
-          style={{ color: "var(--am-gold-800)" }}
+          style={{ color: "var(--am-gold-beschriftung)" }}
         >
           {speaker}
         </p>
@@ -494,7 +494,7 @@ function SpeakerMockRow({
         ) : (
           <span
             className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
-            style={{ color: "var(--am-gold-800)" }}
+            style={{ color: "var(--am-gold-beschriftung)" }}
           >
             {name}
           </span>

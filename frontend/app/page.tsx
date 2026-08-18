@@ -29,7 +29,7 @@ export default function Home() {
         >
           <ShieldCheck
             className="h-5 w-5"
-            style={{ color: "var(--am-gold-800)" }}
+            style={{ color: "var(--am-gold-beschriftung)" }}
             strokeWidth={1.75}
           />
         </div>

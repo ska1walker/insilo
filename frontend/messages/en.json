@@ -629,5 +629,13 @@
     "micStartFailed": "Could not start the microphone. Please check browser permissions.",
     "uploadFailedHttp": "Sending failed (HTTP {status}). Is the box reachable?",
     "uploadFailedTryAgain": "Sending failed. Please try again."
+  },
+  "darstellung": {
+    "title": "Appearance",
+    "hint": "Applies to this device only.",
+    "auto": "Match system",
+    "light": "Light",
+    "dark": "Dark",
+    "saved": "Appearance changed."
   }
 }

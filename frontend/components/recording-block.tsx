@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { AufnahmeWelle } from "@/components/aufnahme-welle";
 import { RecordingIndicator } from "@/components/recording-indicator";
 import { ApiError } from "@/lib/api/client";
 import { useEgress } from "@/lib/api/egress";
@@ -60,6 +61,8 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // Die Welle braucht den Stream als State: ein Ref löst kein Rendern aus.
+  const [liveStream, setLiveStream] = useState<MediaStream | null>(null);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -91,6 +94,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
+    setLiveStream(null);
   }
 
   async function startRecording() {
@@ -106,6 +110,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         audio: ASR_AUDIO_CONSTRAINTS,
       });
       streamRef.current = stream;
+      setLiveStream(stream);
       chunksRef.current = [];
       const recorder = new MediaRecorder(stream, {
         mimeType: mime,
@@ -208,12 +213,22 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
         {(phase === "recording" || phase === "saving") && (
           <p
-            className={`mono mt-3 mb-10 ${timerSize} font-medium tabular-nums text-text-primaer`}
+            className={`mono mt-3 ${timerSize} font-medium tabular-nums text-text-primaer`}
             aria-live="polite"
           >
             {formatDuration(elapsed)}
           </p>
         )}
+
+        {/* Der Pegelverlauf sitzt zwischen Zeit und Knopf: erst was läuft,
+            dann ob Signal ankommt, dann die Handlung. */}
+        {phase === "recording" && (
+          <div className="mt-4 mb-10 flex justify-center">
+            <AufnahmeWelle stream={liveStream} hoehe={isFull ? 48 : 36} />
+          </div>
+        )}
+
+        {phase === "saving" && <div className="mb-10" />}
 
         {phase === "idle" && (
           <p

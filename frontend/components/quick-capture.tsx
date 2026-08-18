@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { AufnahmeWelle } from "@/components/aufnahme-welle";
 import { ApiError } from "@/lib/api/client";
 import { createMeeting } from "@/lib/api/meetings";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
@@ -95,6 +96,8 @@ export function QuickCapture() {
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Die Welle braucht den Stream als Wert, nicht als Ref.
+  const [liveStream, setLiveStream] = useState<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef<number>(0);
   const tickRef = useRef<number | null>(null);
@@ -127,6 +130,7 @@ export function QuickCapture() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((tr) => tr.stop());
       streamRef.current = null;
+      setLiveStream(null);
     }
   }
 
@@ -185,6 +189,7 @@ export function QuickCapture() {
         audio: ASR_AUDIO_CONSTRAINTS,
       });
       streamRef.current = stream;
+      setLiveStream(stream);
       chunksRef.current = [];
       const recorder = new MediaRecorder(stream, {
         mimeType: mime,
@@ -317,11 +322,19 @@ export function QuickCapture() {
         ) : phase === "requesting" ? (
           <MicButton ariaLabel={t("requestingMic")} kind="loading" />
         ) : phase === "recording" ? (
-          <MicButton
-            onClick={stopAndSave}
-            ariaLabel={t("tapToStop")}
-            kind="recording"
-          />
+          <>
+            <MicButton
+              onClick={stopAndSave}
+              ariaLabel={t("tapToStop")}
+              kind="recording"
+            />
+            {/* Im Car-Mode ist der Pegelverlauf die einzige Rückmeldung,
+                dass wirklich aufgenommen wird — hier gibt es weder
+                Statuszeile noch Zeitanzeige im Blickfeld. */}
+            <div className="mt-10 flex justify-center">
+              <AufnahmeWelle stream={liveStream} hoehe={56} />
+            </div>
+          </>
         ) : phase === "saving" ? (
           <MicButton ariaLabel={t("saving")} kind="loading" />
         ) : phase === "saved" ? (

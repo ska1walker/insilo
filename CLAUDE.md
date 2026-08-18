@@ -143,7 +143,7 @@ insilo/
 │
 ├── docs/
 │   ├── ARCHITECTURE.md          # System-Architektur, Datenfluss
-│   ├── DESIGN.md                # Design-System (Weiß/Schwarz/Gold)
+│   ├── DESIGN.md                # Design-System (AImighty-Token)
 │   ├── ROADMAP.md               # Phasen 1-6
 │   ├── SECURITY.md              # Sicherheit (Olares macht das meiste)
 │   ├── DEPLOYMENT.md            # Olares-Paketierung, GHCR, Markt-Upload
@@ -188,24 +188,42 @@ insilo/
 
 ## Designsystem (Kurzfassung — Vollversion in `docs/DESIGN.md`)
 
-**Drei Anker:**
-- HubSpot → Komponenten-Sprache, Spacing, Klarheit
-- aimighty.de → Farbwelt (Weiß/Schwarz/Gold)
-- PLAUD → App-Struktur, Reduktion, Hierarchie
+**Insilo läuft seit 18. August 2026 auf dem AImighty-Designsystem.**
+Das frühere eigene System (Weiß/Schwarz/Gold, Lexend Deca + Inter, Anker
+HubSpot/aimighty/PLAUD) ist abgelöst.
 
-**Informationsdichte:** PLAUD-reduzierte Hauptscreens, HubSpot-dichte Detailviews.
+**Die Werte stehen nicht in dieser Datei**, sondern in
+`frontend/app/globals.css` (Token-Block oben). Wer einen Wert ändert,
+ändert ihn dort — nie am Bauteil. `frontend/tailwind.insilo.preset.js`
+ist eine unveränderte Kopie aus der Lieferung und liest die Token über
+`var(--am-*)`.
 
-**Farben:** `#FFFFFF`, `#0A0A0A`, `#C9A961` (Gold, sehr sparsam).
+**Farbe:** Hanseatenblau trägt die Fläche, Gold zeichnet aus. Im
+Dunkelmodus handelt Gold — Blau auf Blau trägt nicht.
 
-**Typografie:** Lexend Deca (Display) + Inter (Body) + JetBrains Mono.
+**Typografie:** Geist Sans + Geist Mono, selbst gehostet aus
+`frontend/app/fonts/`. Kein Google-CDN, auch nicht zur Bauzeit.
 
-**Anti-Patterns:** Keine Gradients, kein Glassmorphism, kein Lila, keine fetten Marketing-Headlines, kein Card-in-Card, keine AI-Sparkles.
+**Raum:** Grundeinheit 4 px × Dichte (weit 1,1 · normal 1,0 · kompakt
+0,9). Zielgrößen 40 px Zeiger / 44 px Berührung, ohne Ausnahme.
 
-**Identitäts-Signatur:** Goldene 1px-Linie am oberen Bildschirmrand pulsiert während aktiver Aufnahme.
+**Hülle:** drei Bereiche — Navigation, Inhalt, Ablage. Die Ablage trägt
+Kontext zum gewählten Ding und ist nie eine zweite Inhaltsspalte.
 
-**Aktivierte Claude-Code-Skills:**
-- `frontend-design` (Anthropic offiziell)
-- `UI/UX Pro Max` (Community-Skill)
+**Zustände:** Farbe trägt eine Aussage nie allein — immer Zeichen und
+Satz dazu.
+
+**Identitäts-Signatur:** Gold zeichnet die laufende Aufnahme aus (Punkt,
+Knopf, pulsierende Linie). Rot bleibt dem Fehler vorbehalten.
+
+**Datenschutz-Nachweis:** unten in der Navigation, **nur mit gemessenen
+Werten — sonst gar nicht**. Details in `docs/DESIGN.md §5`. Diese Regel
+ist keine Formalie: Insilo ist nicht pauschal „0 Byte", sobald ein
+externer LLM-Endpunkt oder ein Webhook konfiguriert ist.
+
+**Anti-Patterns:** keine Gradients, kein Glassmorphism, keine
+Parallaxe, keine scroll-getriggerten Effekte, keine AI-Sparkles, keine
+hüpfenden Knöpfe.
 
 ---
 
@@ -259,7 +277,7 @@ insilo/
 ## Wie Claude Code in diesem Repo arbeitet
 
 1. **Vor jeder Code-Entscheidung:** `docs/ARCHITECTURE.md` und Olares-Constraints aus dieser CLAUDE.md lesen. Bei Olares-Themen zusätzlich `docs/HANDOFF.md §7g` — codifiziert die teuren Lessons aus v0.1.7→v0.1.17.
-2. **Bei UI-Arbeit:** Skills `frontend-design` + `UI/UX Pro Max` aktivieren. Designsystem strikt aus `docs/DESIGN.md`.
+2. **Bei UI-Arbeit:** Werte kommen aus `frontend/app/globals.css` (AImighty-Token), Regeln aus `docs/DESIGN.md`. Das Referenzblatt `InSilo_Design-Paket.html` zeigt jedes Bauteil an echten Beispielen. Generische Design-Skills sind hier nachrangig — das gelieferte Paket ist präziser und geht vor.
 3. **Bei Backend-Änderungen:** Wir bauen *keine* Auth-Logik. Eingehende Requests sind authentifiziert via Envoy. User-ID kommt aus `X-Bfl-User` Header.
 4. **Bei DB-Schema-Änderungen:** Migration in `supabase/migrations/0NNN_*.sql` anlegen, RLS auf jede neue Tabelle, **dann `python3 scripts/regen-migrations.py` laufen lassen** — das mirroret die SQL in `olares/files/` und regeneriert die inlinete `olares/templates/configmap-migrations.yaml`. CI bricht sonst beim Drift-Check ab.
 5. **Bei Storage:** Nur `/app/data/`, `/app/cache/`, `/app/Home/`. Niemals beliebige Pfade.

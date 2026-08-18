@@ -14,7 +14,7 @@
 | **Vertrieb** | aimighty.de |
 | **Plattform** | Olares OS (Kubernetes-basiert) |
 | **Status** | Phase 1 — MVP |
-| **Version** | v0.1.60 |
+| **Version** | Chart v0.1.65 (im Olares-Markt) · Images 0.1.60 |
 | **Repository** | github.com/ska1walker/insilo |
 | **Branch** | main |
 | **Sprache** | DE (Primär), EN, FR, ES, IT |
@@ -116,9 +116,17 @@ insilo/
 
 ## Designsystem
 
-**Farben:** `#FFFFFF`, `#0A0A0A`, `#C9A961` (Gold, sehr sparsam)
-**Typografie:** Lexend Deca (Display) + Inter (Body) + JetBrains Mono
-**Anti-Patterns:** Keine Gradients, kein Glassmorphism, kein Lila, keine fetten Marketing-Headlines, keine AI-Sparkles
+**System:** AImighty-Designsystem (seit 18.8.2026). Token in
+`frontend/app/globals.css`, Tailwind-Anbindung über
+`frontend/tailwind.insilo.preset.js` (unveränderte Kopie der Lieferung).
+
+**Farben:** Hanseatenblau trägt die Fläche, Gold zeichnet aus. Im
+Dunkelmodus handelt Gold.
+**Typografie:** Geist Sans + Geist Mono, selbst gehostet (kein CDN)
+**Hülle:** Navigation · Inhalt · Ablage; mobil Navigation als untere Leiste
+**Zielgrößen:** 40 px Zeiger / 44 px Berührung, ohne Ausnahme
+**Zustände:** Farbe nie allein — immer Zeichen und Satz
+**Anti-Patterns:** Keine Gradients, kein Glassmorphism, keine Parallaxe, keine AI-Sparkles
 
 ---
 
@@ -185,7 +193,7 @@ insilo/
 | **SSH** | `olares@192.168.112.125` |
 | **Namespace** | `insilo-kaivostudio` |
 | **Pods** | insilo (frontend+envoy), insilo-backend, insilo-whisper, insilo-embeddings, insilo-worker |
-| **Version** | v0.1.60 |
+| **Version** | unverifiziert — `helm list -n insilo-kaivostudio` prüfen |
 
 ---
 

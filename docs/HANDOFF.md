@@ -3,6 +3,107 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # 🎨 Rebrand auf das AImighty-Designsystem (18. August 2026)
+>
+> **Noch nicht deployed.** Der Code liegt auf `main`, aber die Images
+> stehen auf 0.1.60 — nichts davon läuft auf der Box. Für ein Deploy
+> braucht es `scripts/release.sh 0.1.66` **ohne** `--chart-only`.
+>
+> **Was ersetzt wurde:** das eigene Designsystem (Weiß/Schwarz/Gold,
+> Lexend Deca + Inter, 8px-Raster, Anker HubSpot/aimighty/PLAUD) durch das
+> gelieferte AImighty-Paket. Regeln und Insilo-Abweichungen stehen jetzt in
+> [docs/DESIGN.md](DESIGN.md) — die Werte selbst in
+> `frontend/app/globals.css`.
+>
+> - **Token, Schrift, Preset** (`b7b5aa0`): Geist Sans/Mono self-hosted aus
+>   `app/fonts/` via `next/font/local` — `next/font/google` ist raus, kein
+>   CDN-Abruf mehr, auch nicht zur Bauzeit. `tailwind.insilo.preset.js`
+>   unverändert aus der Lieferung übernommen; der nötige Typ-Cast sitzt in
+>   unserer Config, damit die Kopie eine Kopie bleibt.
+> - **Bauteile** (`ef809b4`): Knöpfe, Felder, Zustandsstreifen, Tabelle,
+>   Leerzustand — 1:1 aus dem Referenzblatt.
+> - **Hülle** (`737a55b`): Navigation links, Inhalt, Ablage. Mobil wird die
+>   Navigation zur unteren Leiste (das Referenzblatt zeigt nur den
+>   Zeigerfall, Insilo ist aber primär Telefon-PWA).
+> - **Seiten** (`407a23c`, `4667d4b`): 715 Ersetzungen über 8 Seiten und 22
+>   Bauteile — 608 Utility-Klassen, 107 CSS-Variablen in Inline-Styles.
+> - **Dunkelmodus** (`d842d19`): Umschalter in den Einstellungen
+>   (system/hell/dunkel), Cookie-persistiert, Inline-Script gegen das
+>   Aufblitzen beim Laden.
+>
+> **Drei Entscheidungen, die das Paket offen lässt** (Begründung in
+> DESIGN.md §3):
+>
+> 1. **Gold zeichnet die laufende Aufnahme aus.** Das Paket kennt keine
+>    Aufnahme-Farbe, und sein Fehler-Rot liegt zu nah am alten
+>    Aufnahme-Rot — „läuft" und „Mikrofon verweigert" wären kaum
+>    unterscheidbar gewesen.
+> 2. **Neuer Token `--am-gold-beschriftung`.** `--am-gold-800` ist im Paket
+>    als „Gold als Text auf Weiß" gerechnet und kommt auf dunklem Grund nur
+>    auf 3,3:1 — unter der Lesbarkeitsschwelle. Im Dunkelmodus wechselt der
+>    Token auf das Markengold (7,2:1). Betraf 26 Stellen.
+> 3. **Mobile Hülle**, siehe oben.
+>
+> **⚠️ Was das Paket über Insilo nicht weiß:** Die Beispiel-Ansichten im
+> Referenzblatt heißen „Übersicht / Bestand / Auswertungen", mit Texten wie
+> „3 Silos angebunden". Wer es gebaut hat, hielt InSilo für ein
+> Lager-Produkt. Die Token sind davon unberührt und gültig — die Beispiele
+> taugen aber nicht als Vorlage für unsere Ansichten.
+>
+> **Ungeprüft:** Dunkelmodus-Kontraste sind nur auf der Aufnahme-Seite
+> gemessen. Dialoge, Transkript-Bearbeitungsmodus und Einstellungen
+> (lokal ohne Backend nicht ladbar) hat niemand im Dunkeln gesehen.
+>
+> # 🔒 Datenschutz-Nachweis: messen statt behaupten (18. August 2026)
+>
+> **Der Anlass** kam aus dem Designsystem: es verlangt den Nachweis am
+> unteren Rand der Navigation „mit gemessenen Werten — oder gar nicht".
+> Beim Umsetzen fiel auf, dass Insilo die Aussage bisher gar nicht belegen
+> konnte — und an zwei Stellen etwas versprach, das nicht immer stimmt.
+>
+> **Insilo ist nicht pauschal „0 Byte".** Drei Wege führen hinaus:
+>
+> | Weg | wann | betrifft |
+> |---|---|---|
+> | LLM-Endpunkt | wenn `org_settings.llm_base_url` extern zeigt | **vollständige Transkripte** |
+> | Webhooks | wenn konfiguriert | fertige Protokolle |
+> | Modell-Download | einmalig beim Erststart | nichts von uns |
+>
+> Audio und Suchindex verlassen die Box in **keiner** Konfiguration.
+>
+> **Was gebaut wurde** (`f0bb56e`, `8b05dfb`, `ab5b8ce`):
+>
+> - `backend/app/egress.py` entscheidet, ob ein Ziel die Box verlässt.
+>   **Es rät nicht** — was nicht nachweislich intern ist, gilt als extern.
+>   Erkennt Kubernetes-Dienstnamen (kurz, mit Namespace, vollqualifiziert),
+>   Loopback und RFC-1918. 23 Tests, inklusive Namen wie
+>   `localhost.evil.example` und `cluster.local.example.com`.
+> - **Migration 0014**: `webhook_deliveries.request_bytes`. `notify.py`
+>   schreibt die Länge des signierten Body mit — auch bei Fehlversuchen,
+>   denn der Payload hat die Box verlassen, unabhängig von der Antwort.
+>   Bewusst **keine Kopie des Payloads**: für den Nachweis genügt die
+>   Größe, ein zweites Abbild der Gesprächsinhalte im Audit-Log wäre genau
+>   die Sammlung, die Insilo vermeidet.
+> - `GET /api/v1/egress` liefert den Zustand. `gesendete_bytes: null`
+>   heißt „nie zugestellt" — Zeilen vor 0014 tragen NULL und fallen aus
+>   der Summe.
+> - **Nachweis in der Navigation** in drei Lagen (Erfolg / neutral /
+>   Achtung), jede mit Zeichen und Satz. Ist der Zustand nicht abrufbar,
+>   steht dort **nichts**.
+> - **Neue Ansicht `/datenschutz`** listet jedes Ziel einzeln.
+>
+> **Der Block unter dem Aufnahme-Knopf sagte das Gegenteil.** Dort stand
+> pauschal „Audio, Transkript und Suchindex bleiben auf Ihrer Olares-Box.
+> Kein Cloud-Upload, keine Drittanbieter." Mit externem LLM ist das falsch
+> — und es stand prominenter als der neue Nachweis. Ersetzt durch dieselbe
+> Messung, die jetzt sauber trennt: Audio und Suchindex bleiben immer,
+> Transkript und Protokolle können hinausgehen.
+>
+> **Lesson:** Eine Zusage ohne Beleg ist schlechter als keine Zusage.
+> Wer den nächsten Vertrauens-Baustein baut: erst prüfen, ob die Aussage
+> überhaupt messbar ist — sonst wird aus dem Verkaufsargument eine
+> Angriffsfläche.
+>
 > # 🧹 Doku-Nachzug + Manifest-Drift-Fix (18. August 2026)
 >
 > **Kein Release** — reine Repo-Hygiene. Drei Commits auf `main`

@@ -1,553 +1,191 @@
 # Design-System
 
-> **Editorial-Premium für deutschen Mittelstand.**
-> Drei Anker: HubSpot (Sprache), aimighty (Farben), PLAUD (Struktur).
+> **Insilo läuft auf dem AImighty-Designsystem.**
+> Die Werte stehen nicht hier, sondern im gelieferten Paket. Dieses
+> Dokument hält fest, wo Insilo davon abweicht oder es ergänzt — und
+> warum.
+>
+> Umgestellt am 18. August 2026. Das frühere eigene System (Weiß/Schwarz/
+> Gold, Lexend Deca + Inter, 8px-Raster, Anker HubSpot/aimighty/PLAUD)
+> ist vollständig abgelöst. Wer es nachlesen will:
+> `git show ab5b8ce~9:docs/DESIGN.md`.
 
 ---
 
-## 1. Strategische Verortung
+## 1. Wo die Werte stehen
 
-| Anker          | Rolle im System                                            |
-|----------------|------------------------------------------------------------|
-| **HubSpot**    | Komponenten-Sprache, Spacing, Klarheit, Mikrointeraktionen |
-| **aimighty**   | Farbwelt: Weiß / Schwarz / Gold als Premium-Code           |
-| **PLAUD**      | App-Architektur, Screen-Hierarchie, Übersichtlichkeit      |
+| Was | Wo |
+|---|---|
+| Alle Token (Farbe, Raum, Schrift, Radien, Zustände) | `frontend/app/globals.css`, Block ganz oben |
+| Tailwind-Anbindung | `frontend/tailwind.insilo.preset.js` — unverändert aus dem Paket |
+| Schriften | `frontend/app/fonts/`, geladen per `next/font/local` |
+| Bauteile (Knöpfe, Felder, Streifen, Tabelle) | `frontend/app/globals.css`, `@layer components` |
+| Lebendes Referenzblatt | `InSilo_Design-Paket.html` aus der Lieferung |
 
-**Informationsdichte:** PLAUD-Struktur (radikal reduzierte Hauptscreens), HubSpot-Dichte in Detailviews (reiche Sidebars, Tabs, strukturierte Daten).
+**Regel:** Wer einen Wert ändert, ändert ihn in `globals.css` — nie am
+Bauteil. Das Tailwind-Preset dupliziert keine Werte, es liest sie über
+`var(--am-*)`.
 
-**Tonalität:** Ruhig, vertrauenswürdig, edel, deutsch. Nicht: verspielt, bunt, "tech-y".
-
----
-
-## 2. Farbpalette
-
-### Primärfarben
-
-```css
-:root {
-  --white:        #FFFFFF;  /* Dominante Fläche (~70% der Pixel) */
-  --black:        #0A0A0A;  /* Text, Struktur, Hierarchie */
-  --gold:         #C9A961;  /* Primäre Akzentfarbe — sparsam */
-}
-```
-
-### Funktionale Töne
-
-```css
-:root {
-  /* Flächen */
-  --surface-soft: #FAFAF7;  /* Cards, Sektionstrenner */
-  --surface-warm: #F5F3EE;  /* Active panels */
-
-  /* Borders */
-  --border-subtle: #E8E6E1; /* Standard-Trennlinien */
-  --border-strong: #D4D1CA; /* Akzentuierte Borders */
-
-  /* Text-Hierarchie */
-  --text-primary:   #0A0A0A;
-  --text-secondary: #4A4842;
-  --text-meta:      #737065;
-  --text-disabled:  #A8A599;
-
-  /* Gold-Varianten */
-  --gold-light: #E6D4A3;   /* Hover, Selected-Backgrounds */
-  --gold-deep:  #9C8147;   /* Active, Pressed */
-  --gold-faint: #F5EDD9;   /* Sehr leichte Tönung */
-
-  /* Status (zurückhaltend) */
-  --recording: #C84A3F;
-  --success:   #4A7C59;
-  --warning:   #B8893C;
-  --error:     #A33A2F;
-}
-```
-
-### Gold-Regel
-
-**Gold #C9A961 ausschließlich für:**
-- Pulsierender Aufnahme-Indikator (1px-Linie oben)
-- Speaker-Labels in Transkripten
-- Selected-State in Listen (2px Links-Border)
-- Highlighted Werte in Statistiken
-- Logo / Brand-Mark
-
-**Gold NIEMALS für:**
-- Primäre Buttons (die sind schwarz)
-- Großflächige Hintergründe
-- Mehr als 2-3 Stellen pro Viewport
-- Body-Text
-
-**Begründung:** Gold trägt nur, wenn es selten ist. Selten = Premium.
+**Das Preset bleibt unverändert.** Es ist eine Kopie der Quelle. Was
+angepasst werden muss, gehört in unsere `tailwind.config.ts` (dort sitzt
+zum Beispiel der nötige Typ-Cast) oder als eigener Token nach
+`globals.css`.
 
 ---
 
-## 3. Typografie
+## 2. Die Grundzüge
 
-### Font-Stack
+**Farbe.** Hanseatenblau trägt die Fläche. Im Hellmodus handelt Blau und
+Gold zeichnet aus; im Dunkelmodus handelt Gold — Blau auf Blau trägt
+nicht. Diese Rollenumkehr steckt vollständig in den Token, Bauteile
+merken davon nichts.
 
-```css
-:root {
-  --font-display: 'Lexend Deca', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Menlo', monospace;
-}
-```
+**Schrift.** Geist Sans und Geist Mono, selbst gehostet aus dem Repo.
+Kein Google-CDN, auch nicht zur Bauzeit — bei einem Produkt, das
+Datensouveränität verspricht, wäre ein Fremdabruf beim Bauen die falsche
+Fußnote.
 
-**Einbindung (in Production: self-hosten, kein Google-Fonts-CDN aus Datenschutzgründen):**
+**Raum.** Grundeinheit 4 px mit Dichte-Multiplikator (weit 1,1 · normal
+1,0 · kompakt 0,9). Vorgabe ist „weit", auf Berührung greift automatisch
+„normal". Der Hebel steht als `--am-skalierung` bereit; eine Bedienung
+dafür gibt es noch nicht.
 
-```html
-<!-- Development -->
-<link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+**Zielgrößen.** 40 px am Zeiger, 44 px auf Berührung — ohne Ausnahme.
+Auch die kleinen Knopfvarianten wachsen auf einem Telefon auf 44 px.
 
-<!-- Production: self-hosted aus /public/fonts/ -->
-```
-
-### Type-Skala
-
-| Element          | Font         | Weight | Size                         | Line | Tracking | Farbe          |
-|------------------|--------------|--------|------------------------------|------|----------|----------------|
-| H1 / Display     | Lexend Deca  | 500    | clamp(2.5rem, 5vw, 3.5rem)   | 1.1  | -0.02em  | text-primary   |
-| H2 / Section     | Lexend Deca  | 500    | 2rem                         | 1.2  | -0.015em | text-primary   |
-| H3 / Subsection  | Lexend Deca  | 500    | 1.5rem                       | 1.3  | -0.01em  | text-primary   |
-| H4 / Card-Title  | Lexend Deca  | 500    | 1.125rem                     | 1.4  | 0        | text-primary   |
-| Body Large       | Inter        | 400    | 1.0625rem                    | 1.6  | 0        | text-primary   |
-| Body             | Inter        | 400    | 1rem                         | 1.6  | 0        | text-primary   |
-| Body Small       | Inter        | 400    | 0.875rem                     | 1.5  | 0        | text-secondary |
-| Meta / Caption   | Inter        | 500    | 0.8125rem                    | 1.4  | 0.01em   | text-meta      |
-| Label / Eyebrow  | Inter        | 600    | 0.6875rem                    | 1.2  | 0.08em   | text-meta      |
-| Mono Timestamp   | JetBrains    | 500    | 0.8125rem                    | 1.2  | 0        | text-meta      |
-| Mono Speaker     | JetBrains    | 500    | 0.8125rem                    | 1.4  | 0.02em   | gold           |
-
-**Detail-Regeln:**
-- Labels UPPERCASE: `MEETING DETAILS`, `ZUSAMMENFASSUNG`
-- Speaker-Labels UPPERCASE: `MÜLLER`, `SCHMIDT`
-- Timestamps mit eckigen Klammern: `[00:14:32]`
-- `text-wrap: balance` für alle Headlines
-- `text-wrap: pretty` für Body-Absätze
+**Zustände.** Farbe trägt eine Aussage nie allein. Jeder Zustandsstreifen
+hat ein Zeichen und einen Satz.
 
 ---
 
-## 4. Spacing & Layout
+## 3. Was Insilo ergänzt
 
-### 8px-Grid
+Das Paket ist aus einem Lager-Beispiel abgeleitet („3 Silos angebunden",
+„Bestand"). Drei Dinge, die eine Meeting-App braucht, kommen dort nicht
+vor.
 
-```css
-:root {
-  --space-1:   0.25rem;  /*  4px */
-  --space-2:   0.5rem;   /*  8px */
-  --space-3:   0.75rem;  /* 12px */
-  --space-4:   1rem;     /* 16px */
-  --space-6:   1.5rem;   /* 24px */
-  --space-8:   2rem;     /* 32px */
-  --space-12:  3rem;     /* 48px */
-  --space-16:  4rem;     /* 64px */
-  --space-24:  6rem;     /* 96px */
-  --space-32:  8rem;     /* 128px */
-}
+### Gold zeichnet die laufende Aufnahme aus
+
+Das Paket kennt keine Farbe für „nimmt gerade auf". Sein Fehler-Rot
+(`#ad3f38`) liegt zu nah am früheren Aufnahme-Rot (`#C84A3F`) — „läuft"
+und „Mikrofon verweigert" wären kaum unterscheidbar gewesen.
+
+Entscheidung: **Gold.** Eine laufende Aufnahme ist der ausgezeichnete
+Zustand, und Gold ist im Paket genau dafür da. Rot bleibt dem Fehler
+vorbehalten. Das Speichern tritt als Übergang in gedämpftes Grau zurück.
+
+### `--am-gold-beschriftung`
+
+`--am-gold-800` ist im Paket ausdrücklich als „Gold als Text **auf
+Weiß**" gerechnet. Auf der dunklen Fläche kommt es auf 3,3:1 und fällt
+damit unter die Lesbarkeitsschwelle von 4,5:1.
+
+Deshalb gibt es eine semantische Stufe für Gold als Beschriftung
+(Sprechernamen, aktiver Navigationseintrag, Aufnahme-Pille):
+
+```
+hell:   --am-gold-beschriftung → --am-gold-800   (4,9:1 auf Weiß)
+dunkel: --am-gold-beschriftung → --am-gold-500   (7,2:1 auf der Navigationsfläche)
 ```
 
-### Container
+Falls AImighty dafür einen eigenen Wert vorsieht, gehört er in
+`tokens/globals.css` und ersetzt diesen.
 
-- Mobile: 100%, 24px Outer-Padding
-- Tablet (≥768px): 100%, 48px Outer-Padding
-- Desktop (≥1024px): max 1280px zentriert, 64px Outer-Padding
-- Reading-Width (lange Texte): max 720px
+### Auswahlfelder
 
-### Border-Radius
-
-```css
-:root {
-  --radius-sm:   4px;   /* Inputs, Pills */
-  --radius-md:   6px;   /* Buttons */
-  --radius-lg:   8px;   /* Cards */
-  --radius-xl:  12px;   /* Modals */
-  --radius-full: 9999px; /* Avatars, Badges */
-}
-```
-
-**Niemals super-rund.** Dezent.
-
-### Schatten
-
-```css
-:root {
-  --shadow-xs:   0 1px 2px  rgba(10, 10, 10, 0.04);
-  --shadow-sm:   0 2px 4px  rgba(10, 10, 10, 0.05);
-  --shadow-md:   0 4px 12px rgba(10, 10, 10, 0.06);
-  --shadow-lg:   0 8px 24px rgba(10, 10, 10, 0.08);
-  --shadow-gold: 0 4px 16px rgba(201, 169, 97, 0.15); /* nur Recording-Button */
-}
-```
-
-Schatten sind so subtil, dass sie fast unsichtbar wirken — sie tragen das Premium-Gefühl ohne aufdringlich zu sein.
+Der native Pfeil sitzt je nach Browser hart an der Kante und ignoriert
+das Padding. Alle `select` tragen deshalb ein eigenes Zeichen, mit
+demselben Randabstand wie der Text links, und halten rechts Platz frei,
+damit lange Einträge nicht darunter laufen.
 
 ---
 
-## 5. Komponenten
+## 4. Die Hülle
 
-### Buttons
+Drei Bereiche: Navigation, Inhalt, Ablage.
 
-**Primary** (Standard-Aktion)
-```css
-.btn-primary {
-  background: var(--black);
-  color: var(--white);
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font: 500 0.9375rem var(--font-body);
-  transition: background 150ms ease;
-}
-.btn-primary:hover { background: #1F1F1F; }
-.btn-primary:active { background: #2A2A2A; }
-.btn-primary:disabled { background: var(--text-disabled); cursor: not-allowed; }
-```
+**Navigation.** Wappen mit festem Klickziel zur ersten Ansicht. Der
+Produktname daneben ist Beschriftung, kein Bedienelement — Insilo läuft
+als einzelnes AImighty-Produkt, es gibt nichts umzuschalten.
 
-**Secondary**
-```css
-.btn-secondary {
-  background: var(--white);
-  color: var(--text-primary);
-  border: 1px solid var(--border-strong);
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font: 500 0.9375rem var(--font-body);
-}
-.btn-secondary:hover {
-  background: var(--surface-soft);
-  border-color: var(--text-secondary);
-}
-```
+Reihenfolge: Aufnahme, Besprechungen, Archiv, Idee — abgesetzt darunter
+Einstellungen und Über. Aufnahme steht zuerst, weil es die häufigste
+Handlung ist. Der primäre Knopf wandert dafür in die jeweilige Ansicht;
+das System erlaubt genau eine primäre Handlung je Ansicht.
 
-**Tertiary** (Text-Link)
-```css
-.btn-tertiary {
-  background: transparent;
-  color: var(--text-primary);
-  padding: 8px 12px;
-  font: 500 0.9375rem var(--font-body);
-  text-decoration: none;
-}
-.btn-tertiary:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
-```
+**Ablage.** Trägt Kontext zum gewählten Ding und ist ausdrücklich nie
+eine zweite Inhaltsspalte. Sie erscheint nur, wo eine Ansicht sie über
+`useAblage()` befüllt — sonst fällt die Spalte weg. Bei Insilo ist das
+allein das Besprechungs-Detail.
 
-**Recording-Button** (Spezialfall, einziges Gold-Element)
-```css
-.btn-record {
-  background: var(--white);
-  color: var(--text-primary);
-  border: 2px solid var(--gold);
-  width: 96px;
-  height: 96px;
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-gold);
-  font: 600 0.875rem var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.btn-record.recording {
-  background: var(--gold);
-  color: var(--white);
-  animation: pulse-gold 2s ease-in-out infinite;
-}
-@keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 169, 97, 0.4); }
-  50% { box-shadow: 0 0 0 16px rgba(201, 169, 97, 0); }
-}
-```
-
-### Inputs
-
-```css
-.input {
-  background: var(--white);
-  color: var(--text-primary);
-  border: 1px solid var(--border-strong);
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  font: 400 0.9375rem var(--font-body);
-  transition: border-color 150ms ease;
-}
-.input:focus {
-  outline: none;
-  border-color: var(--black);
-  /* KEIN farbiger Glow — clean focus */
-}
-.input::placeholder { color: var(--text-disabled); }
-```
-
-### Meeting-Liste (PLAUD-Style)
-
-```
-Liste = flache vertikale Sequenz, KEINE Cards.
-Pro Eintrag: dünne Bottom-Border (border-subtle).
-Padding: 16px vertikal, 24px horizontal.
-Layout:
-  ┌──────────────────────────────────────────────┐
-  │ Titel                              [00:42:15]│
-  │ Mo, 12. Mai · 11:30 Uhr · 3 Sprecher          │
-  └──────────────────────────────────────────────┘
-
-Titel:    Inter 500, 1rem, text-primary
-Meta:     Inter 400, 0.8125rem, text-meta
-Dauer:    JetBrains Mono 500, 0.8125rem, text-meta
-Hover:    background: var(--surface-soft)
-Selected: 2px gold left-border + background: var(--gold-faint)
-```
-
-### Card
-
-```css
-.card {
-  background: var(--white);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  box-shadow: var(--shadow-xs);
-}
-.card-header {
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-```
-
-**Card-Verwendung:** Nur in Detailviews und Settings. Auf Listen-Screens: keine Cards (PLAUD-Pattern).
-
-### Tabs
-
-```css
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border-subtle);
-  gap: 0;
-}
-.tab {
-  padding: 12px 20px;
-  font: 500 0.9375rem var(--font-body);
-  color: var(--text-meta);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: all 150ms ease;
-}
-.tab:hover { color: var(--text-primary); }
-.tab[aria-selected="true"] {
-  color: var(--text-primary);
-  border-bottom-color: var(--black); /* schwarz, nicht gold */
-}
-```
-
-### Speaker-Block (im Transkript)
-
-```
-[00:14:32]   MÜLLER
-             Wir sollten bei der nächsten Sitzung das Thema
-             Risikoabsicherung intensiver besprechen.
-
-[00:14:48]   SCHMIDT
-             Einverstanden. Ich bringe den aktuellen Stand mit.
-
-Timestamp:   JetBrains Mono 500, 0.8125rem, text-meta
-Speaker:     JetBrains Mono 500, 0.8125rem, gold, UPPERCASE
-Text:        Inter 400, 1rem, text-primary, line-height 1.6
-Indent:      Text um 80px eingerückt, damit Speaker links steht
-```
-
-### Status-Pills (sparsam einsetzen)
-
-```css
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  font: 500 0.75rem var(--font-body);
-  background: var(--surface-soft);
-  color: var(--text-secondary);
-}
-.pill-recording {
-  background: rgba(200, 74, 63, 0.08);
-  color: var(--recording);
-}
-.pill-recording::before {
-  content: '';
-  width: 6px; height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--recording);
-  animation: blink 1s ease-in-out infinite;
-}
-```
+**Mobil** deckt das Referenzblatt nicht ab, es zeigt nur den Zeigerfall.
+Insilo ist aber primär eine Telefon-PWA, und 220 px Seitenspalte gehen
+auf 375 px nicht auf. Unterhalb von 1024 px wandert die Navigation an den
+unteren Rand (daumennah, mit Berücksichtigung der Safe Area), die Ablage
+rutscht unter den Inhalt. Auf der Leiste ist Platz für fünf Ziele — „Über
+Insilo" entfällt dort und bleibt über die Einstellungen erreichbar.
 
 ---
 
-## 6. Die Identitäts-Kante: Gold-Linie
+## 5. Der Datenschutz-Nachweis
 
-**DAS visuelle Signature-Element des Produkts.**
+Das Paket sieht ihn am unteren Rand der Navigation vor, **mit gemessenen
+Werten — oder gar nicht**. Diese Regel ist bei Insilo keine Formalie: das
+gesamte Verkaufsargument gegenüber PLAUD, Otter und Fireflies hängt
+daran, dass die Aussage stimmt.
 
-Wenn eine Aufnahme läuft, erscheint am oberen Bildschirmrand der PWA (oder unter dem Tab in einer Detail-View) eine 1px hohe goldene Linie, die sanft pulsiert.
+**Insilo ist nicht pauschal „0 Byte".** Drei Dinge können die Box
+verlassen: das Transkript (wenn ein externer LLM-Endpunkt eingetragen
+ist), fertige Protokolle (an konfigurierte Webhooks) und der einmalige
+Modell-Download beim Erststart. Audio und Suchindex verlassen sie in
+keiner Konfiguration.
 
-```css
-.recording-indicator {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: var(--gold);
-  animation: pulse-line 2.4s ease-in-out infinite;
-  z-index: 1000;
-  pointer-events: none;
-}
-@keyframes pulse-line {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-```
+Der Nachweis zeigt darum den gemessenen Zustand in drei Lagen:
 
-Subtil, sofort lesbar, edel — der Premium-Moment der App.
+| Lage | Ton | Aussage |
+|---|---|---|
+| alles intern | Erfolg | „Bleibt auf der Box" |
+| Ziele aktiv | neutral | Anzahl und übertragene Menge |
+| LLM extern | **Achtung** | „Modell extern", nennt den Anbieter |
 
----
+Der dritte Fall ist der wichtigste — dort verliert ein Kunde sein
+Kernversprechen, oft ohne es zu merken.
 
-## 7. Bewegung & Mikrointeraktion
+**Ist der Zustand nicht abrufbar, steht dort nichts.** Eine Zusage ohne
+Beleg ist schlechter als keine. Dieselbe Regel gilt für den Block unter
+dem Aufnahme-Knopf.
 
-**Philosophie:** Animationen sind funktional, nie dekorativ.
-
-```css
-:root {
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --duration-fast: 150ms;
-  --duration-medium: 250ms;
-  --duration-slow: 400ms;
-}
-```
-
-**Wo Animation eingesetzt wird:**
-- Hover-States: 150ms ease
-- Page-Transitions: 250ms ease-out (Slide-Fade)
-- Modal-Erscheinen: 250ms ease-out (Scale + Fade)
-- Recording-Pulse: 2-2.4s ease-in-out
-- Skeleton-Loader bei Datenladen
-
-**Wo NICHT:**
-- Keine Parallax-Effekte
-- Keine Scroll-getriggerten Reveals
-- Keine "AI-Sparkles" oder Glitter-Animationen
-- Keine Bouncing-Buttons
-- Keine Page-Load-Choreographien
+Technisch: `backend/app/egress.py` entscheidet, ob ein Ziel die Box
+verlässt, und rät dabei nicht — was nicht nachweislich intern ist, gilt
+als extern. 23 Tests decken das ab, inklusive Namen wie
+`localhost.evil.example`. Ein zu Unrecht gezeigter Hinweis kostet eine
+Rückfrage; eine zu Unrecht gezeigte Entwarnung kostet das Versprechen.
 
 ---
 
-## 8. Icons
+## 6. Bewegung
 
-**Lucide React** als einzige Icon-Library.
+Animationen sind funktional, nie dekorativ. Das Paket gibt zwei Dauern
+vor (`--am-dauer-kurz` 120 ms, `--am-dauer-lang` 200 ms), aber keine
+Beschleunigungskurve — dafür bleibt `--ease-out` aus dem Altbestand.
 
-**Verwendung:**
-- 18-20px für UI-Icons in Buttons/Toolbars
-- 24px für Navigationsicons
-- 32px für Empty-States
-- 1.5px stroke-width (Lucide-Default)
-- Farbe: `currentColor` (erbt vom Parent)
-
-**Welche Icons:**
-- Funktional, nicht dekorativ
-- Niemals neben jedem Listen-Eintrag
-- Niemals mehrere Icons direkt nebeneinander (außer in Toolbars)
+Weiterhin gilt: keine Parallaxe, keine scroll-getriggerten Effekte, keine
+„AI-Sparkles", keine hüpfenden Knöpfe. `prefers-reduced-motion` wird
+respektiert.
 
 ---
 
-## 9. Anti-Patterns
+## 7. Offen
 
-❌ Lila-Farben oder lila Gradients
-❌ Glassmorphism / Frosted-Glass-Effekte
-❌ Neumorphism (problematisch für Accessibility)
-❌ Tech-Blau als Primary-Farbe
-❌ Fette Marketing-Headlines ("Revolutioniere Deine Meetings!")
-❌ Emojis in der UI
-❌ Card-in-Card-Verschachtelungen
-❌ Bouncing-Animations
-❌ Hero-Sections mit animierten Mesh-Gradients
-❌ Status-Pills für jede Kleinigkeit
-❌ "AI-Sparkles" / animierte Glitter-Effekte
-❌ Custom-Cursors
-❌ Skewed/Diagonale Layouts
-❌ Tab-Bars mit Icons UND Text bei wenig Platz
-
----
-
-## 10. Mobile-First-Regeln
-
-Da die PWA primär auf Smartphones läuft:
-
-- **Touch-Targets:** mindestens 44×44px
-- **Bottom-Navigation** statt Sidebar bei <768px
-- **Safe-Areas** beachten: `padding-bottom: env(safe-area-inset-bottom)`
-- **Keine Hover-Only-Interaktionen** — alles muss per Tap erreichbar sein
-- **Pull-to-Refresh** für Listen
-- **Swipe-Gesten** für Meeting-Aktionen (Archivieren, Löschen)
-
----
-
-## 11. Tailwind-Konfiguration
-
-```typescript
-// tailwind.config.ts
-import type { Config } from "tailwindcss";
-
-export default {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
-  theme: {
-    extend: {
-      colors: {
-        white: "#FFFFFF",
-        black: "#0A0A0A",
-        gold: {
-          DEFAULT: "#C9A961",
-          light: "#E6D4A3",
-          deep: "#9C8147",
-          faint: "#F5EDD9",
-        },
-        surface: {
-          soft: "#FAFAF7",
-          warm: "#F5F3EE",
-        },
-        border: {
-          subtle: "#E8E6E1",
-          strong: "#D4D1CA",
-        },
-        text: {
-          primary: "#0A0A0A",
-          secondary: "#4A4842",
-          meta: "#737065",
-          disabled: "#A8A599",
-        },
-        recording: "#C84A3F",
-      },
-      fontFamily: {
-        display: ["Lexend Deca", "sans-serif"],
-        body: ["Inter", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
-      },
-      boxShadow: {
-        xs: "0 1px 2px rgba(10, 10, 10, 0.04)",
-        sm: "0 2px 4px rgba(10, 10, 10, 0.05)",
-        md: "0 4px 12px rgba(10, 10, 10, 0.06)",
-        lg: "0 8px 24px rgba(10, 10, 10, 0.08)",
-        gold: "0 4px 16px rgba(201, 169, 97, 0.15)",
-      },
-    },
-  },
-} satisfies Config;
-```
-
----
-
-## 12. Aktivierte Claude-Code-Skills
-
-```yaml
-skills:
-  - frontend-design       # Anthropic offiziell
-  - UI/UX Pro Max         # nextlevelbuilder Community-Skill
-```
-
-**Wichtige Anweisung an Claude Code:**
-
-Folge dem Designsystem strikt. Nicht von dem in `frontend-design` empfohlenen "distinctiven Fonts" abweichen — Lexend Deca + Inter sind hier eine bewusste, kontextspezifische Entscheidung (HubSpot-Referenz, deutsche B2B-Lesbarkeit, Vertrauen). Erfinde keine eigenen Farben oder Schriften. Nutze ausschließlich die Tokens aus diesem Dokument.
+- **Dichte-Bedienung.** Der Hebel steht, eine Einstellung dafür gibt es
+  nicht. Sinnvoll erst, wenn jemand Insilo auf einem Tablet im Einsatz
+  hat.
+- **Radien und Randstärken** sind im Paket selbst als ungeklärt markiert
+  und stehen als Vorschlag drin. Ändert sich der AImighty-Wert, ändert
+  sich nur `globals.css`.
+- **Prüfstand Dunkelmodus.** Kontraste sind auf der Aufnahme-Seite
+  gemessen, nicht auf allen Ansichten. Dialoge, das Transkript im
+  Bearbeitungsmodus und die Einstellungen sind ungeprüft.
+- **Byte-Anzeige.** `webhook_deliveries.request_bytes` zählt erst seit
+  Migration 0014; ältere Zustellungen tragen NULL und bleiben aus der
+  Summe heraus.

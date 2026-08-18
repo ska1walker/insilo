@@ -98,6 +98,18 @@ Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`, Box-URL
   Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
   `ci`-Workflow seit v0.1.59 rot hielten.
 
+**Seit dem 18. August (auf `main`, noch nicht deployed):**
+
+- **Rebrand auf das AImighty-Designsystem** — Geist-Schriften, Hanseatenblau,
+  dreiteilige Hülle, Hell- und Dunkelmodus. Werte in
+  `frontend/app/globals.css`, Regeln in `docs/DESIGN.md`.
+- **Datenschutz-Nachweis** — `GET /api/v1/egress` misst, was die Box
+  tatsächlich verlässt; Nachweis unten in der Navigation, Detailansicht
+  unter `/datenschutz`. Migration **0014** zählt gesendete Webhook-Bytes.
+- **Achtung beim Deploy:** die Container-Images stehen weiter auf 0.1.60.
+  Der gesamte Code von heute ist in keinem Image — ein Deploy braucht
+  `scripts/release.sh 0.1.66` **ohne** `--chart-only`.
+
 **Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**
 
 Insilo-Seite ist seit v0.1.39 fertig: Webhook-Manager mit HMAC,
@@ -240,7 +252,7 @@ ssh olares@192.168.112.125 \
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
-| Migrationen | 13 im Repo (0001–0013); nach Deploy auch auf der Box |
+| Migrationen | 14 im Repo (0001–0014); 0014 (request_bytes) noch nicht auf der Box |
 
 ## Offene Issues / Bekannte Stolpersteine
 

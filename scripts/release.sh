@@ -14,9 +14,16 @@
 #         Default — assumes you changed code, so a new image is wanted.
 #
 #     scripts/release.sh 0.1.18 --chart-only
-#         Bump chart + manifest only. Image tags stay where they are.
+#         Bump chart + manifest only. values.yaml keeps pointing at the
+#         previous image tags, so the chart ships proven images.
 #         Use when only the chart YAML changed (e.g. tweaked Helm template,
-#         re-inlined SQL) — saves the ~3-minute GH Actions image build.
+#         re-inlined SQL, corrected release notes).
+#
+#         Note: release.yml derives the image version from the GIT TAG, not
+#         from values.yaml. Until v0.1.61 the build therefore ran anyway and
+#         produced images nobody referenced — the "saves a build" claim in
+#         this header was wrong. release.yml now skips the build when
+#         values.yaml does not reference the tag being pushed.
 #
 #     scripts/release.sh 0.1.18 -m "feat: per-org settings + retry"
 #         Custom commit message. Default is "release: vX.Y.Z".

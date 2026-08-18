@@ -74,6 +74,55 @@
 > rekonstruierbar (kein erklärender Commit) — plausibel ist ein hängendes
 > `helm upgrade` direkt nach dem v0.1.57-Deploy.
 >
+> # 🚀 v0.1.61 — Manifest-Sync-Guard + `--chart-only` repariert (18. August 2026)
+>
+> **Chart-only-Release** (Images bleiben auf 0.1.60). Inhalt: korrekte
+> Release-Notes, gelöschtes Leer-PDB, zwei neue Guards in `check-chart.sh`.
+>
+> **Neuer Guard 1 — Root ↔ Chart-Manifest-Sync.** Siehe Block oben.
+>
+> **Neuer Guard 2 — `upgradeDescription` nennt die ausgelieferte Version.**
+> `release.sh` bumpt die Versions*felder*, aber nicht den Versions*string*
+> in den Release-Notes. Der Header veraltet also still bei jedem Release —
+> dieselbe Drift-Familie, eine Ebene tiefer. Der Check vergleicht die erste
+> nicht-leere Zeile des `upgradeDescription` mit `Chart.yaml.version`.
+> Hat beim allerersten Lauf direkt gegriffen.
+>
+> **⚠️ Korrektur einer langlebigen Fehlannahme: `--chart-only` sparte
+> keinen Image-Build.**
+>
+> `scripts/release.sh` behauptete im Header „saves the ~3-minute GH Actions
+> image build", `CLAUDE.md` wiederholte es. Beides war falsch.
+> [.github/workflows/release.yml](../.github/workflows/release.yml) leitet
+> die Image-Version aus dem **Git-Tag** ab:
+>
+> ```yaml
+> version=${GITHUB_REF_NAME#v}
+> ```
+>
+> `values.yaml` steuert nur, worauf das Chart *zeigt* — nicht, was gebaut
+> wird. Ein `--chart-only`-Release baute also die vollen vier Images unter
+> der neuen Nummer, die dann niemand referenzierte (und taggte sie
+> nebenbei als `:latest`, während das Chart auf die ältere Version zeigte).
+> Aufgefallen ist es erst beim v0.1.61-Push, als der Build lief, obwohl er
+> laut Doku hätte entfallen sollen.
+>
+> **Fix:** `preflight` bekam einen `decide`-Step, der prüft, ob
+> `values.yaml` den gepushten Tag referenziert; der `build`-Job hängt jetzt
+> an dessen Output. **Fail-safe by design** — fehlende Datei oder geändertes
+> Format fällt auf „bauen" zurück, nie auf „überspringen". Bei
+> `workflow_dispatch` wird immer gebaut. Die Entscheidung landet als
+> Job-Summary im Run, damit ein Skip sichtbar ist statt still.
+>
+> **Recovery, falls der Skip mal fälschlich greift:** `release`-Workflow
+> manuell starten (`workflow_dispatch`) mit expliziter Version.
+>
+> **Lesson:** die Behauptung stand seit v0.1.18 in der Doku und wurde nie
+> gegen den Workflow geprüft. Zusammen mit dem Manifest-Drift und dem
+> Phantom-PDB ist das dreimal dasselbe Muster an einem Tag — **Doku,
+> Commit-Message und Dateiname sind Hinweise, keine Belege.** Wer eine
+> Aussage über das Systemverhalten trifft, liest die ausführende Datei.
+>
 > # 🚀 v0.1.57 → v0.1.60 — Health-Checks, LLM-Verbindungstest (8. Juli 2026)
 >
 > **Vier Releases an einem Vormittag**, alle rund um Betriebs-Sichtbarkeit

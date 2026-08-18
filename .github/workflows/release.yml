@@ -23,6 +23,8 @@ jobs:
   preflight:
     name: olares chart · sanity
     runs-on: ubuntu-latest
+    outputs:
+      build_images: ${{ steps.decide.outputs.build_images }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,9 +47,41 @@ jobs:
           fi
           echo "tag $GITHUB_REF_NAME matches chart version $CHART_VERSION"
 
+      # A `release.sh --chart-only` bump leaves values.yaml pointing at the
+      # PREVIOUS image tags — the images this tag would build are then never
+      # referenced by the chart. Skip the ~9-minute build in that case.
+      # Fail-safe: anything unexpected (missing file, changed formatting)
+      # falls through to building. If a build is skipped in error, rebuild
+      # via workflow_dispatch with an explicit version.
+      - name: are images needed for this tag?
+        id: decide
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          BUILD=true
+          if [ -f olares/values.yaml ]; then
+            if ! grep -qE "^[[:space:]]+tag:[[:space:]]*[\"']?${TAG_VERSION}[\"']?[[:space:]]*$" olares/values.yaml; then
+              BUILD=false
+            fi
+          fi
+          echo "build_images=$BUILD" >> "$GITHUB_OUTPUT"
+          if [ "$BUILD" = "true" ]; then
+            echo "### Images werden gebaut (\`$TAG_VERSION\`)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "### Image-Build übersprungen"
+              echo "\`olares/values.yaml\` referenziert **nicht** \`$TAG_VERSION\` —"
+              echo "sieht nach einem \`--chart-only\`-Release aus. Referenzierte Tags:"
+              echo '```'
+              grep -E "^[[:space:]]+tag:" olares/values.yaml | sort -u
+              echo '```'
+              echo "Falls das falsch ist: \`release\`-Workflow manuell mit expliziter Version starten."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   build:
     name: ${{ matrix.service }}
     needs: preflight
+    if: needs.preflight.outputs.build_images == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     strategy:

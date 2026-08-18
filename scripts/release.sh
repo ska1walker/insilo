@@ -37,6 +37,7 @@ cd "$ROOT"
 
 CHART_FILE="olares/Chart.yaml"
 MANIFEST_FILE="olares/OlaresManifest.yaml"
+ROOT_MANIFEST_FILE="OlaresManifest.yaml"
 VALUES_FILE="olares/values.yaml"
 
 # ---------------------------------------------------------------------------
@@ -173,9 +174,14 @@ run "sed -i.bak -E 's/^appVersion:[[:space:]]+\"[0-9.]+\"/appVersion: \"$NEW_VER
 green "  ✓ $CHART_FILE: version + appVersion → $NEW_VERSION"
 
 # OlaresManifest.yaml — metadata.version + spec.versionName
-run "sed -i.bak -E 's/^([[:space:]]+)version:[[:space:]]+[0-9.]+/\\1version: $NEW_VERSION/' '$MANIFEST_FILE'"
-run "sed -i.bak -E 's/^([[:space:]]+)versionName:[[:space:]]+'\\''[0-9.]+'\\''/\\1versionName: '\\'$NEW_VERSION\\''/' '$MANIFEST_FILE'"
-green "  ✓ $MANIFEST_FILE: metadata.version + spec.versionName → $NEW_VERSION"
+# The Olares Market requires TWO copies (see docs/MARKET_SOURCE_PLAYBOOK.md:297):
+# root OlaresManifest.yaml for Store metadata, olares/OlaresManifest.yaml for
+# installation. Both must carry identical version numbers — bump both.
+for mf in "$MANIFEST_FILE" "$ROOT_MANIFEST_FILE"; do
+  run "sed -i.bak -E 's/^([[:space:]]+)version:[[:space:]]+[0-9.]+/\\1version: $NEW_VERSION/' '$mf'"
+  run "sed -i.bak -E 's/^([[:space:]]+)versionName:[[:space:]]+'\\''[0-9.]+'\\''/\\1versionName: '\\'$NEW_VERSION\\''/' '$mf'"
+  green "  ✓ $mf: metadata.version + spec.versionName → $NEW_VERSION"
+done
 
 if (( CHART_ONLY )); then
   yellow "  ! --chart-only: image tags in values.yaml unchanged"
@@ -188,7 +194,7 @@ fi
 
 # Clean up sed-backup files.
 if (( ! DRY_RUN )); then
-  rm -f "$CHART_FILE.bak" "$MANIFEST_FILE.bak" "$VALUES_FILE.bak"
+  rm -f "$CHART_FILE.bak" "$MANIFEST_FILE.bak" "$ROOT_MANIFEST_FILE.bak" "$VALUES_FILE.bak"
 fi
 
 # ---------------------------------------------------------------------------
@@ -260,8 +266,8 @@ fi
 step "git commit + tag"
 COMMIT_MSG="${MESSAGE:-release: v$NEW_VERSION}"
 
-# Always stage the auto-bumped chart + migration files.
-git add olares/ supabase/ 2>/dev/null || true
+# Always stage the auto-bumped chart + migration files + root manifest.
+git add olares/ supabase/ "$ROOT_MANIFEST_FILE" 2>/dev/null || true
 
 # Stage exactly the changes the preflight surfaced — and nothing more.
 # (No `git add -A` here — it would also pick up scratch dirs.)

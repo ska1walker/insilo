@@ -129,14 +129,54 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.17 — UI/UX-Polish + Robustheit.
+    v0.1.60 — Sprecher-Erkennung, 5 Sprachen und Idee-Aufnahme unterwegs.
 
-    - Einstellungen: „Verbindung testen"-Button pingt den konfigurierten
-      LLM-Endpunkt und zeigt Status, Latenz und Modellnamen.
-    - Meeting-Detail: „Erneut zusammenfassen" für fehlgeschlagene Meetings,
-      nutzt das vorhandene Transkript und das aktuelle LLM-Setup.
-    - Fragen-Suche: Score wird als Prozent-Relevanz angezeigt statt als Float.
-    - Aufnahme: Datensouveränitäts-Hinweis statt Dev-Text.
+    **Sprecher-Intelligenz**
+    - Lokale Sprecher-Erkennung (ECAPA-TDNN), token- und cloudfrei
+    - Org-weiter Sprecher-Katalog mit Voiceprint-Matching
+    - Dedizierte Stimmproben-Aufnahme („Nordwind"-Text in 5 Sprachen)
+    - Speaker-Labels im Transkript, per-Meeting-Zuordnung, Match-Score
+
+    **Fünf Sprachen (DE/EN/FR/ES/IT)**
+    - Kompletter UI-Switch, In-App-Umschalter unter /einstellungen
+    - LLM-Zusammenfassungen und Fehlermeldungen pro Sprache
+    - Aufnahme-Sprache pro Meeting wählbar (Auto-Detect + 5 Sprachen)
+
+    **Audio-Qualität**
+    - 128 kbps Opus, Browser-DSP (AGC/NS) aus, Whisper beam_size=5
+    - WebM/Opus für alle Browser-Aufnahmen (Chrome/Firefox/Safari)
+    - Deutsche Frikative gehen nicht mehr verloren
+
+    **Vorlagen**
+    - Qwen 2.5-optimierte System-Prompts mit Few-Shot-Beispielen
+    - Werks-Vorlagen umbenennbar (Display-Name pro Org)
+    - Lite-Schema-Editor: eigene Felder zu System-Vorlagen ergänzen
+    - Neue „Schnellnotiz"-Vorlage für Ideen-Erfassung
+
+    **Idee-Aufnahme (Schauerfunktion)**
+    - Neue Route /idee: Vollbild-Mic-Button für unterwegs
+    - Single-Tap, Wake-Lock, Vibration, PWA-Home-Screen-Shortcut
+    - Automatischer Versand an konfigurierte Empfänger
+
+    **Integrationen**
+    - Webhooks mit HMAC-Signatur, Fan-Out, exponentielles Backoff
+    - REST-API mit Bearer-Token-Auth und Markdown-Export
+    - Manueller Push per Default, „An externe Systeme senden"-Dialog
+
+    **Archiv & Meeting**
+    - Tag-System: Meetings verschlagworten, filtern, verwalten
+    - Meeting-Titel inline editierbar, „Erneut zusammenfassen"
+    - Toast-Notifications, Undo-Delete, Home-Refactor
+
+    **Editorial**
+    - About-Page (/ueber) mit Produkt-Hero und Architektur-Diagramm
+    - Motion-Polish (Page-Transitions, Stagger-Reveals, reduced-motion)
+    - SVG-Logo, Trust-Badge, überarbeitete Startseite
+
+    **Betrieb**
+    - Health-Endpoints für alle Services (Backend, DB, Whisper, LLM, Embeddings)
+    - Pod-Disruption-Budget für Rolling-Update-Sicherheit
+    - LLM-Verbindungstest vor dem Speichern der Einstellungen
 
   developer: kaivo.studio
   website: https://kaivo.studio

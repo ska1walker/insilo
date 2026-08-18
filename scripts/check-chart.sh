@@ -19,6 +19,7 @@ cd "$ROOT"
 
 CHART_FILE="olares/Chart.yaml"
 MANIFEST_FILE="olares/OlaresManifest.yaml"
+ROOT_MANIFEST_FILE="OlaresManifest.yaml"
 VALUES_FILE="olares/values.yaml"
 TEMPLATES_DIR="olares/templates"
 
@@ -71,6 +72,35 @@ if [[ "$CHART_APP_VERSION" == "$MANIFEST_VERSIONNAME" ]]; then
   ok "Chart.yaml.appVersion == OlaresManifest.spec.versionName ($CHART_APP_VERSION)"
 else
   fail "Chart.yaml.appVersion ($CHART_APP_VERSION) != OlaresManifest.spec.versionName ($MANIFEST_VERSIONNAME)"
+fi
+
+# ---------------------------------------------------------------------------
+# 1b. Root manifest ↔ chart manifest sync
+#     Olares Market requires TWO OlaresManifest.yaml files (Store metadata +
+#     installation), with identical version + versionName. See
+#     docs/MARKET_SOURCE_PLAYBOOK.md:297. Missed for v0.1.18–v0.1.60 because
+#     release.sh only bumped the chart-internal copy; fixed since v0.1.61.
+# ---------------------------------------------------------------------------
+
+section "root manifest ↔ chart manifest sync"
+
+if [[ ! -f "$ROOT_MANIFEST_FILE" ]]; then
+  fail "$ROOT_MANIFEST_FILE missing — Olares Market expects a root-level manifest"
+else
+  ROOT_MANIFEST_VERSION="$(extract "$ROOT_MANIFEST_FILE" "  version")"
+  ROOT_MANIFEST_VERSIONNAME="$(grep -E "^[[:space:]]*versionName:" "$ROOT_MANIFEST_FILE" | head -1 | sed -E "s/.*versionName:[[:space:]]*['\"]?([^'\"#]+)['\"]?.*/\1/" | xargs)"
+
+  if [[ "$ROOT_MANIFEST_VERSION" == "$MANIFEST_VERSION" ]]; then
+    ok "root vs chart: metadata.version matches ($ROOT_MANIFEST_VERSION)"
+  else
+    fail "root OlaresManifest.metadata.version ($ROOT_MANIFEST_VERSION) != chart ($MANIFEST_VERSION)"
+  fi
+
+  if [[ "$ROOT_MANIFEST_VERSIONNAME" == "$MANIFEST_VERSIONNAME" ]]; then
+    ok "root vs chart: spec.versionName matches ($ROOT_MANIFEST_VERSIONNAME)"
+  else
+    fail "root OlaresManifest.spec.versionName ($ROOT_MANIFEST_VERSIONNAME) != chart ($MANIFEST_VERSIONNAME)"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

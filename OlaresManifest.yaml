@@ -21,7 +21,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.61              # = Chart.yaml.version
+  version: 0.1.62              # = Chart.yaml.version
   categories:
     - Productivity_v112
     - Utilities_v112
@@ -96,7 +96,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.61'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.62'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
@@ -129,7 +129,7 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.61 — Sprecher-Erkennung, 5 Sprachen und Idee-Aufnahme unterwegs.
+    v0.1.62 — Sprecher-Erkennung, 5 Sprachen und Idee-Aufnahme unterwegs.
 
     **Sprecher-Intelligenz**
     - Lokale Sprecher-Erkennung (ECAPA-TDNN), token- und cloudfrei
@@ -208,11 +208,18 @@ spec:
 # ---- Optionen ---------------------------------------------------------------
 
 options:
-  # System-Dependencies: bestimmte Olares-Version mindestens nötig
+  # System-Dependencies: unterstützte Olares-Version.
+  #
+  # MUSS ein beidseitig geschlossenes Intervall sein — ein offenes '>=x.y.z'
+  # wird vom Markt-Upload mit HTTP 400 abgelehnt ("must restrict the Olares
+  # system version to ...", gesehen bei v0.1.61). Der Markt gibt die zulässige
+  # Spanne für die jeweilige apiVersion vor; bei Ablehnung nennt die
+  # Fehlermeldung das erwartete Intervall — das dann hier eintragen.
+  # Das '-0'-Suffix schließt Pre-Releases von 1.12.3 ein (semver-Konvention).
   dependencies:
     - name: olares
       type: system
-      version: '>=1.12.2'
+      version: '>=1.12.3-0,<1.12.6'
 
   # Erlaubt mehrere isolierte Instanzen (z.B. eine pro Mandant) — MVP: nein
   allowMultipleInstall: false

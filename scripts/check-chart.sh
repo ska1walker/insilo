@@ -128,6 +128,29 @@ for mf in "$MANIFEST_FILE" "$ROOT_MANIFEST_FILE"; do
 done
 
 # ---------------------------------------------------------------------------
+# 1d. Olares system dependency must be a CLOSED version range
+#     An open '>=x.y.z' is rejected by the Market upload with HTTP 400:
+#     "must restrict the Olares system version to >=A,<B". Cost us the
+#     v0.1.61 upload. The exact bounds come from the Market's error message
+#     for the current apiVersion — this check only enforces that an upper
+#     bound exists at all.
+# ---------------------------------------------------------------------------
+
+section "olares dependency is a closed range"
+
+for mf in "$MANIFEST_FILE" "$ROOT_MANIFEST_FILE"; do
+  [[ -f "$mf" ]] || continue
+  DEP_VERSION="$(awk '/^[[:space:]]*-[[:space:]]*name:[[:space:]]*olares[[:space:]]*$/{f=1} f&&/^[[:space:]]*version:/{gsub(/.*version:[[:space:]]*/,""); gsub(/['"'"'"]/,""); print; exit}' "$mf")"
+  if [[ -z "$DEP_VERSION" ]]; then
+    fail "$mf: no options.dependencies[name=olares].version found"
+  elif [[ "$DEP_VERSION" == *"<"* ]]; then
+    ok "$mf: olares dependency bounded ($DEP_VERSION)"
+  else
+    fail "$mf: olares dependency '$DEP_VERSION' has no upper bound — Market upload will 400"
+  fi
+done
+
+# ---------------------------------------------------------------------------
 # 2. NEVER use .Files.Get — Olares chart renderer doesn't support it
 #    (HANDOFF §7g.2)
 # ---------------------------------------------------------------------------

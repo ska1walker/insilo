@@ -44,20 +44,35 @@
 > kein Verhalten geändert. Der `release`-Workflow lief die ganze Zeit grün
 > durch, deshalb ist es niemandem aufgefallen.
 >
-> **⚠️ Beim Doku-Nachzug entdeckt: das PDB existiert nicht.**
-> `olares/templates/pdb.yaml` ist eine **0-Byte-Datei**. v0.1.57 hat das
+> **⚠️ Beim Doku-Nachzug entdeckt: das PDB existierte nur als leere Hülle.**
+> `olares/templates/pdb.yaml` war eine **0-Byte-Datei**. v0.1.57 hat das
 > PodDisruptionBudget eingeführt, v0.1.58 hat den Inhalt wieder entfernt —
 > aber die leere Datei blieb liegen, und die Commit-Message von v0.1.58
 > lautet weiterhin „health checks, **PDB**, numpy fix". `helm template`
-> rendert erwartungsgemäß kein PDB.
+> hat erwartungsgemäß kein PDB gerendert.
 >
-> Warum es entfernt wurde, ist aus der Git-Historie nicht rekonstruierbar
-> (kein erklärender Commit). Plausibelster Verdacht: das Template hatte
-> `minAvailable: 1` bei `matchLabels: app: insilo` — das matcht *alle*
-> Insilo-Pods statt einer Komponente, und bei `replicas: 1` blockiert ein
-> solches PDB Node-Drains vollständig. **Für die nächste Session:** Kai
-> fragen, ob das PDB zurück soll (dann korrekt per-Komponente) oder ob die
-> leere Datei gelöscht wird.
+> **Entscheidung: Datei gelöscht. Kein PDB in dieser Topologie —
+> und bitte auch künftig keins.** Begründung:
+>
+> - **Alle fünf Deployments stehen auf `replicas: 1`** (frontend, backend,
+>   worker, whisper, embeddings). Ein PDB mit `minAvailable: 1` erlaubt
+>   dann *null* freiwillige Disruptions: `kubectl drain` und
+>   Node-Maintenance hängen unendlich. Das PDB blockiert exakt die
+>   Operationen, die es absichern soll.
+> - **Verfügbarkeitsgewinn wäre ohnehin null** — bei einem Replica gibt es
+>   beim Update zwangsläufig Downtime, mit oder ohne PDB.
+> - **Ein-Knoten-Box.** PDBs schützen gegen *voluntary disruptions*, indem
+>   Pods auf andere Nodes ausweichen. Ohne zweiten Node gibt es kein
+>   Ausweichen — das Konzept greift strukturell nicht.
+>
+> Sinnvoll würde ein PDB erst, wenn frontend + backend auf `replicas: 2`
+> gehen **und** die Box mehr als einen Node hat. Beides ist nicht
+> absehbar (whisper/embeddings sind GPU-/RAM-schwer, der Celery-Worker
+> bleibt bei 1).
+>
+> Warum v0.1.58 den Inhalt entfernt hat, ist aus der Historie nicht
+> rekonstruierbar (kein erklärender Commit) — plausibel ist ein hängendes
+> `helm upgrade` direkt nach dem v0.1.57-Deploy.
 >
 > # 🚀 v0.1.57 → v0.1.60 — Health-Checks, LLM-Verbindungstest (8. Juli 2026)
 >

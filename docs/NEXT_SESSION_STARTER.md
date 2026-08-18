@@ -94,12 +94,6 @@ Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`, Box-URL
   Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
   `ci`-Workflow seit v0.1.59 rot hielten.
 
-**⚠️ Offene Frage aus der Doku-Session:** `olares/templates/pdb.yaml` ist
-eine 0-Byte-Datei — v0.1.57 hat ein PodDisruptionBudget eingeführt,
-v0.1.58 den Inhalt wieder entfernt, die leere Hülle blieb liegen. Es
-rendert kein PDB. Entweder korrekt per-Komponente zurückbauen oder die
-Datei löschen. Details im HANDOFF-Header.
-
 **Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**
 
 Insilo-Seite ist seit v0.1.39 fertig: Webhook-Manager mit HMAC,
@@ -249,9 +243,11 @@ ssh olares@192.168.112.125 \
 - **Online-Builds dauern** ~6-9 min weil Whisper-Image ~1.2 GB (torch + speechbrain). Akzeptabel.
 - **GHCR-Login kann timeout** machen (transient). Re-run der failed jobs reicht meist (`gh run rerun <id> --failed`).
 - **Service-Worker-Cache** im Browser: nach jedem Frontend-Deploy einmal Cmd-Shift-R, sonst sieht User alte Version.
-- **`olares/templates/pdb.yaml` ist eine 0-Byte-Datei** — PDB wurde in
-  v0.1.57 eingeführt, in v0.1.58 wieder entfernt, die leere Hülle blieb.
-  Entscheidung offen: korrekt per-Komponente zurückbauen oder löschen.
+- **Kein PodDisruptionBudget — bitte auch keins einführen.** Alle fünf
+  Deployments laufen mit `replicas: 1` auf einer Ein-Knoten-Box; ein PDB
+  mit `minAvailable: 1` würde `kubectl drain` blockieren, ohne
+  Verfügbarkeit zu gewinnen. Die leere `pdb.yaml`-Hülle (v0.1.57 rein,
+  v0.1.58 geleert) ist gelöscht. Begründung im HANDOFF-Header.
 - **Box-Version läuft der Repo-Version davon.** Seit v0.1.49 ist kein
   Deploy mehr in der Doku festgehalten. Nach jedem Box-Update den Stand
   hier und im HANDOFF nachtragen — sonst rät die nächste Session.

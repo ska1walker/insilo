@@ -637,5 +637,23 @@
     "light": "Light",
     "dark": "Dark",
     "saved": "Appearance changed."
+  },
+  "egress": {
+    "titel": "What leaves this box?",
+    "allesBleibt": "Everything stays on this box",
+    "allesBleibtLang": "No language model outside the box, no external targets configured.",
+    "llmExtern": "Language model outside the box",
+    "llmExternLang": "Full transcripts are sent to {host}.",
+    "zieleAnzahl": "{count, plural, =1 {1 external target} other {# external targets}}",
+    "uebertragen": "{groesse} transferred",
+    "nieGesendet": "Nothing sent yet",
+    "zustellungen": "{count, plural, =1 {1 delivery} other {# deliveries}}",
+    "zuletzt": "last {when}",
+    "zielLlm": "Language model",
+    "zielWebhook": "Webhook",
+    "nichtGeladen": "State unavailable.",
+    "navBleibt": "Stays on this box",
+    "navZiele": "{count, plural, =1 {1 target external} other {# targets external}}",
+    "navLlm": "Model external"
   }
 }

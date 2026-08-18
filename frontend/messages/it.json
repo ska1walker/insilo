@@ -637,5 +637,23 @@
     "light": "Chiaro",
     "dark": "Scuro",
     "saved": "Aspetto modificato."
+  },
+  "egress": {
+    "titel": "Che cosa esce da questo box?",
+    "allesBleibt": "Tutto resta su questo box",
+    "allesBleibtLang": "Nessun modello linguistico fuori dal box, nessuna destinazione esterna configurata.",
+    "llmExtern": "Modello linguistico fuori dal box",
+    "llmExternLang": "Le trascrizioni complete vengono inviate a {host}.",
+    "zieleAnzahl": "{count, plural, =1 {1 destinazione esterna} other {# destinazioni esterne}}",
+    "uebertragen": "{groesse} trasferiti",
+    "nieGesendet": "Non è stato ancora inviato nulla",
+    "zustellungen": "{count, plural, =1 {1 consegna} other {# consegne}}",
+    "zuletzt": "ultima {when}",
+    "zielLlm": "Modello linguistico",
+    "zielWebhook": "Webhook",
+    "nichtGeladen": "Stato non disponibile.",
+    "navBleibt": "Resta sul box",
+    "navZiele": "{count, plural, =1 {1 destinazione esterna} other {# destinazioni esterne}}",
+    "navLlm": "Modello esterno"
   }
 }

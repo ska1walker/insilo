@@ -20,7 +20,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { DatenschutzNachweis } from "@/components/datenschutz-nachweis";
 import {
   Archive,
   Info,
@@ -109,6 +110,7 @@ function NavEintrag({
 
 export function Huelle({ children }: { children: ReactNode }) {
   const t = useTranslations("nav");
+  const locale = useLocale();
   const pathname = usePathname();
   const [ablage, setAblage] = useState<ReactNode>(null);
 
@@ -156,9 +158,9 @@ export function Huelle({ children }: { children: ReactNode }) {
             ))}
           </div>
 
-          {/* Der Datenschutz-Nachweis gehört an diese Stelle. Er steht erst,
-              wenn er gemessene Werte zeigen kann — bis dahin bewusst leer
-              (Paket-Regel: „mit gemessenen Werten — oder gar nicht"). */}
+          {/* Datenschutz-Nachweis — zeigt sich nur, wenn der Zustand
+              abrufbar ist (Paket-Regel: gemessene Werte oder gar nicht). */}
+          <DatenschutzNachweis locale={locale} />
         </nav>
 
         {/* Kein <main> hier: die Ansichten bringen ihr eigenes mit.

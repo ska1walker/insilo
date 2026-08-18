@@ -567,6 +567,13 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     display: none;
   }
 
+  /* ── Datenschutz-Nachweis ─────────────────────────────────────────
+     Sitzt unten in der Navigation. Auf der schmalen Leiste hat er keinen
+     Platz — dort trägt ihn die Ansicht „Was verlässt diese Box?" selbst. */
+  .huelle-schutz {
+    display: none;
+  }
+
   .huelle-inhalt {
     grid-row: 1;
     min-width: 0;
@@ -655,6 +662,59 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     }
 
     .huelle-nav-item:hover { background: var(--am-flaeche-2); }
+
+    .huelle-schutz {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--am-raum-2);
+      margin-top: var(--am-raum-3);
+      padding: var(--am-raum-2) var(--am-raum-3);
+      border-radius: var(--am-radius-klein);
+      border: 1px solid transparent;
+      font-family: var(--am-schrift-mono);
+      font-size: 0.6875rem;
+      line-height: 1.4;
+      transition: background var(--am-dauer-kurz) ease;
+    }
+
+    .huelle-schutz-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .huelle-schutz-kopf {
+      font-weight: 600;
+    }
+
+    .huelle-schutz-unter {
+      opacity: 0.85;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Alles intern — der ruhige Normalfall. */
+    .huelle-schutz-erfolg {
+      background: var(--am-erfolg-flaeche);
+      border-color: var(--am-erfolg-rand);
+      color: var(--am-erfolg);
+    }
+
+    /* Ziele konfiguriert, aber bewusst: neutral halten, nicht warnen. */
+    .huelle-schutz-neutral {
+      background: var(--am-flaeche-2);
+      border-color: var(--am-rand);
+      color: var(--am-text-sekundaer);
+    }
+
+    /* Sprachmodell außerhalb der Box — hier gehen ganze Transkripte
+       hinaus. Das ist der Fall, der auffallen muss. */
+    .huelle-schutz-achtung {
+      background: var(--am-achtung-flaeche);
+      border-color: var(--am-achtung-rand);
+      color: var(--am-achtung);
+    }
 
     .huelle-inhalt {
       grid-row: 1;

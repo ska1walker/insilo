@@ -637,5 +637,23 @@
     "light": "Clair",
     "dark": "Sombre",
     "saved": "Affichage modifié."
+  },
+  "egress": {
+    "titel": "Qu'est-ce qui quitte ce boîtier ?",
+    "allesBleibt": "Tout reste sur ce boîtier",
+    "allesBleibtLang": "Aucun modèle de langage hors du boîtier, aucune destination externe configurée.",
+    "llmExtern": "Modèle de langage hors du boîtier",
+    "llmExternLang": "Les transcriptions complètes sont envoyées à {host}.",
+    "zieleAnzahl": "{count, plural, =1 {1 destination externe} other {# destinations externes}}",
+    "uebertragen": "{groesse} transférés",
+    "nieGesendet": "Rien envoyé pour l'instant",
+    "zustellungen": "{count, plural, =1 {1 envoi} other {# envois}}",
+    "zuletzt": "dernier {when}",
+    "zielLlm": "Modèle de langage",
+    "zielWebhook": "Webhook",
+    "nichtGeladen": "État indisponible.",
+    "navBleibt": "Reste sur le boîtier",
+    "navZiele": "{count, plural, =1 {1 cible externe} other {# cibles externes}}",
+    "navLlm": "Modèle externe"
   }
 }

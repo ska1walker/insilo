@@ -21,8 +21,8 @@ Der letzte Code-Stand ist also v0.1.60.
 Box-Version **nicht verifiziert** — der letzte dokumentierte Box-Stand
 ist v0.1.49 (Helm-Rev 35), seitdem wurde kein Deploy in der Doku
 festgehalten. **Vor jeder Box-Arbeit erst prüfen:**
-`ssh olares@192.168.112.125 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm list -n insilo-kaivostudio'`.
-Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`, Box-URL
+`ssh olares@192.168.1.17 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm list -n insilo-kaivostudio'`.
+Olares-Box: `olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
 `https://e5d605f3.kaivostudio.olares.de`). Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
@@ -98,7 +98,7 @@ Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`, Box-URL
   Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
   `ci`-Workflow seit v0.1.59 rot hielten.
 
-**Seit dem 18. August (auf `main`, noch nicht deployed):**
+**Seit dem 18. August — v0.1.66, auf der Box ausgerollt:**
 
 - **Rebrand auf das AImighty-Designsystem** — Geist-Schriften, Hanseatenblau,
   dreiteilige Hülle, Hell- und Dunkelmodus. Werte in
@@ -106,9 +106,13 @@ Olares-Box: `olares@192.168.112.125` (Olares-User `kaivostudio`, Box-URL
 - **Datenschutz-Nachweis** — `GET /api/v1/egress` misst, was die Box
   tatsächlich verlässt; Nachweis unten in der Navigation, Detailansicht
   unter `/datenschutz`. Migration **0014** zählt gesendete Webhook-Bytes.
-- **Achtung beim Deploy:** die Container-Images stehen weiter auf 0.1.60.
-  Der gesamte Code von heute ist in keinem Image — ein Deploy braucht
-  `scripts/release.sh 0.1.66` **ohne** `--chart-only`.
+- **⚠️ Beim Box-Update immer die Image-Tags mitgeben.** `--reuse-values`
+  spielt die beim Installieren gespeicherten Werte zurück — darin stehen
+  die ALTEN Tags. Ohne die vier `--set images.*.tag=X` aktualisiert sich
+  das Chart, Helm meldet Erfolg, der Markt zeigt die neue Version, und
+  die Pods laufen unverändert weiter. Genau so ging v0.1.66 zunächst ins
+  Leere (Chart 0.1.66 bei Images 0.1.56). Danach prüfen:
+  `kubectl get pods -n insilo-kaivostudio -o jsonpath='{range .items[*]}{.spec.containers[*].image}{"\n"}{end}'`
 
 **Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**
 
@@ -211,14 +215,14 @@ template: <Template-Name>
 
 **SSH-Zugang zur Box:**
 ```bash
-ssh olares@192.168.112.125
+ssh olares@192.168.1.17
 # Helm braucht: KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ```
 
 Volle Pipeline für Box-Update:
 ```bash
-scp dist/insilo-0.1.X.tgz olares@192.168.112.125:/tmp/
-ssh olares@192.168.112.125 \
+scp dist/insilo-0.1.X.tgz olares@192.168.1.17:/tmp/
+ssh olares@192.168.1.17 \
   'KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm upgrade insilo \
     /tmp/insilo-0.1.X.tgz -n insilo-kaivostudio --reuse-values \
     --set images.frontend.tag=0.1.X \
@@ -236,7 +240,7 @@ ssh olares@192.168.112.125 \
 | Bereich | Stand |
 |---|---|
 | Version | Chart **v0.1.65** (im Markt ✅), Images **0.1.60**. Box-Stand unverifiziert — zuletzt dokumentiert v0.1.49, Helm-Rev 35. `helm list -n insilo-kaivostudio` prüfen. |
-| Plattform | Olares OS (k3s) auf `192.168.112.125` |
+| Plattform | Olares OS (k3s) auf `192.168.1.17` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
 | Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.60` |

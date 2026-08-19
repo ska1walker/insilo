@@ -14,7 +14,7 @@
 | **Vertrieb** | aimighty.de |
 | **Plattform** | Olares OS (Kubernetes-basiert) |
 | **Status** | Phase 1 — MVP |
-| **Version** | Chart v0.1.65 (im Olares-Markt) · Images 0.1.60 |
+| **Version** | v0.1.66 (Repo, Markt und Box) |
 | **Repository** | github.com/ska1walker/insilo |
 | **Branch** | main |
 | **Sprache** | DE (Primär), EN, FR, ES, IT |
@@ -189,11 +189,11 @@ Dunkelmodus handelt Gold.
 
 | Feld | Wert |
 |------|------|
-| **IP** | 192.168.112.125 |
-| **SSH** | `olares@192.168.112.125` |
+| **IP** | 192.168.1.17 |
+| **SSH** | `olares@192.168.1.17` |
 | **Namespace** | `insilo-kaivostudio` |
 | **Pods** | insilo (frontend+envoy), insilo-backend, insilo-whisper, insilo-embeddings, insilo-worker |
-| **Version** | unverifiziert — `helm list -n insilo-kaivostudio` prüfen |
+| **Version** | v0.1.66, Helm-Rev 44 (verifiziert 19.8.2026, 03:25 UTC) |
 
 ---
 

@@ -1,7 +1,68 @@
-# Handoff — Stand & Learnings (Mai–August 2026, **letzte Aktualisierung: 18. August**)
+# Handoff — Stand & Learnings (Mai–August 2026, **letzte Aktualisierung: 19. August**)
 
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
+>
+> # ⚠️ v0.1.66 — zwei Fallen beim Box-Update (19. August 2026)
+>
+> **Stand: v0.1.66 läuft auf der Box** (Helm-Rev 44, verifiziert 03:25 UTC).
+> Der Weg dahin hat zwei Dinge offengelegt, die jede künftige Session
+> kosten würden.
+>
+> **1. Die Box-IP in der Doku war falsch — und ich habe sie falsch herum
+> korrigiert.**
+>
+> Die Box ist **192.168.1.17**. In `AGENTS.md` stand das richtig; alle
+> anderen Dokumente führten `192.168.112.125`. Beim Aufräumen am 18.8.
+> habe ich nach Mehrheit entschieden (13 Fundstellen gegen 2) und damit
+> den einen korrekten Wert überschrieben. Folge: SSH lief in einen
+> Timeout, die Box war für die halbe Sitzung unerreichbar, und der
+> fehlgeschlagene Deploy fiel erst durch Nachfragen auf.
+>
+> **Lesson: Häufigkeit ist kein Beleg.** Eine Adresse prüft man, indem man
+> sie anspricht — nicht, indem man Fundstellen zählt.
+>
+> **2. `--reuse-values` macht Image-Updates wirkungslos.**
+>
+> Ein Upgrade mit `--reuse-values` und ohne explizite Tags sieht wie ein
+> gelungener Deploy aus und ändert nichts:
+>
+> | | |
+> |---|---|
+> | Chart auf der Box | `insilo-0.1.66` ✓ |
+> | gespeicherte Werte | `tag: 0.1.56` ✗ |
+> | laufende Pods | 0.1.56 |
+> | Helm-Meldung | „successfully upgraded" |
+> | Market UI | zeigt 0.1.66, Knopf „Open" |
+>
+> Helm spielt bei `--reuse-values` die beim Installieren gespeicherten
+> Werte zurück; die enthalten die alten Image-Tags und überschreiben die
+> aus dem neuen Chart. Das ist kein Olares-Eigenheit, sondern Helm-
+> Verhalten — und `scripts/release.sh` gab bis v0.1.66 genau diesen
+> unvollständigen Befehl als Deploy-Hinweis aus.
+>
+> **Der Befehl, der wirkt:**
+>
+> ```bash
+> scp dist/insilo-X.Y.Z.tgz olares@192.168.1.17:/tmp/
+> ssh olares@192.168.1.17 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
+>   helm upgrade insilo /tmp/insilo-X.Y.Z.tgz -n insilo-kaivostudio \
+>   --reuse-values \
+>   --set images.frontend.tag=X.Y.Z --set images.backend.tag=X.Y.Z \
+>   --set images.whisper.tag=X.Y.Z --set images.embeddings.tag=X.Y.Z'
+> ```
+>
+> **Danach immer nachsehen, was wirklich läuft** — die Helm-Meldung
+> genügt nicht:
+>
+> ```bash
+> kubectl get pods -n insilo-kaivostudio \
+>   -o jsonpath='{range .items[*]}{.metadata.name}{"  "}{.spec.containers[*].image}{"\n"}{end}'
+> ```
+>
+> **Merke außerdem:** Ein Chart-Upload in der Market UI registriert die
+> Version, bewegt eine laufende Installation aber nicht auf die neuen
+> Images. „Open" statt „Update" heißt nur „installiert", nicht „aktuell".
 >
 > # 🎨 Rebrand auf das AImighty-Designsystem (18. August 2026)
 >
@@ -136,7 +197,7 @@
 > **2. `AGENTS.md` committed** (war seit 8. Juli untracked). Tabellarische
 > Kurzreferenz für AI-Agents, ergänzt `CLAUDE.md`. Beim Commit die
 > veraltete Box-IP korrigiert: stand auf `192.168.1.17`, überall sonst im
-> Repo steht `192.168.112.125`.
+> Repo steht `192.168.1.17`.
 >
 > **3. Ruff-Blocker beseitigt.** Der `ci`-Workflow war **seit v0.1.59 rot** —
 > 4 auto-fixable Violations (unused `fastapi.HTTPException` in
@@ -1854,7 +1915,7 @@ Image-Tags bumpen NUR bei Code-Änderung (sonst unnötige GH-Actions-Builds).
 
 ### Issue 5: SSH-Zugang ist Gold
 
-`ssh olares@192.168.112.125` mit `~/.ssh/id_ed25519` Key (etabliert in dieser Session).
+`ssh olares@192.168.1.17` mit `~/.ssh/id_ed25519` Key (etabliert in dieser Session).
 Ermöglicht:
 - Direkte kubectl-Calls auf der Box
 - helm upgrade ohne Market-UI
@@ -1915,10 +1976,10 @@ Für den Browser-Audio-Player wird `get_presigned_url(key)` bei `local`-Backend 
 **Wie DB-Migrationen eingespielt wurden** (für Doku falls Box mal neu aufgesetzt wird):
 ```bash
 # Migrations + seed auf Box bringen
-scp supabase/migrations/0001_initial_schema.sql supabase/migrations/0002_rls_policies.sql supabase/seed.sql olares@192.168.112.125:/tmp/
+scp supabase/migrations/0001_initial_schema.sql supabase/migrations/0002_rls_policies.sql supabase/seed.sql olares@192.168.1.17:/tmp/
 
 # In Backend-Pod kopieren + ausführen
-ssh olares@192.168.112.125 "BPOD=\$(kubectl get pod -n insilo-kaivostudio -l component=backend -o jsonpath='{.items[0].metadata.name}'); for f in 0001_initial_schema.sql 0002_rls_policies.sql seed.sql; do kubectl cp /tmp/\$f insilo-kaivostudio/\$BPOD:/tmp/\$f -c backend; done; kubectl exec -n insilo-kaivostudio \$BPOD -c backend -- python3 -c 'import asyncio,asyncpg,os; async def m():
+ssh olares@192.168.1.17 "BPOD=\$(kubectl get pod -n insilo-kaivostudio -l component=backend -o jsonpath='{.items[0].metadata.name}'); for f in 0001_initial_schema.sql 0002_rls_policies.sql seed.sql; do kubectl cp /tmp/\$f insilo-kaivostudio/\$BPOD:/tmp/\$f -c backend; done; kubectl exec -n insilo-kaivostudio \$BPOD -c backend -- python3 -c 'import asyncio,asyncpg,os; async def m():
  c=await asyncpg.connect(host=os.environ[\"DB_HOST\"],port=int(os.environ[\"DB_PORT\"]),user=os.environ[\"DB_USER\"],password=os.environ[\"DB_PASSWORD\"],database=os.environ[\"DB_NAME\"])
  for f in [\"/tmp/0001_initial_schema.sql\",\"/tmp/0002_rls_policies.sql\",\"/tmp/seed.sql\"]:
   await c.execute(open(f).read())
@@ -1935,7 +1996,7 @@ Ein Init-Container im Chart wäre eleganter — Phase-4b-Item.
 
 **Erste Action neuer Session:**
 1. User uploadet `~/Downloads/insilo-0.1.12.tgz` via Olares Market UI → Upload custom chart
-2. Watch: `ssh -t olares@192.168.112.125 'watch -n 2 "kubectl get pods -n insilo-kaivostudio"'`
+2. Watch: `ssh -t olares@192.168.1.17 'watch -n 2 "kubectl get pods -n insilo-kaivostudio"'`
 3. Expectation: 5 Pods Ready, backend ist **1/1 nicht 2/2** (kein Envoy)
 4. Service Worker im Browser leeren (DevTools → Application → Clear site data)
 5. PWA öffnen, „Besprechungen"-Liste sollte laden (oder DB-Migration-Error wenn Tabellen fehlen)
@@ -2077,7 +2138,7 @@ Einstellungen). v0.1.15 + v0.1.16 nutzen weiterhin `:0.1.14`-Images. Spart
 
 ```bash
 # Pods + Job + Migration-Status auf einen Blick:
-ssh -t olares@192.168.112.125 'watch -n 2 "kubectl get pods,job -n insilo-kaivostudio"'
+ssh -t olares@192.168.1.17 'watch -n 2 "kubectl get pods,job -n insilo-kaivostudio"'
 
 # Migration-Init-Container-Logs (während Backend noch Init:0/2):
 kubectl logs -n insilo-kaivostudio <backend-pod> -c migrate -f
@@ -2256,7 +2317,7 @@ Siehe §7d für Architektur, §7e für Marc's Gold-Standard-Playbook-Regeln. Act
 - [ ] Verify: `curl -o /dev/null -w "%{http_code}\n" https://aimighty-market.pages.dev/api/v1/applications/insilo/chart` = 200
 
 #### Auf Olares-Box installieren — ⏸ nach Deploy
-- [ ] SSH-Zugang verifiziert: `ssh olares@192.168.112.125 "kubectl get nodes"` ✅
+- [ ] SSH-Zugang verifiziert: `ssh olares@192.168.1.17 "kubectl get nodes"` ✅
 - [ ] Market Source `aimighty-market.pages.dev` ist als Source konfiguriert (Marc's Doku: in Olares Market → Settings → Market Sources)
 - [ ] **Sync-Force:** Source entfernen + neu hinzufügen (Cache-Invalidierung)
 - [ ] Bis zu 5 Min warten bis Insilo im Market erscheint
@@ -2325,7 +2386,7 @@ Alle technischen Hürden außer der „Upload-vs-Market"-Klassifizierung sind ge
 10. **Olares-Debug:** „download failed" sagt nichts aus. Immer in `kubectl logs -n os-framework app-service-0` schauen — dort steht der echte Render/Validate/Pull-Fehler. Siehe §7a (Debug-Cheatsheet).
 11. **Wenn jemand Phase 4 retry'en will:** zuerst §7c (Sackgassen-Analyse) UND §7f (Phase-4b-Learnings) lesen. Phase 4 ist effektiv gelöst — `~/Downloads/insilo-0.1.12.tgz` ist installierbar via "Upload custom chart" in Market UI.
 
-12. **SSH-Zugang zur Box:** `ssh olares@192.168.112.125` ist eingerichtet (id_ed25519 Key). Für jeden kubectl/helm Befehl auf der Box. Sandbox blockt destruktive Aktionen ohne explizite User-Autorisierung.
+12. **SSH-Zugang zur Box:** `ssh olares@192.168.1.17` ist eingerichtet (id_ed25519 Key). Für jeden kubectl/helm Befehl auf der Box. Sandbox blockt destruktive Aktionen ohne explizite User-Autorisierung.
 
 13. **Auto-Deploy ist AUS auf aimighty CF-Pages** (Marc's bewusste Entscheidung — siehe `docs/MARKET_SOURCE_PLAYBOOK.md`). Nach Code-Änderung im `bayerhazard/aimighty` Repo IMMER manuell `wrangler pages deploy functions/ --project-name=aimighty-market` ausführen. Marc oder Kai (mit CF-Team-Membership) macht das.
 

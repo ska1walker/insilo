@@ -13,7 +13,7 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** **v0.1.70 läuft auf der Box** (Helm-Rev 48, verifiziert
+**Stand:** **v0.1.71 läuft auf der Box** (Helm-Rev 49, verifiziert
 19.8.2026) und liegt als Tag + Chart im Repo. Box:
 `olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
 `https://e5d605f3.kaivostudio.olares.de`).
@@ -98,7 +98,7 @@ Feature-Set:
   Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
   `ci`-Workflow seit v0.1.59 rot hielten.
 
-**Seit dem 18./19. August — v0.1.66 bis v0.1.70, auf der Box:**
+**Seit dem 18./19. August — v0.1.66 bis v0.1.71, auf der Box:**
 
 - **Rebrand auf das AImighty-Designsystem** — Geist-Schriften, Hanseatenblau,
   dreiteilige Hülle, Hell- und Dunkelmodus. Werte in
@@ -108,8 +108,10 @@ Feature-Set:
   unter `/datenschutz`. Migration **0014** zählt gesendete Webhook-Bytes.
 - **Aufnahme-Welle** — Pegelverlauf des echten Mikrofonsignals während
   der Aufnahme, logarithmisch skaliert (v0.1.66).
-- **Neues Wappen + vollständiger Icon-Satz** — PWA, Home-Bildschirm,
-  Olares-Kachel; `icons/` war vorher leer (v0.1.68).
+- **Wappen + vollständiger Icon-Satz** — PWA, Home-Bildschirm,
+  Olares-Kachel; `icons/` war vorher leer (v0.1.68). In v0.1.71 auf das
+  überarbeitete Figma-Zeichen gewechselt: Wappen jetzt in zwei Fassungen
+  (hell/dunkel), maskable-Symbol mit Sicherheitsabstand.
 - **Herkunftsvermerk** unten in der Navigation, verlinkt auf aimighty.de
   (v0.1.69).
 - **Datenschutz-Nachweis unterscheidet eigene Box von Fremdanbieter**

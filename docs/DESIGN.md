@@ -106,15 +106,32 @@ mehr. Gold, weil die laufende Aufnahme die Auszeichnung trägt.
 
 ### Das Wappen
 
-`components/wappen.tsx`, kein `<img>`. Im gelieferten SVG ist die
-Wortmarke weiß und wäre auf hellem Grund unsichtbar; als Bauteil trägt
-sie `currentColor` und folgt der Textfarbe. Das goldene Schild und das
-Monogramm darauf behalten ihre Farben — sie liegen auf Gold und haben mit
-dem Seitenhintergrund nichts zu tun.
+`components/wappen.tsx`, kein `<img>` — und **zwei Fassungen statt einer
+umgefärbten**. Die Vorlagen unterscheiden sich um mehr als die Textfarbe:
+auf hellem Grund ist die Wortmarke Hanseatenblau mit weißem Monogramm,
+auf dunklem beides weiß. Das ist eine gestalterische Entscheidung, keine
+Umfärbung — sie wird deshalb übernommen, nicht nachgerechnet.
 
-**Wird `public/insilo_logo.svg` ersetzt, muss das Bauteil neu erzeugt
-werden.** Die Trennung läuft über die Position: alles rechts des Schilds
-ist Schrift, alles darauf ist Marke.
+Beide liegen im Markup, CSS zeigt die passende (`.wappen-hell` /
+`.wappen-dunkel`). Ohne JavaScript, damit beim Laden nichts umspringt.
+
+**Werden die Vorlagen ersetzt, muss das Bauteil neu erzeugt werden** —
+sonst zeigt die Navigation weiter das alte Zeichen. Quellen im Repo:
+`public/insilo_logo_hell.svg`, `_dunkel.svg`.
+
+### Das App-Symbol
+
+Aus derselben Figma-Quelle, als Vektor geholt und aus einem
+1024-px-Rendering abgeleitet — kleine Größen aus einem großen verkleinert
+sind schärfer als ein hochskaliertes Original. Quelle bleibt als
+`icons/icon-quelle.svg` im Repo.
+
+**Die maskable-Fassung braucht Abstand.** Android beschneidet App-Symbole
+auf beliebige Formen; garantiert sichtbar ist nur der innere Kreis mit
+80 % Durchmesser. Das Schild reicht in der Vorlage bis etwa 85 % der Höhe,
+seine Spitze wäre also abgeschnitten worden. `icon-maskable-512.png`
+zeigt es deshalb auf 78 % verkleinert und auf der Markenfläche zentriert;
+alle anderen Größen bleiben randnah wie in der Vorlage.
 
 ### Auswahlfelder
 

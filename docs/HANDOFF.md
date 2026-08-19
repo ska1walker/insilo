@@ -3,15 +3,16 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # ✅ Stand: v0.1.70 läuft auf der Box (19. August 2026, Helm-Rev 48)
+> # ✅ Stand: v0.1.71 läuft auf der Box (19. August 2026, Helm-Rev 49)
 >
-> Verifiziert, nicht angenommen: alle fünf Pods auf `0.1.70`,
-> `/api/v1/egress` vorhanden, Migration 0014 angewendet. Box:
-> **192.168.1.17** (nicht die früher dokumentierte 112er-Adresse).
+> Verifiziert, nicht angenommen: alle fünf Pods auf `0.1.71`, alle
+> Health-Checks grün (auch `/health/llm`), `/api/v1/egress` vorhanden,
+> Migration 0014 angewendet. Box: **192.168.1.17** (nicht die früher
+> dokumentierte 112er-Adresse).
 >
-> **v0.1.66 → v0.1.70 in einem Rutsch:** Rebrand-Deploy, Dunkelmodus-
-> Korrekturen, neues Wappen mit vollständigem Icon-Satz, Herkunftsvermerk,
-> genauerer Datenschutz-Nachweis.
+> **v0.1.66 → v0.1.71 an einem Tag:** Rebrand-Deploy, Dunkelmodus-
+> Korrekturen, Wappen und Icon-Satz, Herkunftsvermerk, genauerer
+> Datenschutz-Nachweis, überarbeitetes Zeichen aus Figma.
 >
 > ---
 >
@@ -90,7 +91,7 @@
 >
 > ---
 >
-> ## Icons und Wappen (v0.1.68)
+> ## Icons und Wappen (v0.1.68, überarbeitet in v0.1.71)
 >
 > `frontend/public/icons/` war **leer**, obwohl `manifest.json` drei
 > Dateien referenzierte — wer Insilo auf den Home-Bildschirm legte, bekam
@@ -101,12 +102,26 @@
 > einem 1024er-Rendering abgeleitet; die Quelle liegt als
 > `icons/icon-quelle.svg` im Repo, künftige Größen brauchen kein Figma.
 >
-> Das Wappen ist ein Bauteil
-> ([components/wappen.tsx](../frontend/components/wappen.tsx)), kein
-> `<img>`: Im gelieferten SVG ist die Wortmarke **weiß** und wäre auf
-> hellem Grund unsichtbar. Sie trägt jetzt `currentColor`; das Schild
-> behält sein Gold. **Wird `insilo_logo.svg` ersetzt, muss das Bauteil neu
-> erzeugt werden** — sonst zeigt die Navigation weiter das alte Zeichen.
+> **Seit v0.1.71 zwei Fassungen statt einer umgefärbten.** Figma liefert
+> `logo_insilo_white_bg` (98:441) und `logo_insilo_dark_bg` (98:426); sie
+> unterscheiden sich um mehr als die Textfarbe — auf hellem Grund ist die
+> Wortmarke Hanseatenblau mit weißem Monogramm, auf dunklem beides weiß.
+> Das ist Gestaltung, keine Umfärbung, also wird sie nicht nachgerechnet.
+> Beide liegen im Markup, CSS zeigt die passende: kein JavaScript, kein
+> Umspringen beim Laden.
+>
+> **Maskable braucht Abstand.** Das neue Zeichen ist ein Schild und reicht
+> bis ~85 % der Höhe. Android beschneidet auf beliebige Formen, garantiert
+> ist nur der innere Kreis mit 80 % Durchmesser — die Schildspitze wäre
+> abgeschnitten. `icon-maskable-512.png` zeigt das Zeichen deshalb auf
+> 78 % verkleinert und zentriert; die übrigen Größen bleiben randnah wie
+> in der Vorlage.
+>
+> **Werden die Vorlagen ersetzt, muss
+> [components/wappen.tsx](../frontend/components/wappen.tsx) neu erzeugt
+> werden** — sonst zeigt die Navigation weiter das alte Zeichen. Die
+> Quellen liegen im Repo (`public/insilo_logo_{hell,dunkel}.svg`,
+> `icons/icon-quelle.svg`), Figma ist dafür nicht nötig.
 >
 > ---
 >

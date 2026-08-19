@@ -135,7 +135,7 @@ function LocaleOption({
       disabled={loading}
       className={`flex items-start gap-3 rounded-md border px-4 py-3 text-left transition ${
         selected
-          ? "border-gold-600 bg-gold-200"
+          ? "border-gold-600 flaeche-auswahl"
           : "border-trennlinie bg-seite hover:bg-flaeche-1"
       }`}
       style={

@@ -476,7 +476,7 @@ function SegmentPicker({
             onClick={() => onPick(s.id)}
             className={`mono inline-flex rounded-full border px-3 py-1 text-[0.8125rem] font-medium uppercase tracking-[0.02em] transition ${
               current === s.id
-                ? "border-gold-600 bg-gold-200"
+                ? "border-gold-600 flaeche-auswahl"
                 : "border-trennlinie bg-seite hover:bg-flaeche-1"
             }`}
             style={

@@ -22,6 +22,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { DatenschutzNachweis } from "@/components/datenschutz-nachweis";
+import { Wappen } from "@/components/wappen";
 import {
   Archive,
   Info,
@@ -125,12 +126,7 @@ export function Huelle({ children }: { children: ReactNode }) {
               ist Beschriftung — Insilo läuft als einzelnes Produkt. */}
           <div className="huelle-kopfecke">
             <Link href="/" aria-label={t("homeAria")} className="huelle-wappen-link">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/insilo_logo.svg"
-                alt={t("logoAlt")}
-                className="huelle-wappen"
-              />
+              <Wappen className="huelle-wappen" />
             </Link>
           </div>
 

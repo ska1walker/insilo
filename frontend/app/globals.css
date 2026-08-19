@@ -129,6 +129,13 @@
      3,3:1 und fällt damit unter die Lesbarkeitsschwelle. Der Dunkelmodus
      setzt darum weiter unten den helleren Ton. */
   --am-gold-beschriftung: var(--am-gold-800);
+
+  /* Fläche eines ausgewählten Eintrags (Vorlage, Sprache, Sprecher).
+     Im Hellmodus trägt die goldene Tönung die Auszeichnung. Im
+     Dunkelmodus wäre dieselbe helle Fläche ein Loch, auf dem der helle
+     Text verschwindet — dort hebt eine dunklere Blaustufe den Eintrag,
+     und die Auszeichnung übernimmt der goldene Rand. */
+  --am-auswahl-flaeche: var(--am-gold-200);
 }
 
 /* ── Dunkelmodus — Gold handelt, Blau trägt die Fläche ────────────────
@@ -171,6 +178,7 @@ html.dunkel {
      8,1:1 auf der Grundfläche. Es ist zugleich die Handlungsfarbe im
      Dunkelmodus, also bleibt die Sprache geschlossen. */
   --am-gold-beschriftung: var(--am-gold-500);
+  --am-auswahl-flaeche: var(--am-blau-700);
 }
 
 /* ── Dichte — Zeiger vs. Berührung ─────────────────────────────────── */
@@ -455,6 +463,11 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     background: var(--am-deckschicht);
   }
 
+  /* Ausgewählter Eintrag — Fläche folgt dem Modus, siehe Token oben. */
+  .flaeche-auswahl {
+    background: var(--am-auswahl-flaeche);
+  }
+
   /* ── Karte ────────────────────────────────────────────────────────── */
   .karte {
     background: var(--am-flaeche-1);
@@ -633,6 +646,10 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     .huelle-wappen {
       height: 28px;
       width: auto;
+      /* Die Wortmarke erbt die Textfarbe (siehe components/wappen.tsx),
+         damit sie im Dunkelmodus nicht auf der blauen Fläche verschwindet.
+         Das Gold der Sprechblase steckt fest im SVG. */
+      color: var(--am-text-primaer);
     }
 
     .huelle-nav-gruppe {

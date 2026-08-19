@@ -111,7 +111,7 @@ export function DarstellungSwitcher() {
               aria-pressed={aktiv}
               className={`flex items-center justify-between rounded-mittel border px-4 py-3 text-left text-sm transition-colors ${
                 aktiv
-                  ? "border-gold-600 bg-gold-200 text-text-primaer"
+                  ? "border-gold-600 flaeche-auswahl text-text-primaer"
                   : "border-trennlinie text-text-sekundaer hover:bg-flaeche-1"
               }`}
               style={{ minHeight: "var(--am-ziel-zeiger)" }}

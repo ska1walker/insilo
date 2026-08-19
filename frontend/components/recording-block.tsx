@@ -317,7 +317,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
                   key={t.id}
                   className={`flex cursor-pointer items-start gap-3 p-4 ${
                     i > 0 ? "border-t border-trennlinie" : ""
-                  } ${selectedTemplate === t.id ? "bg-gold-200" : ""}`}
+                  } ${selectedTemplate === t.id ? "flaeche-auswahl" : ""}`}
                 >
                   <input
                     type="radio"

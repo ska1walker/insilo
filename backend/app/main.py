@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
-from app.db import close_pool, init_pool
+from app.db import acquire, close_pool, init_pool
 from app.errors import locale_middleware
 from app.routers import (
     api_keys,
@@ -75,8 +75,6 @@ async def health() -> dict:
 
 @app.get("/health/db")
 async def health_db() -> dict:
-    from app.db import acquire
-
     async with acquire() as conn:
         await conn.fetchval("select 1")
     return {"status": "ok", "service": "postgres"}
@@ -94,15 +92,38 @@ async def health_whisper() -> dict:
 
 @app.get("/health/llm")
 async def health_llm() -> dict:
-    # Ohne Adresse gibt es nichts anzupingen. Das ist kein Fehler, sondern
-    # eine offene Einrichtung — die Oberfläche unterscheidet das.
-    if not settings.llm_base_url:
+    # Die wirksame Adresse steht pro Org in der Datenbank; die
+    # Deployment-Vorgabe ist nur Rückfall und seit v0.1.72 regulär leer.
+    # Ein Health-Check hat keinen Org-Kontext, also prüft er, ob überhaupt
+    # irgendwo eine eingetragen ist — sonst meldete er „nicht
+    # eingerichtet", während die App längst zusammenfasst.
+    base = settings.llm_base_url
+    key = settings.llm_api_key
+    try:
+        async with acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                select llm_base_url, llm_api_key
+                from public.org_settings
+                where trim(llm_base_url) <> ''
+                limit 1
+                """
+            )
+        if row:
+            base = row["llm_base_url"]
+            key = row["llm_api_key"] or key
+    except Exception:  # noqa: BLE001
+        # Datenbank nicht erreichbar — dafür gibt es /health/db. Hier
+        # bleibt es beim Vorgabewert.
+        pass
+
+    if not base:
         return {"status": "not_configured", "service": "llm"}
     try:
         async with httpx.AsyncClient(timeout=3) as client:
             r = await client.get(
-                f"{settings.llm_base_url}/models",
-                headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+                f"{base.rstrip('/')}/models",
+                headers={"Authorization": f"Bearer {key}"},
             )
             return {"status": "ok" if r.status_code < 500 else "error", "service": "llm"}
     except Exception as exc:

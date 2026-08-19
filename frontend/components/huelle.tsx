@@ -165,11 +165,22 @@ export function Huelle({ children }: { children: ReactNode }) {
               abrufbar ist (Paket-Regel: gemessene Werte oder gar nicht). */}
           <DatenschutzNachweis locale={locale} />
 
-          {/* Herkunftsvermerk. Bewusst ohne Verweis nach außen: Insilo
-              baut in keiner Ansicht eine Verbindung auf, die der Nutzer
-              nicht angestoßen hat. */}
+          {/* Herkunftsvermerk mit Verweis auf den Hersteller.
+              `rel="noopener noreferrer"`: die neue Seite bekommt weder
+              Zugriff auf dieses Fenster noch die Herkunfts-URL mit — bei
+              einer Box unter eigener Adresse ist das keine Kleinigkeit.
+              Der Aufruf geschieht nur auf Klick; von selbst verbindet
+              sich hier nichts. */}
           <p className="huelle-herkunft">
-            <span className="huelle-herkunft-marke">AImighty</span>
+            <a
+              href="https://aimighty.de"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="huelle-herkunft-marke"
+              aria-label={t("herkunftAria")}
+            >
+              AImighty
+            </a>
             <span className="huelle-herkunft-recht">© {JAHR}</span>
           </p>
         </nav>

@@ -8,7 +8,8 @@
     "idee": "Idea",
     "logoAlt": "Insilo",
     "homeAria": "Insilo — back to overview",
-    "navAria": "Main navigation"
+    "navAria": "Main navigation",
+    "herkunftAria": "AImighty — open website (new window)"
   },
   "common": {
     "save": "Save",

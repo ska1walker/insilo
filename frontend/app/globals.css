@@ -580,9 +580,35 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     display: none;
   }
 
-  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte. */
+  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
+     sichtbar; Farbe und Schnitt gelten unabhängig davon. */
   .huelle-herkunft {
     display: none;
+  }
+
+  .huelle-herkunft-marke {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--am-text-sekundaer);
+    border-radius: var(--am-radius-klein);
+    transition: color var(--am-dauer-kurz) ease;
+  }
+
+  .huelle-herkunft-marke:hover {
+    color: var(--am-text-primaer);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .huelle-herkunft-marke:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+  }
+
+  .huelle-herkunft-recht {
+    font-family: var(--am-schrift-mono);
+    font-size: 0.625rem;
+    color: var(--am-text-deaktiviert);
   }
 
   /* ── Datenschutz-Nachweis ─────────────────────────────────────────
@@ -746,20 +772,6 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
       padding: 0 var(--am-raum-3);
       font-size: 0.6875rem;
       line-height: 1.4;
-    }
-
-    /* Die Wortmarke trägt das Gewicht, das Rechtszeichen tritt zurück —
-       ein Herkunftsvermerk, kein Bedienelement. */
-    .huelle-herkunft-marke {
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      color: var(--am-text-sekundaer);
-    }
-
-    .huelle-herkunft-recht {
-      font-family: var(--am-schrift-mono);
-      font-size: 0.625rem;
-      color: var(--am-text-deaktiviert);
     }
 
     .huelle-inhalt {

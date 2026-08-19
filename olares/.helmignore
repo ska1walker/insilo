@@ -1,0 +1,14 @@
+# Was nicht ins Paket gehört — und erst recht nicht in einen
+# öffentlichen Katalog, in dem der ganze Ordner sichtbar wird.
+
+# Entwurfsstände des Symbols (Mai 2026), nie ausgeliefert
+icon-options/
+# Doppelt: icon-256.png ist das gepflegte, icon_256.png ein Überbleibsel
+icon_256.png
+# Nur für lokales `helm lint` / `helm template` — enthält Platzhalter für
+# Werte, die Olares zur Installationszeit selbst injiziert
+values-olares-stub.yaml
+
+# Übliches
+.DS_Store
+*.tgz

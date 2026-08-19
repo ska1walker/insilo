@@ -30,10 +30,16 @@ export const metadata: Metadata = {
   description:
     "On-Premise Aufnahme, Transkription und Analyse von Geschäftsgesprächen — vollständig auf der Hardware des Kunden.",
   manifest: "/manifest.json",
+  // iOS liest die Icons aus dem Manifest nicht — es braucht
+  // apple-touch-icon ausdrücklich.
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0A0A0A",
+  themeColor: "#051729",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

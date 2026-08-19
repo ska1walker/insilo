@@ -22,6 +22,7 @@ MANIFEST_FILE="olares/OlaresManifest.yaml"
 ROOT_MANIFEST_FILE="OlaresManifest.yaml"
 VALUES_FILE="olares/values.yaml"
 TEMPLATES_DIR="olares/templates"
+VALUES_STUB="olares/values-olares-stub.yaml"
 
 red()    { printf "\033[31m%s\033[0m\n" "$*"; }
 green()  { printf "\033[32m%s\033[0m\n" "$*"; }
@@ -168,6 +169,62 @@ if command -v olares-cli >/dev/null 2>&1; then
   fi
 else
   skip "olares-cli nicht im PATH — offizieller Validator übersprungen"
+fi
+
+# ---------------------------------------------------------------------------
+# 1d1. Neue Wertschlüssel dürfen nicht direkt dereferenziert werden.
+#
+#      Ein Upgrade — ob per `helm --reuse-values` oder über den Markt —
+#      spielt die beim Installieren gespeicherten Werte zurück und mischt
+#      die Vorgaben des neuen Charts NICHT ein. Ein Schlüssel, den es in
+#      der Vorversion noch nicht gab, fehlt dann zur Laufzeit. Steht im
+#      Template `.Values.neu.feld`, stirbt das Rendern mit "nil pointer"
+#      und das Upgrade scheitert, bevor irgendetwas passiert.
+#
+#      Gesehen bei v0.1.77: der neue `stt:`-Block ließ jedes Markt-Upgrade
+#      auflaufen, obwohl jede andere Prüfung grün war.
+#
+#      Nachstellen lässt sich das nicht durch Rendern: `helm template -f`
+#      MISCHT die übergebene Datei mit den Chart-Vorgaben, der Schlüssel
+#      ist also immer da. Deshalb statisch: welche Top-Level-Schlüssel sind
+#      neu gegenüber dem letzten Tag, und greift ein Template direkt
+#      darauf zu?
+#
+#      Sichere Schreibweise: (default (dict) .Values.neu).feld | default ""
+# ---------------------------------------------------------------------------
+
+section "neue Wertschlüssel sind upgrade-sicher dereferenziert"
+
+# Höchster Tag, der NICHT die gerade gebaute Version ist — nach einem
+# Release liefert `git describe` sonst den soeben gesetzten.
+PREV_TAG="$(git tag --list 'v*' --sort=-v:refname | grep -v "^v${CHART_VERSION}$" | head -1)"
+
+if [[ -z "$PREV_TAG" ]]; then
+  skip "kein vorheriger Tag gefunden"
+elif ! git cat-file -e "$PREV_TAG:$VALUES_FILE" 2>/dev/null; then
+  skip "$PREV_TAG kennt $VALUES_FILE nicht"
+else
+  toplevel() { grep -E '^[a-zA-Z_][a-zA-Z0-9_]*:' | sed 's/:.*//'; }
+  ALT_KEYS="$(git show "$PREV_TAG:$VALUES_FILE" | toplevel | sort -u)"
+  NEU_KEYS="$(toplevel < "$VALUES_FILE" | sort -u)"
+  ZUGEWACHSEN="$(comm -13 <(echo "$ALT_KEYS") <(echo "$NEU_KEYS"))"
+
+  if [[ -z "$ZUGEWACHSEN" ]]; then
+    ok "keine neuen Wertschlüssel gegenüber $PREV_TAG"
+  else
+    unsicher=0
+    for k in $ZUGEWACHSEN; do
+      # Kommentarzeilen ausnehmen — sonst schlaegt der Guard bei der
+      # Erklaerung an, die genau vor dieser Schreibweise warnt.
+      TREFFER="$(grep -rn "\.Values\.${k}\." "$TEMPLATES_DIR" 2>/dev/null | grep -vE ':[[:space:]]*#' | grep -v 'default (dict)' || true)"
+      if [[ -n "$TREFFER" ]]; then
+        fail "neuer Schlüssel '$k' (seit $PREV_TAG) wird direkt dereferenziert — Upgrade würde scheitern:"
+        echo "$TREFFER" | sed 's/^/      /'
+        unsicher=1
+      fi
+    done
+    [[ $unsicher -eq 0 ]] && ok "neue Schlüssel gegenüber $PREV_TAG ($(echo $ZUGEWACHSEN | tr '\n' ' ')) sicher dereferenziert"
+  fi
 fi
 
 section "olares dependency matches the manifest generation"

@@ -198,12 +198,23 @@ spec:
             # Box nicht. Wer einen OpenAI-kompatiblen STT-Server bevorzugt
             # (z. B. Speaches auf derselben Box), trägt ihn unter
             # /einstellungen ein — der Datenschutz-Nachweis benennt ihn dann.
+            # Kein direkter Punktzugriff, und das ist keine Stilfrage: ein
+            # Upgrade spielt die beim Installieren gespeicherten Werte
+            # zurück und mischt die Vorgaben des NEUEN Charts nicht ein.
+            # Ein Schlüssel, den es in der Vorversion noch nicht gab,
+            # fehlt dann schlicht — `.Values.stt.baseUrl` stirbt mit
+            # „nil pointer evaluating interface {}.baseUrl", und das
+            # Upgrade scheitert, bevor irgendetwas passiert (so geschehen
+            # bei v0.1.77 über den Markt). `default (dict)` fängt den
+            # fehlenden Block ab. `dig` wäre der naheliegende Weg, kann
+            # aber nicht auf `.Values` — das ist chartutil.Values, keine
+            # einfache Map. Für jeden künftig neuen Wertschlüssel genauso.
             - name: STT_BASE_URL
-              value: "{{ .Values.stt.baseUrl }}"
+              value: "{{ (default (dict) .Values.stt).baseUrl | default "" }}"
             - name: STT_API_KEY
-              value: "{{ .Values.stt.apiKey }}"
+              value: "{{ (default (dict) .Values.stt).apiKey | default "" }}"
             - name: STT_MODEL
-              value: "{{ .Values.stt.model }}"
+              value: "{{ (default (dict) .Values.stt).model | default "" }}"
 
             # ---- Storage-Pfade ----------------------------------------------
             - name: APP_DATA_DIR

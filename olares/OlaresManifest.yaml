@@ -34,7 +34,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.80              # = Chart.yaml.version
+  version: 0.1.81              # = Chart.yaml.version
   # Eine primäre Kategorie, wie es der AIMighty-Markt vorgibt. Die
   # frühere Dreierliste trug mit `Productivity_v112` einen Wert, den
   # dieser Markt ausdrücklich nicht mehr führt.
@@ -108,7 +108,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.80'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.81'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
@@ -141,20 +141,19 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.80 — Einrichtung liegt jetzt neben den Aufnahmen.
+    v0.1.81 — die Einrichtungsdatei wird jetzt wirklich geschrieben.
 
-    - Die Konfiguration wird als eine Datei im Datenverzeichnis abgelegt
-      und beim Start zurückgelesen, wenn die Datenbank leer ist. Eine
-      Sicherung des Datenverzeichnisses ist damit vollständig.
-    - Wichtig dabei: die Kennung der Organisation bleibt erhalten. Nach
-      einer Neuinstallation finden vorhandene Aufnahmen dadurch wieder
-      Anschluss, statt herrenlos liegenzubleiben.
-    - Die Datei enthält Zugangsdaten (Schlüssel für Sprachmodell und
+    - Der in v0.1.80 angekündigte Abzug der Einrichtung entstand nie: er
+      zielte auf ein Verzeichnis, das es im Container nicht gibt, und
+      fragte eine Spalte ab, die seit längerem entfernt ist. Beides ist
+      behoben, die Datei liegt neben den Aufnahmen und wird nach jeder
+      Änderung neu geschrieben.
+    - Sie enthält Zugangsdaten (Schlüssel für Sprachmodell und
       Spracherkennung, Webhook-Geheimnisse). Wer das Datenverzeichnis
       sichert, sichert diese mit.
-    - Fehlermeldungen der Spracherkennung nennen jetzt den Grund, den der
-      Endpunkt genannt hat. Fehlt die Modell-ID, sagt Insilo das vorher,
-      statt den Endpunkt eine Formfehlermeldung schicken zu lassen.
+    - Ein Update über den Markt tauscht ab sofort auch die Programmteile
+      aus. Bisher konnte es die Version anzeigen, ohne sie zu
+      installieren — die Anzeige stimmte, der Inhalt nicht.
 
   developer: kaivo.studio
   website: https://kaivo.studio

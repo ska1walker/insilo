@@ -80,3 +80,54 @@ def test_ohne_datei_passiert_nichts(tmp_path: Path, monkeypatch: pytest.MonkeyPa
             raise AssertionError("darf gar nicht erst gefragt werden")
 
     assert asyncio.run(konfiguration.wiederherstellen(DB())) is False
+
+
+def test_pfad_haengt_nicht_an_app_data_dir(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`APP_DATA_DIR` trägt auf Olares den Host-Pfad — der Abzug darf nicht daran hängen.
+
+    Das Deployment setzt `APP_DATA_DIR` auf `.Values.userspace.appData`, also
+    auf den Pfad, unter dem das Volume auf dem *Knoten* liegt
+    (`/olares/rootfs/userspace/pvc-.../Data/insilo`). Im Container gibt es
+    den nicht. In v0.1.80 zeigte der Abzug deshalb ins Leere; er landete nie
+    auf der Platte. Maßgeblich ist, wo das Audio liegt.
+    """
+    import importlib
+
+    from app.config import settings
+
+    monkeypatch.setenv("APP_DATA_DIR", "/olares/rootfs/userspace/pvc-irgendwas/Data/insilo")
+    neu = importlib.reload(konfiguration)
+    try:
+        assert neu.DATEI.parent == Path(settings.storage_local_path).parent
+        assert "/olares/rootfs" not in str(neu.DATEI)
+    finally:
+        monkeypatch.delenv("APP_DATA_DIR", raising=False)
+        importlib.reload(konfiguration)
+
+
+def test_keine_spalten_die_migrationen_entfernt_haben() -> None:
+    """Das SQL hier darf keine Spalte nennen, die eine Migration gedroppt hat.
+
+    v0.1.80 fragte `template_customizations.system_prompt` ab — Migration
+    0013 hatte die Spalte entfernt, seither heißt sie `system_prompts`
+    (JSONB). Der Abzug scheiterte damit bei *jedem* Versuch, und weil er
+    seine Fehler schluckt, fiel es nur im Protokoll auf.
+    """
+    import re
+
+    wurzel = Path(__file__).resolve().parents[2]
+    quelle = (wurzel / "backend/app/konfiguration.py").read_text(encoding="utf-8")
+
+    entfernt: set[str] = set()
+    for sql in sorted((wurzel / "supabase/migrations").glob("*.sql")):
+        entfernt |= set(
+            re.findall(
+                r"drop\s+column\s+(?:if\s+exists\s+)?([a-z_]+)",
+                sql.read_text(encoding="utf-8"),
+                re.IGNORECASE,
+            )
+        )
+
+    assert entfernt, "keine gedroppten Spalten gefunden — Test prüft nichts"
+    genannt = {s for s in entfernt if re.search(rf"\b{re.escape(s)}\b", quelle)}
+    assert not genannt, f"Abzug nennt entfernte Spalte(n): {sorted(genannt)}"

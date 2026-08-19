@@ -27,26 +27,40 @@ workloads:
 # ============================================================================
 
 # ---- Image-Konfiguration ---------------------------------------------------
+#
+# `tag` ist absichtlich LEER. Der wirksame Tag ist `Chart.AppVersion` —
+# siehe die Deployments (`.Values.images.X.tag | default .Chart.AppVersion`).
+#
+# Warum nicht hier eintragen: ein Upgrade über den Markt spielt die beim
+# Installieren gespeicherten Werte wieder ein und übernimmt die Vorgaben
+# des neuen Charts NICHT. Ein Tag, der hier steht, friert damit fest —
+# am 19.8.2026 lief die Box nach dem Markt-Upgrade auf 0.1.80 weiter mit
+# 0.1.77-Images, und alle Prüfungen meldeten „ok". Die Chart-Metadaten
+# kommen dagegen frisch an, also hängt der Tag an ihnen.
+#
+# Einen Tag hier einzutragen ist nur für ein `--chart-only`-Release
+# richtig: dort ändert sich das Chart ohne neue Images, der alte Tag muss
+# also festgehalten werden.
 
 images:
   frontend:
     repository: ghcr.io/ska1walker/insilo-frontend
-    tag: 0.1.80
+    tag: ""
     pullPolicy: IfNotPresent
 
   backend:
     repository: ghcr.io/ska1walker/insilo-backend
-    tag: 0.1.80
+    tag: ""
     pullPolicy: IfNotPresent
 
   whisper:
     repository: ghcr.io/ska1walker/insilo-whisper
-    tag: 0.1.80
+    tag: ""
     pullPolicy: IfNotPresent
 
   embeddings:
     repository: ghcr.io/ska1walker/insilo-embeddings
-    tag: 0.1.80
+    tag: ""
     pullPolicy: IfNotPresent
 
 # ---- KI-Modelle ------------------------------------------------------------

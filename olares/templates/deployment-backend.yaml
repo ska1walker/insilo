@@ -54,7 +54,7 @@ spec:
         # EXISTS, ON CONFLICT DO NOTHING), so re-running on every restart
         # is safe.
         - name: migrate
-          image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag }}"
+          image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.images.backend.pullPolicy }}
           env:
             - name: DB_HOST
@@ -140,7 +140,7 @@ spec:
               readOnly: true
       containers:
         - name: backend
-          image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag }}"
+          image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.images.backend.pullPolicy }}
           securityContext:
             runAsUser: 1000

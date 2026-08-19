@@ -432,15 +432,37 @@ fi
 # 5. Image-tag sanity (HANDOFF §7e — values.yaml tags should be in sync)
 # ---------------------------------------------------------------------------
 
-section "image tags in values.yaml"
+section "image tags follow Chart.AppVersion"
 
-TAGS=$(grep -E "^[[:space:]]+tag:" "$VALUES_FILE" | sed -E "s/.*tag:[[:space:]]*([^[:space:]#]+).*/\1/" | sort -u)
-TAG_COUNT=$(echo "$TAGS" | wc -l | tr -d ' ')
-if [[ "$TAG_COUNT" -eq 1 ]]; then
-  ok "all image tags align ($(echo $TAGS))"
+# A market upgrade replays the values recorded at install time and does NOT
+# adopt the new chart's defaults. A tag written into values.yaml therefore
+# freezes: on 19.8.2026 the box upgraded to chart 0.1.80 and kept running
+# 0.1.77 images, with every health check reporting "ok". Chart metadata does
+# arrive fresh, so the tag hangs off `.Chart.AppVersion` and values.yaml
+# carries a tag only to hold images back in a --chart-only release.
+
+bad_form=0
+while IFS= read -r line; do
+  file="${line%%:*}"
+  if [[ "$line" != *"default .Chart.AppVersion"* ]]; then
+    fail "$(basename "$file"): image tag not derived from .Chart.AppVersion"
+    echo "    ${line#*:}" | sed 's/^/  /'
+    bad_form=1
+  fi
+done < <(grep -n "image:.*\.Values\.images\." "$TEMPLATES_DIR"/*.yaml 2>/dev/null || true)
+[[ "$bad_form" -eq 0 ]] && ok "all workload images use '| default .Chart.AppVersion'"
+
+PINS=$(grep -E "^[[:space:]]+tag:" "$VALUES_FILE" \
+       | grep -vE 'tag:[[:space:]]*("")|('"''"')[[:space:]]*$' || true)
+if [[ -z "$PINS" ]]; then
+  ok "values.yaml pins nothing — images follow the chart version"
 else
-  yellow "  ! image tags diverge — usually a mistake, but allowed for partial rebuilds:"
-  echo "$TAGS" | sed 's/^/    /'
+  PIN_VALUES=$(echo "$PINS" | sed -E "s/.*tag:[[:space:]]*[\"']?([^[:space:]\"'#]+).*/\1/" | sort -u)
+  if echo "$PIN_VALUES" | grep -qx "$CHART_VERSION"; then
+    fail "values.yaml pins the tag to the chart version ($CHART_VERSION) — redundant, and it freezes on the next market upgrade. Leave it empty."
+  else
+    yellow "  ! values.yaml pins image tags to $(echo $PIN_VALUES) — only correct for a --chart-only release"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

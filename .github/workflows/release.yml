@@ -58,8 +58,13 @@ jobs:
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
           BUILD=true
+          # Empty tags mean "follow Chart.AppVersion" — the normal case, and
+          # the chart then references exactly this tag. A NON-empty tag is a
+          # --chart-only pin: those images already exist, don't rebuild.
           if [ -f olares/values.yaml ]; then
-            if ! grep -qE "^[[:space:]]+tag:[[:space:]]*[\"']?${TAG_VERSION}[\"']?[[:space:]]*$" olares/values.yaml; then
+            PINS="$(grep -E "^[[:space:]]+tag:" olares/values.yaml | grep -vE 'tag:[[:space:]]*(""|'"''"')[[:space:]]*$' || true)"
+            if [ -n "$PINS" ] \
+               && ! grep -qE "^[[:space:]]+tag:[[:space:]]*[\"']?${TAG_VERSION}[\"']?[[:space:]]*$" olares/values.yaml; then
               BUILD=false
             fi
           fi

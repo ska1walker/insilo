@@ -41,7 +41,7 @@ spec:
               mountPath: /app/cache
       containers:
         - name: embeddings
-          image: "{{ .Values.images.embeddings.repository }}:{{ .Values.images.embeddings.tag }}"
+          image: "{{ .Values.images.embeddings.repository }}:{{ .Values.images.embeddings.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.images.embeddings.pullPolicy }}
           securityContext:
             runAsUser: 1000

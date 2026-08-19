@@ -3,12 +3,12 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # ✅ Stand: v0.1.76 läuft auf der Box (19. August 2026, Helm-Rev 54)
+> # ✅ Stand: v0.1.81 läuft auf der Box (19. August 2026)
 >
-> Verifiziert, nicht angenommen: alle fünf Pods bereit, alle
-> Health-Checks grün — `/health/llm` meldet `ok`, `/api/v1/egress`
-> vorhanden, Migration 0014 angewendet. Box: **192.168.1.17** (nicht die
-> früher dokumentierte 112er-Adresse).
+> Verifiziert, nicht angenommen: alle fünf Pods auf 0.1.81-Images, alle
+> sechs Health-Checks grün — `/health/stt` meldet `mode=external`
+> (Speaches), `/app/data/konfiguration.json` existiert mit Rechten 0600.
+> Box: **192.168.1.17** (nicht die früher dokumentierte 112er-Adresse).
 >
 > **v0.1.66 → v0.1.74 an zwei Tagen:** Rebrand-Deploy, Dunkelmodus-
 > Korrekturen, Wappen und Icon-Satz, Herkunftsvermerk, genauerer
@@ -31,7 +31,7 @@
 > vorhandenen Dateien. Belegt durch `users.created_at`, das nach der
 > Neuinstallation stand.
 >
-> **Antwort (v0.1.79): ein Abzug neben dem Audio.**
+> **Antwort (v0.1.79, funktionsfähig ab v0.1.81): ein Abzug neben dem Audio.**
 > `backend/app/konfiguration.py` schreibt die Konfiguration nach jeder
 > Änderung als `/app/data/konfiguration.json` und liest sie beim Start
 > zurück, **wenn die Datenbank leer ist**. Damit ist ein Backup von
@@ -52,6 +52,73 @@
 > Änderung unter `/settings`, `/webhooks`, `/speakers`, `/api-keys`,
 > `/templates` — nicht in zwölf Einzelaufrufen, die man an einer Stelle
 > vergisst.
+>
+> **Bis v0.1.81 schrieb er nie.** Zwei Fehler, beide erst auf der Box
+> sichtbar, weil `sichern_leise` seine Ausnahmen schluckt und nur ins
+> Protokoll schreibt:
+>
+> 1. Der Pfad hing an `APP_DATA_DIR`. Diese Variable trägt im Deployment
+>    `.Values.userspace.appData`, also den **Host**-Pfad des Volumes
+>    (`/olares/rootfs/userspace/pvc-…/Data/insilo`) — den es im Container
+>    nicht gibt. Maßgeblich ist jetzt das Audio-Verzeichnis:
+>    `Path(settings.storage_local_path).parent`.
+> 2. Das SQL fragte `template_customizations.system_prompt` ab. Migration
+>    0013 hatte die Spalte entfernt; sie heißt seither `system_prompts`
+>    und ist JSONB. Dazu kam: asyncpg liefert JSONB als Zeichenkette, ein
+>    `json.dumps` darauf hätte beim Wiederherstellen eine Zeichenkette in
+>    die Spalte geschrieben statt eines Objekts.
+>
+> Zwei Tests halten das fest: einer setzt `APP_DATA_DIR` auf einen
+> Host-Pfad und verlangt, dass der Abzug trotzdem neben dem Audio landet;
+> einer liest alle `drop column`-Anweisungen aus `supabase/migrations/`
+> und verlangt, dass das SQL keine davon nennt.
+>
+> ---
+>
+> ## Ein Markt-Upgrade tauscht die Images nicht aus (19. August 2026)
+>
+> **Das Upgrade auf 0.1.80 lief über den Markt sauber durch — und die Box
+> lief weiter mit 0.1.77-Images.** Alle sechs Health-Checks meldeten `ok`,
+> die Kachel zeigte 0.1.80, `helm history` zeigte Revision 3 mit Chart
+> `insilo-0.1.80`. Nur die Pods trugen die alten Bilder.
+>
+> **Beweis:** der Chart im Release-Secret trägt `version: 0.1.80` und
+> `appVersion: 0.1.80`, seine `values` aber `tag: 0.1.77`. Der Tarball auf
+> der Box war byte-identisch mit dem veröffentlichten 0.1.80 (sha256
+> `0dcc0f0c…`) und enthielt `tag: 0.1.80`. Das Chart kam also richtig an,
+> die Werte nicht.
+>
+> ```bash
+> kubectl get secret -n insilo-kaivostudio sh.helm.release.v1.insilo.v3 \
+>   -o jsonpath='{.data.release}' | base64 -d | base64 -d | gunzip \
+>   | python3 -c "import sys,json; r=json.load(sys.stdin); \
+>       print(r['chart']['metadata']['version'], r['chart']['values']['images'])"
+> ```
+>
+> **Ursache:** ein Upgrade über den Markt spielt die beim Installieren
+> gespeicherten Werte wieder ein und übernimmt die Vorgaben des neuen
+> Charts **nicht**. Was in `values.yaml` steht, friert damit auf dem Stand
+> der ersten Installation ein. 0.1.78 war ein `--chart-only`-Release und
+> zeigte auf 0.1.77 — dieser Zeiger blieb.
+>
+> **Warum das schlimmer ist als ein Fehlschlag:** ein gescheitertes
+> Upgrade sieht man. Dieses meldete Erfolg. Ein Kunde hätte eine Version
+> installiert, die er nicht bekommt, und alle Anzeigen hätten ihm
+> zugestimmt.
+>
+> **Lösung (v0.1.81):** der Image-Tag hängt an den Chart-Metadaten, nicht
+> an den Werten — `{{ .Values.images.X.tag | default .Chart.AppVersion }}`.
+> `Chart.AppVersion` kam nachweislich frisch an. `values.yaml` trägt jetzt
+> `tag: ""`; ein Eintrag dort ist nur noch für `--chart-only` richtig, wo
+> die Images bewusst zurückgehalten werden. `scripts/check-chart.sh`
+> lehnt einen Pin auf die eigene Chart-Version ab, und `release.yml` baut
+> Images, solange nichts anderes gepinnt ist.
+>
+> **Beim direkten Ausrollen** entfällt damit das `--set images.*.tag=` —
+> `helm upgrade insilo /tmp/insilo-X.Y.Z.tgz -n insilo-kaivostudio
+> --reuse-values` reicht. Wo früher gepinnt wurde, muss der Pin einmal
+> geleert werden (`--set images.backend.tag=""`), sonst gewinnt weiter der
+> gespeicherte Wert.
 >
 > ---
 >

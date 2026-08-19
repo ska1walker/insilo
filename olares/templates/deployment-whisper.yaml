@@ -41,7 +41,7 @@ spec:
               mountPath: /app/cache
       containers:
         - name: whisper
-          image: "{{ .Values.images.whisper.repository }}:{{ .Values.images.whisper.tag }}"
+          image: "{{ .Values.images.whisper.repository }}:{{ .Values.images.whisper.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.images.whisper.pullPolicy }}
           ports:
             - containerPort: 8001

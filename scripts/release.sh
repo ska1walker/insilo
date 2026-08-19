@@ -190,12 +190,23 @@ for mf in "$MANIFEST_FILE" "$ROOT_MANIFEST_FILE"; do
   green "  ✓ $mf: metadata.version + spec.versionName → $NEW_VERSION"
 done
 
+# Image tags live in Chart.AppVersion, not in values.yaml — a market
+# upgrade replays the values stored at install time and ignores the new
+# chart's defaults, so a tag written here would freeze (v0.1.80 shipped
+# 0.1.77 images that way). values.yaml only carries a tag when a
+# --chart-only release must hold the images back.
 if (( CHART_ONLY )); then
-  yellow "  ! --chart-only: image tags in values.yaml unchanged"
+  PINNED="$(grep -E '^[[:space:]]+tag:' "$VALUES_FILE" | grep -vcE 'tag:[[:space:]]*""' || true)"
+  if [[ "$PINNED" == "0" ]]; then
+    run "sed -i.bak -E 's/^([[:space:]]+tag:).*/\\1 $CURRENT_VERSION/' '$VALUES_FILE'"
+    yellow "  ! --chart-only: image tags pinned to $CURRENT_VERSION (no new images)"
+  else
+    yellow "  ! --chart-only: image tags in values.yaml left pinned"
+  fi
   IMAGE_TAGS_BUMPED=0
 else
-  run "sed -i.bak -E 's/^([[:space:]]+tag:)[[:space:]]+[0-9.]+/\\1 $NEW_VERSION/' '$VALUES_FILE'"
-  green "  ✓ $VALUES_FILE: all image tags → $NEW_VERSION"
+  run "sed -i.bak -E 's/^([[:space:]]+tag:).*/\\1 \"\"/' '$VALUES_FILE'"
+  green "  ✓ $VALUES_FILE: image tags follow Chart.AppVersion ($NEW_VERSION)"
   IMAGE_TAGS_BUMPED=1
 fi
 

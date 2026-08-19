@@ -33,7 +33,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: frontend
-          image: "{{ .Values.images.frontend.repository }}:{{ .Values.images.frontend.tag }}"
+          image: "{{ .Values.images.frontend.repository }}:{{ .Values.images.frontend.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.images.frontend.pullPolicy }}
           ports:
             - containerPort: 3000

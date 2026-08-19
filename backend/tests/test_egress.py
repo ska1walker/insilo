@@ -12,6 +12,7 @@ import pytest
 
 from app.egress import ist_boxintern, ist_eigene_zone
 from app.llm_config import LLMConfig, auth_header
+from app.stt_config import STTConfig
 
 # ─── bleibt in der Box ────────────────────────────────────────────────
 
@@ -192,3 +193,40 @@ def test_konfiguration_liefert_dieselbe_kopfzeile() -> None:
     mit = LLMConfig(base_url="https://llm.example/v1", api_key="sk-9", model="m")
     assert ohne.auth_header == {}
     assert mit.auth_header == {"Authorization": "Bearer sk-9"}
+
+
+# ─── Spracherkennung: das empfindlichste Ziel ─────────────────────────
+
+
+def test_ohne_stt_adresse_bleibt_audio_lokal() -> None:
+    """Leer heißt hier nicht „nicht eingerichtet", sondern „der
+    mitgelieferte Dienst transkribiert" — der Normalfall, und der einzige,
+    in dem Insilo „kein Audio verlässt die Box" ohne Sternchen sagen darf.
+    """
+    assert STTConfig(base_url="", api_key="", model="").eingerichtet is False
+    assert STTConfig(base_url="   ", api_key="k", model="m").eingerichtet is False
+
+
+def test_stt_auf_der_eigenen_box_ist_kein_fremdanbieter() -> None:
+    """Eine Speaches-Instanz unter der eigenen Zone geht zwar über DNS und
+    Tunnel hinaus, bleibt aber auf derselben Maschine."""
+    url = "https://speaches.kaivostudio.olares.de/v1"
+    assert ist_eigene_zone(url, ZONE) is True
+    assert ist_boxintern(url) is False
+
+
+def test_stt_bei_fremdanbieter_ist_extern() -> None:
+    """Und das ist der Fall, den der Nachweis benennen muss: hier verlässt
+    die Tonaufnahme selbst die Box."""
+    for url in (
+        "https://speaches.aimighty.de/v1",
+        "https://api.openai.com/v1",
+        "https://llm.anderernutzer.olares.de/v1",
+    ):
+        assert ist_eigene_zone(url, ZONE) is False
+        assert ist_boxintern(url) is False
+
+
+def test_stt_clusterintern_bleibt_intern() -> None:
+    assert ist_boxintern("http://insilo-whisper:8001") is True
+    assert ist_boxintern("http://speaches.speaches-kai.svc.cluster.local/v1") is True

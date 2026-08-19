@@ -10,18 +10,18 @@ model so a Mac can still transcribe a short clip in a few seconds.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import tempfile
 from contextlib import asynccontextmanager
 from typing import Any
 
+from app.diarize import diarize, embed_voice_sample, load_embedder, load_vad
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from faster_whisper import WhisperModel
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from app.diarize import diarize, embed_voice_sample, load_embedder, load_vad
 
 
 class Settings(BaseSettings):
@@ -55,6 +55,9 @@ class Settings(BaseSettings):
 
     # Diarization (Phase A) — anonyme Sprecher-Labels per ECAPA-TDNN.
     # Beim Erst-Start lädt SpeechBrain ~60 MB Modell-Gewichte.
+    # Modell beim Start laden. Aus, wenn ein externer STT-Endpunkt
+    # transkribiert und dieser Dienst nur noch /diarize bedient.
+    preload: bool = True
     diarization_enabled: bool = True
     diarization_cache_dir: str = "/app/cache/spkrec-ecapa"
 
@@ -87,6 +90,15 @@ class TranscribeResponse(BaseModel):
     # Pro erkanntem Cluster ein L2-normalisiertes Centroid (192 floats).
     # Reihenfolge = sortierte Cluster-Indices, also entspricht
     # centroids[i] dem Cluster mit cluster_idx == i.
+    cluster_centroids: list[list[float]] = []
+
+
+class DiarizeResponse(BaseModel):
+    """Antwort von /diarize — dieselben Sprecherdaten wie in /transcribe,
+    nur ohne Text."""
+
+    speakers: list[str | None]
+    cluster_indices: list[int | None]
     cluster_centroids: list[list[float]] = []
 
 
@@ -124,8 +136,14 @@ def _load_model() -> WhisperModel:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Eagerly load so the first request doesn't pay the download cost
-    _load_model()
+    # Normalerweise vorab laden, damit die erste Anfrage nicht den Download
+    # bezahlt. Wer die Transkription an einen externen STT-Endpunkt abgibt,
+    # braucht das Modell hier nie — dann spart `WHISPER_PRELOAD=false` rund
+    # 3 GB Arbeitsspeicher, und dieser Dienst trennt nur noch Sprecher.
+    if settings.preload:
+        _load_model()
+    else:
+        log.info("preload disabled — whisper model loads on first /transcribe")
     if settings.diarization_enabled:
         try:
             os.makedirs(settings.diarization_cache_dir, exist_ok=True)
@@ -223,6 +241,59 @@ async def transcribe(
         segments=segments,
         model=settings.model,
         cluster_centroids=centroids,
+    )
+
+
+@app.post("/diarize", response_model=DiarizeResponse)
+async def diarize_only(
+    audio: UploadFile = File(...),
+    segments: str = Form(...),
+) -> DiarizeResponse:
+    """Sprecher trennen, ohne zu transkribieren.
+
+    Für den Fall, dass ein externer STT-Endpunkt den Text liefert: der
+    kennt nur Wörter und Zeiten, keine Sprecher. Die Stimmarbeit bleibt
+    hier — sie braucht das Whisper-Modell nicht, nur VAD und ECAPA
+    (zusammen rund 80 MB statt 3 GB).
+
+    `segments` ist ein JSON-Array von [start, end] in Sekunden, wie es der
+    externe Dienst geliefert hat.
+    """
+    if not settings.diarization_enabled:
+        raise HTTPException(400, "diarization is disabled on this service")
+
+    payload = await audio.read()
+    if len(payload) == 0:
+        raise HTTPException(400, "empty audio")
+
+    try:
+        bounds_raw = json.loads(segments)
+        bounds = [(float(a), float(b)) for a, b in bounds_raw]
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(400, f"segments must be JSON [[start,end],…]: {exc}") from exc
+
+    if not bounds:
+        return DiarizeResponse(speakers=[], cluster_indices=[], cluster_centroids=[])
+
+    with tempfile.NamedTemporaryFile(suffix=".bin", delete=True) as tmp:
+        tmp.write(payload)
+        tmp.flush()
+        try:
+            result = diarize(tmp.name, bounds)
+        except Exception as exc:  # noqa: BLE001
+            # Wie im Transkriptionsweg: ohne Sprecher weiterlaufen ist
+            # besser als gar kein Ergebnis.
+            log.exception("diarization failed (bytes=%d): %s", len(payload), exc)
+            return DiarizeResponse(
+                speakers=[None] * len(bounds),
+                cluster_indices=[None] * len(bounds),
+                cluster_centroids=[],
+            )
+
+    return DiarizeResponse(
+        speakers=list(result.speaker_labels),
+        cluster_indices=list(result.cluster_indices),
+        cluster_centroids=result.cluster_centroids,
     )
 
 

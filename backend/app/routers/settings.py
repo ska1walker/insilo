@@ -31,6 +31,13 @@ class SettingsRead(BaseModel):
     llm_api_key_hint: str  # last 4 chars if set, else ""
     llm_model: str
 
+    # Spracherkennung. Leere Adresse = der mitgelieferte Whisper-Dienst
+    # transkribiert, und kein Audio verlässt die Box.
+    stt_base_url: str
+    stt_api_key_set: bool
+    stt_api_key_hint: str
+    stt_model: str
+
     # Defaults from the deployment env — useful in the UI to show
     # "Aktuell aktiv: <env-default>" when the user has no override.
     defaults: dict[str, str]
@@ -42,6 +49,10 @@ class SettingsWrite(BaseModel):
     llm_api_key: str | None = None
     llm_model: str = Field(default="", max_length=200)
 
+    stt_base_url: str = Field(default="", max_length=500)
+    stt_api_key: str | None = None
+    stt_model: str = Field(default="", max_length=200)
+
 
 def _mask_hint(key: str) -> str:
     if not key:
@@ -52,17 +63,23 @@ def _mask_hint(key: str) -> str:
 
 
 def _row_to_read(row: dict[str, Any] | None) -> SettingsRead:
-    base_url = (row or {}).get("llm_base_url", "") or ""
-    api_key = (row or {}).get("llm_api_key", "") or ""
-    model = (row or {}).get("llm_model", "") or ""
+    r = row or {}
+    api_key = r.get("llm_api_key", "") or ""
+    stt_key = r.get("stt_api_key", "") or ""
     return SettingsRead(
-        llm_base_url=base_url,
+        llm_base_url=r.get("llm_base_url", "") or "",
         llm_api_key_set=bool(api_key),
         llm_api_key_hint=_mask_hint(api_key),
-        llm_model=model,
+        llm_model=r.get("llm_model", "") or "",
+        stt_base_url=r.get("stt_base_url", "") or "",
+        stt_api_key_set=bool(stt_key),
+        stt_api_key_hint=_mask_hint(stt_key),
+        stt_model=r.get("stt_model", "") or "",
         defaults={
             "llm_base_url": env_settings.llm_base_url,
             "llm_model": env_settings.llm_model,
+            "stt_base_url": env_settings.stt_base_url,
+            "stt_model": env_settings.stt_model,
         },
     )
 
@@ -72,7 +89,8 @@ async def get_settings(user: CurrentUser = Depends(get_current_user)) -> Setting
     async with acquire() as conn:
         row = await conn.fetchrow(
             """
-            select llm_base_url, llm_api_key, llm_model
+            select llm_base_url, llm_api_key, llm_model,
+                   stt_base_url, stt_api_key, stt_model
             from public.org_settings
             where org_id = $1
             """,
@@ -191,33 +209,47 @@ async def put_settings(
     async with acquire() as conn:
         async with conn.transaction():
             existing = await conn.fetchrow(
-                "select llm_api_key from public.org_settings where org_id = $1",
+                """
+                select llm_api_key, stt_api_key
+                from public.org_settings where org_id = $1
+                """,
                 user.org_id,
             )
-            # null payload key → keep existing; otherwise replace (incl. "").
-            api_key = (
-                existing["llm_api_key"]
-                if existing and payload.llm_api_key is None
-                else (payload.llm_api_key or "")
-            )
+
+            def _schluessel(feld: str, neuer: str | None) -> str:
+                """null im Payload = behalten; "" = löschen; sonst ersetzen."""
+                if existing and neuer is None:
+                    return existing[feld] or ""
+                return neuer or ""
+
+            api_key = _schluessel("llm_api_key", payload.llm_api_key)
+            stt_key = _schluessel("stt_api_key", payload.stt_api_key)
 
             row = await conn.fetchrow(
                 """
                 insert into public.org_settings (
-                    org_id, llm_base_url, llm_api_key, llm_model, updated_by
+                    org_id, llm_base_url, llm_api_key, llm_model,
+                    stt_base_url, stt_api_key, stt_model, updated_by
                 )
-                values ($1, $2, $3, $4, $5)
+                values ($1, $2, $3, $4, $5, $6, $7, $8)
                 on conflict (org_id) do update set
                     llm_base_url = excluded.llm_base_url,
                     llm_api_key  = excluded.llm_api_key,
                     llm_model    = excluded.llm_model,
+                    stt_base_url = excluded.stt_base_url,
+                    stt_api_key  = excluded.stt_api_key,
+                    stt_model    = excluded.stt_model,
                     updated_by   = excluded.updated_by
-                returning llm_base_url, llm_api_key, llm_model
+                returning llm_base_url, llm_api_key, llm_model,
+                          stt_base_url, stt_api_key, stt_model
                 """,
                 user.org_id,
                 payload.llm_base_url.strip(),
                 api_key,
                 payload.llm_model.strip(),
+                payload.stt_base_url.strip(),
+                stt_key,
+                payload.stt_model.strip(),
                 user.user_id,
             )
     return _row_to_read(dict(row))

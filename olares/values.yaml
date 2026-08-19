@@ -70,6 +70,20 @@ whisper:
 # Zugang zum Sprachmodell. Alle drei Felder sind bewusst leer — dieses
 # Chart wird veröffentlicht, und was hier steht, steht öffentlich.
 
+# ---- Spracherkennung -------------------------------------------------------
+# Vorgabe: leer. Dann übernimmt der mitgelieferte Whisper-Dienst und keine
+# Tonaufnahme verlässt die Box — das ist der datensparsamste Zustand und
+# der einzige, in dem die Zusage ohne Einschränkung gilt.
+#
+# Ein Eintrag hier schaltet auf einen OpenAI-kompatiblen STT-Server um.
+# Auf einer Adresse derselben Box (z. B. https://speaches.<zone>/v1) bleibt
+# das Audio auf der Maschine; bei einem fremden Anbieter nicht, und der
+# Datenschutz-Nachweis sagt das dann auch.
+stt:
+  baseUrl: ""
+  apiKey: ""
+  model: ""
+
 litellm:
   # Adresse der LiteLLM-Instanz. Leer lassen — sie lässt sich nicht
   # vorhersagen: die Olares-App-Kennung wird erst bei der Installation von

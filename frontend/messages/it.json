@@ -75,7 +75,9 @@
     "trustMehr": "Che cosa esce da questo box?",
     "trustEigeneBoxTitel": "Modello linguistico su questo box",
     "trustEigeneBoxText": "Audio, trascrizione e indice restano qui. Anche il modello linguistico gira su questo box, tramite il suo indirizzo.",
-    "llmFehltKurz": "I riepiloghi sono disattivati finché il modello non è configurato."
+    "llmFehltKurz": "I riepiloghi sono disattivati finché il modello non è configurato.",
+    "trustSttTitel": "Le registrazioni vanno a {host}",
+    "trustSttText": "Il riconoscimento vocale passa da un servizio esterno. La registrazione stessa lascia questo box, non solo la trascrizione."
   },
   "meeting": {
     "listTitle": "Riunioni",
@@ -666,11 +668,27 @@
     "navLlm": "Modello esterno",
     "navEigeneBox": "Questo box",
     "eigeneBox": "Modello linguistico su questo box",
-    "eigeneBoxLang": "Raggiungibile tramite {host}, l'indirizzo pubblico di questo box. La chiamata passa dalla rete e torna qui; nessun terzo è coinvolto."
+    "eigeneBoxLang": "Raggiungibile tramite {host}, l'indirizzo pubblico di questo box. La chiamata passa dalla rete e torna qui; nessun terzo è coinvolto.",
+    "sttExtern": "Le registrazioni vanno a un servizio esterno",
+    "sttExternLang": "Il riconoscimento vocale passa da {host}. Così la registrazione stessa lascia questo box, non solo la trascrizione.",
+    "sttEigeneBox": "Riconoscimento vocale su questo box",
+    "sttEigeneBoxLang": "Raggiungibile tramite {host}, l'indirizzo pubblico di questo box. Nessun terzo è coinvolto.",
+    "sttLokal": "Il riconoscimento vocale è eseguito su questo box",
+    "zielStt": "Riconoscimento vocale",
+    "navStt": "L'audio esce"
   },
   "settings": {
     "llmFehltTitel": "Modello linguistico non ancora configurato",
     "llmFehltText": "Registrazione e trascrizione funzionano. Per i riepiloghi, inserisci qui sotto l'indirizzo della tua istanza LiteLLM.",
-    "llmFehltWoher": "Apri LiteLLM sulla scrivania Olares e copia la barra degli indirizzi — termina con /v1."
+    "llmFehltWoher": "Apri LiteLLM sulla scrivania Olares e copia la barra degli indirizzi — termina con /v1.",
+    "sttTitel": "Riconoscimento vocale",
+    "sttHinweis": "Senza indirizzo trascrive il servizio incluso su questo box: allora nessuna registrazione lo lascia.",
+    "sttUrl": "URL dell'API",
+    "sttUrlHinweis": "Server STT compatibile con OpenAI, ad es. https://speaches.suo-box.olares.de/v1",
+    "sttKey": "Chiave API",
+    "sttKeyHinweis": "Facoltativa. Gli endpoint locali di norma non la richiedono.",
+    "sttModell": "ID del modello",
+    "sttModellHinweis": "Nome del modello come registrato presso l'endpoint, ad es. Systran/faster-whisper-large-v3.",
+    "sttWarnung": "Con un indirizzo qui, la registrazione stessa va a quel server. Su un indirizzo di questo box resta sulla stessa macchina; presso un fornitore esterno no."
   }
 }

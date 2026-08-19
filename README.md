@@ -13,7 +13,7 @@
 
 Insilo nimmt Geschäftsbesprechungen auf, transkribiert sie lokal mit Whisper und erstellt strukturierte Notizen mit einem lokal laufenden Sprachmodell.
 
-**Kernversprechen:** Keine einzige Audiosekunde, kein Transkript, kein Suchindex verlässt jemals die Olares-Box des Kunden.
+**Kernversprechen:** In der Vorgabe verlässt nichts die Box — Aufnahme, Transkription und Suchindex laufen vollständig darauf. Wer bewusst einen externen Endpunkt einträgt (Sprachmodell oder Spracherkennung), sieht im Datenschutz-Nachweis gemessen, was dorthin geht. Der Suchindex bleibt in jeder Konfiguration auf der Box.
 
 Geeignet für: Anwaltskanzleien, Steuerberatungen, Beratungen, Industriebetriebe mit Compliance-Anforderungen.
 

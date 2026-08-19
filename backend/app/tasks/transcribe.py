@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
@@ -20,6 +21,7 @@ from app.speaker_matcher import (
     match_centroids,
 )
 from app.storage import get_bytes as _storage_get_bytes
+from app.stt_config import STTConfig, load_stt_config
 from app.worker import celery_app  # noqa: F401  -- import side-effect: registers
 
 log = logging.getLogger(__name__)
@@ -50,6 +52,148 @@ async def _connect() -> asyncpg.Connection:
         password=settings.db_password,
         database=settings.db_name,
     )
+
+
+@dataclass(frozen=True)
+class Transkript:
+    """Was ein Transkriptionsweg liefert — egal welcher.
+
+    Beide Wege füllen dieselben Felder, damit der Rest der Pipeline nicht
+    wissen muss, wer transkribiert hat.
+    """
+
+    segments: list[dict[str, Any]]
+    full_text: str
+    cluster_centroids: list[list[float]]
+    language: str | None
+    model: str
+    duration: float | None
+    # Woher der Text kommt — landet im Audit-Log und im Datenschutz-Nachweis.
+    quelle: str  # "lokal" | "extern"
+
+
+async def _transkribieren_lokal(
+    audio_bytes: bytes, mime: str, language: str | None,
+) -> Transkript:
+    """Der mitgelieferte Whisper-Dienst. Text und Sprecher in einem Aufruf.
+
+    `language` wird weggelassen statt auf None gesetzt, damit
+    faster-whisper selbst erkennt (sein Vorgabewert).
+    """
+    form_data: dict[str, str] = {}
+    if language:
+        form_data["language"] = language
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 25)) as client:
+        resp = await client.post(
+            f"{settings.whisper_url}/transcribe",
+            files={"audio": ("recording.bin", audio_bytes, mime)},
+            data=form_data,
+        )
+        resp.raise_for_status()
+        result = resp.json()
+    return Transkript(
+        segments=result["segments"],
+        full_text=result["full_text"],
+        cluster_centroids=result.get("cluster_centroids") or [],
+        language=result.get("language"),
+        model=result.get("model") or "unknown",
+        duration=result.get("duration"),
+        quelle="lokal",
+    )
+
+
+async def _transkribieren_extern(
+    audio_bytes: bytes, mime: str, language: str | None, stt: STTConfig,
+) -> Transkript:
+    """Externer OpenAI-kompatibler STT-Server, Sprecher weiterhin lokal.
+
+    `response_format=verbose_json` liefert Segmente mit Zeiten; ohne sie
+    gäbe es nur einen Textblock, und die Sprechertrennung hätte keine
+    Grenzen, an denen sie ansetzen könnte. Antwortet der Endpunkt nur mit
+    Text, arbeiten wir mit einem einzigen Segment weiter — lieber ein
+    Transkript ohne Sprecher als gar keins.
+    """
+    daten: dict[str, str] = {"response_format": "verbose_json"}
+    if stt.model:
+        daten["model"] = stt.model
+    if language:
+        daten["language"] = language
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 25)) as client:
+        resp = await client.post(
+            f"{stt.base_url}/audio/transcriptions",
+            files={"file": ("recording.bin", audio_bytes, mime)},
+            data=daten,
+            headers=stt.auth_header,
+        )
+        resp.raise_for_status()
+        roh = resp.json()
+
+    volltext = (roh.get("text") or "").strip()
+    segmente: list[dict[str, Any]] = [
+        {
+            "start": float(s.get("start", 0.0)),
+            "end": float(s.get("end", 0.0)),
+            "text": (s.get("text") or "").strip(),
+            "speaker": None,
+            "cluster_idx": None,
+        }
+        for s in (roh.get("segments") or [])
+        if (s.get("text") or "").strip()
+    ]
+    if not segmente and volltext:
+        dauer = float(roh.get("duration") or 0.0)
+        segmente = [{
+            "start": 0.0, "end": dauer, "text": volltext,
+            "speaker": None, "cluster_idx": None,
+        }]
+    if not volltext:
+        volltext = " ".join(s["text"] for s in segmente).strip()
+
+    centroids = await _sprecher_ergaenzen(audio_bytes, mime, segmente)
+    return Transkript(
+        segments=segmente,
+        full_text=volltext,
+        cluster_centroids=centroids,
+        language=roh.get("language") or language,
+        model=stt.model or "extern",
+        duration=float(roh["duration"]) if roh.get("duration") is not None else None,
+        quelle="extern",
+    )
+
+
+async def _sprecher_ergaenzen(
+    audio_bytes: bytes, mime: str, segmente: list[dict[str, Any]],
+) -> list[list[float]]:
+    """Sprecher zu fremd erzeugten Segmenten, über den lokalen Dienst.
+
+    Schlägt das fehl, bleibt es beim Transkript ohne Sprechernamen — das
+    ist ein Verlust an Komfort, kein Grund, die Besprechung scheitern zu
+    lassen.
+    """
+    if not segmente:
+        return []
+    grenzen = json.dumps([[s["start"], s["end"]] for s in segmente])
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 10)) as client:
+            resp = await client.post(
+                f"{settings.whisper_url}/diarize",
+                files={"audio": ("recording.bin", audio_bytes, mime)},
+                data={"segments": grenzen},
+            )
+            resp.raise_for_status()
+            d = resp.json()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("speaker separation unavailable, continuing without: %s", exc)
+        return []
+
+    for seg, sprecher, cidx in zip(
+        segmente, d.get("speakers") or [], d.get("cluster_indices") or [],
+        strict=False,
+    ):
+        seg["speaker"] = sprecher
+        seg["cluster_idx"] = cidx
+    return d.get("cluster_centroids") or []
 
 
 async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
@@ -84,24 +228,26 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
         meeting_id, len(audio_bytes), mime, requested_language or "auto",
     )
 
-    # Call the Whisper service. Omit the `language` form field entirely when
-    # NULL so faster-whisper auto-detects (its `language=None` default).
-    transcribe_url = f"{settings.whisper_url}/transcribe"
-    form_data: dict[str, str] = {}
-    if requested_language:
-        form_data["language"] = requested_language
-    async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 25)) as client:
-        resp = await client.post(
-            transcribe_url,
-            files={"audio": ("recording.bin", audio_bytes, mime)},
-            data=form_data,
-        )
-        resp.raise_for_status()
-        result = resp.json()
+    # Zwei Wege, je nach Einrichtung: der mitgelieferte Dienst im eigenen
+    # Namespace (Vorgabe, kein Audio verlässt die Box) oder ein
+    # eingetragener OpenAI-kompatibler STT-Server. Beim zweiten Weg holen
+    # wir den Text von dort und die Sprecher weiterhin hier — ein
+    # OpenAI-STT kennt keine Sprecher.
+    conn = await _connect()
+    try:
+        stt = await load_stt_config(conn, org_id)
+    finally:
+        await conn.close()
 
-    segments = result["segments"]
-    full_text = result["full_text"]
-    cluster_centroids: list[list[float]] = result.get("cluster_centroids") or []
+    if stt.eingerichtet:
+        log.info("transcribing via external endpoint %s", stt.base_url)
+        tr = await _transkribieren_extern(audio_bytes, mime, requested_language, stt)
+    else:
+        tr = await _transkribieren_lokal(audio_bytes, mime, requested_language)
+
+    segments = tr.segments
+    full_text = tr.full_text
+    cluster_centroids = tr.cluster_centroids
 
     # ─── Org-Speaker-Matching ─────────────────────────────────────────
     # Wenn die Org bereits Voiceprints kennt, ordnen wir jeden Cluster-
@@ -167,8 +313,8 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
                 json.dumps(segments),
                 json.dumps(speakers_payload),
                 full_text,
-                result.get("language") or settings.app_lang,
-                result.get("model") or "unknown",
+                tr.language or settings.app_lang,
+                tr.model,
                 len(full_text.split()),
             )
 
@@ -229,8 +375,8 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     return {
         "status": "ok",
         "segments": len(segments),
-        "language": result.get("language"),
-        "duration": result.get("duration"),
+        "language": tr.language,
+        "duration": tr.duration,
     }
 
 

@@ -377,7 +377,9 @@
 > | Webhooks | wenn konfiguriert | fertige Protokolle |
 > | Modell-Download | einmalig beim Erststart | nichts von uns |
 >
-> Audio und Suchindex verlassen die Box in **keiner** Konfiguration.
+> Der Suchindex verlässt die Box in **keiner** Konfiguration. Audio galt
+> bis v0.1.76 genauso — seit dem konfigurierbaren STT-Endpunkt (v0.1.77)
+> ist es der vierte mögliche Weg hinaus und der schwerste.
 >
 > **Was gebaut wurde** (`f0bb56e`, `8b05dfb`, `ab5b8ce`):
 >

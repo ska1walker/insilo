@@ -499,10 +499,16 @@ function Datensouveraenitaet() {
   if (lage === null) return null;
 
   const { llm_extern, llm_eigene_box, llm_fehlt, llm_host, alles_bleibt } = lage;
+  const { stt_extern, stt_host } = lage;
 
   // Fehlt der Endpunkt, ist das kein Datenschutz-Thema, sondern eine
   // offene Einrichtung — sie hat Vorrang vor der Herkunftsaussage.
-  const titel = llm_fehlt
+  // Reihenfolge nach Gewicht: dass die Tonaufnahme selbst hinausgeht,
+  // muss jemand wissen, BEVOR er aufnimmt — das schlägt jede offene
+  // Einrichtung und jedes Transkript-Ziel.
+  const titel = stt_extern
+    ? t("trustSttTitel", { host: stt_host ?? "" })
+    : llm_fehlt
     ? t("llmFehltKurz")
     : llm_extern
     ? t("trustLlmTitel")
@@ -512,7 +518,9 @@ function Datensouveraenitaet() {
         ? t("trustAllesTitel")
         : t("trustZieleTitel");
 
-  const text = llm_fehlt
+  const text = stt_extern
+    ? t("trustSttText")
+    : llm_fehlt
     ? t("trustAllesText")
     : llm_extern
     ? t("trustLlmText", { host: llm_host ?? "" })
@@ -527,7 +535,7 @@ function Datensouveraenitaet() {
       <div
         className="flex h-10 w-10 items-center justify-center rounded-full"
         style={
-          llm_extern
+          stt_extern || llm_extern
             ? {
                 background: "var(--am-achtung-flaeche)",
                 border: "1px solid var(--am-achtung-rand)",

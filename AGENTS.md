@@ -25,7 +25,7 @@
 
 **Insilo** ist eine On-Premise-Lösung für Meeting-Aufnahme, Transkription und KI-gestützte Zusammenfassung. Läuft komplett auf einer Olares-Box im Serverraum des Kunden.
 
-**Kernversprechen:** Keine einzige Audiosekunde, kein Transkript, kein Suchindex verlässt jemals die Olares-Box.
+**Kernversprechen:** In der Vorgabe verlässt nichts die Box — Aufnahme, Transkription und Suchindex laufen vollständig darauf. Wer bewusst einen externen Endpunkt einträgt (Sprachmodell oder Spracherkennung), sieht im Datenschutz-Nachweis gemessen, was dorthin geht. Der Suchindex bleibt in jeder Konfiguration auf der Box.
 
 **Zielsegment:** Kanzleien, Steuerberatungen, Beratungen, Industrie-Mittelstand mit Compliance-Druck.
 

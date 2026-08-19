@@ -43,6 +43,29 @@ export default function DatenschutzSeite() {
         <>
           {/* Kernaussage — derselbe Zustand wie in der Navigation, nur
               ausführlich. */}
+          {/* Audio zuerst: das ist das empfindlichste, was hinausgehen kann. */}
+          {lage.stt_extern ? (
+            <div className="streifen streifen-achtung mt-8">
+              <span className="zeichen" aria-hidden>
+                !
+              </span>
+              <span>
+                <strong className="block">{t("sttExtern")}</strong>
+                {lage.stt_host ? t("sttExternLang", { host: lage.stt_host }) : null}
+              </span>
+            </div>
+          ) : lage.stt_eigene_box ? (
+            <div className="streifen streifen-erfolg mt-8">
+              <span className="zeichen" aria-hidden>
+                ✓
+              </span>
+              <span>
+                <strong className="block">{t("sttEigeneBox")}</strong>
+                {lage.stt_host ? t("sttEigeneBoxLang", { host: lage.stt_host }) : null}
+              </span>
+            </div>
+          ) : null}
+
           {lage.llm_extern ? (
             <div className="streifen streifen-achtung mt-8">
               <span className="zeichen" aria-hidden>
@@ -104,7 +127,7 @@ export default function DatenschutzSeite() {
                   {lage.ziele.map((z, i) => (
                     <tr key={`${z.art}-${z.host}-${i}`}>
                       <td className="w-10">
-                        {z.art === "llm" ? (
+                        {z.art === "llm" || z.art === "stt" ? (
                           <ShieldAlert
                             className="h-4 w-4 text-achtung"
                             strokeWidth={1.75}
@@ -121,7 +144,11 @@ export default function DatenschutzSeite() {
                       <td>
                         <span className="block text-text-primaer">{z.host}</span>
                         <span className="text-[0.8125rem] text-text-gedaempft">
-                          {z.art === "llm" ? t("zielLlm") : t("zielWebhook")}
+                          {z.art === "stt"
+                            ? t("zielStt")
+                            : z.art === "llm"
+                              ? t("zielLlm")
+                              : t("zielWebhook")}
                           {z.beschreibung ? ` · ${z.beschreibung}` : ""}
                         </span>
                       </td>

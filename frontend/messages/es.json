@@ -75,7 +75,9 @@
     "trustMehr": "¿Qué sale de esta caja?",
     "trustEigeneBoxTitel": "Modelo de lenguaje en esta caja",
     "trustEigeneBoxText": "El audio, la transcripción y el índice permanecen aquí. El modelo de lenguaje también se ejecuta en esta caja, mediante su propia dirección.",
-    "llmFehltKurz": "Los resúmenes están desactivados hasta configurar el modelo."
+    "llmFehltKurz": "Los resúmenes están desactivados hasta configurar el modelo.",
+    "trustSttTitel": "Las grabaciones van a {host}",
+    "trustSttText": "El reconocimiento de voz usa un servicio ajeno. La grabación misma sale de esta caja, no solo la transcripción."
   },
   "meeting": {
     "listTitle": "Reuniones",
@@ -666,11 +668,27 @@
     "navLlm": "Modelo externo",
     "navEigeneBox": "Esta caja",
     "eigeneBox": "Modelo de lenguaje en esta caja",
-    "eigeneBoxLang": "Accesible mediante {host}, la dirección pública de esta caja. La llamada pasa por la red y vuelve aquí; no interviene ningún tercero."
+    "eigeneBoxLang": "Accesible mediante {host}, la dirección pública de esta caja. La llamada pasa por la red y vuelve aquí; no interviene ningún tercero.",
+    "sttExtern": "Las grabaciones van a un servicio ajeno",
+    "sttExternLang": "El reconocimiento de voz pasa por {host}. Así la grabación misma sale de esta caja, no solo la transcripción.",
+    "sttEigeneBox": "Reconocimiento de voz en esta caja",
+    "sttEigeneBoxLang": "Accesible mediante {host}, la dirección pública de esta caja. No interviene ningún tercero.",
+    "sttLokal": "El reconocimiento de voz se ejecuta en esta caja",
+    "zielStt": "Reconocimiento de voz",
+    "navStt": "El audio sale"
   },
   "settings": {
     "llmFehltTitel": "Modelo de lenguaje aún no configurado",
     "llmFehltText": "La grabación y la transcripción funcionan. Para los resúmenes, introduzca abajo la dirección de su instancia de LiteLLM.",
-    "llmFehltWoher": "Abra LiteLLM en el escritorio de Olares y copie la barra de direcciones — termina en /v1."
+    "llmFehltWoher": "Abra LiteLLM en el escritorio de Olares y copie la barra de direcciones — termina en /v1.",
+    "sttTitel": "Reconocimiento de voz",
+    "sttHinweis": "Sin dirección, transcribe el servicio incluido en esta caja: entonces ninguna grabación sale de ella.",
+    "sttUrl": "URL de la API",
+    "sttUrlHinweis": "Servidor STT compatible con OpenAI, p. ej. https://speaches.su-caja.olares.de/v1",
+    "sttKey": "Clave de API",
+    "sttKeyHinweis": "Opcional. Los puntos finales locales no suelen pedirla.",
+    "sttModell": "ID del modelo",
+    "sttModellHinweis": "Nombre del modelo tal como está registrado, p. ej. Systran/faster-whisper-large-v3.",
+    "sttWarnung": "Con una dirección aquí, la propia grabación va a ese servidor. En una dirección de esta caja permanece en la misma máquina; con un proveedor ajeno, no."
   }
 }

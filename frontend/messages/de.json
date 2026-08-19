@@ -75,7 +75,9 @@
     "trustMehr": "Was verlässt diese Box?",
     "trustEigeneBoxTitel": "Sprachmodell auf dieser Box",
     "trustEigeneBoxText": "Audio, Transkript und Suchindex bleiben hier. Das Sprachmodell läuft ebenfalls auf dieser Box, erreichbar über ihre eigene Adresse.",
-    "llmFehltKurz": "Zusammenfassungen sind aus, bis das Sprachmodell eingerichtet ist."
+    "llmFehltKurz": "Zusammenfassungen sind aus, bis das Sprachmodell eingerichtet ist.",
+    "trustSttTitel": "Tonaufnahmen gehen an {host}",
+    "trustSttText": "Die Spracherkennung läuft über einen fremden Dienst. Damit verlässt die Aufnahme selbst diese Box — nicht nur das Transkript."
   },
   "meeting": {
     "listTitle": "Besprechungen",
@@ -666,11 +668,27 @@
     "navLlm": "Modell extern",
     "navEigeneBox": "Eigene Box",
     "eigeneBox": "Sprachmodell auf dieser Box",
-    "eigeneBoxLang": "Erreichbar über {host} — die öffentliche Adresse dieser Box. Der Aufruf nimmt den Weg über das Netz und kommt hierher zurück; ein fremder Anbieter ist nicht beteiligt."
+    "eigeneBoxLang": "Erreichbar über {host} — die öffentliche Adresse dieser Box. Der Aufruf nimmt den Weg über das Netz und kommt hierher zurück; ein fremder Anbieter ist nicht beteiligt.",
+    "sttExtern": "Tonaufnahmen gehen an einen fremden Dienst",
+    "sttExternLang": "Die Spracherkennung läuft über {host}. Damit verlässt die Tonaufnahme selbst diese Box — nicht nur das Transkript.",
+    "sttEigeneBox": "Spracherkennung auf dieser Box",
+    "sttEigeneBoxLang": "Erreichbar über {host} — die öffentliche Adresse dieser Box. Ein fremder Anbieter ist nicht beteiligt.",
+    "sttLokal": "Spracherkennung läuft auf dieser Box",
+    "zielStt": "Spracherkennung",
+    "navStt": "Ton geht hinaus"
   },
   "settings": {
     "llmFehltTitel": "Sprachmodell noch nicht eingerichtet",
     "llmFehltText": "Aufnahme und Transkription laufen. Für Zusammenfassungen tragen Sie unten die Adresse Ihrer LiteLLM-Instanz ein.",
-    "llmFehltWoher": "Die Adresse finden Sie, indem Sie LiteLLM auf dem Olares-Schreibtisch öffnen und die Adresszeile kopieren — sie endet auf /v1."
+    "llmFehltWoher": "Die Adresse finden Sie, indem Sie LiteLLM auf dem Olares-Schreibtisch öffnen und die Adresszeile kopieren — sie endet auf /v1.",
+    "sttTitel": "Spracherkennung",
+    "sttHinweis": "Ohne Eintrag transkribiert der mitgelieferte Dienst auf dieser Box — dann verlässt keine Tonaufnahme die Box.",
+    "sttUrl": "API-URL",
+    "sttUrlHinweis": "OpenAI-kompatibler STT-Server, z. B. https://speaches.ihre-box.olares.de/v1",
+    "sttKey": "API-Schlüssel",
+    "sttKeyHinweis": "Optional. Lokale Endpunkte verlangen meist keinen.",
+    "sttModell": "Modell-ID",
+    "sttModellHinweis": "Modellname wie er beim Endpunkt registriert ist, z. B. Systran/faster-whisper-large-v3.",
+    "sttWarnung": "Mit einer Adresse hier geht die Tonaufnahme selbst an diesen Server. Auf einer Adresse dieser Box bleibt sie auf derselben Maschine; bei einem fremden Anbieter nicht."
   }
 }

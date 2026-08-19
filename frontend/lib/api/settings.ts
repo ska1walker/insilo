@@ -5,9 +5,18 @@ export type SettingsRead = {
   llm_api_key_set: boolean;
   llm_api_key_hint: string;
   llm_model: string;
+
+  /** Spracherkennung. Leere Adresse = mitgelieferter Dienst auf dieser Box. */
+  stt_base_url: string;
+  stt_api_key_set: boolean;
+  stt_api_key_hint: string;
+  stt_model: string;
+
   defaults: {
     llm_base_url: string;
     llm_model: string;
+    stt_base_url: string;
+    stt_model: string;
   };
 };
 
@@ -16,6 +25,11 @@ export type SettingsWrite = {
   /** `null` keeps the existing key, `""` clears it, otherwise overwrites. */
   llm_api_key: string | null;
   llm_model: string;
+
+  stt_base_url: string;
+  /** Gleiche Regel wie beim Sprachmodell: `null` behält den Schlüssel. */
+  stt_api_key: string | null;
+  stt_model: string;
 };
 
 export function fetchSettings(): Promise<SettingsRead> {

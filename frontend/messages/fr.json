@@ -75,7 +75,9 @@
     "trustMehr": "Qu'est-ce qui quitte ce boîtier ?",
     "trustEigeneBoxTitel": "Modèle de langage sur ce boîtier",
     "trustEigeneBoxText": "L'audio, la transcription et l'index restent ici. Le modèle de langage tourne également sur ce boîtier, via sa propre adresse.",
-    "llmFehltKurz": "Les résumés sont désactivés tant que le modèle n'est pas configuré."
+    "llmFehltKurz": "Les résumés sont désactivés tant que le modèle n'est pas configuré.",
+    "trustSttTitel": "Les enregistrements partent vers {host}",
+    "trustSttText": "La reconnaissance vocale passe par un service tiers. L'enregistrement lui-même quitte cette boîte, pas seulement la transcription."
   },
   "meeting": {
     "listTitle": "Réunions",
@@ -666,11 +668,27 @@
     "navLlm": "Modèle externe",
     "navEigeneBox": "Ce boîtier",
     "eigeneBox": "Modèle de langage sur ce boîtier",
-    "eigeneBoxLang": "Accessible via {host} — l'adresse publique de ce boîtier. L'appel passe par le réseau et revient ici ; aucun tiers n'est impliqué."
+    "eigeneBoxLang": "Accessible via {host} — l'adresse publique de ce boîtier. L'appel passe par le réseau et revient ici ; aucun tiers n'est impliqué.",
+    "sttExtern": "Les enregistrements partent vers un service tiers",
+    "sttExternLang": "La reconnaissance vocale passe par {host}. L'enregistrement lui-même quitte donc cette boîte — pas seulement la transcription.",
+    "sttEigeneBox": "Reconnaissance vocale sur cette boîte",
+    "sttEigeneBoxLang": "Accessible via {host} — l'adresse publique de cette boîte. Aucun tiers n'intervient.",
+    "sttLokal": "La reconnaissance vocale s'exécute sur cette boîte",
+    "zielStt": "Reconnaissance vocale",
+    "navStt": "L'audio sort"
   },
   "settings": {
     "llmFehltTitel": "Modèle de langage pas encore configuré",
     "llmFehltText": "L'enregistrement et la transcription fonctionnent. Pour les résumés, indiquez ci-dessous l'adresse de votre instance LiteLLM.",
-    "llmFehltWoher": "Ouvrez LiteLLM sur le bureau Olares et copiez la barre d'adresse — elle se termine par /v1."
+    "llmFehltWoher": "Ouvrez LiteLLM sur le bureau Olares et copiez la barre d'adresse — elle se termine par /v1.",
+    "sttTitel": "Reconnaissance vocale",
+    "sttHinweis": "Sans adresse, le service inclus transcrit sur cette machine — aucun enregistrement ne quitte alors la boîte.",
+    "sttUrl": "URL de l'API",
+    "sttUrlHinweis": "Serveur STT compatible OpenAI, par ex. https://speaches.votre-boite.olares.de/v1",
+    "sttKey": "Clé d'API",
+    "sttKeyHinweis": "Facultatif. Les points de terminaison locaux n'en demandent généralement pas.",
+    "sttModell": "Identifiant du modèle",
+    "sttModellHinweis": "Nom du modèle tel qu'il est enregistré, par ex. Systran/faster-whisper-large-v3.",
+    "sttWarnung": "Avec une adresse ici, l'enregistrement lui-même part vers ce serveur. Sur une adresse de cette boîte il reste sur la même machine ; chez un tiers, non."
   }
 }

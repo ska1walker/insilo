@@ -156,11 +156,15 @@ if command -v olares-cli >/dev/null 2>&1; then
   # "insilo/". Im Tarball heißt die Wurzel korrekt "insilo/".
   LINT_TMP="$(mktemp -d)"
   trap 'rm -rf "$LINT_TMP"' EXIT
-  if olares-cli chart package olares/ -o "$LINT_TMP" >/dev/null 2>&1 &&
-     LINT_OUT="$(olares-cli chart lint "$LINT_TMP"/*.tgz --with-rbac --with-security-context 2>&1)"; then
-    ok "olares-cli chart lint: OK"
-  else
+  # Packen und Prüfen getrennt melden. Zusammengefasst verschluckte ein
+  # Packfehler seine eigene Meldung und lief unter `set -u` in eine
+  # ungesetzte Variable — die Ursache stand dann nirgends.
+  if ! PACK_OUT="$(olares-cli chart package olares/ -o "$LINT_TMP" 2>&1)"; then
+    fail "olares-cli chart package: ${PACK_OUT}"
+  elif ! LINT_OUT="$(olares-cli chart lint "$LINT_TMP"/*.tgz --with-rbac --with-security-context 2>&1)"; then
     fail "olares-cli chart lint: ${LINT_OUT}"
+  else
+    ok "olares-cli chart lint: OK"
   fi
 else
   skip "olares-cli nicht im PATH — offizieller Validator übersprungen"

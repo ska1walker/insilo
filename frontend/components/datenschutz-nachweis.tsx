@@ -55,19 +55,24 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
   // Nicht messbar heißt: nichts behaupten. Der Platz bleibt leer.
   if (fehlgeschlagen || lage === null) return null;
 
-  const { alles_bleibt, llm_extern, llm_eigene_box, llm_host, ziele, gesendete_bytes } =
+  const { alles_bleibt, llm_extern, llm_eigene_box, llm_host, stt_extern, ziele, gesendete_bytes } =
     lage;
 
   // Die eigene Box unter öffentlicher Adresse ist kein Warnfall: das
   // Modell läuft hier, nur der Weg führt über das Netz. Sie bekommt den
   // Erfolgston, nennt aber den Host — verschwiegen wird nichts.
-  const ton = llm_extern ? "achtung" : alles_bleibt || llm_eigene_box ? "erfolg" : "neutral";
-  const Icon = llm_extern ? ShieldAlert : alles_bleibt || llm_eigene_box ? ShieldCheck : Share2;
+  // Ton, der die Box verlässt, wiegt schwerer als ein Transkript — er
+  // steht deshalb vor allen anderen Fällen.
+  const warnung = stt_extern || llm_extern;
+  const ton = warnung ? "achtung" : alles_bleibt || llm_eigene_box ? "erfolg" : "neutral";
+  const Icon = warnung ? ShieldAlert : alles_bleibt || llm_eigene_box ? ShieldCheck : Share2;
 
   // Kurzfassungen: die Navigationsspalte ist 220px breit und die Schrift
   // hier ist Mono. Die ausführlichen Sätze stehen auf der Detailseite,
   // erreichbar über denselben Klick.
-  const kopf = llm_extern
+  const kopf = stt_extern
+    ? t("navStt")
+    : llm_extern
     ? t("navLlm")
     : llm_eigene_box
       ? t("navEigeneBox")
@@ -75,7 +80,7 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
         ? t("navBleibt")
         : t("navZiele", { count: ziele.length });
 
-  const unterzeile = llm_extern || llm_eigene_box
+  const unterzeile = warnung || llm_eigene_box
     ? llm_host
     : alles_bleibt
       ? null

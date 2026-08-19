@@ -125,7 +125,7 @@ spec:
     - Lets you ask follow-up questions across your entire meeting archive (RAG over pgvector embeddings)
 
     **The promise**
-    Unlike PLAUD, Otter, Fireflies or similar services, **no audio, transcript, or search index ever leaves your Olares box**. No cloud calls, no third-party AI APIs, no telemetry.
+    Out of the box nothing leaves the machine: recording, transcription and search all run on it, with no cloud calls and no telemetry. Unlike PLAUD, Otter or Fireflies, anything that does leave is something you deliberately configured — a language model or a speech-recognition endpoint — and the app states measured what went where. The search index never leaves in any configuration.
 
     **Designed for**
     Law firms, tax consultancies, management consultants and German Mittelstand companies with strict compliance requirements (GDPR, BSI Grundschutz, attorney-client privilege).

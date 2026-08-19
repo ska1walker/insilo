@@ -179,8 +179,13 @@ daran, dass die Aussage stimmt.
 **Insilo ist nicht pauschal „0 Byte".** Drei Dinge können die Box
 verlassen: das Transkript (wenn ein externer LLM-Endpunkt eingetragen
 ist), fertige Protokolle (an konfigurierte Webhooks) und der einmalige
-Modell-Download beim Erststart. Audio und Suchindex verlassen sie in
-keiner Konfiguration.
+Modell-Download beim Erststart — und seit v0.1.77 die **Tonaufnahme
+selbst**, wenn jemand einen externen Endpunkt für die Spracherkennung
+einträgt. Das ist der schwerste der vier Fälle und steht deshalb in
+allen drei Ansichten vor den anderen: wer aufnimmt, muss es vorher
+wissen. Ohne Eintrag transkribiert der mitgelieferte Dienst, und die
+Aufnahme bleibt, wo sie ist. Der Suchindex verlässt die Box in keiner
+Konfiguration.
 
 Der Nachweis zeigt darum den gemessenen Zustand in drei Lagen:
 

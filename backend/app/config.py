@@ -62,6 +62,15 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = ""
 
+    # ---- Spracherkennung ---------------------------------------------
+    # Leer = der mitgelieferte Whisper-Dienst transkribiert, und kein Audio
+    # verlässt die Box. Eine Adresse hier (oder pro Org in org_settings)
+    # schaltet auf einen OpenAI-kompatiblen STT-Server um — dann geht das
+    # Audio dorthin, und der Datenschutz-Nachweis sagt das.
+    stt_base_url: str = ""
+    stt_api_key: str = ""
+    stt_model: str = ""
+
     # The system template used when the user doesn't pick one explicitly.
     default_template_id: str = "00000000-0000-0000-0000-000000000001"
 

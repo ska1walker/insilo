@@ -27,6 +27,13 @@ type FormState = {
   /** True once the user has typed into the key field — only then do we send it. */
   keyEdited: boolean;
   clearKey: boolean;
+
+  /** Spracherkennung. Leer = mitgelieferter Dienst auf dieser Box. */
+  sttBaseUrl: string;
+  sttModel: string;
+  sttApiKey: string;
+  sttKeyEdited: boolean;
+  sttClearKey: boolean;
 };
 
 const initialForm: FormState = {
@@ -35,6 +42,11 @@ const initialForm: FormState = {
   apiKey: "",
   keyEdited: false,
   clearKey: false,
+  sttBaseUrl: "",
+  sttModel: "",
+  sttApiKey: "",
+  sttKeyEdited: false,
+  sttClearKey: false,
 };
 
 export default function EinstellungenPage() {
@@ -61,6 +73,11 @@ export default function EinstellungenPage() {
           apiKey: "",
           keyEdited: false,
           clearKey: false,
+          sttBaseUrl: s.stt_base_url,
+          sttModel: s.stt_model,
+          sttApiKey: "",
+          sttKeyEdited: false,
+          sttClearKey: false,
         });
         setPhase("ready");
       })
@@ -111,10 +128,24 @@ export default function EinstellungenPage() {
     }
 
     try {
+      // Gleiche Regel wie beim Sprachmodell: nur ein wirklich angefasstes
+      // Feld wird geschickt, sonst bleibt der hinterlegte Schlüssel stehen.
+      let stt_api_key: string | null;
+      if (form.sttClearKey) {
+        stt_api_key = "";
+      } else if (form.sttKeyEdited) {
+        stt_api_key = form.sttApiKey;
+      } else {
+        stt_api_key = null;
+      }
+
       const updated = await updateSettings({
         llm_base_url: form.baseUrl,
         llm_api_key,
         llm_model: form.model,
+        stt_base_url: form.sttBaseUrl,
+        stt_api_key,
+        stt_model: form.sttModel,
       });
       setSettings(updated);
       setForm({
@@ -123,6 +154,11 @@ export default function EinstellungenPage() {
         apiKey: "",
         keyEdited: false,
         clearKey: false,
+        sttBaseUrl: updated.stt_base_url,
+        sttModel: updated.stt_model,
+        sttApiKey: "",
+        sttKeyEdited: false,
+        sttClearKey: false,
       });
       setSavedAt(Date.now());
       setPhase("ready");
@@ -151,6 +187,7 @@ export default function EinstellungenPage() {
 
   const s = settings!;
   const hint = s.llm_api_key_set ? s.llm_api_key_hint : "—";
+  const sttHint = s.stt_api_key_set ? s.stt_api_key_hint : "—";
   const effectiveBaseUrl = form.baseUrl.trim() || s.defaults.llm_base_url;
   const effectiveModel = form.model.trim() || s.defaults.llm_model;
 
@@ -325,6 +362,103 @@ export default function EinstellungenPage() {
             </p>
           </div>
         )}
+
+        {/* ── Spracherkennung ────────────────────────────────────────
+            Bewusst im selben Formular und ohne eigenen Speichern-Knopf:
+            das Designsystem erlaubt genau eine primäre Handlung je
+            Ansicht. Ein zweiter Knopf sähe nach zwei getrennten
+            Einstellungen aus, die man einzeln vergessen kann. */}
+        <div className="space-y-5 border-t border-trennlinie pt-7">
+          <header>
+            <h2 className="font-display text-xl font-medium">
+              {tSettings("sttTitel")}
+            </h2>
+            <p className="mt-1 text-sm text-text-sekundaer">
+              {tSettings("sttHinweis")}
+            </p>
+          </header>
+
+          <Field label={tSettings("sttUrl")} hint={tSettings("sttUrlHinweis")}>
+            <input
+              type="url"
+              className="input w-full"
+              value={form.sttBaseUrl}
+              onChange={(e) => setForm({ ...form, sttBaseUrl: e.target.value })}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field
+              label={tSettings("sttKey")}
+              hint={
+                s.stt_api_key_set
+                  ? `Hinterlegt: ${sttHint}. Leer lassen, um den Schlüssel beizubehalten.`
+                  : tSettings("sttKeyHinweis")
+              }
+            >
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  className="input w-full"
+                  value={form.sttApiKey}
+                  placeholder={
+                    form.sttClearKey
+                      ? "wird gelöscht"
+                      : s.stt_api_key_set
+                        ? "•••••••••• (beibehalten)"
+                        : ""
+                  }
+                  disabled={form.sttClearKey}
+                  onChange={(e) =>
+                    setForm({ ...form, sttApiKey: e.target.value, sttKeyEdited: true })
+                  }
+                  autoComplete="off"
+                />
+                {s.stt_api_key_set && (
+                  <button
+                    type="button"
+                    className="btn btn-still shrink-0"
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        sttClearKey: !form.sttClearKey,
+                        sttApiKey: "",
+                        sttKeyEdited: false,
+                      })
+                    }
+                  >
+                    {form.sttClearKey ? "Doch behalten" : "Löschen"}
+                  </button>
+                )}
+              </div>
+            </Field>
+
+            <Field label={tSettings("sttModell")} hint={tSettings("sttModellHinweis")}>
+              <input
+                type="text"
+                className="input w-full"
+                value={form.sttModel}
+                onChange={(e) => setForm({ ...form, sttModel: e.target.value })}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </Field>
+          </div>
+
+          {/* Farbe trägt die Aussage nicht allein — Zeichen und Satz dazu.
+              Der Streifen erscheint nur, wenn wirklich eine Adresse steht:
+              ohne Eintrag gibt es nichts zu warnen. */}
+          {form.sttBaseUrl.trim() !== "" && (
+            <div className="streifen streifen-achtung">
+              <span className="zeichen" aria-hidden>
+                !
+              </span>
+              <span>{tSettings("sttWarnung")}</span>
+            </div>
+          )}
+        </div>
 
         {error && <p className="text-sm text-fehler">{error}</p>}
 

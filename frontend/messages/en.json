@@ -75,7 +75,9 @@
     "trustMehr": "What leaves this box?",
     "trustEigeneBoxTitel": "Language model on this box",
     "trustEigeneBoxText": "Audio, transcript and search index stay here. The language model also runs on this box, reached via its own address.",
-    "llmFehltKurz": "Summaries are off until the language model is set up."
+    "llmFehltKurz": "Summaries are off until the language model is set up.",
+    "trustSttTitel": "Recordings go to {host}",
+    "trustSttText": "Speech recognition runs on a third-party service. The recording itself leaves this box — not just the transcript."
   },
   "meeting": {
     "listTitle": "Meetings",
@@ -666,11 +668,27 @@
     "navLlm": "Model external",
     "navEigeneBox": "This box",
     "eigeneBox": "Language model on this box",
-    "eigeneBoxLang": "Reached via {host} — this box's own public address. The call travels over the network and comes back here; no third party is involved."
+    "eigeneBoxLang": "Reached via {host} — this box's own public address. The call travels over the network and comes back here; no third party is involved.",
+    "sttExtern": "Recordings go to a third-party service",
+    "sttExternLang": "Speech recognition runs via {host}. That means the recording itself leaves this box — not just the transcript.",
+    "sttEigeneBox": "Speech recognition on this box",
+    "sttEigeneBoxLang": "Reached via {host} — the public address of this box. No third party is involved.",
+    "sttLokal": "Speech recognition runs on this box",
+    "zielStt": "Speech recognition",
+    "navStt": "Audio leaves"
   },
   "settings": {
     "llmFehltTitel": "Language model not set up yet",
     "llmFehltText": "Recording and transcription work. For summaries, enter the address of your LiteLLM instance below.",
-    "llmFehltWoher": "Find the address by opening LiteLLM on the Olares desktop and copying the address bar — it ends in /v1."
+    "llmFehltWoher": "Find the address by opening LiteLLM on the Olares desktop and copying the address bar — it ends in /v1.",
+    "sttTitel": "Speech recognition",
+    "sttHinweis": "Leave empty and the bundled service on this box transcribes — then no recording leaves the box.",
+    "sttUrl": "API URL",
+    "sttUrlHinweis": "OpenAI-compatible STT server, e.g. https://speaches.your-box.olares.de/v1",
+    "sttKey": "API key",
+    "sttKeyHinweis": "Optional. Local endpoints usually do not ask for one.",
+    "sttModell": "Model ID",
+    "sttModellHinweis": "Model name as registered at the endpoint, e.g. Systran/faster-whisper-large-v3.",
+    "sttWarnung": "With an address here, the recording itself goes to that server. On an address of this box it stays on the same machine; with a third-party provider it does not."
   }
 }

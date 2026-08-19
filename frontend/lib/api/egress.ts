@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { apiGet } from "./client";
 
 export type EgressZiel = {
-  art: "llm" | "webhook";
+  art: "stt" | "llm" | "webhook";
   host: string;
   beschreibung: string;
 };
@@ -19,6 +19,17 @@ export type EgressRead = {
   /** Kein Endpunkt eingetragen: Zusammenfassungen laufen nicht. */
   llm_fehlt: boolean;
   llm_host: string | null;
+
+  /**
+   * Spracherkennung. `stt_lokal` ist der Normalfall und der einzige, in
+   * dem Insilo „kein Audio verlässt die Box" ohne Einschränkung sagen
+   * darf — dann transkribiert der mitgelieferte Dienst.
+   */
+  stt_lokal: boolean;
+  stt_extern: boolean;
+  stt_eigene_box: boolean;
+  stt_host: string | null;
+
   webhooks_aktiv: number;
   ziele: EgressZiel[];
   /**

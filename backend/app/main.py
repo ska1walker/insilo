@@ -131,6 +131,48 @@ async def health_llm() -> dict:
         return {"status": "error", "service": "llm", "detail": str(exc)}
 
 
+@app.get("/health/stt")
+async def health_stt() -> dict:
+    """Spracherkennung — mitgelieferter Dienst oder externer Endpunkt.
+
+    Ohne eingetragene Adresse ist das kein Mangel: dann transkribiert der
+    Whisper-Dienst im eigenen Namespace, und kein Audio verlässt die Box.
+    Deshalb meldet dieser Check in dem Fall den lokalen Dienst, nicht
+    "nicht eingerichtet".
+    """
+    base = settings.stt_base_url
+    key = settings.stt_api_key
+    try:
+        async with acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                select stt_base_url, stt_api_key
+                from public.org_settings
+                where trim(stt_base_url) <> ''
+                limit 1
+                """
+            )
+        if row:
+            base = row["stt_base_url"]
+            key = row["stt_api_key"] or key
+    except Exception:  # noqa: BLE001
+        pass
+
+    if not base:
+        # Der Normalfall. /health/whisper prüft den lokalen Dienst selbst.
+        return {"status": "ok", "service": "stt", "mode": "local"}
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            r = await client.get(
+                f"{base.rstrip('/')}/models",
+                headers=auth_header(key),
+            )
+            r.raise_for_status()
+        return {"status": "ok", "service": "stt", "mode": "external"}
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "error", "service": "stt", "mode": "external", "detail": str(exc)}
+
+
 @app.get("/health/embeddings")
 async def health_embeddings() -> dict:
     try:

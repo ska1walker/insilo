@@ -192,6 +192,19 @@ spec:
             - name: EMBEDDINGS_URL
               value: "http://insilo-embeddings:8002"
 
+            # ---- Spracherkennung ---------------------------------------------
+            # Leer und das bleibt auch so: dann transkribiert der
+            # mitgelieferte Whisper-Dienst, und die Tonaufnahme verlässt die
+            # Box nicht. Wer einen OpenAI-kompatiblen STT-Server bevorzugt
+            # (z. B. Speaches auf derselben Box), trägt ihn unter
+            # /einstellungen ein — der Datenschutz-Nachweis benennt ihn dann.
+            - name: STT_BASE_URL
+              value: "{{ .Values.stt.baseUrl }}"
+            - name: STT_API_KEY
+              value: "{{ .Values.stt.apiKey }}"
+            - name: STT_MODEL
+              value: "{{ .Values.stt.model }}"
+
             # ---- Storage-Pfade ----------------------------------------------
             - name: APP_DATA_DIR
               value: "{{ .Values.userspace.appData }}"

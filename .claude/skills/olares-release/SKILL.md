@@ -178,29 +178,58 @@ strict-semver-Prüfung scheitern — auf beiden Seiten, Ziel *und*
 installierte Version. Übrig bleibt uninstall + install. Diesen Fehler
 holen wir uns nicht freiwillig ins Haus.
 
-## 5a. ⚠️ Das Repo ist nicht die Wahrheit des Live-Markts (19. August 2026)
+## 5a. Der Markt hat zwei Quellen — und eine Falle beim Nachmessen
 
-`bayerhazard/aimighty-market` hat einen Deploy-Workflow, aber **das
-Cloudflare-Pages-Projekt wird auch direkt bespielt**, am Repo vorbei. Am
-19.8. um 10:40 lag Insilo 0.1.81 nachweislich live (Katalog geprüft,
-Chart byte-identisch). Zwei Stunden später fehlte Insilo im Katalog ganz
-— ohne dass ein weiterer Workflow-Lauf stattgefunden hätte, und mit vier
-Apps in *neueren* Versionen, als das Repo sie kennt.
+`bayerhazard/aimighty-market` hat einen Deploy-Workflow, **das
+Cloudflare-Pages-Projekt wird aber auch direkt bespielt**, am Repo vorbei.
+Am 19.8. lag Insilo 0.1.81 um 10:40 nachweislich live; um 12:10 fehlte es
+im Katalog ganz — ohne weiteren Workflow-Lauf, und mit vier Apps in
+Versionen, die das Repo nicht kennt. Ein Deploy aus dem Repo hat es
+zurückgeholt.
 
-**Zwei Folgerungen:**
+**Erstens: „gepusht und geprüft" hat eine Halbwertszeit.** Ein Eintrag
+kann verschwinden, ohne dass jemand das Repo anfasst. Vor jeder Aussage
+„liegt im Markt" den Live-Stand abfragen — Katalog *und* Chart, denn ein
+gelisteter Eintrag ohne abrufbares Chart ist nicht installierbar:
 
-1. **Nach dem Push prüfen reicht nicht.** Ein Eintrag kann später
-   verschwinden, ohne dass jemand das Repo anfasst. Vor jeder Aussage
-   „liegt im Markt" den Live-Katalog abfragen:
-   ```bash
-   curl -sS https://aimighty-market.pages.dev/api/v1/appstore/info \
-     | python3 -c "import sys,json; d=json.load(sys.stdin); \
-         print(sorted((a['name'], a['version']) for a in d['data']['apps'].values()))"
-   ```
-2. **Nie blind aus dem Repo deployen, um das zu reparieren.** Der Deploy
-   ersetzt den *ganzen* Katalog — ein Repo-Stand, der bei fremden Apps
-   älter ist, wirft die auf alte Versionen zurück. Das sind nicht unsere
-   Apps. Erst mit Marc klären, wessen Stand gilt.
+```bash
+curl -sS https://aimighty-market.pages.dev/api/v1/appstore/info \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); \
+      print(sorted((a['name'], a['version']) for a in d['data']['apps'].values()))"
+curl -sS -o /tmp/c.tgz -w '%{http_code} %{size_download}\n' \
+  https://aimighty-market.pages.dev/api/v1/applications/insilo/chart
+```
+
+Nach einem Deploy braucht die Edge ein bis zwei Minuten. Ein 404 direkt
+danach heißt noch nichts — nachfassen, bevor man Alarm schlägt.
+
+**Zweitens: der Live-Stand ist kein Maßstab.** Genau daran bin ich am
+19.8. gescheitert: ich habe live gemessen, vier fremde Apps in Ordnung
+gefunden, danach deployt, sie auf 404 gesehen — und daraus geschlossen,
+mein Deploy habe sie zerstört. Falsch. Der gemessene Zustand war ein
+Zwei-Stunden-Fenster aus einem fremden Direkt-Deploy. Wer wissen will,
+was ein Deploy *ändert*, vergleicht gegen die **Git-Historie**, nicht
+gegen den Moment:
+
+```bash
+# fuer mehrere Staende: welche Apps haben eine Version ohne passendes Chart?
+git show <ref>:functions/_apps.ts   # name + version
+git show <ref>:functions/_lib.ts    # Schluessel der CHARTS-Tabelle
+```
+
+**Drittens: vier fremde Einträge sind im Repo widersprüchlich** —
+`aimqwen3asr`, `aimqwen3ttsvllm`, `aimvoxtral4bvllm`, `rewind` tragen in
+`_apps.ts` eine Version, zu der in `_lib.ts` kein Chart liegt.
+`getChartByAppName` baut `name-version.tgz` und findet nichts → 404. Das
+steht so schon in `f727d4c`, also **vor** dem ersten Insilo-Commit: jeder
+Repo-Deploy veröffentlicht diese vier unbrauchbar, seit jeher. Nicht von
+uns verursacht, nicht von uns zu reparieren — aber Marc gehört es gesagt,
+denn es ist vermutlich der Grund, warum er sein eigenes Bundle direkt
+aufspielt (und Insilo dabei verliert).
+
+**Also:** aus dem Repo zu deployen ist der normale Weg und funktioniert.
+Man sollte nur wissen, dass man damit einen eventuellen Direkt-Deploy
+ersetzt — und dass der Repo-Stand bei diesen vier Apps unvollständig ist.
 
 ## 6. Eigene Market Source aufsetzen
 

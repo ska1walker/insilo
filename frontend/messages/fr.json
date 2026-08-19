@@ -72,7 +72,9 @@
     "trustLlmText": "L'audio et l'index restent ici. Pour le résumé, la transcription est envoyée à {host}.",
     "trustZieleTitel": "Destinations externes configurées",
     "trustZieleText": "L'audio et la transcription restent sur ce boîtier. Les comptes rendus finis sont envoyés aux destinations configurées.",
-    "trustMehr": "Qu'est-ce qui quitte ce boîtier ?"
+    "trustMehr": "Qu'est-ce qui quitte ce boîtier ?",
+    "trustEigeneBoxTitel": "Modèle de langage sur ce boîtier",
+    "trustEigeneBoxText": "L'audio, la transcription et l'index restent ici. Le modèle de langage tourne également sur ce boîtier, via sa propre adresse."
   },
   "meeting": {
     "listTitle": "Réunions",
@@ -660,6 +662,9 @@
     "nichtGeladen": "État indisponible.",
     "navBleibt": "Reste sur le boîtier",
     "navZiele": "{count, plural, =1 {1 cible externe} other {# cibles externes}}",
-    "navLlm": "Modèle externe"
+    "navLlm": "Modèle externe",
+    "navEigeneBox": "Ce boîtier",
+    "eigeneBox": "Modèle de langage sur ce boîtier",
+    "eigeneBoxLang": "Accessible via {host} — l'adresse publique de ce boîtier. L'appel passe par le réseau et revient ici ; aucun tiers n'est impliqué."
   }
 }

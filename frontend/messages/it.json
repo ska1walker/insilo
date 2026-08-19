@@ -72,7 +72,9 @@
     "trustLlmText": "Audio e indice restano qui. Per il riepilogo la trascrizione viene inviata a {host}.",
     "trustZieleTitel": "Destinazioni esterne configurate",
     "trustZieleText": "Audio e trascrizione restano su questo box. I verbali finiti vengono inviati alle destinazioni configurate.",
-    "trustMehr": "Che cosa esce da questo box?"
+    "trustMehr": "Che cosa esce da questo box?",
+    "trustEigeneBoxTitel": "Modello linguistico su questo box",
+    "trustEigeneBoxText": "Audio, trascrizione e indice restano qui. Anche il modello linguistico gira su questo box, tramite il suo indirizzo."
   },
   "meeting": {
     "listTitle": "Riunioni",
@@ -660,6 +662,9 @@
     "nichtGeladen": "Stato non disponibile.",
     "navBleibt": "Resta sul box",
     "navZiele": "{count, plural, =1 {1 destinazione esterna} other {# destinazioni esterne}}",
-    "navLlm": "Modello esterno"
+    "navLlm": "Modello esterno",
+    "navEigeneBox": "Questo box",
+    "eigeneBox": "Modello linguistico su questo box",
+    "eigeneBoxLang": "Raggiungibile tramite {host}, l'indirizzo pubblico di questo box. La chiamata passa dalla rete e torna qui; nessun terzo è coinvolto."
   }
 }

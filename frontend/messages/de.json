@@ -72,7 +72,9 @@
     "trustLlmText": "Audio und Suchindex bleiben hier. Zur Zusammenfassung geht das Transkript an {host}.",
     "trustZieleTitel": "Externe Ziele eingerichtet",
     "trustZieleText": "Audio und Transkript bleiben auf dieser Box. Fertige Protokolle gehen an eingerichtete Ziele.",
-    "trustMehr": "Was verlässt diese Box?"
+    "trustMehr": "Was verlässt diese Box?",
+    "trustEigeneBoxTitel": "Sprachmodell auf dieser Box",
+    "trustEigeneBoxText": "Audio, Transkript und Suchindex bleiben hier. Das Sprachmodell läuft ebenfalls auf dieser Box, erreichbar über ihre eigene Adresse."
   },
   "meeting": {
     "listTitle": "Besprechungen",
@@ -660,6 +662,9 @@
     "nichtGeladen": "Zustand nicht abrufbar.",
     "navBleibt": "Bleibt auf der Box",
     "navZiele": "{count, plural, =1 {1 Ziel extern} other {# Ziele extern}}",
-    "navLlm": "Modell extern"
+    "navLlm": "Modell extern",
+    "navEigeneBox": "Eigene Box",
+    "eigeneBox": "Sprachmodell auf dieser Box",
+    "eigeneBoxLang": "Erreichbar über {host} — die öffentliche Adresse dieser Box. Der Aufruf nimmt den Weg über das Netz und kommt hierher zurück; ein fremder Anbieter ist nicht beteiligt."
   }
 }

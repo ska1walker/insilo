@@ -72,7 +72,9 @@
     "trustLlmText": "Audio and search index stay here. For summarising, the transcript goes to {host}.",
     "trustZieleTitel": "External targets configured",
     "trustZieleText": "Audio and transcript stay on this box. Finished minutes go to configured targets.",
-    "trustMehr": "What leaves this box?"
+    "trustMehr": "What leaves this box?",
+    "trustEigeneBoxTitel": "Language model on this box",
+    "trustEigeneBoxText": "Audio, transcript and search index stay here. The language model also runs on this box, reached via its own address."
   },
   "meeting": {
     "listTitle": "Meetings",
@@ -660,6 +662,9 @@
     "nichtGeladen": "State unavailable.",
     "navBleibt": "Stays on this box",
     "navZiele": "{count, plural, =1 {1 target external} other {# targets external}}",
-    "navLlm": "Model external"
+    "navLlm": "Model external",
+    "navEigeneBox": "This box",
+    "eigeneBox": "Language model on this box",
+    "eigeneBoxLang": "Reached via {host} — this box's own public address. The call travels over the network and comes back here; no third party is involved."
   }
 }

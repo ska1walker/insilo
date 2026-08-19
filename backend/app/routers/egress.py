@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire
-from app.egress import ist_boxintern
+from app.egress import ist_boxintern, ist_eigene_zone
 from app.llm_config import load_llm_config
 
 router = APIRouter(prefix="/api/v1", tags=["egress"])
@@ -35,7 +35,11 @@ class EgressRead(BaseModel):
     # Kernaussage — trägt die Anzeige in der Navigation.
     alles_bleibt: bool
 
+    # `llm_extern` meint: bei einem fremden Anbieter. Die eigene Box unter
+    # ihrer öffentlichen Adresse zählt nicht dazu — der Aufruf geht zwar
+    # hinaus und wieder herein, bleibt aber auf derselben Maschine.
     llm_extern: bool
+    llm_eigene_box: bool
     llm_host: str | None
 
     webhooks_aktiv: int
@@ -56,7 +60,11 @@ def _host(url: str) -> str:
 async def read_egress(user: CurrentUser = Depends(get_current_user)) -> EgressRead:
     async with acquire() as conn:
         llm = await load_llm_config(conn, user.org_id)
-        llm_extern = not ist_boxintern(llm.base_url)
+        # Drei Lagen statt zwei: clusterintern, eigene Box über die
+        # öffentliche Adresse, fremder Anbieter. Nur das Letzte ist ein
+        # Grund zur Warnung.
+        eigene_box = ist_eigene_zone(llm.base_url)
+        llm_extern = not ist_boxintern(llm.base_url) and not eigene_box
 
         webhooks = await conn.fetch(
             """
@@ -107,7 +115,10 @@ async def read_egress(user: CurrentUser = Depends(get_current_user)) -> EgressRe
     return EgressRead(
         alles_bleibt=not llm_extern and len(webhooks) == 0,
         llm_extern=llm_extern,
-        llm_host=_host(llm.base_url) if llm_extern else None,
+        llm_eigene_box=eigene_box,
+        # Auch bei der eigenen Box den Host zeigen — der Nutzer soll sehen,
+        # worüber gesprochen wird, nicht nur dass alles gut ist.
+        llm_host=_host(llm.base_url) if (llm_extern or eigene_box) else None,
         webhooks_aktiv=len(webhooks),
         ziele=ziele,
         gesendete_bytes=int(summe["bytes"]) if gemessen and summe["bytes"] else None,

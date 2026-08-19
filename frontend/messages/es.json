@@ -72,7 +72,9 @@
     "trustLlmText": "El audio y el índice permanecen aquí. Para resumir, la transcripción se envía a {host}.",
     "trustZieleTitel": "Destinos externos configurados",
     "trustZieleText": "El audio y la transcripción permanecen en esta caja. Las actas terminadas se envían a los destinos configurados.",
-    "trustMehr": "¿Qué sale de esta caja?"
+    "trustMehr": "¿Qué sale de esta caja?",
+    "trustEigeneBoxTitel": "Modelo de lenguaje en esta caja",
+    "trustEigeneBoxText": "El audio, la transcripción y el índice permanecen aquí. El modelo de lenguaje también se ejecuta en esta caja, mediante su propia dirección."
   },
   "meeting": {
     "listTitle": "Reuniones",
@@ -660,6 +662,9 @@
     "nichtGeladen": "Estado no disponible.",
     "navBleibt": "Permanece en la caja",
     "navZiele": "{count, plural, =1 {1 destino externo} other {# destinos externos}}",
-    "navLlm": "Modelo externo"
+    "navLlm": "Modelo externo",
+    "navEigeneBox": "Esta caja",
+    "eigeneBox": "Modelo de lenguaje en esta caja",
+    "eigeneBoxLang": "Accesible mediante {host}, la dirección pública de esta caja. La llamada pasa por la red y vuelve aquí; no interviene ningún tercero."
   }
 }

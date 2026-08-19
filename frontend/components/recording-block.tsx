@@ -498,19 +498,23 @@ function Datensouveraenitaet() {
   // als gar keine — dieselbe Regel wie beim Nachweis in der Navigation.
   if (lage === null) return null;
 
-  const { llm_extern, llm_host, alles_bleibt } = lage;
+  const { llm_extern, llm_eigene_box, llm_host, alles_bleibt } = lage;
 
   const titel = llm_extern
     ? t("trustLlmTitel")
-    : alles_bleibt
-      ? t("trustAllesTitel")
-      : t("trustZieleTitel");
+    : llm_eigene_box
+      ? t("trustEigeneBoxTitel")
+      : alles_bleibt
+        ? t("trustAllesTitel")
+        : t("trustZieleTitel");
 
   const text = llm_extern
     ? t("trustLlmText", { host: llm_host ?? "" })
-    : alles_bleibt
-      ? t("trustAllesText")
-      : t("trustZieleText");
+    : llm_eigene_box
+      ? t("trustEigeneBoxText")
+      : alles_bleibt
+        ? t("trustAllesText")
+        : t("trustZieleText");
 
   return (
     <div className="mt-16 flex flex-col items-center gap-3">
@@ -547,7 +551,7 @@ function Datensouveraenitaet() {
       <div className="max-w-[360px] text-center">
         <p className="text-sm font-medium text-text-primaer">{titel}</p>
         <p className="mt-1 text-sm text-text-gedaempft">{text}</p>
-        {!alles_bleibt && (
+        {(!alles_bleibt || llm_eigene_box) && (
           <Link
             href="/datenschutz"
             className="mt-2 inline-block text-sm underline text-text-sekundaer hover:text-text-primaer"

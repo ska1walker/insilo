@@ -55,6 +55,18 @@ export default function DatenschutzSeite() {
                   : null}
               </span>
             </div>
+          ) : lage.llm_eigene_box ? (
+            <div className="streifen streifen-erfolg mt-8">
+              <span className="zeichen" aria-hidden>
+                ✓
+              </span>
+              <span>
+                <strong className="block">{t("eigeneBox")}</strong>
+                {lage.llm_host
+                  ? t("eigeneBoxLang", { host: lage.llm_host })
+                  : null}
+              </span>
+            </div>
           ) : lage.alles_bleibt ? (
             <div className="streifen streifen-erfolg mt-8">
               <span className="zeichen" aria-hidden>

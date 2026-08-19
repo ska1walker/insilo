@@ -12,7 +12,10 @@ export type EgressZiel = {
 export type EgressRead = {
   /** Kernaussage für den Nachweis in der Navigation. */
   alles_bleibt: boolean;
+  /** true nur bei einem fremden Anbieter. */
   llm_extern: boolean;
+  /** Die eigene Box unter ihrer öffentlichen Adresse — kein Dritter. */
+  llm_eigene_box: boolean;
   llm_host: string | null;
   webhooks_aktiv: number;
   ziele: EgressZiel[];

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.egress import ist_boxintern
+from app.egress import ist_boxintern, ist_eigene_zone
 
 # ─── bleibt in der Box ────────────────────────────────────────────────
 
@@ -86,3 +86,53 @@ def test_grossschreibung_und_punkt_am_ende() -> None:
     assert ist_boxintern("http://INSILO-Whisper:8001") is True
     assert ist_boxintern("http://litellm.svc.cluster.local./v1") is True
     assert ist_boxintern("https://API.OpenAI.com/v1") is False
+
+
+# ─── eigene Box unter öffentlicher Adresse ────────────────────────────
+
+ZONE = "kaivostudio.olares.de"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://llm.kaivostudio.olares.de/v1",
+        "https://e5d605f3.kaivostudio.olares.de/api",
+        "https://kaivostudio.olares.de/v1",
+        "https://LLM.KaivoStudio.Olares.DE/v1",   # Groß-/Kleinschreibung
+        "https://llm.kaivostudio.olares.de./v1",  # Punkt am Ende
+    ],
+)
+def test_eigene_zone(url: str) -> None:
+    assert ist_eigene_zone(url, ZONE) is True
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://api.openai.com/v1",
+        # Fremde Olares-Box — andere Zone, nicht unsere
+        "https://llm.anderernutzer.olares.de/v1",
+        # Sieht ähnlich aus, ist es aber nicht: die Zone muss auf einer
+        # Punktgrenze enden, sonst wäre "boesekaivostudio.olares.de" dabei
+        "https://boesekaivostudio.olares.de/v1",
+        # Zone als Präfix statt Suffix
+        "https://kaivostudio.olares.de.angreifer.example/v1",
+    ],
+)
+def test_fremde_zone(url: str) -> None:
+    assert ist_eigene_zone(url, ZONE) is False
+
+
+def test_ohne_zone_keine_aussage() -> None:
+    """Ohne OLARES_ZONE lässt sich nichts belegen — dann nicht behaupten."""
+    assert ist_eigene_zone("https://llm.kaivostudio.olares.de/v1", "") is False
+    assert ist_eigene_zone("https://llm.kaivostudio.olares.de/v1", None) is False
+
+
+def test_eigene_zone_ist_nicht_clusterintern() -> None:
+    """Beide Begriffe sauber trennen: die öffentliche Route verlässt die
+    Box tatsächlich, auch wenn sie zurückkommt."""
+    url = "https://llm.kaivostudio.olares.de/v1"
+    assert ist_eigene_zone(url, ZONE) is True
+    assert ist_boxintern(url) is False

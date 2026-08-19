@@ -15,6 +15,7 @@ viel als ein falsches Entwarnungssignal.
 from __future__ import annotations
 
 import ipaddress
+import os
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -74,6 +75,39 @@ def ist_boxintern(url: str) -> bool:
         return True
 
     return False
+
+
+def ist_eigene_zone(url: str, zone: str | None = None) -> bool:
+    """True, wenn das Ziel die eigene Box unter ihrer öffentlichen Adresse ist.
+
+    Olares reicht die Zone als `OLARES_ZONE` in jeden Pod (etwa
+    "kaivostudio.olares.de"). Zeigt ein Ziel dorthin, läuft es auf
+    derselben Maschine — der Aufruf nimmt zwar den Weg über DNS und den
+    Tunnel nach draußen, landet aber wieder hier.
+
+    Das ist der praktisch häufigste Fall: Der Envoy-Sidecar vor
+    Nachbar-Apps wie LiteLLM verlangt einen Authelia-Token, den ein
+    Server-zu-Server-Aufruf nicht hat (geprüft: clusterintern antwortet er
+    mit 400 „cannot get user name from header", mit Benutzernamen mit
+    401). Die öffentliche Adresse ist deshalb kein Umweg aus Nachlässigkeit,
+    sondern der einzige Weg, der funktioniert.
+
+    Für den Nachweis ist der Unterschied wesentlich: „läuft auf der
+    eigenen Box" ist etwas anderes als „geht an einen fremden Anbieter",
+    und beides in einen Topf zu werfen würde die Aussage entwerten.
+    """
+    if zone is None:
+        zone = os.environ.get("OLARES_ZONE", "")
+    zone = (zone or "").strip().lower().rstrip(".")
+    if not zone:
+        return False
+
+    host = urlsplit((url or "").strip()).hostname
+    if not host:
+        return False
+    host = host.lower().rstrip(".")
+
+    return host == zone or host.endswith("." + zone)
 
 
 @dataclass(frozen=True)

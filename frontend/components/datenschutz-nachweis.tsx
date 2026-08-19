@@ -55,21 +55,27 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
   // Nicht messbar heißt: nichts behaupten. Der Platz bleibt leer.
   if (fehlgeschlagen || lage === null) return null;
 
-  const { alles_bleibt, llm_extern, llm_host, ziele, gesendete_bytes } = lage;
+  const { alles_bleibt, llm_extern, llm_eigene_box, llm_host, ziele, gesendete_bytes } =
+    lage;
 
-  const ton = llm_extern ? "achtung" : alles_bleibt ? "erfolg" : "neutral";
-  const Icon = llm_extern ? ShieldAlert : alles_bleibt ? ShieldCheck : Share2;
+  // Die eigene Box unter öffentlicher Adresse ist kein Warnfall: das
+  // Modell läuft hier, nur der Weg führt über das Netz. Sie bekommt den
+  // Erfolgston, nennt aber den Host — verschwiegen wird nichts.
+  const ton = llm_extern ? "achtung" : alles_bleibt || llm_eigene_box ? "erfolg" : "neutral";
+  const Icon = llm_extern ? ShieldAlert : alles_bleibt || llm_eigene_box ? ShieldCheck : Share2;
 
   // Kurzfassungen: die Navigationsspalte ist 220px breit und die Schrift
   // hier ist Mono. Die ausführlichen Sätze stehen auf der Detailseite,
   // erreichbar über denselben Klick.
   const kopf = llm_extern
     ? t("navLlm")
-    : alles_bleibt
-      ? t("navBleibt")
-      : t("navZiele", { count: ziele.length });
+    : llm_eigene_box
+      ? t("navEigeneBox")
+      : alles_bleibt
+        ? t("navBleibt")
+        : t("navZiele", { count: ziele.length });
 
-  const unterzeile = llm_extern
+  const unterzeile = llm_extern || llm_eigene_box
     ? llm_host
     : alles_bleibt
       ? null
@@ -81,7 +87,13 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
     <Link
       href="/datenschutz"
       className={`huelle-schutz huelle-schutz-${ton}`}
-      title={llm_extern && llm_host ? t("llmExternLang", { host: llm_host }) : undefined}
+      title={
+        llm_host
+          ? llm_extern
+            ? t("llmExternLang", { host: llm_host })
+            : t("eigeneBoxLang", { host: llm_host })
+          : undefined
+      }
     >
       <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
       <span className="huelle-schutz-text">

@@ -447,6 +447,19 @@ export default function EinstellungenPage() {
             </Field>
           </div>
 
+          {/* Adresse ohne Modell-ID: der Endpunkt lehnt dann jede Anfrage
+              ab (HTTP 422). Das ist keine Datenschutzfrage, sondern eine
+              unfertige Einrichtung — und sie hat Vorrang, weil sie die
+              Transkription stillstehen lässt. */}
+          {form.sttBaseUrl.trim() !== "" && form.sttModel.trim() === "" && (
+            <div className="streifen streifen-hinweis">
+              <span className="zeichen" aria-hidden>
+                i
+              </span>
+              <span>{tSettings("sttModellFehlt")}</span>
+            </div>
+          )}
+
           {/* Farbe trägt die Aussage nicht allein — Zeichen und Satz dazu.
               Der Streifen erscheint nur, wenn wirklich eine Adresse steht:
               ohne Eintrag gibt es nichts zu warnen. */}

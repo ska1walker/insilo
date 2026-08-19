@@ -7,6 +7,7 @@ import json
 import logging
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit
 from uuid import UUID
 
 import asyncpg
@@ -72,6 +73,27 @@ class Transkript:
     quelle: str  # "lokal" | "extern"
 
 
+def _host_kurz(url: str) -> str:
+    """Nur der Rechnername, für Meldungen an den Nutzer."""
+    return urlsplit(url).hostname or url
+
+
+def _dateiname(mime: str) -> str:
+    """Dateiname mit passender Endung für den Upload.
+
+    Einige STT-Server erkennen das Format an der Endung, nicht am
+    MIME-Typ — mit "recording.bin" laufen sie ins Leere.
+    """
+    endung = {
+        "webm": "webm", "mp4": "m4a", "ogg": "ogg",
+        "wav": "wav", "mpeg": "mp3", "flac": "flac",
+    }
+    for kennung, e in endung.items():
+        if kennung in mime:
+            return f"recording.{e}"
+    return "recording.webm"
+
+
 async def _transkribieren_lokal(
     audio_bytes: bytes, mime: str, language: str | None,
 ) -> Transkript:
@@ -113,20 +135,43 @@ async def _transkribieren_extern(
     Text, arbeiten wir mit einem einzigen Segment weiter — lieber ein
     Transkript ohne Sprecher als gar keins.
     """
-    daten: dict[str, str] = {"response_format": "verbose_json"}
-    if stt.model:
-        daten["model"] = stt.model
+    # Die Modellkennung ist bei OpenAI-kompatiblen Endpunkten ein
+    # Pflichtfeld — Speaches etwa antwortet ohne sie mit 422 und
+    # "model: Field required". Das hier abzufangen ist ehrlicher, als den
+    # Endpunkt einen Formfehler melden zu lassen: es fehlt eine Angabe,
+    # der Dienst ist nicht kaputt.
+    if not stt.model:
+        raise RuntimeError(
+            "Für die Spracherkennung fehlt die Modell-ID. Der eingetragene "
+            f"Endpunkt ({_host_kurz(stt.base_url)}) verlangt sie bei jeder "
+            "Anfrage. Sie steht unter Einstellungen › Spracherkennung; "
+            "welche Kennungen der Endpunkt kennt, verrät sein /v1/models."
+        )
+
+    daten: dict[str, str] = {
+        "response_format": "verbose_json",
+        "model": stt.model,
+    }
     if language:
         daten["language"] = language
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 25)) as client:
         resp = await client.post(
             f"{stt.base_url}/audio/transcriptions",
-            files={"file": ("recording.bin", audio_bytes, mime)},
+            # Dateiname mit echter Endung: manche Server leiten das Format
+            # daraus ab statt aus dem MIME-Typ.
+            files={"file": (_dateiname(mime), audio_bytes, mime)},
             data=daten,
             headers=stt.auth_header,
         )
-        resp.raise_for_status()
+        if resp.status_code >= 400:
+            # Den Antwortkörper mitgeben. `raise_for_status()` allein
+            # liefert nur "422 Unprocessable Entity", und der Nutzer steht
+            # vor einer Sackgasse — dabei steht der Grund im Körper.
+            raise RuntimeError(
+                f"Der Spracherkennungs-Dienst antwortete mit HTTP "
+                f"{resp.status_code}: {resp.text[:400]}"
+            )
         roh = resp.json()
 
     volltext = (roh.get("text") or "").strip()

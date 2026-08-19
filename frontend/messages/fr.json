@@ -689,6 +689,7 @@
     "sttKeyHinweis": "Facultatif. Les points de terminaison locaux n'en demandent généralement pas.",
     "sttModell": "Identifiant du modèle",
     "sttModellHinweis": "Nom du modèle tel qu'il est enregistré, par ex. Systran/faster-whisper-large-v3.",
-    "sttWarnung": "Avec une adresse ici, l'enregistrement lui-même part vers ce serveur. Sur une adresse de cette boîte il reste sur la même machine ; chez un tiers, non."
+    "sttWarnung": "Avec une adresse ici, l'enregistrement lui-même part vers ce serveur. Sur une adresse de cette boîte il reste sur la même machine ; chez un tiers, non.",
+    "sttModellFehlt": "Adresse renseignée, identifiant du modèle manquant. Sans lui, le point de terminaison refuse chaque requête : l'enregistrement fonctionne, pas la transcription. Son /v1/models liste les identifiants acceptés."
   }
 }

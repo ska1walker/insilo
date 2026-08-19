@@ -689,6 +689,7 @@
     "sttKeyHinweis": "Optional. Lokale Endpunkte verlangen meist keinen.",
     "sttModell": "Modell-ID",
     "sttModellHinweis": "Modellname wie er beim Endpunkt registriert ist, z. B. Systran/faster-whisper-large-v3.",
-    "sttWarnung": "Mit einer Adresse hier geht die Tonaufnahme selbst an diesen Server. Auf einer Adresse dieser Box bleibt sie auf derselben Maschine; bei einem fremden Anbieter nicht."
+    "sttWarnung": "Mit einer Adresse hier geht die Tonaufnahme selbst an diesen Server. Auf einer Adresse dieser Box bleibt sie auf derselben Maschine; bei einem fremden Anbieter nicht.",
+    "sttModellFehlt": "Adresse eingetragen, Modell-ID fehlt. Ohne sie lehnt der Endpunkt jede Anfrage ab — die Aufnahme läuft, die Transkription nicht. Welche Kennungen er kennt, steht unter /v1/models."
   }
 }

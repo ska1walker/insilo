@@ -230,3 +230,19 @@ def test_stt_bei_fremdanbieter_ist_extern() -> None:
 def test_stt_clusterintern_bleibt_intern() -> None:
     assert ist_boxintern("http://insilo-whisper:8001") is True
     assert ist_boxintern("http://speaches.speaches-kai.svc.cluster.local/v1") is True
+
+
+# ─── Dateiendung für fremde STT-Server ────────────────────────────────
+
+
+def test_dateiname_traegt_die_passende_endung() -> None:
+    """Manche STT-Server lesen das Format aus der Dateiendung, nicht aus
+    dem MIME-Typ. Mit „recording.bin" laufen sie ins Leere."""
+    from app.tasks.transcribe import _dateiname
+
+    assert _dateiname("audio/webm;codecs=opus") == "recording.webm"
+    assert _dateiname("audio/mp4") == "recording.m4a"
+    assert _dateiname("audio/ogg;codecs=opus") == "recording.ogg"
+    assert _dateiname("audio/wav") == "recording.wav"
+    # Unbekannt: die Fassung, die der Browser in der Regel liefert.
+    assert _dateiname("application/octet-stream") == "recording.webm"

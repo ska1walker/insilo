@@ -689,6 +689,7 @@
     "sttKeyHinweis": "Optional. Local endpoints usually do not ask for one.",
     "sttModell": "Model ID",
     "sttModellHinweis": "Model name as registered at the endpoint, e.g. Systran/faster-whisper-large-v3.",
-    "sttWarnung": "With an address here, the recording itself goes to that server. On an address of this box it stays on the same machine; with a third-party provider it does not."
+    "sttWarnung": "With an address here, the recording itself goes to that server. On an address of this box it stays on the same machine; with a third-party provider it does not.",
+    "sttModellFehlt": "Address set, model ID missing. Without it the endpoint rejects every request — recording works, transcription does not. Its /v1/models lists the ids it accepts."
   }
 }

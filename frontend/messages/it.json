@@ -689,6 +689,7 @@
     "sttKeyHinweis": "Facoltativa. Gli endpoint locali di norma non la richiedono.",
     "sttModell": "ID del modello",
     "sttModellHinweis": "Nome del modello come registrato presso l'endpoint, ad es. Systran/faster-whisper-large-v3.",
-    "sttWarnung": "Con un indirizzo qui, la registrazione stessa va a quel server. Su un indirizzo di questo box resta sulla stessa macchina; presso un fornitore esterno no."
+    "sttWarnung": "Con un indirizzo qui, la registrazione stessa va a quel server. Su un indirizzo di questo box resta sulla stessa macchina; presso un fornitore esterno no.",
+    "sttModellFehlt": "Indirizzo inserito, manca l'ID del modello. Senza, l'endpoint rifiuta ogni richiesta: la registrazione funziona, la trascrizione no. Il suo /v1/models elenca gli ID accettati."
   }
 }

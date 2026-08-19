@@ -689,6 +689,7 @@
     "sttKeyHinweis": "Opcional. Los puntos finales locales no suelen pedirla.",
     "sttModell": "ID del modelo",
     "sttModellHinweis": "Nombre del modelo tal como está registrado, p. ej. Systran/faster-whisper-large-v3.",
-    "sttWarnung": "Con una dirección aquí, la propia grabación va a ese servidor. En una dirección de esta caja permanece en la misma máquina; con un proveedor ajeno, no."
+    "sttWarnung": "Con una dirección aquí, la propia grabación va a ese servidor. En una dirección de esta caja permanece en la misma máquina; con un proveedor ajeno, no.",
+    "sttModellFehlt": "Dirección indicada, falta el ID del modelo. Sin él, el punto final rechaza cada solicitud: la grabación funciona, la transcripción no. Su /v1/models enumera los ID admitidos."
   }
 }

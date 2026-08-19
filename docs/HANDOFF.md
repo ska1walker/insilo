@@ -3,14 +3,14 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # ✅ Stand: v0.1.73 läuft auf der Box (19. August 2026, Helm-Rev 51)
+> # ✅ Stand: v0.1.74 läuft auf der Box (19. August 2026, Helm-Rev 52)
 >
-> Verifiziert, nicht angenommen: alle fünf Pods auf `0.1.73`, alle
+> Verifiziert, nicht angenommen: alle fünf Pods auf `0.1.74`, alle
 > Health-Checks grün — `/health/llm` meldet `ok`, `/api/v1/egress`
 > vorhanden, Migration 0014 angewendet. Box: **192.168.1.17** (nicht die
 > früher dokumentierte 112er-Adresse).
 >
-> **v0.1.66 → v0.1.73 an zwei Tagen:** Rebrand-Deploy, Dunkelmodus-
+> **v0.1.66 → v0.1.74 an zwei Tagen:** Rebrand-Deploy, Dunkelmodus-
 > Korrekturen, Wappen und Icon-Satz, Herkunftsvermerk, genauerer
 > Datenschutz-Nachweis, überarbeitetes Zeichen aus Figma, ehrliche
 > Erst-Einrichtung des Sprachmodells.
@@ -80,8 +80,7 @@
 > jetzt zuerst die Datenbank und fällt nur darauf zurück; eine
 > DB-Störung deckt `/health/db` ab.
 >
-> **2. „Verbindung testen" schickte einen leeren `Bearer `-Kopf**
-> (auf `main`, **noch nicht ausgerollt** — die Box läuft 0.1.73).
+> **2. „Verbindung testen" schickte einen leeren `Bearer `-Kopf (v0.1.74).**
 > Das Schlüsselfeld trägt die Zusage „leer lassen, um den Schlüssel
 > beizubehalten" — der Test übernahm das Formular aber **als Block**,
 > sobald irgendein Feld gefüllt war, und schickte den leeren Schlüssel

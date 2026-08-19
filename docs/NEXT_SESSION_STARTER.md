@@ -13,7 +13,7 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** **v0.1.73 läuft auf der Box** (Helm-Rev 51, verifiziert
+**Stand:** **v0.1.74 läuft auf der Box** (Helm-Rev 52, verifiziert
 19.8.2026) und liegt als Tag + Chart im Repo. Box:
 `olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
 `https://e5d605f3.kaivostudio.olares.de`).
@@ -103,7 +103,7 @@ Feature-Set:
   Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
   `ci`-Workflow seit v0.1.59 rot hielten.
 
-**Seit dem 18./19. August — v0.1.66 bis v0.1.73, auf der Box:**
+**Seit dem 18./19. August — v0.1.66 bis v0.1.74, auf der Box:**
 
 - **Rebrand auf das AImighty-Designsystem** — Geist-Schriften, Hanseatenblau,
   dreiteilige Hülle, Hell- und Dunkelmodus. Werte in
@@ -125,7 +125,9 @@ Feature-Set:
   (Status bleibt `transcribed`), `/health/llm` meldet `not_configured`,
   und Einstellungen wie Aufnahme-Seite sagen, was fehlt. `/health/llm`
   liest die wirksame Adresse aus der Datenbank, nicht die
-  Deployment-Vorgabe (v0.1.73).
+  Deployment-Vorgabe (v0.1.73). Der Verbindungstest kommt mit leerem
+  Schlüsselfeld zurecht (v0.1.74) — die Kopfzeile baut
+  `llm_config.auth_header()`, nie von Hand.
 - **Datenschutz-Nachweis unterscheidet eigene Box von Fremdanbieter**
   (v0.1.70) — sonst hätte er dauerhaft gewarnt, obwohl das Modell auf
   derselben Maschine läuft.

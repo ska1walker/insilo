@@ -248,9 +248,21 @@
 >   -o jsonpath='{range .items[*]}{.metadata.name}{"  "}{.spec.containers[*].image}{"\n"}{end}'
 > ```
 >
-> **Merke außerdem:** Ein Chart-Upload in der Market UI registriert die
-> Version, bewegt eine laufende Installation aber nicht auf die neuen
-> Images. „Open" statt „Update" heißt nur „installiert", nicht „aktuell".
+> **Merke außerdem:** Ein Chart-Upload in der Market UI bewegt eine
+> laufende Installation nicht zuverlässig auf die neuen Images. „Open"
+> statt „Update" heißt nur „installiert", nicht „aktuell".
+>
+> **Genauer, beobachtet beim Upload von v0.1.74 (19.8.):** Der Markt
+> *führt* beim Bestätigen sehr wohl ein `helm upgrade` aus — die Revision
+> sprang von 52 auf 53. Die Pods blieben trotzdem stehen (gleiches Alter),
+> weil das gerenderte Ergebnis identisch war: das hochgeladene Chart trug
+> dieselben Image-Tags, die vorher schon liefen.
+>
+> Daraus folgt die Reihenfolge, die funktioniert: **erst per `helm upgrade`
+> mit expliziten Tags ausrollen, dann hochladen.** Dann stimmen laufende
+> Installation und registrierte Version überein. Umgekehrt — erst
+> hochladen, dann hoffen — hängt das Ergebnis an den gespeicherten
+> Helm-Werten, und genau daran ist v0.1.66 gescheitert.
 >
 > # 🎨 Rebrand auf das AImighty-Designsystem (18. August 2026)
 >

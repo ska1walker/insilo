@@ -197,17 +197,23 @@ section "neue Wertschlüssel sind upgrade-sicher dereferenziert"
 
 # Höchster Tag, der NICHT die gerade gebaute Version ist — nach einem
 # Release liefert `git describe` sonst den soeben gesetzten.
-PREV_TAG="$(git tag --list 'v*' --sort=-v:refname | grep -v "^v${CHART_VERSION}$" | head -1)"
+# Jede Pipeline hier braucht `|| true`. Unter `set -euo pipefail` beendet
+# ein grep ohne Treffer das ganze Skript — und "kein Treffer" ist hier ein
+# normaler Fall: eine frische Prüfung ohne Tags, oder ein Repo, in dem der
+# einzige Tag die gerade gebaute Version ist. Genau daran ist der Release
+# v0.1.79 gescheitert: der Guard hat nichts gefunden und deshalb den Build
+# abgebrochen, statt "nichts zu prüfen" zu melden.
+PREV_TAG="$(git tag --list 'v*' --sort=-v:refname 2>/dev/null | grep -v "^v${CHART_VERSION}$" | head -1 || true)"
 
 if [[ -z "$PREV_TAG" ]]; then
   skip "kein vorheriger Tag gefunden"
 elif ! git cat-file -e "$PREV_TAG:$VALUES_FILE" 2>/dev/null; then
   skip "$PREV_TAG kennt $VALUES_FILE nicht"
 else
-  toplevel() { grep -E '^[a-zA-Z_][a-zA-Z0-9_]*:' | sed 's/:.*//'; }
-  ALT_KEYS="$(git show "$PREV_TAG:$VALUES_FILE" | toplevel | sort -u)"
-  NEU_KEYS="$(toplevel < "$VALUES_FILE" | sort -u)"
-  ZUGEWACHSEN="$(comm -13 <(echo "$ALT_KEYS") <(echo "$NEU_KEYS"))"
+  toplevel() { grep -E '^[a-zA-Z_][a-zA-Z0-9_]*:' | sed 's/:.*//' || true; }
+  ALT_KEYS="$(git show "$PREV_TAG:$VALUES_FILE" 2>/dev/null | toplevel | sort -u || true)"
+  NEU_KEYS="$(toplevel < "$VALUES_FILE" | sort -u || true)"
+  ZUGEWACHSEN="$(comm -13 <(echo "$ALT_KEYS") <(echo "$NEU_KEYS") || true)"
 
   if [[ -z "$ZUGEWACHSEN" ]]; then
     ok "keine neuen Wertschlüssel gegenüber $PREV_TAG"
@@ -223,7 +229,9 @@ else
         unsicher=1
       fi
     done
-    [[ $unsicher -eq 0 ]] && ok "neue Schlüssel gegenüber $PREV_TAG ($(echo $ZUGEWACHSEN | tr '\n' ' ')) sicher dereferenziert"
+    if [[ $unsicher -eq 0 ]]; then
+      ok "neue Schlüssel gegenüber $PREV_TAG ($(echo $ZUGEWACHSEN | tr '\n' ' ')) sicher dereferenziert"
+    fi
   fi
 fi
 

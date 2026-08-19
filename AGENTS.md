@@ -14,7 +14,7 @@
 | **Vertrieb** | aimighty.de |
 | **Plattform** | Olares OS (Kubernetes-basiert) |
 | **Status** | Phase 1 — MVP |
-| **Version** | v0.1.66 (Repo, Markt und Box) |
+| **Version** | v0.1.70 (Repo und Box) |
 | **Repository** | github.com/ska1walker/insilo |
 | **Branch** | main |
 | **Sprache** | DE (Primär), EN, FR, ES, IT |
@@ -193,7 +193,7 @@ Dunkelmodus handelt Gold.
 | **SSH** | `olares@192.168.1.17` |
 | **Namespace** | `insilo-kaivostudio` |
 | **Pods** | insilo (frontend+envoy), insilo-backend, insilo-whisper, insilo-embeddings, insilo-worker |
-| **Version** | v0.1.66, Helm-Rev 44 (verifiziert 19.8.2026, 03:25 UTC) |
+| **Version** | v0.1.70, Helm-Rev 48 (verifiziert 19.8.2026) |
 
 ---
 
@@ -204,8 +204,20 @@ Dunkelmodus handelt Gold.
 | `/health` | Backend | ok |
 | `/health/db` | PostgreSQL | ok |
 | `/health/whisper` | Whisper | ok |
-| `/health/llm` | LiteLLM | ok |
+| `/health/llm` | LiteLLM | ok (nur über die öffentliche Adresse — siehe unten) |
 | `/health/embeddings` | BGE-M3 | ok |
+
+---
+
+## ⚠️ LiteLLM nur über die öffentliche Adresse
+
+Die Chart-Vorgabe `LLM_BASE_URL=http://litellm-svc.litellm-<user>.svc.cluster.local/v1`
+**funktioniert nicht** — der Envoy-Sidecar vor LiteLLM verlangt einen
+Authelia-Token, den ein Server-zu-Server-Aufruf nicht hat (400
+„cannot get user name from header", mit `X-Bfl-User` 401). Tragfähig ist
+nur `https://llm.<olares-zone>/v1`, einzustellen unter `/einstellungen`.
+Der Datenschutz-Nachweis erkennt diesen Fall über `OLARES_ZONE` und
+wertet ihn als eigene Box, nicht als Fremdanbieter.
 
 ---
 

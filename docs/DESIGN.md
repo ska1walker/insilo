@@ -61,8 +61,8 @@ hat ein Zeichen und einen Satz.
 ## 3. Was Insilo ergänzt
 
 Das Paket ist aus einem Lager-Beispiel abgeleitet („3 Silos angebunden",
-„Bestand"). Drei Dinge, die eine Meeting-App braucht, kommen dort nicht
-vor.
+„Bestand"). Was eine Meeting-App braucht, kommt dort nicht vor — die
+folgenden Ergänzungen schließen diese Lücken.
 
 ### Gold zeichnet die laufende Aufnahme aus
 
@@ -90,6 +90,31 @@ dunkel: --am-gold-beschriftung → --am-gold-500   (7,2:1 auf der Navigationsfl�
 
 Falls AImighty dafür einen eigenen Wert vorsieht, gehört er in
 `tokens/globals.css` und ersetzt diesen.
+
+### Die Welle während der Aufnahme
+
+Das Paket verlangt Animationen, die etwas leisten. Der Pegelverlauf unter
+dem Timer zeigt deshalb das **echte Mikrofonsignal**, nicht eine
+Zierschleife — er beantwortet die einzige Frage, die während einer
+Aufnahme zählt: kommt Signal an. Eine erfundene Bewegung liefe auch bei
+totem Mikrofon weiter.
+
+Der Pegel ist **logarithmisch** skaliert (−60 dB bis −6 dB), nicht
+linear. Ein linearer Faktor sättigt schon bei halber Aussteuerung; die
+Anzeige stünde beim Sprechen dauerhaft am Anschlag und zeigte nichts
+mehr. Gold, weil die laufende Aufnahme die Auszeichnung trägt.
+
+### Das Wappen
+
+`components/wappen.tsx`, kein `<img>`. Im gelieferten SVG ist die
+Wortmarke weiß und wäre auf hellem Grund unsichtbar; als Bauteil trägt
+sie `currentColor` und folgt der Textfarbe. Das goldene Schild und das
+Monogramm darauf behalten ihre Farben — sie liegen auf Gold und haben mit
+dem Seitenhintergrund nichts zu tun.
+
+**Wird `public/insilo_logo.svg` ersetzt, muss das Bauteil neu erzeugt
+werden.** Die Trennung läuft über die Position: alles rechts des Schilds
+ist Schrift, alles darauf ist Marke.
 
 ### Auswahlfelder
 
@@ -145,11 +170,21 @@ Der Nachweis zeigt darum den gemessenen Zustand in drei Lagen:
 | Lage | Ton | Aussage |
 |---|---|---|
 | alles intern | Erfolg | „Bleibt auf der Box" |
+| **eigene Box, öffentlicher Weg** | Erfolg | „Eigene Box", nennt den Host |
 | Ziele aktiv | neutral | Anzahl und übertragene Menge |
-| LLM extern | **Achtung** | „Modell extern", nennt den Anbieter |
+| LLM bei Dritten | **Achtung** | „Modell extern", nennt den Anbieter |
 
-Der dritte Fall ist der wichtigste — dort verliert ein Kunde sein
+Der letzte Fall ist der wichtigste — dort verliert ein Kunde sein
 Kernversprechen, oft ohne es zu merken.
+
+**Warum es die zweite Lage braucht:** Der clusterinterne Weg zu LiteLLM
+ist versperrt (Envoy verlangt einen Authelia-Token, den ein
+Server-zu-Server-Aufruf nicht hat). In der Praxis läuft das Sprachmodell
+deshalb über die öffentliche Adresse derselben Box. Ohne diese
+Unterscheidung würde der Nachweis dauerhaft warnen, obwohl kein Dritter
+beteiligt ist — und eine Warnung, die immer steht, wird überlesen.
+Entschieden wird über `OLARES_ZONE`; die Zone muss auf einer Punktgrenze
+enden, sonst käme `boese<zone>` durch.
 
 **Ist der Zustand nicht abrufbar, steht dort nichts.** Eine Zusage ohne
 Beleg ist schlechter als keine. Dieselbe Regel gilt für den Block unter

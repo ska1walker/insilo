@@ -13,17 +13,17 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** Insilo steht als **v0.1.65** im Repo (Tag + Chart) und ist unter
-dieser Version **erfolgreich im Olares-Markt** (18.8.2026). Achtung bei der
-Versions-Buchhaltung: v0.1.61–v0.1.65 waren reine Chart-Releases für die
-Markt-Validierung — **die Container-Images stehen unverändert auf 0.1.60**.
-Der letzte Code-Stand ist also v0.1.60.
-Box-Version **nicht verifiziert** — der letzte dokumentierte Box-Stand
-ist v0.1.49 (Helm-Rev 35), seitdem wurde kein Deploy in der Doku
-festgehalten. **Vor jeder Box-Arbeit erst prüfen:**
-`ssh olares@192.168.1.17 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm list -n insilo-kaivostudio'`.
-Olares-Box: `olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
-`https://e5d605f3.kaivostudio.olares.de`). Feature-Set:
+**Stand:** **v0.1.70 läuft auf der Box** (Helm-Rev 48, verifiziert
+19.8.2026) und liegt als Tag + Chart im Repo. Box:
+`olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
+`https://e5d605f3.kaivostudio.olares.de`).
+
+**⚠️ Bevor du am LLM etwas änderst:** Die Vorgabe im Chart
+(`LLM_BASE_URL` clusterintern) **funktioniert nicht** — Envoy vor LiteLLM
+verlangt einen Authelia-Token. Details im HANDOFF-Header. Nur die
+öffentliche Adresse (`https://llm.<zone>/v1`) trägt.
+
+Feature-Set:
 
 - Aufnahme + Speaker-Diarization + Transkript + Summary + Q&A + Tags
 - **Outbound-Integration:** Webhooks (HMAC, Fan-Out, exp. Backoff),
@@ -98,7 +98,7 @@ Olares-Box: `olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
   Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
   `ci`-Workflow seit v0.1.59 rot hielten.
 
-**Seit dem 18. August — v0.1.66, auf der Box ausgerollt:**
+**Seit dem 18./19. August — v0.1.66 bis v0.1.70, auf der Box:**
 
 - **Rebrand auf das AImighty-Designsystem** — Geist-Schriften, Hanseatenblau,
   dreiteilige Hülle, Hell- und Dunkelmodus. Werte in
@@ -106,6 +106,15 @@ Olares-Box: `olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
 - **Datenschutz-Nachweis** — `GET /api/v1/egress` misst, was die Box
   tatsächlich verlässt; Nachweis unten in der Navigation, Detailansicht
   unter `/datenschutz`. Migration **0014** zählt gesendete Webhook-Bytes.
+- **Aufnahme-Welle** — Pegelverlauf des echten Mikrofonsignals während
+  der Aufnahme, logarithmisch skaliert (v0.1.66).
+- **Neues Wappen + vollständiger Icon-Satz** — PWA, Home-Bildschirm,
+  Olares-Kachel; `icons/` war vorher leer (v0.1.68).
+- **Herkunftsvermerk** unten in der Navigation, verlinkt auf aimighty.de
+  (v0.1.69).
+- **Datenschutz-Nachweis unterscheidet eigene Box von Fremdanbieter**
+  (v0.1.70) — sonst hätte er dauerhaft gewarnt, obwohl das Modell auf
+  derselben Maschine läuft.
 - **⚠️ Beim Box-Update immer die Image-Tags mitgeben.** `--reuse-values`
   spielt die beim Installieren gespeicherten Werte zurück — darin stehen
   die ALTEN Tags. Ohne die vier `--set images.*.tag=X` aktualisiert sich
@@ -256,7 +265,7 @@ ssh olares@192.168.1.17 \
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
-| Migrationen | 14 im Repo (0001–0014); 0014 (request_bytes) noch nicht auf der Box |
+| Migrationen | 14 im Repo (0001–0014), alle auf der Box angewendet |
 
 ## Offene Issues / Bekannte Stolpersteine
 

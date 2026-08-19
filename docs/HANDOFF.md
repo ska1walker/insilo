@@ -3,6 +3,127 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
+> # ✅ Stand: v0.1.70 läuft auf der Box (19. August 2026, Helm-Rev 48)
+>
+> Verifiziert, nicht angenommen: alle fünf Pods auf `0.1.70`,
+> `/api/v1/egress` vorhanden, Migration 0014 angewendet. Box:
+> **192.168.1.17** (nicht die früher dokumentierte 112er-Adresse).
+>
+> **v0.1.66 → v0.1.70 in einem Rutsch:** Rebrand-Deploy, Dunkelmodus-
+> Korrekturen, neues Wappen mit vollständigem Icon-Satz, Herkunftsvermerk,
+> genauerer Datenschutz-Nachweis.
+>
+> ---
+>
+> ## ⚠️ Der wichtigste Fund: LiteLLM ist clusterintern NICHT erreichbar
+>
+> `deployment-backend.yaml` setzt als Vorgabe
+>
+> ```
+> LLM_BASE_URL=http://litellm-svc.litellm-<user>.svc.cluster.local/v1
+> ```
+>
+> **Diese Adresse funktioniert nicht.** Vor LiteLLM sitzt ein
+> Envoy-Sidecar, der einen Authelia-Token verlangt. Ein Server-zu-Server-
+> Aufruf aus dem Insilo-Backend hat keinen — der Token entsteht erst durch
+> einen Browser-Login. Gemessen auf der Box:
+>
+> | Aufruf | Antwort |
+> |---|---|
+> | ohne Header | 400 · `cannot get user name from header` (server: envoy) |
+> | mit `X-Bfl-User: <user>` | 401 Unauthorized |
+> | mit Bearer-Key allein | 400, wie oben |
+>
+> Auch `/health/liveliness` — das keinen Schlüssel braucht — antwortet 400.
+> Es liegt also am Sidecar, nicht an LiteLLM.
+>
+> **Folge:** Jede Neuinstallation startet mit einem LLM-Endpunkt, der nicht
+> antwortet, bis jemand in `/einstellungen` die öffentliche Adresse
+> einträgt (`https://llm.<zone>/v1`). Das ist kein Bedienfehler, sondern
+> eine falsche Vorgabe im Chart.
+>
+> **Offen:** Der Default müsste auf die öffentliche Adresse zeigen. Die
+> Zone steht als `OLARES_ZONE` im Pod bereit, der Name des LiteLLM-Hosts
+> (`llm.`) ist aber nicht garantiert — deshalb hier bewusst nicht geraten.
+> Vor dem nächsten Kunden-Deploy klären, sonst wirkt die App bei der
+> Erstinstallation defekt.
+>
+> ---
+>
+> ## Datenschutz-Nachweis: drei Lagen statt zwei (v0.1.70)
+>
+> Aus dem obigen Fund folgte ein zweites Problem: Der Nachweis hätte
+> dauerhaft „Modell extern" gemeldet für ein Modell, das auf **derselben
+> Box** läuft. Technisch richtig — der Aufruf geht über DNS und Tunnel
+> hinaus und kommt zurück —, für den Betrachter aber irreführend.
+>
+> `ist_eigene_zone()` in [backend/app/egress.py](../backend/app/egress.py)
+> entscheidet das anhand von `OLARES_ZONE`, das Olares in jeden Pod reicht
+> (`kaivostudio.olares.de`). Damit:
+>
+> | Ziel | Lage | Anzeige |
+> |---|---|---|
+> | `litellm-svc…svc.cluster.local` | clusterintern | grün |
+> | `llm.<eigene-zone>` | eigene Box, öffentlicher Weg | grün, Host genannt |
+> | `api.openai.com` | fremder Anbieter | **Achtung** |
+>
+> **Die Zone muss auf einer Punktgrenze enden** — sonst würde
+> `boesekaivostudio.olares.de` als eigene Box durchgehen. Ebenso geprüft:
+> Zone als Präfix (`kaivostudio.olares.de.angreifer.example`) und die Box
+> eines anderen Olares-Nutzers. Ohne `OLARES_ZONE` wird nichts behauptet.
+> 34 Tests in `backend/tests/test_egress.py`.
+>
+> ---
+>
+> ## Aufnahme-Welle (v0.1.66)
+>
+> Zeigt das echte Mikrofonsignal als mitlaufenden Pegelverlauf
+> ([components/aufnahme-welle.tsx](../frontend/components/aufnahme-welle.tsx)).
+> Im Car-Mode `/idee` ist sie die einzige Rückmeldung, dass aufgenommen
+> wird.
+>
+> **Pegel logarithmisch, nicht linear** — das kam aus dem Testen: ein
+> linearer Faktor 3,2 sättigte ab RMS 0,31, normales Sprechen hätte die
+> Anzeige dauerhaft am Anschlag gehalten. Jetzt in Dezibel (−60 dB bis
+> −6 dB), gemessen über eine Tonrampe: Balkenhöhen 13 / 13 / 22 / 33 / 44
+> statt konstant 44.
+>
+> ---
+>
+> ## Icons und Wappen (v0.1.68)
+>
+> `frontend/public/icons/` war **leer**, obwohl `manifest.json` drei
+> Dateien referenzierte — wer Insilo auf den Home-Bildschirm legte, bekam
+> kein Symbol. Die Verknüpfungen zeigten auf `record-96.png`, das nie
+> existiert hat.
+>
+> Icon aus Figma (AImighty, Node 97:421) als **Vektor** geholt und aus
+> einem 1024er-Rendering abgeleitet; die Quelle liegt als
+> `icons/icon-quelle.svg` im Repo, künftige Größen brauchen kein Figma.
+>
+> Das Wappen ist ein Bauteil
+> ([components/wappen.tsx](../frontend/components/wappen.tsx)), kein
+> `<img>`: Im gelieferten SVG ist die Wortmarke **weiß** und wäre auf
+> hellem Grund unsichtbar. Sie trägt jetzt `currentColor`; das Schild
+> behält sein Gold. **Wird `insilo_logo.svg` ersetzt, muss das Bauteil neu
+> erzeugt werden** — sonst zeigt die Navigation weiter das alte Zeichen.
+>
+> ---
+>
+> ## Dunkelmodus-Korrekturen (v0.1.67)
+>
+> Zwei Fehler, beide erst im laufenden Betrieb sichtbar geworden:
+>
+> - Ausgewählte Einträge lagen auf heller Goldfläche; heller Text darauf
+>   kam auf **1,35:1**. Jetzt über `--am-auswahl-flaeche`: Goldtönung im
+>   Hellmodus, angehobenes Blau im Dunkelmodus (13,89:1).
+> - Die Wortmarke stand auf `fill="black"` und verschwand auf der dunklen
+>   Navigationsfläche.
+>
+> **Lesson:** Beide standen auf meiner „ungeprüft"-Liste. Das Markieren
+> hat sie nicht gefunden — der Blick auf die laufende App hat sie
+> gefunden.
+>
 > # ⚠️ v0.1.66 — zwei Fallen beim Box-Update (19. August 2026)
 >
 > **Stand: v0.1.66 läuft auf der Box** (Helm-Rev 44, verifiziert 03:25 UTC).

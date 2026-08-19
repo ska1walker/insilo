@@ -16,6 +16,8 @@ export type EgressRead = {
   llm_extern: boolean;
   /** Die eigene Box unter ihrer öffentlichen Adresse — kein Dritter. */
   llm_eigene_box: boolean;
+  /** Kein Endpunkt eingetragen: Zusammenfassungen laufen nicht. */
+  llm_fehlt: boolean;
   llm_host: string | null;
   webhooks_aktiv: number;
   ziele: EgressZiel[];

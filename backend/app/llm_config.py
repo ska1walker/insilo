@@ -23,6 +23,16 @@ class LLMConfig:
     api_key: str
     model: str
 
+    @property
+    def eingerichtet(self) -> bool:
+        """Ohne Adresse ist nichts anzusprechen.
+
+        Es gibt bewusst keinen Vorgabewert: jede geratene Adresse wäre bei
+        einem anderen Kunden falsch (siehe app/config.py). Aufrufer prüfen
+        das hier, statt in einen Verbindungsfehler zu laufen.
+        """
+        return bool(self.base_url.strip())
+
 
 async def load_llm_config(conn: asyncpg.Connection, org_id: UUID) -> LLMConfig:
     row = await conn.fetchrow(

@@ -51,9 +51,16 @@ class Settings(BaseSettings):
     # the LiteLLM gateway (shared across all kaivo apps so we don't burn an
     # extra GPU slot). Locally we run Ollama natively on Mac Metal; its
     # /v1/chat/completions endpoint is OpenAI-compatible too.
-    llm_base_url: str = "http://localhost:11434/v1"
-    llm_api_key: str = "sk-local"     # Ollama doesn't enforce; LiteLLM does
-    llm_model: str = "qwen2.5:7b-instruct"
+    # Kein Vorgabewert. Jede Adresse, die wir hier raten würden, ist bei
+    # einem anderen Kunden falsch: die Olares-App-Kennung von LiteLLM wird
+    # erst bei dessen Installation vergeben, ein eigener Alias ist frei
+    # gewählt, und der clusterinterne Weg ist durch den Envoy-Sidecar
+    # gesperrt (verlangt einen Authelia-Token, den ein Server-zu-Server-
+    # Aufruf nicht hat). Leer heißt „noch nicht eingerichtet" — die
+    # Oberfläche sagt das, statt in einen Verbindungsfehler zu laufen.
+    llm_base_url: str = ""
+    llm_api_key: str = ""
+    llm_model: str = ""
 
     # The system template used when the user doesn't pick one explicitly.
     default_template_id: str = "00000000-0000-0000-0000-000000000001"

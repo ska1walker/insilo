@@ -74,7 +74,8 @@
     "trustZieleText": "El audio y la transcripción permanecen en esta caja. Las actas terminadas se envían a los destinos configurados.",
     "trustMehr": "¿Qué sale de esta caja?",
     "trustEigeneBoxTitel": "Modelo de lenguaje en esta caja",
-    "trustEigeneBoxText": "El audio, la transcripción y el índice permanecen aquí. El modelo de lenguaje también se ejecuta en esta caja, mediante su propia dirección."
+    "trustEigeneBoxText": "El audio, la transcripción y el índice permanecen aquí. El modelo de lenguaje también se ejecuta en esta caja, mediante su propia dirección.",
+    "llmFehltKurz": "Los resúmenes están desactivados hasta configurar el modelo."
   },
   "meeting": {
     "listTitle": "Reuniones",
@@ -666,5 +667,10 @@
     "navEigeneBox": "Esta caja",
     "eigeneBox": "Modelo de lenguaje en esta caja",
     "eigeneBoxLang": "Accesible mediante {host}, la dirección pública de esta caja. La llamada pasa por la red y vuelve aquí; no interviene ningún tercero."
+  },
+  "settings": {
+    "llmFehltTitel": "Modelo de lenguaje aún no configurado",
+    "llmFehltText": "La grabación y la transcripción funcionan. Para los resúmenes, introduzca abajo la dirección de su instancia de LiteLLM.",
+    "llmFehltWoher": "Abra LiteLLM en el escritorio de Olares y copie la barra de direcciones — termina en /v1."
   }
 }

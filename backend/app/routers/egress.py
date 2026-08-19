@@ -40,6 +40,9 @@ class EgressRead(BaseModel):
     # hinaus und wieder herein, bleibt aber auf derselben Maschine.
     llm_extern: bool
     llm_eigene_box: bool
+    # Kein Endpunkt eingetragen. Weder Warnung noch Entwarnung — es fehlt
+    # etwas, und die Oberfläche sagt das statt zu beruhigen.
+    llm_fehlt: bool
     llm_host: str | None
 
     webhooks_aktiv: int
@@ -63,8 +66,11 @@ async def read_egress(user: CurrentUser = Depends(get_current_user)) -> EgressRe
         # Drei Lagen statt zwei: clusterintern, eigene Box über die
         # öffentliche Adresse, fremder Anbieter. Nur das Letzte ist ein
         # Grund zur Warnung.
-        eigene_box = ist_eigene_zone(llm.base_url)
-        llm_extern = not ist_boxintern(llm.base_url) and not eigene_box
+        llm_fehlt = not llm.eingerichtet
+        eigene_box = not llm_fehlt and ist_eigene_zone(llm.base_url)
+        llm_extern = (
+            not llm_fehlt and not ist_boxintern(llm.base_url) and not eigene_box
+        )
 
         webhooks = await conn.fetch(
             """
@@ -116,6 +122,7 @@ async def read_egress(user: CurrentUser = Depends(get_current_user)) -> EgressRe
         alles_bleibt=not llm_extern and len(webhooks) == 0,
         llm_extern=llm_extern,
         llm_eigene_box=eigene_box,
+        llm_fehlt=llm_fehlt,
         # Auch bei der eigenen Box den Host zeigen — der Nutzer soll sehen,
         # worüber gesprochen wird, nicht nur dass alles gut ist.
         llm_host=_host(llm.base_url) if (llm_extern or eigene_box) else None,

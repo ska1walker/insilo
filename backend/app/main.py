@@ -94,6 +94,10 @@ async def health_whisper() -> dict:
 
 @app.get("/health/llm")
 async def health_llm() -> dict:
+    # Ohne Adresse gibt es nichts anzupingen. Das ist kein Fehler, sondern
+    # eine offene Einrichtung — die Oberfläche unterscheidet das.
+    if not settings.llm_base_url:
+        return {"status": "not_configured", "service": "llm"}
     try:
         async with httpx.AsyncClient(timeout=3) as client:
             r = await client.get(

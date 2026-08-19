@@ -498,9 +498,13 @@ function Datensouveraenitaet() {
   // als gar keine — dieselbe Regel wie beim Nachweis in der Navigation.
   if (lage === null) return null;
 
-  const { llm_extern, llm_eigene_box, llm_host, alles_bleibt } = lage;
+  const { llm_extern, llm_eigene_box, llm_fehlt, llm_host, alles_bleibt } = lage;
 
-  const titel = llm_extern
+  // Fehlt der Endpunkt, ist das kein Datenschutz-Thema, sondern eine
+  // offene Einrichtung — sie hat Vorrang vor der Herkunftsaussage.
+  const titel = llm_fehlt
+    ? t("llmFehltKurz")
+    : llm_extern
     ? t("trustLlmTitel")
     : llm_eigene_box
       ? t("trustEigeneBoxTitel")
@@ -508,7 +512,9 @@ function Datensouveraenitaet() {
         ? t("trustAllesTitel")
         : t("trustZieleTitel");
 
-  const text = llm_extern
+  const text = llm_fehlt
+    ? t("trustAllesText")
+    : llm_extern
     ? t("trustLlmText", { host: llm_host ?? "" })
     : llm_eigene_box
       ? t("trustEigeneBoxText")

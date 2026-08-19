@@ -11,6 +11,7 @@ from __future__ import annotations
 import pytest
 
 from app.egress import ist_boxintern, ist_eigene_zone
+from app.llm_config import LLMConfig
 
 # ─── bleibt in der Box ────────────────────────────────────────────────
 
@@ -136,3 +137,28 @@ def test_eigene_zone_ist_nicht_clusterintern() -> None:
     url = "https://llm.kaivostudio.olares.de/v1"
     assert ist_eigene_zone(url, ZONE) is True
     assert ist_boxintern(url) is False
+
+
+# ─── kein Endpunkt eingerichtet ───────────────────────────────────────
+
+
+def test_leere_konfiguration_ist_nicht_eingerichtet() -> None:
+    """Ohne Adresse ist nichts anzusprechen — und nichts zu behaupten."""
+    assert LLMConfig(base_url="", api_key="", model="").eingerichtet is False
+    assert LLMConfig(base_url="   ", api_key="k", model="m").eingerichtet is False
+
+
+def test_gesetzte_adresse_ist_eingerichtet() -> None:
+    assert LLMConfig(
+        base_url="https://llm.kaivostudio.olares.de/v1", api_key="k", model="m"
+    ).eingerichtet is True
+
+
+def test_leere_adresse_gilt_weder_als_intern_noch_als_eigene_box() -> None:
+    """Sonst würde eine fehlende Einrichtung als Entwarnung durchgehen.
+
+    `ist_boxintern("")` ist bewusst True (kein Ziel = nichts geht hinaus),
+    deshalb muss der Aufrufer den leeren Fall vorher abfangen — genau das
+    prüft der Router über `eingerichtet`.
+    """
+    assert ist_eigene_zone("", ZONE) is False

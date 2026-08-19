@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiKeyManager } from "@/components/api-key-manager";
@@ -37,6 +38,9 @@ const initialForm: FormState = {
 };
 
 export default function EinstellungenPage() {
+  // Die übrigen Texte dieser Seite sind noch deutsch verdrahtet (Altlast);
+  // neue kommen aus den Sprachdateien, damit die Lücke nicht wächst.
+  const tSettings = useTranslations("settings");
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<SettingsRead | null>(null);
@@ -172,6 +176,25 @@ export default function EinstellungenPage() {
         <LocaleSwitcher />
         <DarstellungSwitcher />
       </section>
+
+      {/* Ohne eingetragene Adresse laufen Aufnahme und Transkription,
+          aber keine Zusammenfassung. Das gehört gesagt, bevor jemand eine
+          Besprechung aufnimmt und sich über das fehlende Protokoll
+          wundert. Kein Fehlerton — es fehlt etwas, kaputt ist nichts. */}
+      {settings !== null && !settings.llm_base_url && !settings.defaults?.llm_base_url && (
+        <div className="streifen streifen-hinweis mb-6">
+          <span className="zeichen" aria-hidden>
+            i
+          </span>
+          <span>
+            <strong className="block">{tSettings("llmFehltTitel")}</strong>
+            {tSettings("llmFehltText")}
+            <span className="mt-2 block text-[0.8125rem] text-text-gedaempft">
+              {tSettings("llmFehltWoher")}
+            </span>
+          </span>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}

@@ -74,7 +74,8 @@
     "trustZieleText": "Audio und Transkript bleiben auf dieser Box. Fertige Protokolle gehen an eingerichtete Ziele.",
     "trustMehr": "Was verlässt diese Box?",
     "trustEigeneBoxTitel": "Sprachmodell auf dieser Box",
-    "trustEigeneBoxText": "Audio, Transkript und Suchindex bleiben hier. Das Sprachmodell läuft ebenfalls auf dieser Box, erreichbar über ihre eigene Adresse."
+    "trustEigeneBoxText": "Audio, Transkript und Suchindex bleiben hier. Das Sprachmodell läuft ebenfalls auf dieser Box, erreichbar über ihre eigene Adresse.",
+    "llmFehltKurz": "Zusammenfassungen sind aus, bis das Sprachmodell eingerichtet ist."
   },
   "meeting": {
     "listTitle": "Besprechungen",
@@ -666,5 +667,10 @@
     "navEigeneBox": "Eigene Box",
     "eigeneBox": "Sprachmodell auf dieser Box",
     "eigeneBoxLang": "Erreichbar über {host} — die öffentliche Adresse dieser Box. Der Aufruf nimmt den Weg über das Netz und kommt hierher zurück; ein fremder Anbieter ist nicht beteiligt."
+  },
+  "settings": {
+    "llmFehltTitel": "Sprachmodell noch nicht eingerichtet",
+    "llmFehltText": "Aufnahme und Transkription laufen. Für Zusammenfassungen tragen Sie unten die Adresse Ihrer LiteLLM-Instanz ein.",
+    "llmFehltWoher": "Die Adresse finden Sie, indem Sie LiteLLM auf dem Olares-Schreibtisch öffnen und die Adresszeile kopieren — sie endet auf /v1."
   }
 }

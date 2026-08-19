@@ -525,6 +525,19 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         # Per-org LLM endpoint/key/model (falls back to env defaults).
         llm = await load_llm_config(conn, meeting["org_id"])
 
+        # Ohne eingerichtetes Sprachmodell gar nicht erst loslaufen: sonst
+        # rennt der Task in einen Verbindungsfehler und das Meeting steht
+        # als „fehlgeschlagen" da, obwohl bloß etwas fehlt. Das Transkript
+        # ist zu diesem Zeitpunkt fertig und bleibt nutzbar.
+        if not llm.eingerichtet:
+            log.warning(
+                "meeting %s: kein LLM-Endpunkt eingerichtet — "
+                "Zusammenfassung übersprungen, Transkript bleibt erhalten",
+                meeting_id,
+            )
+            await _set_status(conn, meeting_id, "transcribed")
+            return
+
         await _set_status(conn, meeting_id, "summarizing")
     finally:
         await conn.close()

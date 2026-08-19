@@ -177,8 +177,14 @@ spec:
             # LLM via the shared Olares LiteLLM gateway (OpenAI-compatible).
             # Saves us a 4-GB Ollama image + a GPU slot, and pools the LLM
             # across all kaivo apps on the box.
+            # Bewusst leer: die clusterinterne LiteLLM-Adresse antwortet
+            # nicht (Envoy davor verlangt einen Authelia-Token), und die
+            # öffentliche Adresse hängt an der App-Kennung, die erst bei
+            # der Installation von LiteLLM vergeben wird. Der Nutzer trägt
+            # sie unter /einstellungen ein; bis dahin meldet die App das
+            # offen, statt einen Endpunkt anzusprechen, den es nicht gibt.
             - name: LLM_BASE_URL
-              value: "http://litellm-svc.litellm-{{ .Values.bfl.username }}.svc.cluster.local/v1"
+              value: "{{ .Values.litellm.baseUrl }}"
             - name: LLM_API_KEY
               value: "{{ .Values.litellm.apiKey }}"
             - name: LLM_MODEL

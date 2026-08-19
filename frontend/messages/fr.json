@@ -74,7 +74,8 @@
     "trustZieleText": "L'audio et la transcription restent sur ce boîtier. Les comptes rendus finis sont envoyés aux destinations configurées.",
     "trustMehr": "Qu'est-ce qui quitte ce boîtier ?",
     "trustEigeneBoxTitel": "Modèle de langage sur ce boîtier",
-    "trustEigeneBoxText": "L'audio, la transcription et l'index restent ici. Le modèle de langage tourne également sur ce boîtier, via sa propre adresse."
+    "trustEigeneBoxText": "L'audio, la transcription et l'index restent ici. Le modèle de langage tourne également sur ce boîtier, via sa propre adresse.",
+    "llmFehltKurz": "Les résumés sont désactivés tant que le modèle n'est pas configuré."
   },
   "meeting": {
     "listTitle": "Réunions",
@@ -666,5 +667,10 @@
     "navEigeneBox": "Ce boîtier",
     "eigeneBox": "Modèle de langage sur ce boîtier",
     "eigeneBoxLang": "Accessible via {host} — l'adresse publique de ce boîtier. L'appel passe par le réseau et revient ici ; aucun tiers n'est impliqué."
+  },
+  "settings": {
+    "llmFehltTitel": "Modèle de langage pas encore configuré",
+    "llmFehltText": "L'enregistrement et la transcription fonctionnent. Pour les résumés, indiquez ci-dessous l'adresse de votre instance LiteLLM.",
+    "llmFehltWoher": "Ouvrez LiteLLM sur le bureau Olares et copiez la barre d'adresse — elle se termine par /v1."
   }
 }

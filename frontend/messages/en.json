@@ -74,7 +74,8 @@
     "trustZieleText": "Audio and transcript stay on this box. Finished minutes go to configured targets.",
     "trustMehr": "What leaves this box?",
     "trustEigeneBoxTitel": "Language model on this box",
-    "trustEigeneBoxText": "Audio, transcript and search index stay here. The language model also runs on this box, reached via its own address."
+    "trustEigeneBoxText": "Audio, transcript and search index stay here. The language model also runs on this box, reached via its own address.",
+    "llmFehltKurz": "Summaries are off until the language model is set up."
   },
   "meeting": {
     "listTitle": "Meetings",
@@ -666,5 +667,10 @@
     "navEigeneBox": "This box",
     "eigeneBox": "Language model on this box",
     "eigeneBoxLang": "Reached via {host} — this box's own public address. The call travels over the network and comes back here; no third party is involved."
+  },
+  "settings": {
+    "llmFehltTitel": "Language model not set up yet",
+    "llmFehltText": "Recording and transcription work. For summaries, enter the address of your LiteLLM instance below.",
+    "llmFehltWoher": "Find the address by opening LiteLLM on the Olares desktop and copying the address bar — it ends in /v1."
   }
 }

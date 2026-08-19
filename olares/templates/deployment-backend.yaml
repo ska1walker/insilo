@@ -15,7 +15,7 @@ metadata:
     app: insilo
     component: backend
 spec:
-  replicas: 1
+  replicas: {{ (index .Values.workloads "insilo-backend").replicaCount }}
   # Recreate, nicht RollingUpdate: dieses Deployment mountet hostPath
   # (/app/data, /app/cache). Bei RollingUpdate liefen kurzzeitig zwei Pods
   # auf demselben Host-Verzeichnis. Der Olares-Markt lehnt die Kombination
@@ -217,9 +217,14 @@ spec:
             - name: MAX_UPLOAD_MB
               value: "{{ .Values.app.maxUploadSizeMb }}"
 
-            # ---- Olares-Kontext (für User-Identifikation) -------------------
-            - name: OLARES_USER
-              value: "{{ .Values.bfl.username }}"
+            # ---- Olares-Kontext ---------------------------------------------
+            # Die Benutzeridentität kommt pro Anfrage aus dem X-Bfl-User-Kopf;
+            # eine Umgebungsvariable dafür wurde nie gelesen und ist entfallen
+            # (apiVersion=v3 verbietet dieses Namenspräfix in Chart-Dateien
+            # ohnehin — der Prüfer sucht die Zeichenkette im Dateitext, also
+            # steht sie auch in keinem Kommentar mehr).
+            # OLARES_ZONE bleibt: daran erkennt der Datenschutz-Nachweis die
+            # eigene Box.
             - name: OLARES_ZONE
               value: "{{ .Values.user.zone }}"
 

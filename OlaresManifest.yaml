@@ -12,8 +12,21 @@
 # - requiredDisk MUSS gesetzt sein (regex: ^(?:\d+(?:\.\d+)?)[kKMGTP]?i?$)
 # ============================================================================
 
-olaresManifest.version: '0.11.0'
+olaresManifest.version: '0.12.0'
 olaresManifest.type: app
+apiVersion: 'v3'
+
+# Jedes Deployment, das dieses Chart rendert, mit seiner Replikatzahl.
+# app-service steuert darüber den gesamten Lebenslauf: die Installation
+# rendert zuerst mit 0 und skaliert dann hoch, Anhalten setzt alles auf 0,
+# Fortsetzen zurück auf die hier genannten Werte. Steht die Zahl fest im
+# Template, läuft das ins Leere.
+workloadReplicas:
+  insilo: 1
+  insilo-backend: 1
+  insilo-whisper: 1
+  insilo-embeddings: 1
+  insilo-worker: 1
 
 metadata:
   name: insilo
@@ -21,7 +34,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.75              # = Chart.yaml.version
+  version: 0.1.76              # = Chart.yaml.version
   # Eine primäre Kategorie, wie es der AIMighty-Markt vorgibt. Die
   # frühere Dreierliste trug mit `Productivity_v112` einen Wert, den
   # dieser Markt ausdrücklich nicht mehr führt.
@@ -77,14 +90,12 @@ permission:
   appData: true                 # für /app/data (Audio, persistente Daten)
   # userData: []                # MVP: kein Zugriff auf User-Home-Verzeichnis
 
-  # Cross-App-Zugriff: wir konsumieren das LLM aus der Olares-LiteLLM-App
-  # statt ein eigenes Ollama mitzubringen. Spart 4-GB-Image + GPU-Slot.
-  provider:
-    - appName: litellm
-      providerName: api
-      podSelectors:
-        - matchLabels:
-            io.kompose.service: litellm
+  # Kein `provider`-Block: ab Schema 0.12.0 verbietet die Prüfung ihn, und
+  # er hat ohnehin nie getragen — vor LiteLLM sitzt ein Envoy-Sidecar, der
+  # einen Authelia-Token verlangt, den ein Server-zu-Server-Aufruf nicht
+  # hat (auf der Box gemessen: 400 ohne Kopf, 401 mit X-Bfl-User). Der
+  # Weg zum Sprachmodell führt über die öffentliche Adresse, die der
+  # Nutzer unter /einstellungen einträgt.
 
 # ---- Provider (für zukünftige Cross-App-Integration) -----------------------
 # In Phase 5+ aktivieren, wenn CallList/andere kaivo-Apps auf Insilo zugreifen sollen.
@@ -97,7 +108,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.75'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.76'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
@@ -130,15 +141,17 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.75 — Vorbereitung für den AIMighty-Markt.
+    v0.1.76 — Manifest auf apiVersion v3.
 
-    - Kein Vorgabe-Schlüssel mehr im Chart. Bis v0.1.74 stand dort
-      LiteLLMs bekannter `sk-1234`-Master-Key; in einem veröffentlichten
-      Chart ist ein eingebackener Schlüssel das falsche Signal, und seit
-      v0.1.72 gibt es ohnehin keine Vorgabe-Adresse, zu der er passte.
-    - Eine Kategorie statt drei (`AI`).
-    - Das Paket enthält keine Entwurfsdateien mehr — Symbol-Entwürfe und
-      die Entwickler-Wertedatei sind ausgeschlossen.
+    - Das Manifest folgt jetzt Schema 0.12.0 mit `apiVersion: v3`. Nötig
+      für die Auslieferung über eine Markt-Quelle; die Referenz-Apps auf
+      Olares 1.12.6 stehen alle darauf.
+    - Der Olares-Pin lautet `>=1.12.6-0`. Zuvor `<1.12.6` — das sperrte
+      ausgerechnet die Version aus, auf der die Box läuft.
+    - Replikatzahlen kommen aus `workloadReplicas` statt fest aus den
+      Templates. Ohne das greifen Anhalten und Fortsetzen nicht.
+    - Der `provider`-Block für LiteLLM ist entfallen: ab Schema 0.12.0
+      unzulässig, und er hat nie getragen.
 
   developer: kaivo.studio
   website: https://kaivo.studio
@@ -191,7 +204,7 @@ options:
   dependencies:
     - name: olares
       type: system
-      version: '>=1.12.3-0,<1.12.6'
+      version: '>=1.12.6-0'
 
   # Erlaubt mehrere isolierte Instanzen (z.B. eine pro Mandant) — MVP: nein
   allowMultipleInstall: false

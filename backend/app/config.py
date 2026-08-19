@@ -66,7 +66,6 @@ class Settings(BaseSettings):
     default_template_id: str = "00000000-0000-0000-0000-000000000001"
 
     # --- Olares context (dev defaults) ---
-    olares_user: str = "devuser"
     olares_zone: str = "devuser.olares.local"
 
     # --- Webhooks ---

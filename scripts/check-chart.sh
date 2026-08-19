@@ -35,6 +35,9 @@ fail() {
 ok() {
   green "  ✓ $*"
 }
+skip() {
+  yellow "  – $*"
+}
 section() {
   printf "\n%s\n" "── $* ──"
 }
@@ -136,17 +139,56 @@ done
 #     bound exists at all.
 # ---------------------------------------------------------------------------
 
-section "olares dependency is a closed range"
+# ---------------------------------------------------------------------------
+# 1d0. Der offizielle Validator, wenn er da ist.
+#      `olares-cli chart lint` fährt nach eigener Aussage dieselbe Pipeline,
+#      mit der der Store ein Chart einliest — er kennt die Regeln also
+#      besser als alles, was wir hier nachbauen. Fehlt der Befehl (CI,
+#      frische Maschine), wird übersprungen statt zu scheitern; die
+#      handgeschriebenen Guards unten decken den Rest ab.
+# ---------------------------------------------------------------------------
+
+section "olares-cli chart lint (offizieller Validator)"
+
+if command -v olares-cli >/dev/null 2>&1; then
+  # Das gepackte Chart prüfen, nicht den Ordner: der Validator verlangt
+  # Ordnername == Chart-Name, und unser Ordner heißt "olares/", nicht
+  # "insilo/". Im Tarball heißt die Wurzel korrekt "insilo/".
+  LINT_TMP="$(mktemp -d)"
+  trap 'rm -rf "$LINT_TMP"' EXIT
+  if olares-cli chart package olares/ -o "$LINT_TMP" >/dev/null 2>&1 &&
+     LINT_OUT="$(olares-cli chart lint "$LINT_TMP"/*.tgz --with-rbac --with-security-context 2>&1)"; then
+    ok "olares-cli chart lint: OK"
+  else
+    fail "olares-cli chart lint: ${LINT_OUT}"
+  fi
+else
+  skip "olares-cli nicht im PATH — offizieller Validator übersprungen"
+fi
+
+section "olares dependency matches the manifest generation"
 
 for mf in "$MANIFEST_FILE" "$ROOT_MANIFEST_FILE"; do
   [[ -f "$mf" ]] || continue
   DEP_VERSION="$(awk '/^[[:space:]]*-[[:space:]]*name:[[:space:]]*olares[[:space:]]*$/{f=1} f&&/^[[:space:]]*version:/{gsub(/.*version:[[:space:]]*/,""); gsub(/['"'"'"]/,""); print; exit}' "$mf")"
+  API_VERSION="$(awk '/^apiVersion:/{gsub(/.*apiVersion:[[:space:]]*/,""); gsub(/['"'"'"]/,""); print; exit}' "$mf")"
+
   if [[ -z "$DEP_VERSION" ]]; then
     fail "$mf: no options.dependencies[name=olares].version found"
+  elif [[ "$API_VERSION" == "v3" ]]; then
+    # apiVersion=v3 verlangt genau '>=1.12.6-0' — offen nach oben, mit
+    # '-0', damit Tages- und RC-Builds (1.12.6-20260327) matchen. Die
+    # frühere Regel (geschlossenes Intervall) galt für v1 und ist hier
+    # falsch: '<1.12.6' würde die Version aussperren, auf der die Box läuft.
+    if [[ "$DEP_VERSION" == ">=1.12.6-0" ]]; then
+      ok "$mf: olares dependency '>=1.12.6-0' (v3)"
+    else
+      fail "$mf: apiVersion=v3 requires olares dependency exactly '>=1.12.6-0', found '$DEP_VERSION'"
+    fi
   elif [[ "$DEP_VERSION" == *"<"* ]]; then
-    ok "$mf: olares dependency bounded ($DEP_VERSION)"
+    ok "$mf: olares dependency bounded ($DEP_VERSION, pre-v3)"
   else
-    fail "$mf: olares dependency '$DEP_VERSION' has no upper bound — Market upload will 400"
+    fail "$mf: olares dependency '$DEP_VERSION' has no upper bound — pre-v3 Market upload will 400"
   fi
 done
 

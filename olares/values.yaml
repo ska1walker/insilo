@@ -1,3 +1,18 @@
+# Replikatzahlen je Workload. Olares überschreibt sie zur Laufzeit
+# (Installation, Anhalten, Fortsetzen) — die Templates lesen ausschließlich
+# von hier, nie eine feste Zahl.
+workloads:
+  "insilo":
+    replicaCount: 1
+  "insilo-backend":
+    replicaCount: 1
+  "insilo-whisper":
+    replicaCount: 1
+  "insilo-embeddings":
+    replicaCount: 1
+  "insilo-worker":
+    replicaCount: 1
+
 # ============================================================================
 # values.yaml — Default Helm Values für Insilo
 #

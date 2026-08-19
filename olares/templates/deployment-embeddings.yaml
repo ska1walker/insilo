@@ -14,7 +14,7 @@ metadata:
     app: insilo
     component: embeddings
 spec:
-  replicas: 1
+  replicas: {{ (index .Values.workloads "insilo-embeddings").replicaCount }}
   # Recreate wegen hostPath-Mount (/app/cache, BGE-M3-Modell) — siehe
   # deployment-backend.yaml. Markt lehnt hostPath + RollingUpdate ab.
   strategy:

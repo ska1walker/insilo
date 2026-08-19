@@ -14,7 +14,7 @@ metadata:
     app: insilo
     component: worker
 spec:
-  replicas: 1
+  replicas: {{ (index .Values.workloads "insilo-worker").replicaCount }}
   # Recreate wegen hostPath-Mounts (/app/data, /app/cache) — siehe
   # deployment-backend.yaml. Markt lehnt hostPath + RollingUpdate ab.
   strategy:

@@ -580,6 +580,11 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     display: none;
   }
 
+  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte. */
+  .huelle-herkunft {
+    display: none;
+  }
+
   /* ── Datenschutz-Nachweis ─────────────────────────────────────────
      Sitzt unten in der Navigation. Auf der schmalen Leiste hat er keinen
      Platz — dort trägt ihn die Ansicht „Was verlässt diese Box?" selbst. */
@@ -731,6 +736,30 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
       background: var(--am-achtung-flaeche);
       border-color: var(--am-achtung-rand);
       color: var(--am-achtung);
+    }
+
+    .huelle-herkunft {
+      display: flex;
+      align-items: baseline;
+      gap: var(--am-raum-2);
+      margin-top: var(--am-raum-3);
+      padding: 0 var(--am-raum-3);
+      font-size: 0.6875rem;
+      line-height: 1.4;
+    }
+
+    /* Die Wortmarke trägt das Gewicht, das Rechtszeichen tritt zurück —
+       ein Herkunftsvermerk, kein Bedienelement. */
+    .huelle-herkunft-marke {
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: var(--am-text-sekundaer);
+    }
+
+    .huelle-herkunft-recht {
+      font-family: var(--am-schrift-mono);
+      font-size: 0.625rem;
+      color: var(--am-text-deaktiviert);
     }
 
     .huelle-inhalt {

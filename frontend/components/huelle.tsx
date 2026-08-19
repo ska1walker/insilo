@@ -74,6 +74,13 @@ type Eintrag = {
   nachrangig?: boolean;
 };
 
+/**
+ * Fest statt `new Date().getFullYear()`: Server und Browser würden sonst
+ * um Mitternacht unterschiedliche Jahre rendern und React meldete einen
+ * Hydration-Fehler. Beim Jahreswechsel hier nachziehen.
+ */
+const JAHR = 2026;
+
 const HANDLUNGEN: Eintrag[] = [
   { href: "/aufnahme", schluessel: "record", icon: Mic },
   { href: "/besprechungen", schluessel: "meetings", icon: Text },
@@ -157,6 +164,14 @@ export function Huelle({ children }: { children: ReactNode }) {
           {/* Datenschutz-Nachweis — zeigt sich nur, wenn der Zustand
               abrufbar ist (Paket-Regel: gemessene Werte oder gar nicht). */}
           <DatenschutzNachweis locale={locale} />
+
+          {/* Herkunftsvermerk. Bewusst ohne Verweis nach außen: Insilo
+              baut in keiner Ansicht eine Verbindung auf, die der Nutzer
+              nicht angestoßen hat. */}
+          <p className="huelle-herkunft">
+            <span className="huelle-herkunft-marke">AImighty</span>
+            <span className="huelle-herkunft-recht">© {JAHR}</span>
+          </p>
         </nav>
 
         {/* Kein <main> hier: die Ansichten bringen ihr eigenes mit.

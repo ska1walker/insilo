@@ -3,9 +3,9 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # ✅ Stand: v0.1.74 läuft auf der Box (19. August 2026, Helm-Rev 52)
+> # ✅ Stand: v0.1.76 läuft auf der Box (19. August 2026, Helm-Rev 54)
 >
-> Verifiziert, nicht angenommen: alle fünf Pods auf `0.1.74`, alle
+> Verifiziert, nicht angenommen: alle fünf Pods bereit, alle
 > Health-Checks grün — `/health/llm` meldet `ok`, `/api/v1/egress`
 > vorhanden, Migration 0014 angewendet. Box: **192.168.1.17** (nicht die
 > früher dokumentierte 112er-Adresse).
@@ -14,6 +14,52 @@
 > Korrekturen, Wappen und Icon-Satz, Herkunftsvermerk, genauerer
 > Datenschutz-Nachweis, überarbeitetes Zeichen aus Figma, ehrliche
 > Erst-Einrichtung des Sprachmodells.
+>
+> ---
+>
+> ## Manifest auf v3 — und was dabei falsch war (v0.1.76)
+>
+> **Der Auslöser:** Insilo sollte in den AIMighty-Markt. Beim Vergleich mit
+> hermeswebui — einer App, die aus genau dieser Quelle auf genau diese Box
+> installiert wird — fiel auf, dass unser Olares-Pin
+> `>=1.12.3-0,<1.12.6` **die Version aussperrt, auf der die Box läuft**.
+>
+> **Zwei Korrekturen an früheren Behauptungen in diesem Dokument:**
+>
+> 1. `apiVersion: v2` wird vom offiziellen Validator **nicht** abgelehnt.
+>    `olares-cli chart lint` meldete für das v2-Chart `OK`. Die
+>    403-Behauptung stammte aus fremden Notizen und galt für uns nicht.
+> 2. Der Guard „olares dependency is a closed range" war nach der Migration
+>    selbst falsch — er stammt aus der v0.1.61-Ablehnung, die für
+>    `apiVersion=v1` galt. Unter v3 verlangt die Prüfung das Gegenteil:
+>    genau `>=1.12.6-0`, offen nach oben. Der Guard kennt jetzt die
+>    Generation.
+>
+> **Was die Migration umfasste:** Schema `0.12.0` + `apiVersion: v3`, Pin
+> `>=1.12.6-0`, `workloadReplicas` statt fester Replikatzahlen,
+> `permission.provider` raus (ab 0.12.0 unzulässig), `OLARES_USER`-Env raus
+> (v3 verbietet das Präfix in Chart-Dateien — die Variable wurde ohnehin
+> nie gelesen, die Identität kommt aus `X-Bfl-User`).
+>
+> **Drei Fallen, die Zeit kosten:**
+>
+> - Workload-Namen mit Bindestrich brauchen
+>   `{{ (index .Values.workloads "insilo-backend").replicaCount }}` —
+>   Helms Punktsyntax erreicht solche Schlüssel nicht.
+> - Der Prüfer sucht `OLARES_USER` als **Zeichenkette im Dateitext**. Auch
+>   ein Kommentar, der den Namen erwähnt, lässt die Prüfung scheitern.
+> - `chart lint` verlangt Ordnername == Chart-Name. Unser Ordner heißt
+>   `olares/` — also immer das **gepackte** Chart prüfen.
+>
+> **Und beim Ausrollen:** `--reuse-values` merged die Vorgabewerte des
+> neuen Charts **nicht**. Ein Schlüssel, den das Chart erst in diesem
+> Release bekommt, fehlt dann (`index of untyped nil`). Helm 3.9 auf der
+> Box kennt `--reset-then-reuse-values` nicht, also müssen neue Schlüssel
+> per `--set` mit — `release.sh` gibt den vollständigen Befehl aus.
+>
+> **Seither prüft `check-chart.sh` mit `olares-cli chart lint`**, wenn der
+> Befehl im PATH liegt. Der offizielle Validator kennt die Regeln besser
+> als unsere Nachbauten; fehlt er, wird übersprungen statt zu scheitern.
 >
 > ---
 >

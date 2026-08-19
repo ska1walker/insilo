@@ -13,7 +13,7 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** **v0.1.74 läuft auf der Box** (Helm-Rev 52, verifiziert
+**Stand:** **v0.1.76 läuft auf der Box** (Helm-Rev 54, verifiziert
 19.8.2026) und liegt als Tag + Chart im Repo. Box:
 `olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
 `https://e5d605f3.kaivostudio.olares.de`).

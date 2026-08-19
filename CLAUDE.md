@@ -5,7 +5,7 @@
 > **Vertrieb:** über aimighty.de
 > **Plattform:** Olares OS (Kubernetes-basiert)
 > **Status:** Phase 1 — MVP-Setup
-> **Letzte Aktualisierung:** August 2026 (v0.1.74)
+> **Letzte Aktualisierung:** August 2026 (v0.1.76)
 
 ---
 

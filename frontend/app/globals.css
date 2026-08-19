@@ -580,6 +580,23 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     display: none;
   }
 
+  /* Wappen — zwei Fassungen im Markup, CSS zeigt die passende.
+     Ohne JavaScript, damit beim Laden nichts umspringt. */
+  .wappen {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .wappen svg {
+    height: 100%;
+    width: auto;
+    display: block;
+  }
+
+  .wappen .wappen-dunkel { display: none; }
+  html.dunkel .wappen .wappen-hell { display: none; }
+  html.dunkel .wappen .wappen-dunkel { display: block; }
+
   /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
      sichtbar; Farbe und Schnitt gelten unabhängig davon. */
   .huelle-herkunft {
@@ -676,11 +693,6 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
 
     .huelle-wappen {
       height: 28px;
-      width: auto;
-      /* Die Wortmarke erbt die Textfarbe (siehe components/wappen.tsx),
-         damit sie im Dunkelmodus nicht auf der blauen Fläche verschwindet.
-         Das Gold der Sprechblase steckt fest im SVG. */
-      color: var(--am-text-primaer);
     }
 
     .huelle-nav-gruppe {

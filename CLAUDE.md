@@ -290,9 +290,15 @@ hüpfenden Knöpfe.
 7. **Bei neuem Git-Tag `v*.*.*`:** Tag-Name muss `olares/Chart.yaml.version` matchen — `release.yml` bricht sonst ab. Am einfachsten via `scripts/release.sh X.Y.Z` — bumpt alle 4 Versionsstellen + image-tags, regen-Migrationen, check-chart, helm package, commit, tag, push, copy to `~/Downloads/`. Flag `--chart-only` lässt image-tags in `values.yaml` stehen — das Chart zieht dann weiter die bewährten Images. `--dry-run` zeigt was passieren würde. `--no-push` stoppt lokal nach Tag.
 
    **Wichtig zum Zusammenspiel mit `release.yml`:** der Workflow leitet die Image-Version aus dem **Git-Tag** ab, nicht aus `values.yaml`. Bis v0.1.61 lief der Build bei `--chart-only` deshalb trotzdem durch und erzeugte Images, die niemand referenziert (die frühere Behauptung „spart GH-Actions-Build" war schlicht falsch). Seit v0.1.61 überspringt `release.yml` den Build, wenn `values.yaml` den gepushten Tag nicht referenziert. Falls das mal fälschlich greift: `release`-Workflow manuell via `workflow_dispatch` mit expliziter Version starten.
-8. **Sprachregel:** UI-Texte über `useTranslations()` aus `frontend/messages/*.json` (5 Sprachen). Default DE / Sie-Form, formelle Anrede in allen Sprachen. Code + Commit-Messages weiter Englisch. Neue inline-Strings → erst Key in alle 5 JSONs aufnehmen, dann `t('namespace.key')` verwenden.
-9. **Tests:** Vitest fürs Frontend, pytest fürs Backend. Kritische Pfade (Audio-Upload, Transkription) immer mit Tests.
-10. **Bei Unsicherheit:** stoppen und Kai fragen.
+8. **Bei Veröffentlichung in einen Store:** Skill `olares-release`
+   (`.claude/skills/olares-release/SKILL.md`) — Pfadwahl, Reihenfolge
+   (erst ausrollen, dann hochladen) und die offenen Punkte für den
+   öffentlichen Markt. Olares' eigene CLI bringt dazu vierzehn gepflegte
+   Skills mit (`npx @olares/cli@latest install`); die gehen bei
+   Plattformfragen vor.
+9. **Sprachregel:** UI-Texte über `useTranslations()` aus `frontend/messages/*.json` (5 Sprachen). Default DE / Sie-Form, formelle Anrede in allen Sprachen. Code + Commit-Messages weiter Englisch. Neue inline-Strings → erst Key in alle 5 JSONs aufnehmen, dann `t('namespace.key')` verwenden.
+10. **Tests:** Vitest fürs Frontend, pytest fürs Backend. Kritische Pfade (Audio-Upload, Transkription) immer mit Tests.
+11. **Bei Unsicherheit:** stoppen und Kai fragen.
 
 ---
 

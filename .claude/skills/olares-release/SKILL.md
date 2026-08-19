@@ -180,9 +180,18 @@ für Modell-Apps gedacht. Das Titelmuster `AIM <Modell> <Größe> <Aufgabe>`
 gilt nicht für Produkt-Apps — in seinem eigenen Inventar heißen sie
 „Wings for Hermes" und „Rewind". Insilo heißt Insilo.
 
-**Auf Kais Box ist die AIMighty-Quelle nicht eingetragen** (gültige
-Quellen: `market.olares`, `cli`, `upload`, `studio`). Sie muss zuerst
-hinzugefügt werden, sonst greift `-s market.AImighty` ins Leere.
+**Die Quellen der Box stehen in Market → Settings → Market source**, nicht
+im Hilfetext der CLI. `olares-cli market --help` listet unter `-s` die
+Werte `market.olares, cli, upload, studio` — das ist die eingebaute
+Namensliste, **keine Aussage über die konfigurierten Quellen**. Wer daraus
+schließt, liegt falsch (am 19.8. genau so passiert).
+
+Stand 19.8.2026 sind auf Kais Box drei Quellen eingetragen:
+`market.olares` (aktiv), `aimighty`
+(`https://aimighty-market.pages.dev`) und `LLM`. Die Auswahl ist ein
+**Radioknopf, also exklusiv**: solange eine eigene Quelle aktiv ist, zeigt
+der Markt den offiziellen Katalog nicht mehr. Das Umschalten lohnt erst,
+wenn die App in der Zielquelle wirklich steht.
 
 **Der Zugriff aufs Repo ist READ, nicht write.** Die HANDOFF-Notiz „Kai
 hat Schreibzugriff" stimmt nicht mehr (`gh api repos/bayerhazard/aimighty-market`

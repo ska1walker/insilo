@@ -3,16 +3,17 @@
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
 >
-> # ✅ Stand: v0.1.71 läuft auf der Box (19. August 2026, Helm-Rev 49)
+> # ✅ Stand: v0.1.73 läuft auf der Box (19. August 2026, Helm-Rev 51)
 >
-> Verifiziert, nicht angenommen: alle fünf Pods auf `0.1.71`, alle
-> Health-Checks grün (auch `/health/llm`), `/api/v1/egress` vorhanden,
-> Migration 0014 angewendet. Box: **192.168.1.17** (nicht die früher
-> dokumentierte 112er-Adresse).
+> Verifiziert, nicht angenommen: alle fünf Pods auf `0.1.73`, alle
+> Health-Checks grün — `/health/llm` meldet `ok`, `/api/v1/egress`
+> vorhanden, Migration 0014 angewendet. Box: **192.168.1.17** (nicht die
+> früher dokumentierte 112er-Adresse).
 >
-> **v0.1.66 → v0.1.71 an einem Tag:** Rebrand-Deploy, Dunkelmodus-
+> **v0.1.66 → v0.1.73 an zwei Tagen:** Rebrand-Deploy, Dunkelmodus-
 > Korrekturen, Wappen und Icon-Satz, Herkunftsvermerk, genauerer
-> Datenschutz-Nachweis, überarbeitetes Zeichen aus Figma.
+> Datenschutz-Nachweis, überarbeitetes Zeichen aus Figma, ehrliche
+> Erst-Einrichtung des Sprachmodells.
 >
 > ---
 >
@@ -38,16 +39,68 @@
 > Auch `/health/liveliness` — das keinen Schlüssel braucht — antwortet 400.
 > Es liegt also am Sidecar, nicht an LiteLLM.
 >
-> **Folge:** Jede Neuinstallation startet mit einem LLM-Endpunkt, der nicht
-> antwortet, bis jemand in `/einstellungen` die öffentliche Adresse
-> einträgt (`https://llm.<zone>/v1`). Das ist kein Bedienfehler, sondern
-> eine falsche Vorgabe im Chart.
+> **Folge bis v0.1.71:** Jede Neuinstallation startete mit einem
+> LLM-Endpunkt, der nicht antwortet — die App wirkte defekt, obwohl nur
+> die Einrichtung fehlte.
 >
-> **Offen:** Der Default müsste auf die öffentliche Adresse zeigen. Die
-> Zone steht als `OLARES_ZONE` im Pod bereit, der Name des LiteLLM-Hosts
-> (`llm.`) ist aber nicht garantiert — deshalb hier bewusst nicht geraten.
-> Vor dem nächsten Kunden-Deploy klären, sonst wirkt die App bei der
-> Erstinstallation defekt.
+> ## Gelöst in v0.1.72 — durch Weglassen
+>
+> Der Chart bringt **keine Adresse** mehr mit (`litellm.baseUrl: ""`,
+> `config.py` ohne Vorgabe; vorher fiel es auf `localhost:11434` zurück,
+> wo auf der Box nie etwas lief).
+>
+> **Kein Vorgabewert kann richtig sein**, auf der Box nachgeprüft: die
+> öffentliche Adresse leitet sich aus der Olares-App-Kennung ab, die erst
+> bei der Installation von LiteLLM vergeben wird (hier `6aead52a`, Insilo
+> hat `e5d605f3`); ein freundlicherer Alias wie `llm.<zone>` ist frei
+> gewählt; der clusterinterne Weg ist zu. Jeder geratene Wert ist beim
+> nächsten Kunden falsch.
+>
+> Was die App stattdessen tut:
+>
+> | Ort | ohne eingetragene Adresse |
+> |---|---|
+> | `/health/llm` | `not_configured` statt Verbindungsfehler |
+> | Zusammenfassung | wird übersprungen, Besprechung bleibt auf `transcribed` |
+> | `/einstellungen` | Hinweisstreifen samt Fundort der Adresse |
+> | Block unter dem Aufnahme-Knopf | nennt zuerst die offene Einrichtung |
+>
+> Die Zusammenfassung **scheitert nicht, sie unterbleibt**: das Transkript
+> ist an dem Punkt fertig und bleibt brauchbar. Wer die Adresse beim
+> Installieren schon kennt: `--set litellm.baseUrl=https://…/v1`.
+>
+> ---
+>
+> ## Zwei Folgefehler — beide erst im Betrieb sichtbar
+>
+> **1. `/health/llm` prüfte die Vorgabe statt der Wirklichkeit (v0.1.73).**
+> Mit der nun regulär leeren Vorgabe meldete der Check `not_configured` —
+> **während die App zusammenfasste**. Die wirksame Adresse steht pro Org
+> in `org_settings`, der Check las nur die Umgebungsvariable. Er fragt
+> jetzt zuerst die Datenbank und fällt nur darauf zurück; eine
+> DB-Störung deckt `/health/db` ab.
+>
+> **2. „Verbindung testen" schickte einen leeren `Bearer `-Kopf**
+> (auf `main`, **noch nicht ausgerollt** — die Box läuft 0.1.73).
+> Das Schlüsselfeld trägt die Zusage „leer lassen, um den Schlüssel
+> beizubehalten" — der Test übernahm das Formular aber **als Block**,
+> sobald irgendein Feld gefüllt war, und schickte den leeren Schlüssel
+> mit. `Bearer ` ist kein gültiger Kopfwert; httpx bricht mit „Illegal
+> header value" ab, **bevor** eine Verbindung entsteht. Angezeigt wurde
+> „Verbindung fehlgeschlagen" für einen Endpunkt, der nie angesprochen
+> wurde.
+>
+> Behoben in zwei Schritten: das Formular gewinnt jetzt **feldweise**
+> (leerer Schlüssel → gespeicherter), und ohne Schlüssel geht **gar keine**
+> Kopfzeile hinaus. Der leere Schlüssel ist seit v0.1.72 der Normalfall,
+> und lokale Endpunkte verlangen ohnehin keinen. Die Kopfzeile entsteht
+> jetzt zentral in `llm_config.auth_header()` — dieselbe Falle lag latent
+> auch in `search.py`, `summarize.py` und `/health/llm`.
+>
+> **Lesson, dreimal in Folge dieselbe:** gefunden wurde keiner der beiden
+> beim Nachdenken über die Änderung, sondern beim Benutzen der laufenden
+> App. Ein Health-Check, der die Vorgabe prüft statt des tatsächlichen
+> Zustands, widerspricht der Anwendung, die er absichern soll.
 >
 > ---
 >
@@ -72,7 +125,7 @@
 > `boesekaivostudio.olares.de` als eigene Box durchgehen. Ebenso geprüft:
 > Zone als Präfix (`kaivostudio.olares.de.angreifer.example`) und die Box
 > eines anderen Olares-Nutzers. Ohne `OLARES_ZONE` wird nichts behauptet.
-> 34 Tests in `backend/tests/test_egress.py`.
+> 40 Tests in `backend/tests/test_egress.py`.
 >
 > ---
 >
@@ -202,9 +255,10 @@
 >
 > # 🎨 Rebrand auf das AImighty-Designsystem (18. August 2026)
 >
-> **Noch nicht deployed.** Der Code liegt auf `main`, aber die Images
-> stehen auf 0.1.60 — nichts davon läuft auf der Box. Für ein Deploy
-> braucht es `scripts/release.sh 0.1.66` **ohne** `--chart-only`.
+> **Ausgeliefert mit v0.1.66** (am folgenden Tag). Beim Schreiben dieses
+> Abschnitts lag der Code nur auf `main` und die Images standen auf
+> 0.1.60 — wer den Absatz später liest, soll nicht nach einem offenen
+> Deploy suchen.
 >
 > **Was ersetzt wurde:** das eigene Designsystem (Weiß/Schwarz/Gold,
 > Lexend Deca + Inter, 8px-Raster, Anker HubSpot/aimighty/PLAUD) durch das

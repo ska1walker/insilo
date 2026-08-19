@@ -13,15 +13,20 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** **v0.1.71 läuft auf der Box** (Helm-Rev 49, verifiziert
+**Stand:** **v0.1.73 läuft auf der Box** (Helm-Rev 51, verifiziert
 19.8.2026) und liegt als Tag + Chart im Repo. Box:
 `olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
 `https://e5d605f3.kaivostudio.olares.de`).
 
-**⚠️ Bevor du am LLM etwas änderst:** Die Vorgabe im Chart
-(`LLM_BASE_URL` clusterintern) **funktioniert nicht** — Envoy vor LiteLLM
-verlangt einen Authelia-Token. Details im HANDOFF-Header. Nur die
-öffentliche Adresse (`https://llm.<zone>/v1`) trägt.
+**⚠️ Bevor du am LLM etwas änderst:** Der Chart hat seit v0.1.72
+**absichtlich keinen Vorgabewert** für `LLM_BASE_URL`. Der clusterinterne
+Weg zu LiteLLM antwortet nicht (Envoy davor verlangt einen
+Authelia-Token), und die öffentliche Adresse hängt an einer App-Kennung,
+die erst bei der Installation vergeben wird — jeder geratene Wert ist beim
+nächsten Kunden falsch. Der Nutzer trägt sie unter `/einstellungen` ein;
+bis dahin sagt die App das offen, statt in einen Verbindungsfehler zu
+laufen. **Einen leeren API-Schlüssel nie zu `Bearer ` zusammensetzen** —
+dafür gibt es `llm_config.auth_header()`. Details im HANDOFF-Header.
 
 Feature-Set:
 
@@ -98,7 +103,7 @@ Feature-Set:
   Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
   `ci`-Workflow seit v0.1.59 rot hielten.
 
-**Seit dem 18./19. August — v0.1.66 bis v0.1.71, auf der Box:**
+**Seit dem 18./19. August — v0.1.66 bis v0.1.73, auf der Box:**
 
 - **Rebrand auf das AImighty-Designsystem** — Geist-Schriften, Hanseatenblau,
   dreiteilige Hülle, Hell- und Dunkelmodus. Werte in
@@ -114,6 +119,13 @@ Feature-Set:
   (hell/dunkel), maskable-Symbol mit Sicherheitsabstand.
 - **Herkunftsvermerk** unten in der Navigation, verlinkt auf aimighty.de
   (v0.1.69).
+- **Ehrliche Erst-Einrichtung des Sprachmodells (v0.1.72/0.1.73)** — kein
+  erfundener Vorgabe-Endpunkt mehr. Ohne eingetragene Adresse laufen
+  Aufnahme und Transkription weiter, die Zusammenfassung unterbleibt
+  (Status bleibt `transcribed`), `/health/llm` meldet `not_configured`,
+  und Einstellungen wie Aufnahme-Seite sagen, was fehlt. `/health/llm`
+  liest die wirksame Adresse aus der Datenbank, nicht die
+  Deployment-Vorgabe (v0.1.73).
 - **Datenschutz-Nachweis unterscheidet eigene Box von Fremdanbieter**
   (v0.1.70) — sonst hätte er dauerhaft gewarnt, obwohl das Modell auf
   derselben Maschine läuft.

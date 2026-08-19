@@ -14,7 +14,7 @@
 | **Vertrieb** | aimighty.de |
 | **Plattform** | Olares OS (Kubernetes-basiert) |
 | **Status** | Phase 1 — MVP |
-| **Version** | v0.1.71 (Repo und Box) |
+| **Version** | v0.1.73 (Repo und Box) |
 | **Repository** | github.com/ska1walker/insilo |
 | **Branch** | main |
 | **Sprache** | DE (Primär), EN, FR, ES, IT |
@@ -53,7 +53,8 @@
 ### KI-Services
 - **Whisper:** `faster-whisper` mit `large-v3` Modell
 - **Speaker Diarization:** pyannote.audio (über WhisperX)
-- **LLM:** Ollama mit `qwen2.5:14b-instruct-q4_K_M`
+- **LLM:** externer OpenAI-kompatibler Endpunkt (LiteLLM auf der Box),
+  Adresse pro Org unter `/einstellungen` — **kein Vorgabewert**
 - **Embeddings:** BGE-M3 (multilingual, Apache 2.0)
 
 ### Datenbank
@@ -108,8 +109,7 @@ insilo/
 │   └── regen-migrations.py      # Migration-Mirror
 └── services/                    # KI-Services
     ├── whisper/
-    ├── embeddings/
-    └── ollama/
+    └── embeddings/       # kein Ollama — LLM kommt von außen
 ```
 
 ---
@@ -193,7 +193,7 @@ Dunkelmodus handelt Gold.
 | **SSH** | `olares@192.168.1.17` |
 | **Namespace** | `insilo-kaivostudio` |
 | **Pods** | insilo (frontend+envoy), insilo-backend, insilo-whisper, insilo-embeddings, insilo-worker |
-| **Version** | v0.1.71, Helm-Rev 49 (verifiziert 19.8.2026) |
+| **Version** | v0.1.73, Helm-Rev 51 (verifiziert 19.8.2026) |
 
 ---
 
@@ -204,20 +204,34 @@ Dunkelmodus handelt Gold.
 | `/health` | Backend | ok |
 | `/health/db` | PostgreSQL | ok |
 | `/health/whisper` | Whisper | ok |
-| `/health/llm` | LiteLLM | ok (nur über die öffentliche Adresse — siehe unten) |
+| `/health/llm` | LLM-Endpunkt | ok · `not_configured`, solange keine Adresse eingetragen ist |
 | `/health/embeddings` | BGE-M3 | ok |
 
 ---
 
-## ⚠️ LiteLLM nur über die öffentliche Adresse
+## ⚠️ Der LLM-Endpunkt hat keinen Vorgabewert (seit v0.1.72)
 
-Die Chart-Vorgabe `LLM_BASE_URL=http://litellm-svc.litellm-<user>.svc.cluster.local/v1`
-**funktioniert nicht** — der Envoy-Sidecar vor LiteLLM verlangt einen
-Authelia-Token, den ein Server-zu-Server-Aufruf nicht hat (400
-„cannot get user name from header", mit `X-Bfl-User` 401). Tragfähig ist
-nur `https://llm.<olares-zone>/v1`, einzustellen unter `/einstellungen`.
-Der Datenschutz-Nachweis erkennt diesen Fall über `OLARES_ZONE` und
-wertet ihn als eigene Box, nicht als Fremdanbieter.
+**Der Chart bringt keine Adresse mit.** Absicht, nicht Lücke: die
+öffentliche Adresse leitet sich aus der Olares-App-Kennung von LiteLLM
+ab, die erst bei dessen Installation vergeben wird; ein Alias wie
+`llm.<zone>` ist frei gewählt; und der clusterinterne Weg
+(`http://litellm-svc.litellm-<user>.svc.cluster.local/v1`) **antwortet
+nicht** — der Envoy-Sidecar davor verlangt einen Authelia-Token, den ein
+Server-zu-Server-Aufruf nicht hat (400 „cannot get user name from
+header", mit `X-Bfl-User` 401).
+
+Tragfähig ist nur die öffentliche Adresse, einzutragen unter
+`/einstellungen`. Bis dahin: Aufnahme und Transkription laufen,
+Zusammenfassungen unterbleiben (die Besprechung bleibt auf
+`transcribed`), `/health/llm` meldet `not_configured`.
+
+**Ein leerer API-Schlüssel ist der Normalfall.** Die Kopfzeile entsteht
+zentral in `llm_config.auth_header()` und entfällt ohne Schlüssel — ein
+`Bearer ` mit leerem Wert ist kein gültiger Kopfwert und scheitert schon
+vor dem Verbindungsaufbau. Nie wieder von Hand zusammensetzen.
+
+Der Datenschutz-Nachweis erkennt die eigene Box über `OLARES_ZONE` und
+wertet sie nicht als Fremdanbieter.
 
 ---
 

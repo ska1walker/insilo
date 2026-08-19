@@ -5,7 +5,7 @@
 > **Vertrieb:** über aimighty.de
 > **Plattform:** Olares OS (Kubernetes-basiert)
 > **Status:** Phase 1 — MVP-Setup
-> **Letzte Aktualisierung:** Mai 2026
+> **Letzte Aktualisierung:** August 2026 (v0.1.73)
 
 ---
 
@@ -39,11 +39,17 @@ Das ist die wichtigste Architekturentscheidung des Projekts. Olares OS ist kein 
 - Frontend (Next.js 15 PWA)
 - Backend (FastAPI)
 - Whisper-Service (faster-whisper auf GPU)
-- Ollama-Container (Qwen 2.5 14B auf GPU)
 - BGE-M3 Embedding-Service
 - Celery-Worker für Background-Jobs
 
 Alle laufen als separate Deployments im Namespace `insilo-<username>`, kommunizieren per Kubernetes-DNS.
+
+**Kein eigenes LLM.** Insilo bringt seit dem LiteLLM-Umstieg keinen
+Ollama-Container mehr mit — das spart ein 4-GB-Image und einen GPU-Slot.
+Das Sprachmodell spricht Insilo als OpenAI-kompatiblen Endpunkt an;
+üblicherweise die LiteLLM-App auf derselben Box. **Es gibt bewusst keinen
+Vorgabewert** für die Adresse (siehe `docs/HANDOFF.md`, Abschnitt
+„Gelöst in v0.1.72"): der Nutzer trägt sie unter `/einstellungen` ein.
 
 ---
 
@@ -92,13 +98,14 @@ Aus dem offiziellen Olares Deployment Guide:
 - **Datenbank-Client:** asyncpg + SQLAlchemy 2.x (kein Supabase-Client mehr)
 - **Background-Jobs:** Celery mit KVRocks als Broker
 - **Audio-Verarbeitung:** Aufruf an internen Whisper-Service
-- **LLM-Calls:** Aufruf an internen Ollama-Service
+- **LLM-Calls:** OpenAI-kompatibler Endpunkt, Adresse pro Org aus `org_settings`
 - **Embeddings:** Aufruf an internen BGE-M3-Service
 
 ### KI-Services (jeweils eigener Container)
 - **Whisper:** `faster-whisper` mit `large-v3` Modell
 - **Speaker Diarization:** pyannote.audio (über WhisperX)
-- **LLM:** Ollama mit `qwen2.5:14b-instruct-q4_K_M`
+- **LLM:** kein eigener Container — externer OpenAI-kompatibler Endpunkt
+  (auf der Box: LiteLLM), Modellname frei konfigurierbar
 - **Embeddings:** BGE-M3 (multilingual, Apache 2.0)
 
 ### Datenbank-Strategie
@@ -175,12 +182,10 @@ insilo/
     │   ├── deployment-frontend.yaml
     │   ├── deployment-backend.yaml
     │   ├── deployment-whisper.yaml
-    │   ├── deployment-ollama.yaml
     │   ├── deployment-embeddings.yaml
     │   ├── deployment-worker.yaml
-    │   ├── service-frontend.yaml
-    │   ├── service-backend.yaml
-    │   └── ...
+    │   ├── services.yaml            # alle ClusterIP-Services
+    │   └── configmap-migrations.yaml
     └── README.md
 ```
 

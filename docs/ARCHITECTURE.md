@@ -39,10 +39,12 @@
 │   │                      │                                        │   │
 │   │       ┌──────────────┼──────────────┐                        │   │
 │   │       ▼              ▼              ▼                        │   │
-│   │  ┌─────────┐  ┌──────────┐  ┌──────────────┐                │   │
-│   │  │ whisper │  │  ollama  │  │  embeddings  │                │   │
-│   │  │  (GPU)  │  │   (GPU)  │  │   (BGE-M3)   │                │   │
-│   │  └─────────┘  └──────────┘  └──────────────┘                │   │
+│   │  ┌─────────┐  ┌──────────────┐   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐       │   │
+│   │  │ whisper │  │  embeddings  │    LLM-Endpunkt               │   │
+│   │  │  (GPU)  │  │   (BGE-M3)   │    OpenAI-kompatibel          │   │
+│   │  └─────────┘  └──────────────┘   └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘       │   │
+│   │                                   nicht Teil von Insilo:     │   │
+│   │                                   Adresse aus org_settings   │   │
 │   │                                                              │   │
 │   │       worker (Celery, kein eigener Service)                  │   │
 │   └──────────────────┬───────────────────────────────────────────┘   │
@@ -105,9 +107,10 @@
    ────────────────
    Zweiter Task "summarize_meeting" startet automatisch
    System-Prompt aus templates Tabelle
-   HTTP-Call:
-     POST http://ollama.insilo-<user>.svc.cluster.local:11434/api/generate
-   Modell: qwen2.5:14b-instruct-q4_K_M
+   HTTP-Call an den konfigurierten OpenAI-kompatiblen Endpunkt:
+     POST {org_settings.llm_base_url}/chat/completions
+   Modell: frei konfigurierbar (Box: LiteLLM, z. B. qwen3.6)
+   Ohne eingetragene Adresse: übersprungen, Status bleibt "transcribed"
    Strukturiertes JSON-Output gemäß Template-Schema
    Speicherung: summaries Tabelle (JSONB)
 
@@ -169,11 +172,15 @@
 - Modell: large-v3 (~3 GB) lokal in `/app/cache/models/`
 - GPU: 1× NVIDIA, ~3 GB VRAM
 
-**Ollama-Service**
-- Container: offizielles `ollama/ollama:latest`
-- Endpoint: HTTP-API auf Port 11434
-- Modell: `qwen2.5:14b-instruct-q4_K_M` (~9 GB im VRAM)
-- GPU: 1× NVIDIA, ~10 GB VRAM
+**LLM — kein eigener Container**
+- Insilo bringt kein Ollama mehr mit (spart 4-GB-Image + GPU-Slot)
+- Angesprochen wird ein **OpenAI-kompatibler Endpunkt**:
+  `POST {base_url}/chat/completions`, Kopfzeile `Authorization: Bearer …`
+  **nur wenn ein Schlüssel hinterlegt ist** (`llm_config.auth_header()`)
+- Auf der Box üblicherweise die LiteLLM-App, über ihre **öffentliche**
+  Adresse — der clusterinterne Weg ist durch Envoy gesperrt
+- **Kein Vorgabewert**: Adresse pro Org in `org_settings`, eingetragen
+  unter `/einstellungen` (Begründung in `docs/HANDOFF.md`)
 
 **Embeddings-Service**
 - Container: Python 3.11 + sentence-transformers
@@ -309,7 +316,7 @@ entrances:
 
 Die API ist erreichbar, aber hat kein Icon auf dem Olares-Desktop.
 
-**Wichtig:** Whisper, Ollama, Embeddings sind **interne Services ohne Entrance**. Sie sind nur namespace-intern per Kubernetes-DNS erreichbar.
+**Wichtig:** Whisper und Embeddings sind **interne Services ohne Entrance**. Sie sind nur namespace-intern per Kubernetes-DNS erreichbar. Der LLM-Endpunkt gehört nicht zu Insilo und wird über seine konfigurierte Adresse angesprochen.
 
 ---
 

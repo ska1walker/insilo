@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from app.auth import CurrentUser, get_current_user
 from app.config import settings as env_settings
 from app.db import acquire
-from app.llm_config import load_llm_config
+from app.llm_config import auth_header, load_llm_config
 
 router = APIRouter(prefix="/api/v1", tags=["settings"])
 
@@ -100,21 +100,23 @@ async def test_settings(
     body: TestRequest | None = None,
     user: CurrentUser = Depends(get_current_user),
 ) -> TestResult:
-    """Test LLM connection — uses form values if provided, otherwise DB values."""
-    use_url = ""
-    use_key = ""
-    use_model = ""
+    """Testet die LLM-Verbindung — Formularwerte schlagen die gespeicherten.
 
-    if body and (body.llm_base_url.strip() or body.llm_api_key.strip() or body.llm_model.strip()):
-        use_url = body.llm_base_url.strip()
-        use_key = body.llm_api_key.strip()
-        use_model = body.llm_model.strip()
-    else:
-        async with acquire() as conn:
-            cfg = await load_llm_config(conn, user.org_id)
-            use_url = cfg.base_url or ""
-            use_key = cfg.api_key or ""
-            use_model = cfg.model or ""
+    Feldweise, nicht als Block: das Schlüssel-Feld trägt die Zusage „leer
+    lassen, um den Schlüssel beizubehalten". Wurde der Block als Ganzes
+    übernommen, sobald *irgendein* Feld gefüllt war, ging der Test mit
+    leerem Schlüssel hinaus — und scheiterte an einem `Bearer `-Kopf, den
+    httpx zu Recht ablehnt.
+    """
+    async with acquire() as conn:
+        cfg = await load_llm_config(conn, user.org_id)
+
+    def _waehle(aus_formular: str, gespeichert: str) -> str:
+        return aus_formular.strip() or (gespeichert or "")
+
+    use_url = _waehle(body.llm_base_url if body else "", cfg.base_url)
+    use_key = _waehle(body.llm_api_key if body else "", cfg.api_key)
+    use_model = _waehle(body.llm_model if body else "", cfg.model)
 
     if not use_url:
         return TestResult(ok=False, detail="Keine Endpunkt-URL konfiguriert.")
@@ -129,9 +131,9 @@ async def test_settings(
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
                 resp = await client.post(
-                    f"{use_url}/chat/completions",
+                    f"{use_url.rstrip('/')}/chat/completions",
                     json=payload,
-                    headers={"Authorization": f"Bearer {use_key}"},
+                    headers=auth_header(use_key),
                 )
     except httpx.ConnectError as exc:
         return TestResult(

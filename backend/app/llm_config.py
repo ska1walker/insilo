@@ -33,6 +33,23 @@ class LLMConfig:
         """
         return bool(self.base_url.strip())
 
+    @property
+    def auth_header(self) -> dict[str, str]:
+        """Kopfzeile für den Endpunkt — ohne Schlüssel gar keine.
+
+        `Bearer ` mit leerem Wert ist kein gültiger Kopfwert; httpx lehnt
+        ihn mit „Illegal header value" ab, bevor eine Verbindung zustande
+        kommt. Seit v0.1.72 ist der leere Schlüssel der Normalfall (kein
+        Vorgabewert mehr), und lokale Endpunkte verlangen ohnehin keinen.
+        """
+        return auth_header(self.api_key)
+
+
+def auth_header(api_key: str) -> dict[str, str]:
+    """Wie `LLMConfig.auth_header`, für Aufrufer ohne fertige Konfiguration."""
+    key = (api_key or "").strip()
+    return {"Authorization": f"Bearer {key}"} if key else {}
+
 
 async def load_llm_config(conn: asyncpg.Connection, org_id: UUID) -> LLMConfig:
     row = await conn.fetchrow(

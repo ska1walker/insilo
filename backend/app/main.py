@@ -16,6 +16,7 @@ from app.auth import CurrentUser, get_current_user
 from app.config import settings
 from app.db import acquire, close_pool, init_pool
 from app.errors import locale_middleware
+from app.llm_config import auth_header
 from app.routers import (
     api_keys,
     audio,
@@ -123,7 +124,7 @@ async def health_llm() -> dict:
         async with httpx.AsyncClient(timeout=3) as client:
             r = await client.get(
                 f"{base.rstrip('/')}/models",
-                headers={"Authorization": f"Bearer {key}"},
+                headers=auth_header(key),
             )
             return {"status": "ok" if r.status_code < 500 else "error", "service": "llm"}
     except Exception as exc:

@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 
 from app.egress import ist_boxintern, ist_eigene_zone
-from app.llm_config import LLMConfig
+from app.llm_config import LLMConfig, auth_header
 
 # ─── bleibt in der Box ────────────────────────────────────────────────
 
@@ -162,3 +162,33 @@ def test_leere_adresse_gilt_weder_als_intern_noch_als_eigene_box() -> None:
     prüft der Router über `eingerichtet`.
     """
     assert ist_eigene_zone("", ZONE) is False
+
+
+# ─── Kopfzeile zum Endpunkt ───────────────────────────────────────────
+
+
+def test_ohne_schluessel_keine_kopfzeile() -> None:
+    """`Bearer ` mit leerem Wert ist kein gültiger Kopfwert.
+
+    httpx lehnt ihn mit „Illegal header value" ab, bevor die Verbindung
+    zustande kommt — der Nutzer sah einen Verbindungsfehler, wo der
+    Endpunkt nie angesprochen wurde. Seit v0.1.72 ist der leere Schlüssel
+    der Normalfall, also darf er keinen Fehler mehr erzeugen.
+    """
+    assert auth_header("") == {}
+    assert auth_header("   ") == {}
+    assert auth_header(None) == {}  # type: ignore[arg-type]
+
+
+def test_mit_schluessel_kopfzeile_gesetzt() -> None:
+    assert auth_header("sk-123") == {"Authorization": "Bearer sk-123"}
+    # Umschließende Leerzeichen aus dem Formular fallen weg — sonst wäre
+    # der Kopfwert wieder ungültig.
+    assert auth_header("  sk-123  ") == {"Authorization": "Bearer sk-123"}
+
+
+def test_konfiguration_liefert_dieselbe_kopfzeile() -> None:
+    ohne = LLMConfig(base_url="https://llm.example/v1", api_key="", model="m")
+    mit = LLMConfig(base_url="https://llm.example/v1", api_key="sk-9", model="m")
+    assert ohne.auth_header == {}
+    assert mit.auth_header == {"Authorization": "Bearer sk-9"}

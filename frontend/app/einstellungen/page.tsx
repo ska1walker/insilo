@@ -209,7 +209,7 @@ export default function EinstellungenPage() {
 
         <Field
           label="Endpunkt-URL"
-          hint="z. B. https://api.openai.com/v1 oder http://litellm-svc.litellm-…/v1"
+          hint="z. B. https://llm.ihre-box.olares.de/v1 oder https://api.openai.com/v1"
           placeholder={s.defaults.llm_base_url}
         >
           <input

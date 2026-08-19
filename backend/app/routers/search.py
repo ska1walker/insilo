@@ -193,7 +193,7 @@ async def ask(
             resp = await client.post(
                 f"{llm.base_url}/chat/completions",
                 json=payload,
-                headers={"Authorization": f"Bearer {llm.api_key}"},
+                headers=llm.auth_header,
             )
             resp.raise_for_status()
             data = resp.json()

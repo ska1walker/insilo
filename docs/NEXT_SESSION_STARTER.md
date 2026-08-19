@@ -13,10 +13,11 @@ Lies dich ein:
 2. **`docs/HANDOFF.md`** — Status + Learnings. **Besonders der Header
    oben ($1) sowie §7g „v0.1.14 → v0.1.16 Lessons".**
 
-**Stand:** **v0.1.76 läuft auf der Box** (Helm-Rev 54, verifiziert
-19.8.2026) und liegt als Tag + Chart im Repo. Box:
-`olares@192.168.1.17` (Olares-User `kaivostudio`, Box-URL
-`https://e5d605f3.kaivostudio.olares.de`).
+**Stand:** **v0.1.81 läuft auf der Box** (Helm-Rev 5 nach der
+Neuinstallation, verifiziert 19.8.2026: alle fünf Pods auf 0.1.81-Images,
+sechs von sechs Health-Checks grün) und liegt als Tag + Chart im Repo
+sowie im AIMighty-Markt. Box: `olares@192.168.1.17` (Olares-User
+`kaivostudio`, Box-URL `https://e5d605f3.kaivostudio.olares.de`).
 
 **⚠️ Bevor du am LLM etwas änderst:** Der Chart hat seit v0.1.72
 **absichtlich keinen Vorgabewert** für `LLM_BASE_URL`. Der clusterinterne
@@ -103,6 +104,30 @@ Feature-Set:
   Drift. `AGENTS.md` committed. 4 Ruff-Violations gefixt, die den
   `ci`-Workflow seit v0.1.59 rot hielten.
 
+**Am 19. August — v0.1.76 bis v0.1.81:**
+
+- **Manifest auf apiVersion v3** (v0.1.76), **Spracherkennung als
+  eintragbarer Endpunkt** (v0.1.77) — ohne Eintrag transkribiert weiter
+  der mitgelieferte Whisper, kein Ton verlässt die Box. `/health/stt`
+  meldet `mode=local` oder `mode=external`.
+- **Insilo liegt im AIMighty-Markt** (`aimighty-market.pages.dev`),
+  Eintrag in `functions/_apps.ts` + Chart base64 in `functions/_lib.ts`.
+- **Eine Deinstallation über den Markt löscht die Datenbank.** `/app/data`
+  überlebt, die Datenbank nicht — samt neuer Org-Kennung, wodurch
+  vorhandene Aufnahmen unter `audio/<org-id>/` in der Luft hängen.
+  Antwort: `backend/app/konfiguration.py` schreibt einen Abzug der
+  Einrichtung neben das Audio (0600, **enthält Zugangsdaten**) und liest
+  ihn beim Start zurück, wenn die Datenbank leer ist. **Er funktioniert
+  erst ab v0.1.81** — davor zielte er auf `APP_DATA_DIR`, also den
+  Host-Pfad des Volumes, und fragte eine gedroppte Spalte ab.
+- **13 herrenlose Aufnahmen wieder angehängt** (19.8., kein Release):
+  Besprechungszeilen unter der laufenden Organisation angelegt, Dateien
+  in deren Verzeichnis kopiert (die Audio-Ausgabe prüft `user.org_id`
+  gegen die Kennung im Pfad), neu transkribiert — 10 mit Text und
+  Zusammenfassung, 3 nachweislich stumm (auch `large-v3` findet dort kein
+  Wort). Die alten Kopien sind nach sha256-Abgleich gelöscht. Herkunft
+  steht in `meetings.metadata.wiederhergestellt`.
+
 **Seit dem 18./19. August — v0.1.66 bis v0.1.74, auf der Box:**
 
 - **Rebrand auf das AImighty-Designsystem** — Geist-Schriften, Hanseatenblau,
@@ -131,12 +156,18 @@ Feature-Set:
 - **Datenschutz-Nachweis unterscheidet eigene Box von Fremdanbieter**
   (v0.1.70) — sonst hätte er dauerhaft gewarnt, obwohl das Modell auf
   derselben Maschine läuft.
-- **⚠️ Beim Box-Update immer die Image-Tags mitgeben.** `--reuse-values`
-  spielt die beim Installieren gespeicherten Werte zurück — darin stehen
-  die ALTEN Tags. Ohne die vier `--set images.*.tag=X` aktualisiert sich
-  das Chart, Helm meldet Erfolg, der Markt zeigt die neue Version, und
-  die Pods laufen unverändert weiter. Genau so ging v0.1.66 zunächst ins
-  Leere (Chart 0.1.66 bei Images 0.1.56). Danach prüfen:
+- **⚠️ Ein Upgrade friert die Werte ein — und meldet trotzdem Erfolg.**
+  Olares spielt beim Aktualisieren die bei der *Installation*
+  gespeicherten Werte wieder ein und übernimmt die Vorgaben des neuen
+  Charts nicht. Zweimal darauf hereingefallen: v0.1.66 (Chart 0.1.66 bei
+  Images 0.1.56, per Direkt-Upgrade) und v0.1.80 (Chart 0.1.80 bei Images
+  0.1.77, über den Markt — Kachel, `helm history` und alle sechs
+  Health-Checks meldeten die neue Version, nur die Pods trugen die alten
+  Bilder). **Seit v0.1.81 hängt der Image-Tag an `.Chart.AppVersion`**,
+  nicht an `.Values.images.*.tag`; die Metadaten kommen frisch an, die
+  Werte nicht. Ein `helm upgrade --reuse-values` reicht damit wieder.
+  **Trotzdem danach immer nachsehen, was wirklich läuft** — die
+  Erfolgsmeldung beweist nichts:
   `kubectl get pods -n insilo-kaivostudio -o jsonpath='{range .items[*]}{.spec.containers[*].image}{"\n"}{end}'`
 
 **Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**

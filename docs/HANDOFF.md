@@ -75,6 +75,44 @@
 >
 > ---
 >
+> ## Die verwaisten Aufnahmen sind zurück (19. August 2026)
+>
+> Der Abzug rettet künftige Installationen, nicht die vergangene. Auf der
+> Platte lagen **13 herrenlose Dateien** unter drei alten Org-Kennungen
+> (4,7 MB) — Reste aus drei Installationen. Sie hängen jetzt wieder an der
+> laufenden Organisation `fd03b796…`.
+>
+> **Kopiert, nicht verschoben.** `GET /api/v1/audio/{org_id}/{filename}`
+> prüft `user.org_id != org_id → 403`
+> (`backend/app/routers/audio.py`). Eine Zeile, die auf einen fremden
+> Org-Pfad zeigt, wäre also nicht abspielbar gewesen — die Datei muss
+> unter der laufenden Kennung liegen. Die Originale blieben bis zur
+> Prüfung liegen.
+>
+> **Der Dateiname ist die alte Besprechungs-ID** (`_audio_key()` baut
+> `<org>/<meeting>.webm`). Die wurde als neue ID übernommen, damit Pfad
+> und Zeile weiter zusammenpassen. `recorded_at` kommt aus der mtime, der
+> Titel folgt in Ortszeit derselben Form, die die App vergibt. Herkunft
+> steht in `meetings.metadata.wiederhergestellt`.
+>
+> **Ergebnis:** 10 mit Text und Zusammenfassung (6–194 Wörter), 3 leer.
+> Die drei wurden gegen den mitgelieferten `large-v3` gehalten — auch der
+> findet kein Wort, die Dateien sind stumm. Das kleine Speaches-Modell
+> trifft also keine Schuld. Ihre Dauer stammt aus dieser Gegenprobe, weil
+> ein leeres Transkript keine hergibt (`meetings.duration_sec` füllt sonst
+> der Browser beim Hochladen; für wiederhergestellte Dateien gibt es das
+> nicht, und im Backend-Container steckt kein ffprobe — der liegt im
+> Whisper-Pod, der `/app/data` nicht mountet).
+>
+> **Gelöscht wurde erst nach Beweis:** für jede der 13 Dateien musste die
+> Kopie existieren, ihr sha256 identisch sein und eine Besprechung darauf
+> zeigen. Danach 16 Besprechungen, davon 0 ohne Datei. Einen Papierkorb
+> gibt es hier nicht — Insilos Soft-Delete gilt für Besprechungen über die
+> Oberfläche, nicht für Dateien neben der Datenbank. Bei Kundendaten
+> gehört vorher eine Sicherung des Datenverzeichnisses dazu.
+>
+> ---
+>
 > ## Ein Markt-Upgrade tauscht die Images nicht aus (19. August 2026)
 >
 > **Das Upgrade auf 0.1.80 lief über den Markt sauber durch — und die Box

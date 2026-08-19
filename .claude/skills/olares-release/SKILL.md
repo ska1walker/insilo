@@ -55,35 +55,51 @@ Für Insilo heißt das konkret — vor jedem Markt-Schritt:
 - das Feature, das die Version rechtfertigt, **gegen die laufende App**
   geprüft — nicht gegen den Diff
 
-## 3. Reihenfolge: erst ausrollen, dann hochladen
+## 3. Ein Upgrade friert die Werte ein — und meldet trotzdem Erfolg
 
-Beim Upload von v0.1.74 gemessen: der Markt **führt** beim Bestätigen ein
-`helm upgrade` aus (Revision 52 → 53). Die Pods blieben trotzdem stehen,
-weil das gerenderte Ergebnis identisch war — das hochgeladene Chart trug
-die Tags, die schon liefen.
+**Die Regel:** Olares spielt beim Aktualisieren die bei der *Installation*
+gespeicherten Werte wieder ein und übernimmt die Vorgaben des neuen Charts
+nicht. Was in `values.yaml` steht, bleibt auf dem Stand der ersten
+Installation stehen.
 
-Daraus die Reihenfolge, die trägt:
+**Zweimal daran gescheitert, beide Male mit Erfolgsmeldung:**
+
+- v0.1.66 — Chart 0.1.66 bei Images 0.1.56, per Direkt-Upgrade.
+- v0.1.80 — Chart 0.1.80 bei Images 0.1.77, über den Markt. Kachel,
+  `helm history` und alle sechs Health-Checks meldeten die neue Version;
+  nur die Pods trugen die alten Bilder.
+
+**Die Lösung (v0.1.81):** der Image-Tag hängt an den Chart-Metadaten,
+nicht an den Werten — `{{ .Values.images.X.tag | default .Chart.AppVersion }}`.
+`Chart.AppVersion` kam nachweislich frisch an, während die Werte
+zurückgespielt wurden. `values.yaml` trägt `tag: ""`, und
+`scripts/check-chart.sh` lehnt einen Pin auf die eigene Chart-Version ab.
+
+Damit tut es ein Markt-Update wieder. Beim Direkt-Ausrollen:
 
 ```bash
-# 1. ausrollen, mit expliziten Tags (--reuse-values spielt sonst die ALTEN zurück)
 scp dist/insilo-X.Y.Z.tgz olares@192.168.1.17:/tmp/
 ssh olares@192.168.1.17 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
-  helm upgrade insilo /tmp/insilo-X.Y.Z.tgz -n insilo-kaivostudio --reuse-values \
-  --set images.frontend.tag=X.Y.Z --set images.backend.tag=X.Y.Z \
-  --set images.whisper.tag=X.Y.Z --set images.embeddings.tag=X.Y.Z'
+  helm upgrade insilo /tmp/insilo-X.Y.Z.tgz -n insilo-kaivostudio --reuse-values'
 
-# 2. nachsehen, was WIRKLICH läuft — die Helm-Meldung genügt nicht
+# nachsehen, was WIRKLICH läuft — die Helm-Meldung genügt nicht
 ssh olares@192.168.1.17 "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl get pods \
   -n insilo-kaivostudio -o custom-columns='N:.metadata.name,I:.spec.containers[*].image'"
-
-# 3. erst dann hochladen
-olares-cli market upload dist/insilo-X.Y.Z.tgz     # oder über die Market-UI
 ```
 
-Umgekehrt — erst hochladen und hoffen — hängt das Ergebnis an den
-gespeicherten Helm-Werten. Genau daran ist v0.1.66 gescheitert: Chart
-0.1.66 bei Images 0.1.56, Helm meldete Erfolg, der Markt zeigte die neue
-Version, die Pods liefen unverändert weiter.
+Bringt das Release **neue Wertschlüssel** mit, müssen die trotzdem per
+`--set` dazu — dieselbe Einfrier-Regel, andere Richtung. Siehe §4a;
+`scripts/release.sh` gibt den vollständigen Befehl aus.
+
+**Ausnahme:** hat ein früheres Release die Tags per `--set` gepinnt, spielt
+`--reuse-values` genau diese Pins zurück. Dann einmalig leeren:
+`--set images.frontend.tag= --set images.backend.tag= --set images.whisper.tag=
+--set images.embeddings.tag=`. Danach sind sie leer gespeichert und der
+Tag folgt wieder der Chart-Version. Ob noch ein Pin steht, verrät
+`helm get values insilo -n insilo-kaivostudio | grep -A9 '^images:'`.
+
+**Der Schritt 2 bleibt Pflicht.** Ein Upgrade, das `running` meldet, ist
+kein Beweis, dass neue Programmteile laufen — das war der ganze Fehler.
 
 ## 4. Das Manifest steht auf v3 — und warum das nötig war
 
@@ -129,10 +145,11 @@ exakt `>=1.12.6-0`.
 
 ## 4a. Beim Ausrollen: `--reuse-values` verschluckt neue Schlüssel
 
-Bekannt war, dass `--reuse-values` alte **Image-Tags** zurückspielt. Der
-Umkehrfall kam mit v0.1.76 dazu: Helm merged bei `--reuse-values` die
-**Vorgabewerte des neuen Charts nicht**. Ein Schlüssel, den das Chart erst
-in diesem Release bekommt, fehlt dann schlicht:
+Dieselbe Einfrier-Regel wie in §3, nur andersherum. Dort kommt ein
+**alter** Wert zurück; hier kommt ein **neuer** gar nicht erst an: Helm
+merged bei `--reuse-values` die Vorgabewerte des neuen Charts nicht. Ein
+Schlüssel, den das Chart erst in diesem Release bekommt, fehlt dann
+schlicht (v0.1.76):
 
 ```
 Error: UPGRADE FAILED: ... at <index .Values.workloads "insilo-worker">:

@@ -5,7 +5,7 @@
 > **Vertrieb:** über aimighty.de
 > **Plattform:** Olares OS (Kubernetes-basiert)
 > **Status:** Phase 1 — MVP-Setup
-> **Letzte Aktualisierung:** August 2026 (v0.1.76)
+> **Letzte Aktualisierung:** 19. August 2026 (v0.1.81)
 
 ---
 
@@ -75,6 +75,25 @@ Aus dem offiziellen Olares Deployment Guide:
 7. **Deployment-Template-Regel:** `metadata.name` muss der *literale* App-Name sein. `{{ .Release.Name }}` ist nicht erlaubt.
 
 8. **Datenbank-Connection-Vars werden injiziert.** Wir bekommen `.Values.postgres.host`, `.Values.postgres.password` etc. zur Laufzeit. **Nicht hardcoden.**
+
+9. **Ein Upgrade friert die Werte ein.** Olares spielt beim Aktualisieren
+   die bei der *Installation* gespeicherten Werte wieder ein und übernimmt
+   die Vorgaben des neuen Charts **nicht**. Was in `values.yaml` steht,
+   bleibt damit auf dem Stand der ersten Installation stehen — dauerhaft.
+   Deshalb darf nichts, das sich pro Version ändert, dort seine einzige
+   Quelle haben. Der Image-Tag hängt seit v0.1.81 an `.Chart.AppVersion`
+   (Metadaten kommen frisch an), nicht an `.Values.images.*.tag`.
+   Hintergrund und Beweis: `docs/HANDOFF.md`, Abschnitt „Ein Markt-Upgrade
+   tauscht die Images nicht aus".
+
+10. **Eine Deinstallation löscht die Datenbank.** `/app/data` überlebt
+    (das ist `permission.appData`), die Datenbank nicht — Olares legt sie
+    neu an, samt neuer Org-Kennung. Weil Audio unter `audio/<org-id>/`
+    liegt, hängen die vorhandenen Aufnahmen danach in der Luft. Dagegen
+    schreibt `backend/app/konfiguration.py` einen Abzug der Einrichtung
+    neben das Audio und liest ihn beim Start zurück, **wenn die Datenbank
+    leer ist** — mit derselben Org-Kennung. Der Abzug **enthält
+    Zugangsdaten** und liegt mit Rechten 0600.
 
 ---
 
@@ -287,7 +306,7 @@ hüpfenden Knöpfe.
 4. **Bei DB-Schema-Änderungen:** Migration in `supabase/migrations/0NNN_*.sql` anlegen, RLS auf jede neue Tabelle, **dann `python3 scripts/regen-migrations.py` laufen lassen** — das mirroret die SQL in `olares/files/` und regeneriert die inlinete `olares/templates/configmap-migrations.yaml`. CI bricht sonst beim Drift-Check ab.
 5. **Bei Storage:** Nur `/app/data/`, `/app/cache/`, `/app/Home/`. Niemals beliebige Pfade.
 6. **Bei Olares-Manifest- oder Chart-Änderungen:** **Vor dem Commit `bash scripts/check-chart.sh` laufen lassen.** Das Script codiert die Phase-4-Learnings — Version-Sync (Marc's Golden Rule), keine `.Files.Get`, keine Helm-Hooks (chicken-and-egg `ns-owner`-Label), kein `runAsInternal: true`, SQL-Drift, helm lint + template. Vollständiges Detail in `docs/HANDOFF.md §7g`. Selbe Checks laufen in CI (`ci.yml.chart-checks`) und blockieren Image-Builds (`release.yml.preflight`).
-7. **Bei neuem Git-Tag `v*.*.*`:** Tag-Name muss `olares/Chart.yaml.version` matchen — `release.yml` bricht sonst ab. Am einfachsten via `scripts/release.sh X.Y.Z` — bumpt alle 4 Versionsstellen + image-tags, regen-Migrationen, check-chart, helm package, commit, tag, push, copy to `~/Downloads/`. Flag `--chart-only` lässt image-tags in `values.yaml` stehen — das Chart zieht dann weiter die bewährten Images. `--dry-run` zeigt was passieren würde. `--no-push` stoppt lokal nach Tag.
+7. **Bei neuem Git-Tag `v*.*.*`:** Tag-Name muss `olares/Chart.yaml.version` matchen — `release.yml` bricht sonst ab. Am einfachsten via `scripts/release.sh X.Y.Z` — bumpt alle 4 Versionsstellen, regen-Migrationen, check-chart, helm package, commit, tag, push, copy to `~/Downloads/`. **Image-Tags werden nicht mehr gebumpt:** sie hängen seit v0.1.81 an `Chart.AppVersion` (siehe Constraint 9), `values.yaml` trägt `tag: ""`. Flag `--chart-only` schreibt dort ausnahmsweise einen Pin auf die Vorversion — das Chart zieht dann weiter die bewährten Images und der Image-Build entfällt. `--dry-run` zeigt was passieren würde. `--no-push` stoppt lokal nach Tag.
 
    **Wichtig zum Zusammenspiel mit `release.yml`:** der Workflow leitet die Image-Version aus dem **Git-Tag** ab, nicht aus `values.yaml`. Bis v0.1.61 lief der Build bei `--chart-only` deshalb trotzdem durch und erzeugte Images, die niemand referenziert (die frühere Behauptung „spart GH-Actions-Build" war schlicht falsch). Seit v0.1.61 überspringt `release.yml` den Build, wenn `values.yaml` den gepushten Tag nicht referenziert. Falls das mal fälschlich greift: `release`-Workflow manuell via `workflow_dispatch` mit expliziter Version starten.
 8. **Bei Veröffentlichung in einen Store:** Skill `olares-release`

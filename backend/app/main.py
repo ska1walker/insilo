@@ -6,12 +6,14 @@ vor unserem Pod und injiziert die User-Identität über den Header X-Bfl-User.
 Lokal mocken wir den Header im Frontend.
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from app import konfiguration
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
 from app.db import acquire, close_pool, init_pool
@@ -36,9 +38,30 @@ from app.routers import settings as settings_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_pool()
+
+    # Konfiguration zurücklesen, falls die Datenbank leer ist. Das ist der
+    # Fall nach einer Neuinstallation: Olares legt die Datenbank dabei neu
+    # an, während /app/data überlebt. Ohne das bekäme die Organisation eine
+    # neue Kennung, und die vorhandenen Aufnahmen unter audio/<org-id>/
+    # hätten niemanden mehr, zu dem sie gehören.
+    try:
+        async with acquire() as conn:
+            if await konfiguration.wiederherstellen(conn):
+                log.info("Konfiguration aus dem Datenverzeichnis übernommen")
+            else:
+                # Nichts wiederherzustellen — dann wenigstens einen
+                # aktuellen Abzug hinterlassen, damit die erste
+                # Sicherung nicht auf die erste Änderung warten muss.
+                await konfiguration.sichern_leise(conn)
+    except Exception as exc:  # noqa: BLE001
+        # Weder Abzug noch Wiederherstellung dürfen den Start verhindern.
+        log.warning("Konfigurations-Abzug beim Start übersprungen: %s", exc)
+
     yield
     await close_pool()
 
+
+log = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Insilo API",
@@ -51,6 +74,36 @@ app = FastAPI(
 
 # CORS — locker, weil Olares Envoy davor sitzt. Lokal brauchen wir es für
 # den Browser, der von http://localhost:3000 aus mit dem Backend redet.
+# ---------------------------------------------------------------------------
+# Konfigurations-Abzug nach jeder Änderung
+#
+# Eine Middleware statt eines Aufrufs in jedem Endpunkt: das deckt auch die
+# Endpunkte ab, die es heute noch nicht gibt, und kann nicht an einer
+# Stelle vergessen werden. Nur die Pfade, die wirklich Konfiguration
+# ändern — eine Aufnahme hochzuladen soll keinen Abzug auslösen.
+# ---------------------------------------------------------------------------
+
+KONFIG_PFADE = ("/settings", "/webhooks", "/speakers", "/api-keys", "/templates")
+
+
+@app.middleware("http")
+async def konfig_abzug(request: Request, call_next):
+    antwort = await call_next(request)
+    if (
+        request.method in ("POST", "PUT", "PATCH", "DELETE")
+        and antwort.status_code < 400
+        and any(p in request.url.path for p in KONFIG_PFADE)
+    ):
+        try:
+            async with acquire() as conn:
+                await konfiguration.sichern_leise(conn)
+        except Exception as exc:  # noqa: BLE001
+            # Der Abzug ist eine Bequemlichkeit, keine Bedingung. Die
+            # Änderung steht bereits in der Datenbank.
+            log.warning("Konfigurations-Abzug übersprungen: %s", exc)
+    return antwort
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],

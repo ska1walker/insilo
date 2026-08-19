@@ -17,6 +17,44 @@
 >
 > ---
 >
+> ## Eine Deinstallation löscht die Datenbank (19. August 2026)
+>
+> **Beim Deinstallieren über den Markt legt Olares die App-Datenbank neu
+> an.** `/app/data` überlebt (das ist `permission.appData`), die Datenbank
+> nicht. Am 19.8. hat das gekostet: Besprechungen, Transkripte,
+> Zusammenfassungen, Sprecherkatalog und Einstellungen waren weg, während
+> zehn Tonaufnahmen weiter auf der Platte lagen.
+>
+> **Schlimmer als der Verlust war die Trennung.** Die neue Installation
+> legte eine neue Organisation an — neue Kennung. Audio liegt unter
+> `audio/<org-id>/`, also zeigte keine Datenbankzeile mehr auf die
+> vorhandenen Dateien. Belegt durch `users.created_at`, das nach der
+> Neuinstallation stand.
+>
+> **Antwort (v0.1.79): ein Abzug neben dem Audio.**
+> `backend/app/konfiguration.py` schreibt die Konfiguration nach jeder
+> Änderung als `/app/data/konfiguration.json` und liest sie beim Start
+> zurück, **wenn die Datenbank leer ist**. Damit ist ein Backup von
+> `/app/data` vollständig, und die **Org-Kennung bleibt dieselbe** — die
+> Aufnahmen finden wieder Anschluss.
+>
+> Drin: Organisation samt Kennung, Nutzer und Rollen, LLM- und
+> STT-Einstellungen, Webhooks, Vorlagen-Anpassungen, Sprecherkatalog mit
+> Stimmabdrücken, Zugriffsschlüssel. **Nicht** drin: Besprechungen,
+> Transkripte, Zusammenfassungen — das sind Gesprächsinhalte, kein
+> Einrichtungszustand.
+>
+> **Die Datei enthält Zugangsdaten** (API-Schlüssel, Webhook-Geheimnisse).
+> Sie liegt mit 0600 und sagt es im Kopf. Wer `/app/data` sichert, sichert
+> sie mit — das gehört dem Kunden gesagt, nicht in eine Fußnote.
+>
+> Ausgelöst wird der Abzug von einer Middleware nach jeder erfolgreichen
+> Änderung unter `/settings`, `/webhooks`, `/speakers`, `/api-keys`,
+> `/templates` — nicht in zwölf Einzelaufrufen, die man an einer Stelle
+> vergisst.
+>
+> ---
+>
 > ## Manifest auf v3 — und was dabei falsch war (v0.1.76)
 >
 > **Der Auslöser:** Insilo sollte in den AIMighty-Markt. Beim Vergleich mit

@@ -21,7 +21,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.73              # = Chart.yaml.version
+  version: 0.1.74              # = Chart.yaml.version
   categories:
     - Productivity_v112
     - Utilities_v112
@@ -96,7 +96,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.73'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.74'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
@@ -129,11 +129,17 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.73 — Korrektur der Sprachmodell-Statusanzeige.
+    v0.1.74 — „Verbindung testen" funktioniert wieder.
 
-    - Die Statusanzeige des Sprachmodells prüft jetzt die tatsächlich
-      eingetragene Adresse statt der Vorgabe aus dem Deployment. Zuvor
-      konnte sie „nicht eingerichtet" melden, obwohl alles lief.
+    - Der Verbindungstest für das Sprachmodell schlug fehl, sobald das
+      Schlüsselfeld leer blieb — obwohl das Feld genau dafür da ist, den
+      hinterlegten Schlüssel beizubehalten. Leere Felder greifen jetzt auf
+      die gespeicherte Einstellung zurück.
+    - Endpunkte ohne API-Schlüssel werden ohne Schlüssel-Kopfzeile
+      angesprochen. Das betraf auch Zusammenfassung, Fragen-Funktion und
+      Statusanzeige.
+    - Das Beispiel unter „Endpunkt-URL" nannte eine Adresse, die auf der
+      Box nicht antworten kann. Ersetzt.
 
   developer: kaivo.studio
   website: https://kaivo.studio

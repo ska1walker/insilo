@@ -178,6 +178,30 @@ strict-semver-Prüfung scheitern — auf beiden Seiten, Ziel *und*
 installierte Version. Übrig bleibt uninstall + install. Diesen Fehler
 holen wir uns nicht freiwillig ins Haus.
 
+## 5a. ⚠️ Das Repo ist nicht die Wahrheit des Live-Markts (19. August 2026)
+
+`bayerhazard/aimighty-market` hat einen Deploy-Workflow, aber **das
+Cloudflare-Pages-Projekt wird auch direkt bespielt**, am Repo vorbei. Am
+19.8. um 10:40 lag Insilo 0.1.81 nachweislich live (Katalog geprüft,
+Chart byte-identisch). Zwei Stunden später fehlte Insilo im Katalog ganz
+— ohne dass ein weiterer Workflow-Lauf stattgefunden hätte, und mit vier
+Apps in *neueren* Versionen, als das Repo sie kennt.
+
+**Zwei Folgerungen:**
+
+1. **Nach dem Push prüfen reicht nicht.** Ein Eintrag kann später
+   verschwinden, ohne dass jemand das Repo anfasst. Vor jeder Aussage
+   „liegt im Markt" den Live-Katalog abfragen:
+   ```bash
+   curl -sS https://aimighty-market.pages.dev/api/v1/appstore/info \
+     | python3 -c "import sys,json; d=json.load(sys.stdin); \
+         print(sorted((a['name'], a['version']) for a in d['data']['apps'].values()))"
+   ```
+2. **Nie blind aus dem Repo deployen, um das zu reparieren.** Der Deploy
+   ersetzt den *ganzen* Katalog — ein Repo-Stand, der bei fremden Apps
+   älter ist, wirft die auf alte Versionen zurück. Das sind nicht unsere
+   Apps. Erst mit Marc klären, wessen Stand gilt.
+
 ## 6. Eigene Market Source aufsetzen
 
 Der ausführliche, in Betrieb erprobte Weg steht in

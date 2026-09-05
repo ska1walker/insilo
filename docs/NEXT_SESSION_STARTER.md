@@ -219,13 +219,13 @@ ssh olares@192.168.1.17 \
 
 | Bereich | Stand |
 |---|---|
-| Version | Chart **v0.1.65** (im Markt ✅), Images **0.1.60**. Box-Stand unverifiziert — zuletzt dokumentiert v0.1.49, Helm-Rev 35. `helm list -n insilo-kaivostudio` prüfen. |
+| Version | **v0.1.85** auf der Box, verifiziert 5.9.2026 (Helm-Rev 9, alle fünf Pods auf 0.1.85). |
 | Plattform | Olares OS (k3s) auf `192.168.1.17` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.60` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.85` |
 | Health | `/health`, `/health/db`, `/health/whisper`, `/health/llm`, `/health/embeddings` — alle echt seit v0.1.57 |
-| LLM | Per-Org konfigurierbar via `/einstellungen` (Default Olares-LiteLLM); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
+| LLM | Per-Org konfigurierbar via `/einstellungen` (**kein Vorgabewert**, siehe HANDOFF-Kopf); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
 | Sprecher-Katalog | pgvector(192)+HNSW, Cosine ≥ 0.5, FIFO-Mittelwert über 20 Samples |
 | Stimmprobe | „North Wind"-Fabel pro Sprache (v0.1.48), Whisper `/embed-only`-Endpoint |
@@ -236,7 +236,7 @@ ssh olares@192.168.1.17 \
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
-| Migrationen | 14 im Repo (0001–0014), alle auf der Box angewendet |
+| Migrationen | 17 im Repo (0001–0017), alle auf der Box angewendet |
 
 ## Offene Issues / Bekannte Stolpersteine
 
@@ -257,7 +257,7 @@ ssh olares@192.168.1.17 \
 1. `CLAUDE.md` — Briefing (insbes. neue Sprachregel)
 2. `docs/HANDOFF.md` — Status + Lessons (Header-Block oben: Manifest-Drift +
    PDB-Warnung; v0.1.44-Block für die Decoder-Lesson)
-3. `docs/DESIGN.md` — Designsystem (Weiß/Schwarz/Gold, formelle Anrede)
+3. `docs/DESIGN.md` — Designsystem (AImighty: Hanseatenblau/Gold, formelle Anrede)
 4. `frontend/messages/de.json` — Master für Übersetzungs-Keys; pull-up bei jeder neuen UI-String
 5. `frontend/i18n/request.ts` — Locale-Resolution & Cookie-Logik
 6. `backend/app/locale.py` + `backend/app/errors.py` — Backend-i18n (Resolver + DE/EN-Dict mit ContextVar-Middleware)

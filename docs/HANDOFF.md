@@ -19,8 +19,11 @@
 >
 > ## Torwächter und Zeilensicherheit (5. September 2026)
 >
-> **Ausgerollt und nachgemessen: v0.1.83 läuft auf der Box** (Helm-Rev 8,
-> alle fünf Pods auf 0.1.83-Images, alle sechs Health-Checks grün).
+> **Ausgerollt und nachgemessen: v0.1.85 läuft auf der Box** (Helm-Rev 9,
+> alle fünf Pods auf 0.1.85-Images, alle sechs Health-Checks grün,
+> `/health/stt` meldet `mode=external`). 0.1.84 war ein
+> `--chart-only`-Release für das neue Symbol, 0.1.85 hat die Bilder
+> nachgezogen, damit auch der Home-Bildschirm es zeigt.
 > Migrationen **0016** und **0017** sind angewandt.
 >
 > Der Datenbanknutzer der Box (`insilo_kaivostudio_insilo`) ist **kein

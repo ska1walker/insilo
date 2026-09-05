@@ -25,15 +25,6 @@
         "/Users/kai/Documents/apps/insilo/backend"
       ],
       "port": 8000
-    },
-    {
-      "name": "beacon-frontend",
-      "runtimeExecutable": "sh",
-      "runtimeArgs": [
-        "-c",
-        "BACKEND_URL=http://localhost:8010 npm run dev --prefix /Users/kai/beacon/frontend -- --port 3010"
-      ],
-      "port": 3010
     }
   ]
 }

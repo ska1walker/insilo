@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
-from app.db import acquire
+from app.db import acquire_as
 from app.locale import SUPPORTED, LocaleSource, resolve_locale
 
 router = APIRouter(prefix="/api/v1", tags=["locale"])
@@ -42,7 +42,7 @@ async def get_locale(
     user: CurrentUser = Depends(get_current_user),
     accept_language: str | None = Header(None, alias="Accept-Language"),
 ) -> LocaleRead:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             select
@@ -85,7 +85,7 @@ async def put_locale(
             f"unsupported locale: {raw!r}. Use one of {', '.join(SUPPORTED)} or null.",
         )
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         if payload.scope == "user":
             await conn.execute(
                 "update public.users set ui_locale = $2 where id = $1",

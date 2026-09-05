@@ -52,7 +52,7 @@ def test_intern(url: str) -> None:
         "https://api.openai.com/v1",
         "https://api.anthropic.com/v1",
         "https://generativelanguage.googleapis.com/v1",
-        "http://duo.aimighty.de/api",
+        "http://hub.example.com/api",
         # Öffentliche IP
         "http://8.8.8.8:11434/v1",
         # Sieht intern aus, ist es aber nicht

@@ -50,11 +50,24 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsNonRoot: true
+          # `--beat` bringt den Zeitplaner im Worker-Prozess mit, statt
+          # als zweites Deployment. Zulässig, weil genau ein Worker läuft
+          # (`workloads.insilo-worker.replicaCount: 1` auf einer
+          # Ein-Knoten-Box); bei mehreren Replikaten liefe der tägliche
+          # Aufräum-Job mehrfach. Der Zeitplan steht in
+          # `app/worker.py:beat_schedule`.
+          #
+          # Die Zustandsdatei des Beat gehört nach /app/cache: das
+          # Arbeitsverzeichnis im Bild ist nicht beschreibbar, und der
+          # Zeitplan ist wiederherstellbar — ein Verlust kostet einen
+          # ausgelassenen Lauf, keine Daten.
           command:
             - "celery"
             - "-A"
             - "app.worker:celery_app"
             - "worker"
+            - "--beat"
+            - "--schedule=/app/cache/celerybeat-schedule"
             - "-l"
             - "info"
             - "--concurrency=2"

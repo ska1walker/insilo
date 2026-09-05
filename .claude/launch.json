@@ -4,8 +4,36 @@
     {
       "name": "insilo-frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "frontend"
+      ],
       "port": 3000
+    },
+    {
+      "name": "insilo-backend",
+      "runtimeExecutable": "/Users/kai/Documents/apps/insilo/backend/.venv/bin/python",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--port",
+        "8000",
+        "--app-dir",
+        "/Users/kai/Documents/apps/insilo/backend"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "beacon-frontend",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "BACKEND_URL=http://localhost:8010 npm run dev --prefix /Users/kai/beacon/frontend -- --port 3010"
+      ],
+      "port": 3010
     }
   ]
 }

@@ -110,8 +110,44 @@ export async function createMeeting(args: {
   });
 }
 
+/**
+ * Legt die Besprechung in den Papierkorb. Die Tonaufnahme bleibt bis zum
+ * Ablauf der Frist liegen — bis v0.1.81 war sie sofort weg, und
+ * `deleted_at` damit eine Frist auf eine leere Hülle.
+ */
 export async function deleteMeeting(id: string): Promise<void> {
   await apiDelete<void>(`/api/v1/meetings/${id}`);
+}
+
+export type PapierkorbEintrag = {
+  id: string;
+  title: string;
+  recorded_at: string | null;
+  deleted_at: string | null;
+  /** Wann der Aufräum-Job sie endgültig entfernt. Null = keine Frist gesetzt. */
+  endgueltig_am: string | null;
+  status: MeetingStatus;
+  duration_ms: number;
+  byte_size: number;
+  audio_vorhanden: boolean;
+};
+
+export type Papierkorb = {
+  frist_tage: number;
+  eintraege: PapierkorbEintrag[];
+};
+
+export async function fetchPapierkorb(): Promise<Papierkorb> {
+  return apiGet<Papierkorb>("/api/v1/meetings/trash");
+}
+
+export async function restoreMeeting(id: string): Promise<void> {
+  await apiPost<void>(`/api/v1/meetings/${id}/restore`);
+}
+
+/** Endgültig — ohne Frist, ohne Papierkorb, ohne Weg zurück. */
+export async function purgeMeeting(id: string): Promise<void> {
+  await apiDelete<void>(`/api/v1/meetings/${id}/permanent`);
 }
 
 export async function retrySummary(id: string): Promise<void> {

@@ -23,12 +23,13 @@ from typing import Any
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 
+from app import audit
 from app.auth import CurrentUser, get_current_user
 from app.config import settings as env_settings
-from app.db import acquire
+from app.db import acquire_as
 from app.speaker_matcher import append_voiceprint_sample
 from app.tasks.notify import enqueue as enqueue_webhook
 
@@ -110,7 +111,7 @@ def _speaker_row_to_read(row: dict[str, Any]) -> SpeakerRead:
 async def list_speakers(
     user: CurrentUser = Depends(get_current_user),
 ) -> list[SpeakerRead]:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         rows = await conn.fetch(
             """
             select id, display_name, description, is_self,
@@ -126,6 +127,7 @@ async def list_speakers(
 
 @router.post("/speakers", status_code=201, response_model=SpeakerRead)
 async def create_speaker(
+    request: Request,
     payload: SpeakerCreate,
     user: CurrentUser = Depends(get_current_user),
 ) -> SpeakerRead:
@@ -133,7 +135,7 @@ async def create_speaker(
     if not name:
         raise HTTPException(400, "name must not be empty")
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         async with conn.transaction():
             # If is_self=true, clear is_self on any existing speaker in the org —
             # there can be at most one "self" per org (unique partial index).
@@ -162,6 +164,7 @@ async def create_speaker(
                 if "org_speakers" in str(exc) and "unique" in str(exc).lower():
                     raise HTTPException(409, f"speaker '{name}' already exists") from None
                 raise
+    audit.ergaenze(request.scope, kennung=row["id"])
     return _speaker_row_to_read(dict(row))
 
 
@@ -171,7 +174,7 @@ async def update_speaker(
     payload: SpeakerUpdate,
     user: CurrentUser = Depends(get_current_user),
 ) -> SpeakerRead:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         async with conn.transaction():
             existing = await conn.fetchrow(
                 "select id from public.org_speakers where id = $1 and org_id = $2",
@@ -226,7 +229,7 @@ async def delete_speaker(
     speaker_id: UUID,
     user: CurrentUser = Depends(get_current_user),
 ) -> None:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         result = await conn.execute(
             "delete from public.org_speakers where id = $1 and org_id = $2",
             speaker_id,
@@ -244,7 +247,7 @@ async def list_clusters(
     meeting_id: UUID,
     user: CurrentUser = Depends(get_current_user),
 ) -> list[ClusterRead]:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         owned = await conn.fetchval(
             """
             select 1 from public.meetings
@@ -289,7 +292,7 @@ async def assign_cluster(
     if payload.org_speaker_id is not None and payload.new_name is not None:
         raise HTTPException(400, "provide either org_speaker_id or new_name, not both")
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         async with conn.transaction():
             cluster = await conn.fetchrow(
                 """
@@ -457,7 +460,7 @@ async def enroll_speaker(
       forward that as 422 with a German user-facing message.
     """
     # 1. Verify the speaker belongs to this org.
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         speaker = await conn.fetchrow(
             """
             select id, display_name
@@ -509,7 +512,7 @@ async def enroll_speaker(
 
     # 3. Persist as voiceprint sample. Enrollment samples have no
     # meeting/cluster — migration 0007 made those columns nullable.
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         await append_voiceprint_sample(
             conn,
             org_speaker_id=speaker_id,
@@ -549,7 +552,7 @@ async def re_diarize(
     auto-match against the current org-speaker catalog. Heavy: full
     Whisper transcription + ECAPA embedding pass.
     """
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             select m.id, m.audio_path

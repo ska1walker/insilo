@@ -49,7 +49,7 @@
     {
       "name": "Idee aufnehmen",
       "short_name": "Idee",
-      "description": "Schauerfunktion — eine Idee unterwegs strukturieren und an Duo senden.",
+      "description": "Schauerfunktion — eine Idee unterwegs strukturieren und weitergeben.",
       "url": "/idee",
       "icons": [
         {

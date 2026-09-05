@@ -19,11 +19,12 @@ from typing import Any
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, HttpUrl
 
+from app import audit
 from app.auth import CurrentUser, get_current_user
-from app.db import acquire
+from app.db import acquire_as
 from app.tasks.notify import VALID_EVENTS
 
 router = APIRouter(prefix="/api/v1", tags=["webhooks"])
@@ -126,7 +127,7 @@ def _validate_events(events: list[str]) -> list[str]:
 
 @router.get("/webhooks", response_model=list[WebhookRead])
 async def list_webhooks(user: CurrentUser = Depends(get_current_user)) -> list[WebhookRead]:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         rows = await conn.fetch(
             """
             select id, url, description, events, is_active, trigger_mode, secret,
@@ -142,13 +143,14 @@ async def list_webhooks(user: CurrentUser = Depends(get_current_user)) -> list[W
 
 @router.post("/webhooks", status_code=201, response_model=WebhookCreated)
 async def create_webhook(
+    request: Request,
     payload: WebhookCreate,
     user: CurrentUser = Depends(get_current_user),
 ) -> WebhookCreated:
     events = _validate_events(payload.events)
     secret = payload.secret or secrets.token_urlsafe(32)
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             insert into public.org_webhooks (
@@ -169,6 +171,8 @@ async def create_webhook(
             user.user_id,
         )
     read = _row_to_read(dict(row))
+    # Ziel im Protokoll benennen: ein Webhook ist ein Weg nach draußen.
+    audit.ergaenze(request.scope, kennung=row["id"], zusatz={"ziel": str(payload.url)})
     return WebhookCreated(**read.model_dump(), secret=secret)
 
 
@@ -180,7 +184,7 @@ async def update_webhook(
 ) -> WebhookRead:
     events = _validate_events(payload.events) if payload.events is not None else None
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         existing = await conn.fetchrow(
             "select id from public.org_webhooks where id = $1 and org_id = $2",
             webhook_id,
@@ -218,7 +222,7 @@ async def delete_webhook(
     webhook_id: UUID,
     user: CurrentUser = Depends(get_current_user),
 ) -> None:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         result = await conn.execute(
             "delete from public.org_webhooks where id = $1 and org_id = $2",
             webhook_id,
@@ -239,7 +243,7 @@ async def test_webhook(
     a meeting. The result is NOT written to `webhook_deliveries` — that
     table is reserved for real lifecycle events.
     """
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             select url, secret
@@ -295,7 +299,7 @@ async def list_deliveries(
     user: CurrentUser = Depends(get_current_user),
 ) -> list[DeliveryRead]:
     limit = max(1, min(limit, 200))
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         owned = await conn.fetchval(
             "select 1 from public.org_webhooks where id = $1 and org_id = $2",
             webhook_id,

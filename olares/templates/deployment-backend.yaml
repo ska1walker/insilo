@@ -28,6 +28,11 @@ spec:
       component: backend
   template:
     metadata:
+      annotations:
+        # Zwingt beide Pods zum Neustart, wenn sich das gemeinsame
+        # Geheimnis ändert. Ohne das behielten sie den alten Wert und
+        # der nächste Einzelneustart liefe in 401.
+        checksum/insilo-internal: {{ include "insilo.internalChecksum" . }}
       labels:
         app: insilo
         component: backend
@@ -251,6 +256,12 @@ spec:
             # eigene Box.
             - name: OLARES_ZONE
               value: "{{ .Values.user.zone }}"
+            # Gemeinsames Geheimnis — der Torwächter vor dem Backend.
+            - name: INSILO_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: insilo-internal
+                  key: token
 
           volumeMounts:
             - name: app-data

@@ -17,11 +17,12 @@ import json
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from app import audit
 from app.auth import CurrentUser, get_current_user
-from app.db import acquire
+from app.db import acquire_as
 from app.errors import http_error
 
 router = APIRouter(prefix="/api/v1", tags=["templates"])
@@ -114,7 +115,7 @@ async def list_templates(user: CurrentUser = Depends(get_current_user)) -> list[
     Each row carries `is_customized` so the UI can show a small badge
     next to templates the org has tailored.
     """
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         rows = await conn.fetch(
             """
             select t.id, t.name, t.description, t.category, t.is_system,
@@ -144,7 +145,7 @@ async def get_template(
     template_id: UUID, user: CurrentUser = Depends(get_current_user)
 ) -> dict:
     """Full template detail including effective and default system prompts."""
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             select t.id, t.name, t.description, t.category, t.is_system,
@@ -313,7 +314,7 @@ async def upsert_template_prompt(
     else:
         custom_fields_json = None
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         # Ensure the template is one the user can see.
         tpl = await conn.fetchrow(
             """
@@ -375,7 +376,7 @@ async def reset_template_prompt(
     user: CurrentUser = Depends(get_current_user),
 ) -> None:
     """Drop the org's customization. Worker reverts to the template default."""
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         await conn.execute(
             """
             delete from public.template_customizations
@@ -403,12 +404,13 @@ class TemplateUpdate(BaseModel):
 
 @router.post("/templates", status_code=201)
 async def create_template(
+    request: Request,
     payload: TemplateCreate,
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     """Create a new org-owned template with the flexible default schema."""
     prompts_dict = _normalize_system_prompts(payload.system_prompts)
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             insert into public.templates (
@@ -428,6 +430,7 @@ async def create_template(
         )
     dto = _base_dto(row)
     dto["is_customized"] = False
+    audit.ergaenze(request.scope, kennung=row["id"])
     return dto
 
 
@@ -442,7 +445,7 @@ async def update_template(
     System templates are read-only here — use PUT /templates/{id}/prompt
     for the customization override.
     """
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         tpl = await conn.fetchrow(
             """
             select id, is_system from public.templates
@@ -488,7 +491,7 @@ async def delete_template(
     user: CurrentUser = Depends(get_current_user),
 ) -> None:
     """Soft-delete an org-owned template. System templates are protected."""
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         tpl = await conn.fetchrow(
             "select is_system, org_id from public.templates where id = $1 and is_active = true",
             template_id,

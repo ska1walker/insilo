@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
-from app.db import acquire
+from app.db import acquire_as
 from app.errors import http_error
 from app.llm_config import load_llm_config
 
@@ -80,9 +80,12 @@ async def _embed_query(text: str) -> list[float]:
 
 
 async def _retrieve(
-    org_id, query_vec: list[float], limit: int
+    user_id, org_id, query_vec: list[float], limit: int
 ) -> list[SearchHit]:
-    async with acquire() as conn:
+    # Nutzerkontext mit, nicht nur die Org-Kennung: unter erzwungener
+    # Zeilensicherheit entscheidet er, ob die Abschnitte überhaupt
+    # sichtbar sind. Der `where org_id`-Filter bleibt daneben stehen.
+    async with acquire_as(user_id) as conn:
         rows = await conn.fetch(
             """
             select c.meeting_id, c.chunk_index, c.content,
@@ -125,7 +128,7 @@ async def search(
     except httpx.HTTPError as exc:
         raise http_error(503, "service.embeddings_unreachable") from exc
 
-    hits = await _retrieve(user.org_id, qvec, req.limit)
+    hits = await _retrieve(user.user_id, user.org_id, qvec, req.limit)
     return SearchResponse(query=req.query, hits=hits)
 
 
@@ -171,9 +174,9 @@ async def ask(
     except httpx.HTTPError as exc:
         raise http_error(503, "service.embeddings_unreachable") from exc
 
-    hits = await _retrieve(user.org_id, qvec, req.limit)
+    hits = await _retrieve(user.user_id, user.org_id, qvec, req.limit)
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         llm = await load_llm_config(conn, user.org_id)
 
     system_prompt, user_prompt = _build_rag_prompt(req.question, hits)

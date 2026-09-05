@@ -1,5 +1,6 @@
 """Runtime configuration via env vars (Pydantic Settings)."""
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -76,6 +77,35 @@ class Settings(BaseSettings):
 
     # --- Olares context (dev defaults) ---
     olares_zone: str = "devuser.olares.local"
+
+    # ---- Torwächter vor dem Backend ----------------------------------
+    # Das Backend hat bewusst keine Entrance und damit keinen
+    # Envoy-Sidecar (siehe OlaresManifest, Abschnitt entrances): mit
+    # Sidecar bekamen die internen Aufrufe des Next.js-Servers keine
+    # Authelia-Cookies und liefen in 401. Folge war aber, dass
+    # `insilo-backend:8000` für **jeden Pod im Cluster** ungeprüft
+    # erreichbar war — und `X-Bfl-User` frei behauptbar.
+    #
+    # Dieses Geheimnis schließt die Lücke: der Helm-Chart legt es als
+    # Secret an und gibt es beiden Deployments. Der Next.js-Server hängt
+    # es an jeden weitergereichten Aufruf, das Backend verlangt es. Ohne
+    # gültiges Geheimnis wird `X-Bfl-User` nicht einmal angesehen.
+    #
+    # Leer heißt „nicht eingerichtet". Dann bleibt der Torwächter offen —
+    # sonst wäre die lokale Entwicklung ohne Docker nicht mehr zu starten
+    # und ein Upgrade ohne Secret bräche die App. Das Backend sagt es
+    # beim Start deutlich ins Protokoll.
+    # Ausdrücklicher Aliasname. Ohne ihn läse Pydantic `INTERNAL_TOKEN`,
+    # während der Chart `INSILO_INTERNAL_TOKEN` setzt — der Torwächter
+    # bliebe offen und nichts würde es melden. Genau diese Falle hat
+    # v0.1.52 beim Whisper-Modell gekostet (HANDOFF, `env_prefix`).
+    internal_token: str = Field(default="", validation_alias="INSILO_INTERNAL_TOKEN")
+
+    # Ein unbekannter Name legt Nutzer und Organisation an — nur, wenn
+    # das hier ausdrücklich freigeschaltet ist. In Betrieb aus: sonst
+    # genügt ein ausgedachter Name, um sich eine eigene Organisation zu
+    # verschaffen und darin Inhaber zu sein.
+    auto_provision: bool = Field(default=False, validation_alias="INSILO_AUTO_PROVISION")
 
     # --- Webhooks ---
     webhook_default_timeout_sec: int = 10

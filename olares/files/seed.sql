@@ -18,6 +18,18 @@
 -- ON CONFLICT DO UPDATE: idempotent — jeder Init-Container-Run schreibt
 -- die neuesten Defaults. User-Overrides leben in template_customizations
 -- und werden NICHT überschrieben.
+--
+-- Seit Migration 0017 gilt `force row level security` auch für die
+-- Eigentümerin der Tabellen — also für genau die Verbindung, mit der der
+-- Init-Container arbeitet. Die Regel `templates_insert` verlangt eine
+-- Organisation und `is_system = false`; Werksvorlagen haben weder das
+-- eine noch das andere. Ohne die folgende Zeile scheitert das Saatgut
+-- mit „new row violates row-level security policy" — und zwar bei
+-- **jeder** Neuinstallation.
+--
+-- Das Saatgut ist ein Systemvorgang, kein Nutzervorgang: es bekommt
+-- denselben Kontext wie die Hintergrunddienste.
+select set_config('app.dienst', '1', false);
 -- ========================================================================
 
 insert into public.templates (

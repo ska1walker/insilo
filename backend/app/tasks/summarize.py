@@ -13,6 +13,7 @@ import httpx
 from celery import shared_task
 
 from app.config import settings
+from app.db import dienst_kontext
 from app.llm_config import load_llm_config
 from app.worker import celery_app  # noqa: F401 -- side-effect: registers worker
 
@@ -20,13 +21,21 @@ log = logging.getLogger(__name__)
 
 
 async def _connect() -> asyncpg.Connection:
-    return await asyncpg.connect(
+    """Eigene Verbindung für diese Aufgabe — mit Dienst-Kontext.
+
+    Hintergrundaufgaben haben keinen angemeldeten Nutzer. Unter der
+    erzwungenen Zeilensicherheit aus Migration 0017 sähen sie ohne
+    Kontext keine Zeile und könnten keine schreiben.
+    """
+    conn = await asyncpg.connect(
         host=settings.db_host,
         port=settings.db_port,
         user=settings.db_user,
         password=settings.db_password,
         database=settings.db_name,
     )
+    await dienst_kontext(conn)
+    return conn
 
 
 async def _set_status(
@@ -619,7 +628,7 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     from app.worker import celery_app as _app
     _app.send_task("embed_meeting", args=[str(meeting_id)])
 
-    # Notify subscribers (Duo, OpenWebUI, …) that the meeting is ready.
+    # Notify subscribers (knowledge hubs, automations, …) that the meeting is ready.
     _app.send_task("notify_webhook", args=[str(meeting_id), "meeting.ready"])
 
     return {

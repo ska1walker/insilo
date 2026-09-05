@@ -2,9 +2,11 @@
 
 from uuid import UUID
 
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Request
 from pydantic import BaseModel
 
+from app import audit
+from app.config import settings
 from app.db import acquire
 
 
@@ -18,12 +20,47 @@ class CurrentUser(BaseModel):
 
 
 async def _ensure_user_and_org(olares_username: str) -> CurrentUser:
-    """
-    Auf der echten Olares-Box legt das Admin-Onboarding User + Org an.
-    Für lokale Dev provisionieren wir hier automatisch, sodass der erste
-    Request einer neuen X-Bfl-User-Identität nicht fehlschlägt.
+    """Identität auflösen — und nur in der Entwicklung anlegen.
+
+    Bis hierher legte ein unbekannter Name stillschweigend **einen neuen
+    Nutzer samt eigener Organisation** an. Als Bequemlichkeit für die
+    lokale Entwicklung gedacht, in Betrieb aber eine Selbstbedienung: wer
+    das Backend erreicht und einen ausgedachten Namen schickt, bekam eine
+    frische Organisation und war darin Inhaber.
+
+    `INSILO_AUTO_PROVISION` schaltet das frei. Vorgabe ist aus; das
+    Deployment setzt es nicht. Ohne die Freigabe endet ein unbekannter
+    Name mit 401 — Nutzer und Organisation legt dann das Onboarding an.
     """
     async with acquire() as conn:
+        if not settings.auto_provision:
+            gefunden = await conn.fetchrow(
+                """
+                select u.id, u.display_name, r.org_id
+                from public.users u
+                join public.user_org_roles r on r.user_id = u.id
+                join public.orgs o on o.id = r.org_id and o.deleted_at is null
+                where u.olares_username = $1
+                limit 1
+                """,
+                olares_username,
+            )
+            if gefunden is None:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Unknown identity. Ask an administrator to add this user.",
+                )
+            await conn.execute(
+                "update public.users set last_seen_at = now() where id = $1",
+                gefunden["id"],
+            )
+            return CurrentUser(
+                olares_username=olares_username,
+                user_id=gefunden["id"],
+                org_id=gefunden["org_id"],
+                display_name=gefunden["display_name"],
+            )
+
         async with conn.transaction():
             row = await conn.fetchrow(
                 """
@@ -77,6 +114,7 @@ async def _ensure_user_and_org(olares_username: str) -> CurrentUser:
 
 
 async def get_current_user(
+    request: Request,
     x_bfl_user: str | None = Header(None, alias="X-Bfl-User"),
 ) -> CurrentUser:
     if not x_bfl_user:
@@ -84,7 +122,17 @@ async def get_current_user(
             status_code=401,
             detail="Missing X-Bfl-User header. Reach this API via Olares Envoy.",
         )
-    return await _ensure_user_and_org(x_bfl_user)
+    user = await _ensure_user_and_org(x_bfl_user)
+    # Den aufgelösten Urheber fürs Protokoll hinterlegen. Die Middleware
+    # könnte ihn nicht selbst holen, ohne diesen Aufruf zu wiederholen —
+    # und der legt unbekannte Benutzer beim Auflösen an.
+    audit.merke_akteur(
+        request.scope,
+        user_id=user.user_id,
+        org_id=user.org_id,
+        olares_user=user.olares_username,
+    )
+    return user
 
 
 # Re-export for convenience in router dependencies

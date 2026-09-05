@@ -10,12 +10,13 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from app import audit
 from app.auth import CurrentUser, get_current_user
 from app.auth_api import generate_api_key, normalize_scopes
-from app.db import acquire
+from app.db import acquire_as
 
 router = APIRouter(prefix="/api/v1", tags=["api-keys"])
 
@@ -57,7 +58,7 @@ def _row_to_read(row: dict[str, Any]) -> ApiKeyRead:
 async def list_api_keys(
     user: CurrentUser = Depends(get_current_user),
 ) -> list[ApiKeyRead]:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         rows = await conn.fetch(
             """
             select id, name, key_prefix, scopes, created_at, last_used_at, revoked_at
@@ -72,6 +73,7 @@ async def list_api_keys(
 
 @router.post("/api-keys", status_code=201, response_model=ApiKeyCreated)
 async def create_api_key(
+    request: Request,
     payload: ApiKeyCreate,
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiKeyCreated:
@@ -82,7 +84,7 @@ async def create_api_key(
 
     token, prefix, hashed = generate_api_key()
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             insert into public.api_keys (
@@ -99,6 +101,7 @@ async def create_api_key(
             user.user_id,
         )
     read = _row_to_read(dict(row))
+    audit.ergaenze(request.scope, kennung=row["id"], zusatz={"name": name})
     return ApiKeyCreated(**read.model_dump(), token=token)
 
 
@@ -109,7 +112,7 @@ async def revoke_api_key(
 ) -> None:
     """Soft-revoke: sets `revoked_at` so the key stops authenticating but
     the row stays around for audit purposes."""
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         result = await conn.execute(
             """
             update public.api_keys

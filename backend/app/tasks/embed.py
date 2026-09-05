@@ -12,6 +12,7 @@ import httpx
 from celery import shared_task
 
 from app.config import settings
+from app.db import dienst_kontext
 from app.worker import celery_app  # noqa: F401 — side-effect: registers task
 
 log = logging.getLogger(__name__)
@@ -24,13 +25,21 @@ OVERLAP_WORDS = 60
 
 
 async def _connect() -> asyncpg.Connection:
-    return await asyncpg.connect(
+    """Eigene Verbindung für diese Aufgabe — mit Dienst-Kontext.
+
+    Hintergrundaufgaben haben keinen angemeldeten Nutzer. Unter der
+    erzwungenen Zeilensicherheit aus Migration 0017 sähen sie ohne
+    Kontext keine Zeile und könnten keine schreiben.
+    """
+    conn = await asyncpg.connect(
         host=settings.db_host,
         port=settings.db_port,
         user=settings.db_user,
         password=settings.db_password,
         database=settings.db_name,
     )
+    await dienst_kontext(conn)
+    return conn
 
 
 def _chunk_text(text: str) -> list[str]:

@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.config import settings as env_settings
-from app.db import acquire
+from app.db import acquire_as
 from app.llm_config import auth_header, load_llm_config
 
 router = APIRouter(prefix="/api/v1", tags=["settings"])
@@ -86,7 +86,7 @@ def _row_to_read(row: dict[str, Any] | None) -> SettingsRead:
 
 @router.get("/settings", response_model=SettingsRead)
 async def get_settings(user: CurrentUser = Depends(get_current_user)) -> SettingsRead:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             select llm_base_url, llm_api_key, llm_model,
@@ -126,7 +126,7 @@ async def test_settings(
     leerem Schlüssel hinaus — und scheiterte an einem `Bearer `-Kopf, den
     httpx zu Recht ablehnt.
     """
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         cfg = await load_llm_config(conn, user.org_id)
 
     def _waehle(aus_formular: str, gespeichert: str) -> str:
@@ -206,7 +206,7 @@ async def put_settings(
     payload: SettingsWrite,
     user: CurrentUser = Depends(get_current_user),
 ) -> SettingsRead:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         async with conn.transaction():
             existing = await conn.fetchrow(
                 """

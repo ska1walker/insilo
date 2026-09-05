@@ -7,16 +7,18 @@ Lokal mocken wir den Header im Frontend.
 """
 
 import logging
+import secrets
 from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from app import konfiguration
+from app import audit, konfiguration
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
-from app.db import acquire, close_pool, init_pool
+from app.db import acquire, acquire_als_dienst, close_pool, init_pool
 from app.errors import locale_middleware
 from app.llm_config import auth_header
 from app.routers import (
@@ -26,6 +28,7 @@ from app.routers import (
     external_api,
     locale,
     meetings,
+    protokoll,
     search,
     speakers,
     tags,
@@ -45,7 +48,7 @@ async def lifespan(app: FastAPI):
     # neue Kennung, und die vorhandenen Aufnahmen unter audio/<org-id>/
     # hätten niemanden mehr, zu dem sie gehören.
     try:
-        async with acquire() as conn:
+        async with acquire_als_dienst() as conn:
             if await konfiguration.wiederherstellen(conn):
                 log.info("Konfiguration aus dem Datenverzeichnis übernommen")
             else:
@@ -56,6 +59,18 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         # Weder Abzug noch Wiederherstellung dürfen den Start verhindern.
         log.warning("Konfigurations-Abzug beim Start übersprungen: %s", exc)
+
+    if not settings.internal_token:
+        log.warning(
+            "INSILO_INTERNAL_TOKEN ist nicht gesetzt — das Backend nimmt Aufrufe "
+            "aus dem Cluster ungeprüft an. In Betrieb legt der Helm-Chart das "
+            "Geheimnis an; fehlt es dort, ist die App offen."
+        )
+    if settings.auto_provision:
+        log.warning(
+            "INSILO_AUTO_PROVISION ist an — ein unbekannter Name legt Nutzer und "
+            "Organisation an. Nur für die Entwicklung gedacht."
+        )
 
     yield
     await close_pool()
@@ -95,13 +110,64 @@ async def konfig_abzug(request: Request, call_next):
         and any(p in request.url.path for p in KONFIG_PFADE)
     ):
         try:
-            async with acquire() as conn:
+            async with acquire_als_dienst() as conn:
                 await konfiguration.sichern_leise(conn)
         except Exception as exc:  # noqa: BLE001
             # Der Abzug ist eine Bequemlichkeit, keine Bedingung. Die
             # Änderung steht bereits in der Datenbank.
             log.warning("Konfigurations-Abzug übersprungen: %s", exc)
     return antwort
+
+
+# ---------------------------------------------------------------------------
+# Protokoll — wer hat wann was geändert oder ausgeleitet
+#
+# Wie beim Abzug oben: eine Stelle, nicht zwölf. Was `audit.deuten` am
+# Pfad erkennt, landet in `public.audit_log` — auch die Endpunkte, die es
+# heute noch nicht gibt. Erfasst werden ändernde Aufrufe und die Wege, auf
+# denen Inhalte die Box verlassen können; lesende Aufrufe der eigenen
+# Oberfläche nicht (ein Protokoll, das jeden Seitenaufruf mitschreibt,
+# beantwortet die Frage nicht mehr, für die es da ist).
+# ---------------------------------------------------------------------------
+
+
+@app.middleware("http")
+async def protokoll_middleware(request: Request, call_next):
+    vorgang = audit.deuten(request.method, request.url.path)
+    if vorgang is None:
+        return await call_next(request)
+
+    try:
+        antwort = await call_next(request)
+    except Exception:
+        # Auch ein Absturz ist ein Vorgang — und der interessanteste.
+        await _protokoll_schreiben(request, vorgang, 500)
+        raise
+
+    await _protokoll_schreiben(request, vorgang, antwort.status_code)
+    return antwort
+
+
+async def _protokoll_schreiben(request: Request, vorgang, status: int) -> None:
+    """Schreibt den Eintrag und lässt den Aufruf nie daran scheitern.
+
+    Ein stiller Verlust wäre für ein Protokoll misslich, ein abgelehnter
+    Aufruf wegen einer klemmenden Protokollzeile aber schlimmer: die
+    Änderung steht dann bereits in der Datenbank. Deshalb `error` statt
+    `warning` — das gehört gesehen, nicht überblättert.
+    """
+    try:
+        async with acquire() as conn:
+            await audit.aufzeichnen(
+                conn,
+                vorgang=vorgang,
+                scope=request.scope,
+                headers={k.lower(): v for k, v in request.headers.items()},
+                client=request.client.host if request.client else None,
+                status=status,
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.error("Protokoll-Eintrag für %s nicht geschrieben: %s", vorgang.aktion, exc)
 
 
 app.add_middleware(
@@ -116,6 +182,60 @@ app.add_middleware(
 # Reads Accept-Language and stashes a DE/EN-supported locale in a
 # contextvar that `app.errors.http_error` reads when building responses.
 app.middleware("http")(locale_middleware)
+
+
+# ---------------------------------------------------------------------------
+# Torwächter — als letzte angemeldet, also die äußerste Schicht
+#
+# Das Backend hat bewusst keine Entrance und damit keinen Envoy-Sidecar:
+# mit Sidecar bekamen die internen Aufrufe des Next.js-Servers keine
+# Authelia-Cookies und liefen in 401 (Begründung im OlaresManifest,
+# Abschnitt entrances). Der Preis war, dass `insilo-backend:8000` für
+# **jeden Pod im Cluster** offen stand — und `X-Bfl-User` frei behauptbar
+# war. Wer den Dienst erreichte, war, wer er zu sein behauptete.
+#
+# Das gemeinsame Geheimnis schließt die Lücke, ohne die Entrance
+# zurückzuholen: der Helm-Chart legt es als Secret an und gibt es beiden
+# Deployments; der Next.js-Server hängt es an jeden weitergereichten
+# Aufruf. Ein Aufruf ohne gültiges Geheimnis wird abgewiesen, bevor
+# `X-Bfl-User` überhaupt angesehen wird.
+#
+# Ausgenommen: die Health-Endpunkte (die Kubelet-Probes haben kein
+# Geheimnis) und die externe Schnittstelle, die sich mit einem
+# Zugriffsschlüssel ausweist und ihre Prüfung selbst mitbringt.
+# ---------------------------------------------------------------------------
+
+TORWAECHTER_FREI = (
+    "/health",
+    "/api/external/v1/",
+    "/docs",
+    "/redoc",
+    "/openapi.json",
+)
+
+
+@app.middleware("http")
+async def torwaechter(request: Request, call_next):
+    if not settings.internal_token:
+        # Nicht eingerichtet — offen, damit die lokale Entwicklung ohne
+        # Aufbau läuft und ein Upgrade ohne Secret die App nicht bricht.
+        # Beim Start steht der Hinweis im Protokoll.
+        return await call_next(request)
+
+    pfad = request.url.path
+    if pfad.startswith(TORWAECHTER_FREI):
+        return await call_next(request)
+
+    mitgebracht = request.headers.get("X-Insilo-Internal", "")
+    # Zeitkonstanter Vergleich: ein Vergleich, der beim ersten
+    # abweichenden Zeichen abbricht, verrät das Geheimnis Zeichen für
+    # Zeichen.
+    if not secrets.compare_digest(mitgebracht, settings.internal_token):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "This API is only reachable through the Insilo frontend."},
+        )
+    return await call_next(request)
 
 
 # ----------------------------------------------------------------------------
@@ -266,3 +386,4 @@ app.include_router(api_keys.router)
 app.include_router(external_api.router)
 app.include_router(speakers.router)
 app.include_router(locale.router)
+app.include_router(protokoll.router)

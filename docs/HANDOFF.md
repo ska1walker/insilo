@@ -17,6 +17,201 @@
 >
 > ---
 >
+> ## Torwächter und Zeilensicherheit (5. September 2026)
+>
+> **Noch nicht ausgerollt.** Code auf `main`, Migration **0017** gehört
+> dazu. Die Box läuft weiter auf v0.1.81.
+>
+> Vier Befunde, die zusammen einen einzigen Satz ergaben: **wer das
+> Backend erreichte, war, wer er zu sein behauptete.**
+>
+> | Befund | Stand davor |
+> |---|---|
+> | Kein Torwächter | Das Backend hat bewusst keine Entrance und damit keinen Envoy-Sidecar. `insilo-backend:8000` stand damit **jedem Pod im Cluster** offen |
+> | Identität nur aus dem Kopf | `auth.py` las allein `X-Bfl-User` — wer den Dienst erreichte, konnte jede Identität setzen |
+> | Der Browser setzte sie mit | `client.ts` hängte `X-Bfl-User` an **jeden** Aufruf, ohne Umgebungsabfrage, also auch im Produktionsbau |
+> | Zeilensicherheit wirkungslos | 0002 schrieb die Regeln, aber `app.current_user_id` setzte **niemand**, und überall stand nur `enable`, nie `force`. Das Backend verbindet als Eigentümerin — und die umgeht RLS ohne `force` grundsätzlich |
+> | Selbstbedienung | Ein unbekannter Name legte Nutzer **und eigene Organisation** an, mit Inhaberrolle |
+>
+> Getrennt wurden die Mandanten bis hierher allein durch `where org_id = $1`
+> in jeder einzelnen Abfrage — eine Zusicherung, die an der Sorgfalt jedes
+> künftigen Endpunkts hängt.
+>
+> **Was jetzt gilt:** `client.ts` setzt die Kopfzeile nur noch, wenn
+> `NEXT_PUBLIC_API_URL` gesetzt ist (das gibt es nur lokal). Ein
+> gemeinsames Geheimnis (Secret `insilo-internal`, vom Chart erzeugt,
+> beiden Deployments gegeben) geht als `X-Insilo-Internal` mit; eine
+> Next.js-Middleware hängt es serverseitig an und **überschreibt**, was
+> der Browser mitschickt. Ohne gültiges Geheimnis wird `X-Bfl-User` nicht
+> einmal angesehen. Frei bleiben nur die Health-Endpunkte (die
+> Kubelet-Probes haben keins) und die externe Schnittstelle, die ihre
+> Schlüsselprüfung selbst mitbringt.
+>
+> `acquire_as(user_id)` setzt den Nutzerkontext je Transaktion — 54
+> Fundstellen in zwölf Routern umgestellt. Zwei weitere Kontexte, weil
+> nicht jeder Zugriff einen Nutzer hat: `app.dienst` für die
+> Hintergrundaufgaben und den Konfigurations-Abzug, `app.api_key_org`
+> für die externe Schnittstelle — **lesend, eine Organisation, nachweislich
+> kein Schreibrecht** (`UPDATE 0` im Prüflauf).
+>
+> **Drei Fallen, alle erst beim Ausprobieren sichtbar:**
+>
+> 1. **Der Torwächter war offen, obwohl alles eingerichtet schien.**
+>    Pydantic bildet `internal_token` auf `INTERNAL_TOKEN` ab, der Chart
+>    setzt `INSILO_INTERNAL_TOKEN`. Ohne `validation_alias` prüft die
+>    Middleware gegen einen leeren Wert und lässt alles durch — dieselbe
+>    Falle wie beim Whisper-Modell in v0.1.52. Ein Test hält beide Namen
+>    jetzt zusammen.
+> 2. **Der erste RLS-Nachweis war wertlos.** Er lief als `kai`, ein
+>    Superuser — und Superuser umgehen RLS auch mit `force`. Erst gegen
+>    eine Rolle ohne Superuser-Rechte, die die Tabellen besitzt (wie
+>    `insilo` auf der Box), zeigte sich die Wahrheit. **Regel: RLS
+>    prüft man nur gegen die Rechte, die in Betrieb gelten.**
+> 3. **`seed.sql` kam nicht mehr durch.** Werksvorlagen haben keine
+>    Organisation und `is_system = true`; `templates_insert` verlangt das
+>    Gegenteil. Das hätte **jede Neuinstallation** gebrochen, mit „new row
+>    violates row-level security policy". Das Saatgut ist ein
+>    Systemvorgang und setzt jetzt selbst `app.dienst`.
+>
+> Zwei Lücken in 0002 mussten vor dem Erzwingen zu: `meetings_select`
+> verlangte `deleted_at is null` — der Papierkorb wäre leer gewesen — und
+> für `templates` fehlte eine Lösch-Regel.
+>
+> **Nachgewiesen** (lokal, gegen eine Kopie der Datenbank, Rolle ohne
+> Superuser-Rechte): alle 17 Migrationen samt Saatgut laufen durch;
+> ohne Kontext ist **keine Zeile** sichtbar; alice sieht nur Alpha, bob
+> nur Beta; direkt am Backend vorbei mit beliebigem `X-Bfl-User` und ohne
+> Geheimnis → **401**; über den Next.js-Server → 200, und ein vom Browser
+> mitgeschicktes Geheimnis wird überschrieben; ein ausgedachter Name →
+> 401 und **keine** neue Organisation; alle dreizehn lesenden Wege 200,
+> keiner leer; Anlegen von Etikett, Sprecher, Webhook und Vorlage → 201.
+>
+> ## Der Envoy-Sidecar setzt `X-Bfl-User` nicht (an der Box nachgemessen)
+>
+> Beim Umbau lag die Annahme nahe, die Kopfzeile käme in Betrieb vom
+> Sidecar vor dem Frontend — der Manifest-Kommentar liest sich so, und
+> `client.ts` schien sie nur zusätzlich zu setzen. **Falsch.** Am 5.9. am
+> laufenden System geprüft:
+>
+> | Beleg | Ergebnis |
+> |---|---|
+> | `request_headers_to_add` in der Sidecar-Konfiguration | **gibt es nicht** — Envoy fügt gar keine Kopfzeile hinzu |
+> | `authorization_response.allowed_upstream_headers` | nur `authorization`, `proxy-authorization`, `remote-*`, `authelia-*` — **kein `x-bfl-user`** |
+> | Wo `x-bfl-user` in der Konfiguration steht | unter `authorization_request.allowed_headers`, also unter dem, was Envoy **an** Authelia weiterreicht. Olares erwartet sie vom Aufrufer |
+> | Debug-Log des Sidecars | die einzigen `x-bfl-user`-Zeilen stammten aus den eigenen Testaufrufen; nie eine erfolgreiche `/api/verify/`-Antwort, also auch kein `remote-*` zu sehen |
+>
+> **Die Kopfzeile aus `client.ts` zu entfernen hätte die Anmeldung
+> abgeschaltet** — niemand wäre mehr hineingekommen. Sie bleibt deshalb.
+>
+> Wirksam abgesichert ist sie trotzdem, aus zwei Richtungen:
+>
+> - **Nach innen** verlangt das Backend das gemeinsame Geheimnis. Ein
+>   Aufruf direkt an `insilo-backend:8000` kommt nicht mehr an, ganz
+>   gleich, welche Identität er behauptet. Das war die eigentliche Lücke.
+> - **Nach außen** prüft Authelia die Sitzung am Eingang — ein
+>   `X-Bfl-User` ohne gültige Sitzung wird zu `/api/verify/` umgeleitet
+>   (302), auch mitgeschickt. Zusätzlich ersetzt `middleware.ts` den Wert
+>   serverseitig durch `Remote-User`, **sobald** Authelia ihn liefert;
+>   dann kann der Browser gar keine fremde Identität mehr behaupten.
+>
+> Der letzte Punkt ist bewusst als Vorrang und nicht als Bedingung
+> gebaut: ob Authelia `Remote-User` in dieser Aufstellung tatsächlich
+> schickt, war ohne angemeldete Sitzung nicht zu prüfen. So greift die
+> Absicherung, sobald die Kopfzeile kommt, und bricht nichts, falls
+> nicht. **Wer es abschließend wissen will:** die App im Browser öffnen
+> und danach
+> `kubectl logs -n insilo-kaivostudio <frontend-pod> -c olares-envoy-sidecar | grep -i remote-user`
+> — steht dort etwas, greift der Vorrang.
+>
+> ---
+>
+> ## Protokoll und Papierkorb — drei Zusagen eingelöst (5. September 2026)
+>
+> **Noch nicht ausgerollt.** Der Code liegt auf `main`, die Box läuft
+> weiter auf v0.1.81. Migration **0016** gehört dazu.
+>
+> Der Anlass war eine Bestandsaufnahme, keine Fehlermeldung: drei
+> Eigenschaften, mit denen Insilo gegenüber Kanzleien argumentiert,
+> standen in CLAUDE.md und nicht im Code.
+>
+> | Zusage | Stand davor |
+> |---|---|
+> | „Audit-Trail. Jede Datenänderung wird geloggt." | `public.audit_log` seit Migration 0001 angelegt, samt vier Indizes und RLS-Regel — **keine Zeile Code hat je hineingeschrieben** |
+> | „Soft-Delete + 30-Tage-Frist vor Hard-Delete" | `deleted_at` wurde gesetzt, die Tonaufnahme aber **sofort** gelöscht. Die Frist galt für eine Zeile, deren Inhalt schon weg war |
+> | `orgs.audio_retention_days` (Vorgabe 90) | stand seit 0001 in der Tabelle, **wurde von niemandem gelesen** |
+>
+> **Geschrieben wird aus einer Middleware**, wie beim Konfigurations-Abzug:
+> `app/audit.py` deutet Methode und Pfad, `app.main.protokoll_middleware`
+> schreibt. Ein neuer schreibender Endpunkt landet damit im Protokoll,
+> ohne dass jemand daran denken muss — `test_audit.py` hält das fest, indem
+> es alle angemeldeten Routen durchgeht und für jede schreibende eine Regel
+> verlangt. Erfasst werden ändernde Aufrufe **und** die Wege nach draußen;
+> die externe Schnittstelle ist deshalb dabei, obwohl sie nur liest.
+>
+> **Der Urheber kostet keine zusätzliche Abfrage.** Die Middleware kann ihn
+> nicht selbst auflösen — `get_current_user` legt unbekannte Benutzer beim
+> Auflösen an, ein zweiter Aufruf wäre eine zweite Schreiboperation. Also
+> hinterlegen die beiden Auth-Wege ihn im **ASGI-`scope`**. Nicht in einer
+> ContextVar: eine im Endpunkt gesetzte ContextVar ist in der Middleware
+> nicht mehr zu sehen, weil Starlette den nachgelagerten Aufruf in eine
+> eigene Task legt. Der `scope` ist dagegen dasselbe Wörterbuch.
+>
+> **Ein Fund aus dem Prüflauf, den kein Unit-Test gebracht hätte:**
+> scheitert eine Anfrage an der Eingabeprüfung, ruft FastAPI den Endpunkt
+> nie auf — und damit auch `get_current_user` nicht. Der Eintrag hatte
+> dann keine Organisation, und weil die Ansicht nach Organisation filtert,
+> war er **für niemanden sichtbar**: protokolliert und trotzdem
+> unauffindbar. Aufgefallen ist das beim Vergleich von Tabelle und
+> Bildschirm, nicht beim Nachdenken über den Entwurf — zum wiederholten
+> Mal dieselbe Lektion. `audit.akteur_nachschlagen` holt den Urheber jetzt
+> per `select` aus dem Kopfwert nach (kein `insert`; anlegen darf nur der
+> Auth-Weg).
+>
+> **Nicht im Protokoll steht der Wortlaut von Suchanfragen.** Dass jemand
+> das Archiv befragt hat, gehört hinein; wonach, wäre Gesprächsinhalt in
+> einer Tabelle, die Inhaberinnen und Verwaltende vollständig lesen dürfen.
+>
+> **Die beiden Fristen treffen Verschiedenes** — das ist der Kern von
+> `app/tasks/aufraeumen.py`:
+>
+> - `trash_retention_days` (neu, Vorgabe 30) entfernt die Besprechung ganz.
+> - `audio_retention_days` (Vorgabe 90) entfernt **nur die Tonaufnahme**;
+>   Transkript und Zusammenfassung bleiben lesbar. Das Gesprächsprotokoll
+>   ist der Aktenbestandteil, die Tonspur das Rohmaterial.
+> - `0` bedeutet bei beiden Gegenteiliges (sofort endgültig / unbegrenzt).
+>   Steht als Kommentar an beiden Spalten.
+>
+> Klemmt der Speicher, bleibt die Zeile stehen und der nächste Lauf nimmt
+> es mit — eine Datei ohne Besprechung ist genau der Zustand, der am
+> 19. August dreizehn Aufnahmen gekostet hat.
+>
+> **Der Zeitplaner läuft eingebettet im Worker** (`--beat` im Deployment,
+> Zustandsdatei unter `/app/cache`). Zulässig, weil genau ein Replikat
+> läuft; bei mehreren liefe der Aufräum-Job mehrfach.
+>
+> **Verifiziert gegen eine echte Datenbank**, nicht nur gegen Tests:
+> Löschen legt in den Papierkorb und lässt die Datei liegen;
+> Zurückholen bringt sie zurück; endgültiges Löschen entfernt Zeile *und*
+> Datei; eine 200 Tage alte Aufnahme verlor bei Frist 90 ihre Datei und
+> behielt ihre Zeile; ein 31 Tage alter Papierkorb-Eintrag ging bei Frist
+> 30 vollständig. Ein Absturz im Endpunkt wird als `success=false` mit
+> Status 500 protokolliert.
+>
+> **⚠️ Dabei aufgefallen, nicht behoben:** `passlib[bcrypt]>=1.7.4` in
+> `backend/pyproject.toml` hat keine Obergrenze für `bcrypt`. passlib 1.7.4
+> ist mit bcrypt ≥ 4.1 unverträglich — sein Backend-Test übergibt einen
+> überlangen Wert, den neuere bcrypt-Fassungen mit `ValueError` ablehnen
+> statt zu kürzen. Lokal (bcrypt 5.0.0) ist damit **die gesamte externe
+> Schnittstelle tot**: weder ein Zugriffsschlüssel lässt sich anlegen noch
+> einer prüfen — also auch der Weg für angeschlossene Systeme nicht. Ob die Box betroffen ist,
+> hängt daran, welche bcrypt-Fassung ihr Image beim Bauen aufgelöst hat;
+> das gehört nachgemessen, bevor der nächste Kunde einen Schlüssel
+> ausstellt. Gehört in einen eigenen Commit: eine Abhängigkeitsgrenze
+> ändert die Auflösung für das Produktionsbild und will auf der Box
+> nachgesehen werden.
+>
+> ---
+>
 > ## Eine Deinstallation löscht die Datenbank (19. August 2026)
 >
 > **Beim Deinstallieren über den Markt legt Olares die App-Datenbank neu
@@ -979,7 +1174,7 @@
 > **Stand bei v0.1.50:** Neue dedizierte Aufnahme-UX für unterwegs —
 > „die besten Ideen hat man unter der Dusche". Eine Route, ein Riesen-
 > Button, kein Template-Picker, kein Save-Klick, automatischer Webhook-
-> Dispatch zu Duo (sobald Duo-Receiver bereit ist).
+> Dispatch zu das Zielsystem (sobald Empfänger auf der Gegenseite bereit ist).
 >
 > **Was v0.1.50 gebracht hat:**
 >
@@ -1007,7 +1202,7 @@
 >   konfigurierten Webhooks für das `meeting.ready`-Event, unabhängig
 >   davon ob der User den Webhook auf `manual` gestellt hat. Genau das
 >   ist der Friction-Free-Effekt: nach Stopp muss nichts mehr geklickt
->   werden. Duo-Receiver ist noch nicht gebaut (separate Story) — bis
+>   werden. Empfänger auf der Gegenseite ist noch nicht gebaut (separate Story) — bis
 >   dahin landen Dispatches in der Retry-Queue (existing exponential
 >   backoff).
 > - **Frontend-Plumbing:** [meetings.ts](frontend/lib/api/meetings.ts:84)
@@ -1354,7 +1549,7 @@
 >    `users.ui_locale`), Stimmproben-Standardtexte aus den jeweils
 >    kanonischen phonetisch ausgewogenen Passagen pro Sprache
 >    (Nordwind/North-Wind/La-Bise/El-viento-del-norte/La-tramontana).
-> 2. **Duo-Receiver in `duo.aimighty.de`:** der Webhook-Empfänger
+> 2. **Empfänger auf der Gegenseite in `dem Zielsystem`:** der Webhook-Empfänger
 >    ist immer noch offen — Insilo-Seite ist seit v0.1.39 komplett
 >    bereit (manueller Dispatch + signierter POST).
 > 3. **Drop legacy `templates.system_prompt TEXT`** in einer späteren
@@ -1421,12 +1616,12 @@
 >
 > # 🎯 Nächste Story
 >
-> **Duo-Empfänger-Endpoint in `duo.aimighty.de` bauen** — die Insilo-Seite
+> **das Zielsystem-Empfänger-Endpoint in `dem Zielsystem` bauen** — die Insilo-Seite
 > ist fertig. Mit v0.1.39 ist Auto-Push pro Default sicher aus, der User
-> entscheidet pro Meeting bewusst. Für Duo also nur noch:
+> entscheidet pro Meeting bewusst. Für das Zielsystem also nur noch:
 > 1. Receiver `POST /api/integrations/insilo` mit HMAC-Verify
 > 2. Upsert über `external_source='insilo'` + `external_id=meeting.id`
-> 3. Optional: Checkbox-Parser für `## Offene Aufgaben` → Duo-Tasks
+> 3. Optional: Checkbox-Parser für `## Offene Aufgaben` → Aufgaben im Zielsystem
 > Spec dafür in `docs/WEBHOOKS.md` + Pseudocode-Block in `ContractDisclosure`
 > direkt im UI.
 >
@@ -1437,7 +1632,7 @@
 > HMAC-Signatur + Fan-Out + Retry/Backoff, externe REST-API mit
 > Bearer-Token-Auth (read-only), Markdown-Export-Renderer.
 >
-> **Was v0.1.35 + v0.1.36 gebracht haben (Duo-Vorstufe):**
+> **Was v0.1.35 + v0.1.36 gebracht haben (das Zielsystem-Vorstufe):**
 >
 > - **Migration 0005** (`supabase/migrations/0005_webhooks_api_keys.sql`):
 >   neue Tabellen `org_webhooks` (URL + Secret + Event-Filter +
@@ -1480,22 +1675,22 @@
 > - **Doku**: `docs/WEBHOOKS.md` — vollständiger Contract (Events, Header,
 >   Signatur-Verifikation, Retry-Verhalten, Pseudocode für Receiver).
 >
-> # 🎯 Nächste Story: Duo-Integration (konkret)
+> # 🎯 Nächste Story: Webhook-Empfänger (konkret)
 >
-> Duo ist **die eigene Cloud-App des Users** (duo.aimighty.de) —
-> Notizen-/Wissens-Hub mit Folders + Tasks. Da User Duo selbst baut,
+> das Zielsystem ist **die eigene Cloud-App des Users** (dem Zielsystem) —
+> Notizen-/Wissens-Hub mit Folders + Tasks. Da User das Zielsystem selbst baut,
 > hat er die Wahl zwischen Webhook-Empfänger oder Pull-API. Empfehlung:
-> **Webhook-Empfänger in Duo**. Die Integration läuft dann nur als
-> Konfiguration (Insilo-Webhook anlegen → Secret in Duo eintragen), kein
+> **Webhook-Empfänger im Zielsystem**. Die Integration läuft dann nur als
+> Konfiguration (Insilo-Webhook anlegen → Secret im Zielsystem eintragen), kein
 > weiterer Insilo-Code nötig.
 >
 > Konkrete Aufgaben für die nächste Session:
-> 1. Duo bekommt einen `POST /api/integrations/insilo`-Endpoint (HMAC-Verify,
+> 1. das Zielsystem bekommt einen `POST /api/integrations/insilo`-Endpoint (HMAC-Verify,
 >    `external_source` / `external_id` Upsert via `meeting.id`).
 > 2. Optional: Checkbox-Parser zur Übernahme der `## Offene Aufgaben`-Items
->    in Duo's Task-System.
+>    im Zielsystem's Task-System.
 > 3. End-to-End-Test: Meeting in Insilo aufnehmen → Webhook landet
->    automatisch in Duo's Olares-Ordner.
+>    automatisch im Zielsystem's Olares-Ordner.
 >
 > # 📚 v0.1.34 — Tag-System gelandet (14. Mai 2026, später Nachmittag)
 >
@@ -1529,7 +1724,7 @@
 > - **v0.1.34** — **Tag-System:** Tags am Meeting, Filter im Archiv,
 >   CRUD in Einstellungen, Pills in der Liste. Nutzt bestehende
 >   `public.tags`-Tabelle aus 0001-Schema.
-> - **v0.1.35** — **Webhooks + API-Keys + Markdown-Export** (Duo-Vorstufe).
+> - **v0.1.35** — **Webhooks + API-Keys + Markdown-Export** (das Zielsystem-Vorstufe).
 >   Migration 0005, 3 neue Backend-Router (`webhooks`, `api_keys`,
 >   `external_api`), 2 neue UI-Sektionen in `/einstellungen`. Volles
 >   Event-Set (5 Events), single-secret pro Webhook, bcrypt-API-Keys
@@ -1617,11 +1812,11 @@
 > 0012 template_locale_prompts). Kein Schema-Drift in v0.1.47 — pure
 > Frontend-Iteration.
 >
-> # 🎯 Vision für die nächste Phase: Duo-Integration (v0.1.35+)
+> # 🎯 Vision für die nächste Phase: Webhook-Empfänger auf der Gegenseite (v0.1.35+)
 >
 > User will Insilo als **Knowledge-Layer-Quelle** fürs gesamte
 > AI-Setup. Konkret: Meeting-Minutes landen automatisch als Markdown
-> in einem „Duo-Ordner" (Duo = eigenes Knowledge-Hub-Projekt des
+> in einem „Ordner des Zielsystems" (das Zielsystem = eigenes Knowledge-Hub-Projekt des
 > Users). OpenWebUI greift auf diesen Ordner zu und beantwortet Fragen
 > wie „Welche Aufgaben aus letztem Mandantengespräch sind offen?".
 >
@@ -1632,17 +1827,17 @@
 > 3. **File-Export-Adapter** — schreibt strukturiertes Markdown in einen
 >    hostPath-Ordner (Frontmatter mit Tags/Datum/Speakers + Sektionen
 >    Zusammenfassung / Beschlüsse / Aufgaben / Volltranskript)
-> 4. **API-Keys + REST-API** für Pull-basierte Integrationen (Duo
+> 4. **API-Keys + REST-API** für Pull-basierte Integrationen (das Zielsystem
 >    holt Meeting-Daten auf Anfrage)
 >
 > **Aufgaben-Listing** als zentraler Use-Case: jedes Meeting-Markdown
-> hat eine `## Offene Aufgaben`-Sektion mit Checklist-Items. Duo
+> hat eine `## Offene Aufgaben`-Sektion mit Checklist-Items. das Zielsystem
 > aggregiert alle Items über alle Meetings → Antwort auf
 > „Was steht für mich noch offen?".
 >
-> Ehrlich-Hinweis für neue Sessions: **Duo ist noch nicht bekannt im
-> Detail.** Bei Start dieser Story zuerst klären: ist Duo eine eigene
-> Olares-App? Wo liegen Duo's Dateien (Pfad)? Hat Duo eine API zum
+> Ehrlich-Hinweis für neue Sessions: **das Zielsystem ist noch nicht bekannt im
+> Detail.** Bei Start dieser Story zuerst klären: ist das Zielsystem eine eigene
+> Olares-App? Wo liegen das Zielsystem's Dateien (Pfad)? Hat das Zielsystem eine API zum
 > Aufnehmen von Tasks, oder ist Markdown-File-Watch der primäre
 > Mechanismus? Erst nach diesen Antworten den Webhook + File-Export
 > bauen.

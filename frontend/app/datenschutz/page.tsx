@@ -10,7 +10,8 @@
  * steht, was tatsächlich hinausging".
  */
 
-import { ShieldAlert, ShieldCheck, Share2 } from "lucide-react";
+import { ScrollText, ShieldAlert, ShieldCheck, Share2 } from "lucide-react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { formatBytes } from "@/components/datenschutz-nachweis";
@@ -18,6 +19,7 @@ import { fetchEgress, type EgressRead } from "@/lib/api/egress";
 
 export default function DatenschutzSeite() {
   const t = useTranslations("egress");
+  const tProtokoll = useTranslations("protokoll");
   const locale = useLocale();
   const [lage, setLage] = useState<EgressRead | null>(null);
   const [fehler, setFehler] = useState(false);
@@ -166,6 +168,17 @@ export default function DatenschutzSeite() {
           )}
         </>
       )}
+
+      {/* Die zweite Hälfte derselben Frage: dieser Nachweis misst, wie
+          viel die Box verlassen hat — das Protokoll sagt, wer es
+          veranlasst hat. */}
+      <Link
+        href="/protokoll"
+        className="mono mt-10 inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer"
+      >
+        <ScrollText size={14} aria-hidden />
+        {tProtokoll("titel")}
+      </Link>
     </main>
   );
 }

@@ -46,11 +46,29 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { body, headers, ...rest } = options;
 
-  // Mock Olares Envoy auth header for local dev.
   const finalHeaders: Record<string, string> = {
-    "X-Bfl-User": DEV_USER,
     ...((headers as Record<string, string>) ?? {}),
   };
+
+  // Die Identität geht mit — sie ist derzeit die einzige Quelle.
+  //
+  // Am 5.9. an der Box nachgemessen: **der Envoy-Sidecar setzt
+  // `X-Bfl-User` nicht.** In seiner Konfiguration gibt es kein
+  // `request_headers_to_add`, und was Authelia beisteuern darf
+  // (`allowed_upstream_headers`), sind nur `authorization`,
+  // `proxy-authorization`, `remote-*` und `authelia-*`. `x-bfl-user`
+  // steht dort ausschließlich unter den Kopfzeilen, die Envoy **an**
+  // Authelia weiterreicht — Olares erwartet sie also vom Aufrufer.
+  //
+  // Diese Zeile wegzulassen hieße deshalb: niemand kommt mehr hinein.
+  //
+  // Missbrauchbar ist sie trotzdem nicht mehr, und zwar aus zwei
+  // Richtungen: nach außen prüft Authelia die Sitzung am Eingang, und
+  // `middleware.ts` ersetzt den Wert serverseitig durch `Remote-User`,
+  // sobald Authelia ihn liefert. Nach innen verlangt das Backend seit
+  // 0017 das gemeinsame Geheimnis — ein Aufruf direkt an
+  // `insilo-backend:8000` kommt gar nicht mehr an, egal was er behauptet.
+  finalHeaders["X-Bfl-User"] = DEV_USER;
 
   // Forward the in-app locale override (LocaleSwitcher → cookie) as
   // Accept-Language so the backend's error i18n picks the same language

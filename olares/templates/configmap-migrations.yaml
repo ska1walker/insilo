@@ -1226,6 +1226,248 @@ data:
     comment on column public.org_settings.stt_model is
       'Modellkennung beim Endpunkt, z. B. Systran/faster-whisper-large-v3.';
     
+  0016_audit_papierkorb.sql: |
+    -- ========================================================================
+    -- 0016 — Protokoll und Papierkorb
+    --
+    -- Zwei Versprechen aus CLAUDE.md, die bis hierher nur als Absicht
+    -- existierten:
+    --
+    --   „Audit-Trail. Jede Datenänderung wird geloggt."
+    --   „Reversibilität. Soft-Delete + 30-Tage-Frist vor Hard-Delete."
+    --
+    -- `public.audit_log` liegt seit 0001 samt Indizes und RLS bereit, aber
+    -- kein Code hat je hineingeschrieben. Und das Löschen setzte zwar
+    -- `deleted_at`, entfernte die Tonaufnahme aber sofort und unwiderruflich —
+    -- die Frist galt für die Datenbankzeile, nicht für die Datei.
+    --
+    -- Diese Migration ergänzt, was dafür fehlt. Sie ist idempotent
+    -- (Lesson aus 0012, siehe HANDOFF v0.1.51).
+    -- ========================================================================
+    
+    -- ── Protokoll: auch Aufrufe über einen Zugriffsschlüssel haben einen Urheber ──
+    --
+    -- Die externe Schnittstelle authentifiziert nicht über X-Bfl-User, sondern
+    -- über einen Zugriffsschlüssel. Ohne diese Spalte wäre genau der Weg, auf
+    -- dem Daten die Box verlassen, der einzige ohne benennbaren Urheber.
+    alter table public.audit_log
+      add column if not exists api_key_id uuid references public.api_keys(id) on delete set null;
+    
+    create index if not exists audit_log_api_key_idx
+      on public.audit_log (api_key_id, timestamp desc);
+    
+    -- Append-only war bisher nur durch Weglassen erzwungen: 0002 verbietet
+    -- update und delete, erlaubt aber nirgends ausdrücklich das Einfügen. Das
+    -- trägt, solange die Anwendung als Eigentümerin der Tabelle verbindet
+    -- (Eigentümer umgehen RLS). Diese Regel schreibt die Absicht hin, damit
+    -- das Protokoll auch dann noch schreibbar ist, wenn jemand später
+    -- `force row level security` setzt.
+    drop policy if exists audit_log_insert on public.audit_log;
+    create policy audit_log_insert on public.audit_log
+      for insert
+      with check (true);
+    
+    -- ── Papierkorb: Frist pro Organisation ──────────────────────────────────
+    --
+    -- Neben `audio_retention_days` (seit 0001, bis hierher von niemandem
+    -- gelesen). Beide Fristen setzt jetzt `app/tasks/aufraeumen.py` durch.
+    alter table public.orgs
+      add column if not exists trash_retention_days integer not null default 30;
+    
+    comment on column public.orgs.trash_retention_days is
+      'Tage zwischen Löschen und endgültigem Entfernen. 0 = sofort endgültig.';
+    
+    comment on column public.orgs.audio_retention_days is
+      'Tage, die eine Tonaufnahme aufbewahrt wird. Danach entfällt die Datei, '
+      'Transkript und Zusammenfassung bleiben. 0 = unbegrenzt.';
+    
+    -- ── Besprechungen: die Tonaufnahme kann vor der Besprechung gehen ───────
+    --
+    -- Die Aufbewahrungsfrist trifft die Aufnahme, nicht das Protokoll: nach
+    -- Ablauf verschwindet die Datei, das Transkript bleibt lesbar. Damit die
+    -- Oberfläche „Aufnahme nach Frist entfernt" von „nie hochgeladen"
+    -- unterscheiden kann, wird der Zeitpunkt festgehalten.
+    alter table public.meetings
+      add column if not exists audio_deleted_at timestamptz;
+    
+    -- Der Papierkorb fragt genau andersherum als jede andere Ansicht: nur
+    -- gelöschte Zeilen. Die vorhandenen Indizes sind partiell auf
+    -- `deleted_at is null` — für diese Abfrage also nutzlos.
+    create index if not exists meetings_papierkorb_idx
+      on public.meetings (org_id, deleted_at desc)
+      where deleted_at is not null;
+    
+    -- Der Aufräum-Job sucht Aufnahmen, deren Frist abgelaufen ist.
+    create index if not exists meetings_audio_frist_idx
+      on public.meetings (org_id, recorded_at)
+      where audio_path is not null and audio_deleted_at is null;
+    
+  0017_zeilensicherheit_erzwingen.sql: |
+    -- ========================================================================
+    -- 0017 — Zeilensicherheit erzwingen
+    --
+    -- Migration 0002 hat die Regeln geschrieben. Wirksam waren sie nie:
+    --
+    --   1. Der Kontext, den sie lesen (`app.current_user_id`), wurde von
+    --      keiner Zeile Code gesetzt — im Backend gab es weder `set_config`
+    --      noch einen Aufruf von `current_user_id()`.
+    --   2. Überall stand nur `enable row level security`, nie `force`. Das
+    --      Backend verbindet als **Eigentümerin** der Tabellen, und die
+    --      umgeht RLS ohne `force` grundsätzlich.
+    --
+    -- Getrennt wurden die Mandanten damit allein durch `where org_id = $1`
+    -- in jeder einzelnen Abfrage — eine Zusicherung, die an der Sorgfalt
+    -- jedes künftigen Endpunkts hängt. Diese Migration macht die Regeln
+    -- wirksam; der Filter in den Abfragen bleibt daneben stehen.
+    --
+    -- `users`, `orgs` und `user_org_roles` bleiben ausgenommen: die
+    -- Erstanlage einer Identität muss durchkommen, bevor es einen Kontext
+    -- gibt, den die Regeln lesen könnten.
+    --
+    -- Idempotent (Lesson aus 0012, siehe HANDOFF v0.1.51).
+    -- ========================================================================
+    
+    -- ── Zwei Kontexte neben dem Nutzer ──────────────────────────────────────
+    
+    -- Hintergrunddienste. Transkription, Zusammenfassung, Einbettung,
+    -- Webhook-Versand, Aufräumlauf und der Konfigurations-Abzug laufen ohne
+    -- angemeldeten Nutzer; ohne diese Ausnahme sähen sie keine Zeile und
+    -- könnten keine schreiben.
+    --
+    -- Gesetzt wird der Wert ausschließlich in `app/db.py` von Prozessen, die
+    -- ohnehin die Zugangsdaten der Datenbank haben. Aus einer HTTP-Anfrage
+    -- ist er nicht erreichbar: er kommt nicht aus Kopfzeilen oder Rumpf,
+    -- sondern aus dem Code, der die Verbindung aufmacht.
+    create or replace function public.ist_dienst()
+    returns boolean
+    language sql
+    stable
+    as $$
+      select coalesce(nullif(current_setting('app.dienst', true), ''), '0') = '1';
+    $$;
+    
+    -- Die externe Schnittstelle weist sich mit einem Zugriffsschlüssel aus,
+    -- nicht mit einer Olares-Identität. Sie bekommt genau eine Organisation
+    -- und ausschließlich Leserechte.
+    create or replace function public.api_schluessel_org()
+    returns uuid
+    language sql
+    stable
+    as $$
+      select nullif(current_setting('app.api_key_org', true), '')::uuid;
+    $$;
+    
+    -- ── Zwei Lücken in 0002, die vor dem Erzwingen zu schließen sind ────────
+    
+    -- 1. `meetings_select` verlangte `deleted_at is null`. Damit wäre der
+    --    Papierkorb (0016) leer und das endgültige Löschen fände seine Zeile
+    --    nicht. Die Bedingung entfällt hier; jede Ansicht außer dem
+    --    Papierkorb filtert ohnehin selbst darauf — nachgeprüft in
+    --    meetings.py, search.py und external_api.py.
+    drop policy if exists meetings_select on public.meetings;
+    create policy meetings_select on public.meetings
+      for select
+      using (org_id in (select public.current_user_orgs()));
+    
+    -- 2. Für `templates` gab es keine Lösch-Regel — `delete_template` wäre
+    --    unter `force` ins Leere gelaufen. Dieselbe Bedingung wie beim
+    --    Ändern: eigene Organisation, Verwaltung, keine Werksvorlage.
+    drop policy if exists templates_delete on public.templates;
+    create policy templates_delete on public.templates
+      for delete
+      using (
+        org_id in (select public.current_user_orgs())
+        and public.current_user_role_in_org(org_id) in ('owner', 'admin')
+        and is_system = false
+      );
+    
+    -- ── Dienst-Ausnahme je Tabelle ──────────────────────────────────────────
+    --
+    -- Permissive Regeln werden mit ODER verknüpft: die Ausnahme steht neben
+    -- den Nutzerregeln aus 0002, sie ersetzt keine.
+    do $$
+    declare t text;
+    begin
+      foreach t in array array[
+        'meetings', 'transcripts', 'summaries', 'meeting_chunks',
+        'templates', 'tags', 'meeting_tags', 'audit_log',
+        'org_settings', 'template_customizations',
+        'org_webhooks', 'webhook_deliveries', 'api_keys',
+        'org_speakers', 'speaker_voiceprints', 'meeting_speaker_clusters'
+      ]
+      loop
+        execute format('drop policy if exists %I on public.%I', t || '_dienst', t);
+        execute format(
+          'create policy %I on public.%I for all using (public.ist_dienst()) with check (public.ist_dienst())',
+          t || '_dienst', t
+        );
+      end loop;
+    end $$;
+    
+    -- ── Lesezugang für die externe Schnittstelle ────────────────────────────
+    --
+    -- Nur die Tabellen, die `/api/external/v1/*` tatsächlich liest, und nur
+    -- `for select`. Schreiben ist über diesen Kontext nirgends möglich.
+    drop policy if exists meetings_api_schluessel on public.meetings;
+    create policy meetings_api_schluessel on public.meetings
+      for select using (org_id = public.api_schluessel_org());
+    
+    drop policy if exists transcripts_api_schluessel on public.transcripts;
+    create policy transcripts_api_schluessel on public.transcripts
+      for select using (
+        meeting_id in (select id from public.meetings where org_id = public.api_schluessel_org())
+      );
+    
+    drop policy if exists summaries_api_schluessel on public.summaries;
+    create policy summaries_api_schluessel on public.summaries
+      for select using (
+        meeting_id in (select id from public.meetings where org_id = public.api_schluessel_org())
+      );
+    
+    drop policy if exists tags_api_schluessel on public.tags;
+    create policy tags_api_schluessel on public.tags
+      for select using (org_id = public.api_schluessel_org());
+    
+    drop policy if exists meeting_tags_api_schluessel on public.meeting_tags;
+    create policy meeting_tags_api_schluessel on public.meeting_tags
+      for select using (
+        meeting_id in (select id from public.meetings where org_id = public.api_schluessel_org())
+      );
+    
+    -- Werksvorlagen tragen keine Organisation; die externe Ansicht nennt nur
+    -- den Namen der verwendeten Vorlage.
+    drop policy if exists templates_api_schluessel on public.templates;
+    create policy templates_api_schluessel on public.templates
+      for select using (
+        public.api_schluessel_org() is not null
+        and (is_system = true or org_id = public.api_schluessel_org())
+      );
+    
+    -- ── Und jetzt erzwingen ─────────────────────────────────────────────────
+    --
+    -- `force` gilt auch für die Eigentümerin der Tabellen — also für genau
+    -- die Verbindung, mit der Insilo arbeitet. Ohne diese Zeilen ist alles
+    -- darüber Zierde.
+    --
+    -- Bewusst NICHT dabei: users, orgs, user_org_roles. Die Anmeldung löst
+    -- die Identität auf, bevor es einen Kontext gibt; würden sie mitgezwungen,
+    -- käme keine erste Anmeldung mehr durch.
+    do $$
+    declare t text;
+    begin
+      foreach t in array array[
+        'meetings', 'transcripts', 'summaries', 'meeting_chunks',
+        'templates', 'tags', 'meeting_tags', 'audit_log',
+        'org_settings', 'template_customizations',
+        'org_webhooks', 'webhook_deliveries', 'api_keys',
+        'org_speakers', 'speaker_voiceprints', 'meeting_speaker_clusters'
+      ]
+      loop
+        execute format('alter table public.%I enable row level security', t);
+        execute format('alter table public.%I force row level security', t);
+      end loop;
+    end $$;
+    
   0099_seed.sql: |
     -- ========================================================================
     -- seed.sql — System-Templates (v0.1.46 i18n Phase 3)
@@ -1247,6 +1489,18 @@ data:
     -- ON CONFLICT DO UPDATE: idempotent — jeder Init-Container-Run schreibt
     -- die neuesten Defaults. User-Overrides leben in template_customizations
     -- und werden NICHT überschrieben.
+    --
+    -- Seit Migration 0017 gilt `force row level security` auch für die
+    -- Eigentümerin der Tabellen — also für genau die Verbindung, mit der der
+    -- Init-Container arbeitet. Die Regel `templates_insert` verlangt eine
+    -- Organisation und `is_system = false`; Werksvorlagen haben weder das
+    -- eine noch das andere. Ohne die folgende Zeile scheitert das Saatgut
+    -- mit „new row violates row-level security policy" — und zwar bei
+    -- **jeder** Neuinstallation.
+    --
+    -- Das Saatgut ist ein Systemvorgang, kein Nutzervorgang: es bekommt
+    -- denselben Kontext wie die Hintergrunddienste.
+    select set_config('app.dienst', '1', false);
     -- ========================================================================
     
     insert into public.templates (

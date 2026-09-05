@@ -6,11 +6,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel, Field
 
+from app import audit
 from app.auth import CurrentUser, get_current_user
-from app.db import acquire
+from app.db import acquire_as
 from app.errors import http_error
 from app.storage import delete_object, get_presigned_url, upload_bytes
 from app.tasks.notify import enqueue as enqueue_webhook
@@ -70,7 +71,7 @@ async def list_meetings(
     - `tag` (repeatable): AND-filter — only meetings tagged with **all** given tag-IDs.
     - `q`: case-insensitive title substring search.
     """
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         # Base query — join tag-count when AND-filter is set
         if tag:
             rows = await conn.fetch(
@@ -128,9 +129,62 @@ async def list_meetings(
     return dtos
 
 
+# Muss vor `/meetings/{meeting_id}` stehen: FastAPI prüft die Routen in
+# Reihenfolge der Anmeldung, und `trash` würde sonst als Kennung gelesen
+# und mit 422 abgelehnt — nicht durchgereicht.
+@router.get("/meetings/trash")
+async def list_trash(user: CurrentUser = Depends(get_current_user)) -> dict:
+    """Gelöschte Besprechungen, die noch zurückgeholt werden können.
+
+    Bis v0.1.81 gab es diese Ansicht nicht — und auch nichts zu zeigen:
+    das Löschen entfernte die Tonaufnahme sofort, die Frist galt nur für
+    die Datenbankzeile.
+    """
+    async with acquire_as(user.user_id) as conn:
+        frist = await conn.fetchval(
+            "select trash_retention_days from public.orgs where id = $1",
+            user.org_id,
+        )
+        rows = await conn.fetch(
+            """
+            select m.id, m.title, m.recorded_at, m.deleted_at, m.status,
+                   m.duration_sec, m.audio_path, m.audio_deleted_at,
+                   m.audio_size_bytes,
+                   case when o.trash_retention_days > 0
+                        then m.deleted_at + make_interval(days => o.trash_retention_days)
+                   end as endgueltig_am
+            from public.meetings m
+            join public.orgs o on o.id = m.org_id
+            where m.org_id = $1 and m.deleted_at is not null
+            order by m.deleted_at desc
+            """,
+            user.org_id,
+        )
+
+    return {
+        "frist_tage": frist or 0,
+        "eintraege": [
+            {
+                "id": str(r["id"]),
+                "title": r["title"],
+                "recorded_at": r["recorded_at"].isoformat() if r["recorded_at"] else None,
+                "deleted_at": r["deleted_at"].isoformat() if r["deleted_at"] else None,
+                "endgueltig_am": (
+                    r["endgueltig_am"].isoformat() if r["endgueltig_am"] else None
+                ),
+                "status": r["status"],
+                "duration_ms": (r["duration_sec"] or 0) * 1000,
+                "byte_size": r["audio_size_bytes"] or 0,
+                "audio_vorhanden": bool(r["audio_path"]) and r["audio_deleted_at"] is None,
+            }
+            for r in rows
+        ],
+    }
+
+
 @router.get("/meetings/{meeting_id}")
 async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_user)) -> dict:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             select m.id, m.title, m.recorded_at, m.duration_sec, m.audio_size_bytes,
@@ -177,7 +231,7 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
     dto["template_name"] = row["template_name"]
 
     # Tags zum Meeting
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         tag_rows = await conn.fetch(
             """
             select t.id, t.name, t.color
@@ -236,6 +290,7 @@ _QUICK_NOTE_TEMPLATE_ID = UUID("00000000-0000-0000-0000-000000000005")
 
 @router.post("/recordings", status_code=201)
 async def create_recording(
+    request: Request,
     audio: UploadFile = File(...),
     title: str = Form(...),
     duration_ms: int = Form(...),
@@ -281,7 +336,7 @@ async def create_recording(
     if quick_mode:
         metadata["quick_mode"] = True
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         # Validate template visibility if one was passed (otherwise the
         # summarize task falls back to the system default).
         if tpl_uuid is not None:
@@ -331,6 +386,9 @@ async def create_recording(
     transcribe_meeting.delay(str(meeting_id))
     enqueue_webhook(meeting_id, "meeting.created")
 
+    # Die Besprechung ist der Gegenstand, um den es bei einer Rückfrage
+    # geht — ihre Kennung entsteht aber erst hier, nicht im Pfad.
+    audit.ergaenze(request.scope, kennung=row["id"], zusatz={"titel": row["title"]})
     return _meeting_row_to_dto(row, audio_url=get_presigned_url(key))
 
 
@@ -376,7 +434,7 @@ async def update_transcript_speakers(
                 sid=repr(sid),
             )
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         # Make sure the user owns the meeting.
         owned = await conn.fetchval(
             """
@@ -438,7 +496,7 @@ async def retry_summary(
     Einstellungen — they don't want to re-record the meeting, just retry
     the summary step against the freshly-configured endpoint.
     """
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             select m.id, m.status, t.full_text
@@ -488,7 +546,7 @@ async def patch_meeting(
     if not fields:
         raise http_error(400, "meeting.no_fields")
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         existing = await conn.fetchrow(
             """
             select id from public.meetings
@@ -538,7 +596,7 @@ async def dispatch_meeting(
     wants to decide per meeting whether the outbound push happens. This
     endpoint is what the "An externe Systeme senden"-Button calls.
     """
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         meeting = await conn.fetchrow(
             """
             select id, status from public.meetings
@@ -570,24 +628,90 @@ async def dispatch_meeting(
 async def delete_meeting(
     meeting_id: UUID, user: CurrentUser = Depends(get_current_user)
 ) -> None:
-    async with acquire() as conn:
+    """In den Papierkorb legen — die Tonaufnahme bleibt.
+
+    Bis v0.1.81 entfernte dieser Endpunkt die Datei sofort. `deleted_at`
+    war damit eine Frist auf eine Zeile, deren Inhalt schon weg war: wer
+    versehentlich löschte, hatte die Aufnahme verloren, und CLAUDE.md
+    versprach derweil „Soft-Delete + 30-Tage-Frist vor Hard-Delete".
+
+    Die Datei entfernt jetzt `app.tasks.aufraeumen` nach Ablauf der Frist
+    — oder sofort, wenn die Organisation `trash_retention_days = 0` führt.
+    """
+    async with acquire_as(user.user_id) as conn:
         row = await conn.fetchrow(
             """
             update public.meetings
             set deleted_at = now()
             where id = $1 and org_id = $2 and deleted_at is null
-            returning audio_path
+            returning id
             """,
             meeting_id,
             user.org_id,
         )
     if row is None:
         raise http_error(404, "meeting.not_found")
-    # Soft-delete in DB; also remove from object storage to reclaim space.
-    if row["audio_path"]:
-        try:
-            delete_object(row["audio_path"])
-        except Exception:
-            # If object is already gone, don't fail the request.
-            pass
     enqueue_webhook(meeting_id, "meeting.deleted")
+
+
+@router.post("/meetings/{meeting_id}/restore", status_code=204)
+async def restore_meeting(
+    meeting_id: UUID, user: CurrentUser = Depends(get_current_user)
+) -> None:
+    """Aus dem Papierkorb zurückholen.
+
+    Wenn die Aufbewahrungsfrist die Tonaufnahme inzwischen entfernt hat,
+    kommt die Besprechung ohne Datei zurück — Transkript und
+    Zusammenfassung bleiben lesbar. Das ist der Zweck der getrennten
+    Fristen.
+    """
+    row = None
+    async with acquire_as(user.user_id) as conn:
+        row = await conn.fetchrow(
+            """
+            update public.meetings
+            set deleted_at = null
+            where id = $1 and org_id = $2 and deleted_at is not null
+            returning id
+            """,
+            meeting_id,
+            user.org_id,
+        )
+    if row is None:
+        raise http_error(404, "meeting.not_found")
+
+
+@router.delete("/meetings/{meeting_id}/permanent", status_code=204)
+async def purge_meeting(
+    meeting_id: UUID, user: CurrentUser = Depends(get_current_user)
+) -> None:
+    """Endgültig entfernen — Zeile und Datei, ohne Frist.
+
+    Nur aus dem Papierkorb heraus: was noch nicht gelöscht ist, kann hier
+    nicht verschwinden. Transkript, Zusammenfassung, Abschnitte, Etiketten
+    und Sprecher-Zuordnungen hängen mit `on delete cascade` daran.
+    """
+    async with acquire_as(user.user_id) as conn:
+        row = await conn.fetchrow(
+            """
+            select audio_path from public.meetings
+            where id = $1 and org_id = $2 and deleted_at is not null
+            """,
+            meeting_id,
+            user.org_id,
+        )
+        if row is None:
+            raise http_error(404, "meeting.not_found")
+
+        # Erst die Datei, dann die Zeile: bleibt die Datei liegen, weil
+        # der Speicher klemmt, zeigt die Zeile noch darauf und der
+        # Aufräum-Job holt es nach. Andersherum wäre sie herrenlos —
+        # genau der Zustand, der am 19.8. dreizehn Dateien gekostet hat.
+        if row["audio_path"]:
+            delete_object(row["audio_path"])
+
+        await conn.execute(
+            "delete from public.meetings where id = $1 and org_id = $2",
+            meeting_id,
+            user.org_id,
+        )

@@ -15,11 +15,12 @@ import re
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
+from app import audit
 from app.auth import CurrentUser, get_current_user
-from app.db import acquire
+from app.db import acquire_as
 from app.errors import http_error
 from app.tasks.notify import enqueue as enqueue_webhook
 
@@ -71,7 +72,7 @@ def _row_to_dto(row) -> TagDto:
 
 @router.get("/tags")
 async def list_tags(user: CurrentUser = Depends(get_current_user)) -> list[TagDto]:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         rows = await conn.fetch(
             """
             select id, name, color
@@ -86,6 +87,7 @@ async def list_tags(user: CurrentUser = Depends(get_current_user)) -> list[TagDt
 
 @router.post("/tags", status_code=201)
 async def create_tag(
+    request: Request,
     payload: TagCreate,
     user: CurrentUser = Depends(get_current_user),
 ) -> TagDto:
@@ -94,7 +96,7 @@ async def create_tag(
         raise http_error(400, "tags.name_empty")
     color = _validate_color(payload.color)
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         try:
             row = await conn.fetchrow(
                 """
@@ -108,6 +110,8 @@ async def create_tag(
             )
         except asyncpg.UniqueViolationError:
             raise http_error(409, "tags.duplicate", name=name) from None
+    # Die Kennung entsteht erst hier — der Pfad gibt sie nicht her.
+    audit.ergaenze(request.scope, kennung=row["id"])
     return _row_to_dto(row)
 
 
@@ -122,7 +126,7 @@ async def update_tag(
         raise http_error(400, "tags.name_empty")
     color = _validate_color(payload.color)
 
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         try:
             row = await conn.fetchrow(
                 """
@@ -148,7 +152,7 @@ async def delete_tag(
     tag_id: UUID,
     user: CurrentUser = Depends(get_current_user),
 ) -> None:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         result = await conn.execute(
             "delete from public.tags where id = $1 and org_id = $2",
             tag_id,
@@ -191,7 +195,7 @@ async def attach_tag_to_meeting(
     payload: MeetingTagAttach,
     user: CurrentUser = Depends(get_current_user),
 ) -> dict:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         await _ensure_meeting_owned(conn, meeting_id, user.org_id)
         await _ensure_tag_owned(conn, payload.tag_id, user.org_id)
         await conn.execute(
@@ -213,7 +217,7 @@ async def detach_tag_from_meeting(
     tag_id: UUID,
     user: CurrentUser = Depends(get_current_user),
 ) -> None:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         await _ensure_meeting_owned(conn, meeting_id, user.org_id)
         await conn.execute(
             """

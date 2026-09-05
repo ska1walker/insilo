@@ -2,7 +2,7 @@
 
 Fires when a meeting transitions state (created / ready / failed /
 updated / deleted). For `meeting.ready` events the payload includes the
-full rendered Markdown — that's the moment downstream consumers (Duo,
+full rendered Markdown — that's the moment downstream consumers (knowledge
 OpenWebUI, custom integrations) actually want to file the meeting. For
 every other event the payload is a minimal status update.
 
@@ -40,6 +40,7 @@ import httpx
 from celery import shared_task
 
 from app.config import settings
+from app.db import dienst_kontext
 from app.exports.markdown import render_meeting_markdown
 from app.worker import celery_app  # noqa: F401  -- import side-effect: registers
 
@@ -57,13 +58,21 @@ _RESPONSE_BODY_CHARS = 512
 
 
 async def _connect() -> asyncpg.Connection:
-    return await asyncpg.connect(
+    """Eigene Verbindung für diese Aufgabe — mit Dienst-Kontext.
+
+    Hintergrundaufgaben haben keinen angemeldeten Nutzer. Unter der
+    erzwungenen Zeilensicherheit aus Migration 0017 sähen sie ohne
+    Kontext keine Zeile und könnten keine schreiben.
+    """
+    conn = await asyncpg.connect(
         host=settings.db_host,
         port=settings.db_port,
         user=settings.db_user,
         password=settings.db_password,
         database=settings.db_name,
     )
+    await dienst_kontext(conn)
+    return conn
 
 
 def _iso_now() -> str:

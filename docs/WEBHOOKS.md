@@ -1,6 +1,6 @@
 # Insilo Webhooks — Vertrag
 
-> **Zielgruppe:** Entwicklerinnen und Entwickler, die Insilo an ein Drittsystem anschließen (Duo, OpenWebUI, Notion, eigene Integrationen).
+> **Zielgruppe:** Entwicklerinnen und Entwickler, die Insilo an ein Drittsystem anschließen (Wissensspeicher, OpenWebUI, Notion, eigene Integrationen).
 > **Stand:** Mai 2026
 > **Verwandt:** [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md)
 
@@ -316,7 +316,7 @@ Welche Felder sind in welchem Event garantiert?
    - URL des Drittsystems eintragen
    - Events auswählen (Minimum: `meeting.ready`)
    - Speichern → das Secret wird **einmalig** angezeigt → kopieren
-2. **Im Drittsystem (z. B. Duo):**
+2. **Im Drittsystem:**
    - Secret einfügen
    - Zielordner / Tabelle / Verarbeitungspfad konfigurieren
 3. **Test:** im Insilo-WebhookManager auf „Testen" klicken → das Drittsystem sollte `200` zurückgeben → grüne LED erscheint.

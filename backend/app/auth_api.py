@@ -16,9 +16,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 from passlib.context import CryptContext
 
+from app import audit
 from app.db import acquire
 from app.errors import http_error
 
@@ -65,6 +66,7 @@ def _parse_bearer(header: str | None) -> str | None:
 
 
 async def get_api_caller(
+    request: Request,
     authorization: str | None = Header(None),
 ) -> ApiCaller:
     token = _parse_bearer(authorization)
@@ -97,6 +99,14 @@ async def get_api_caller(
             "update public.api_keys set last_used_at = now() where id = $1",
             match["id"],
         )
+
+    # Fürs Protokoll: auf diesem Weg verlassen Daten die Box, hier hat der
+    # Urheber keinen Namen aus X-Bfl-User, sondern einen Schlüssel.
+    audit.merke_akteur(
+        request.scope,
+        org_id=match["org_id"],
+        api_key_id=match["id"],
+    )
 
     return ApiCaller(
         api_key_id=match["id"],

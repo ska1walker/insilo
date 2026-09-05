@@ -81,7 +81,7 @@ Feature-Set:
   `naechste_schritte`, `kontext`). Backend-`quick_mode`-Flag setzt
   Template hart + zwingt Webhook-Auto-Dispatch (für Friction-Free-UX).
   PWA-Shortcut „Idee aufnehmen" für Home-Screen-Long-Press.
-  Volle Pipeline → Duo (sobald Duo-Receiver bereit; bis dahin
+  Volle Pipeline bis zum Webhook-Versand (bis ein Empfänger steht:
   Retry-Queue).
 - **Whisper-env-prefix + JSON-Unwrap (v0.1.52)** — `env_prefix="WHISPER_"`
   in den Whisper-Settings (lief vorher als `tiny` statt `large-v3`!),
@@ -170,94 +170,18 @@ Feature-Set:
   Erfolgsmeldung beweist nichts:
   `kubectl get pods -n insilo-kaivostudio -o jsonpath='{range .items[*]}{.spec.containers[*].image}{"\n"}{end}'`
 
-**Nächste geplante Iteration: Duo-Integration (Webhook-Empfänger)**
+**Nächste Iteration: Absicherung des Backends**
 
-Insilo-Seite ist seit v0.1.39 fertig: Webhook-Manager mit HMAC,
-Fan-Out, Backoff, REST-API + Markdown-Export. Fehlt nur noch der
-Empfänger in `duo.aimighty.de`.
+Das Backend läuft ohne Envoy-Sidecar (die api-Entrance wurde in v0.1.12
+entfernt, Begründung im OlaresManifest) und liest die Identität allein aus
+`X-Bfl-User`. Wer den Dienst clusterintern erreicht, kann sich als
+beliebiger Nutzer ausgeben. Dazu ist die Zeilensicherheit zwar
+geschrieben, aber wirkungslos: der Nutzerkontext wurde nie gesetzt und
+`force` fehlte, während das Backend als Eigentümerin der Tabellen
+verbindet.
 
-Die Vision (vom User):
-> Insilo schreibt nach jeder Transkription Meeting-Minutes als Markdown
-> nach Duo (Cloud-Knowledge-Hub). OpenWebUI greift auf Duo zu und
-> beantwortet Fragen wie „Sind noch Aufgaben offen?", „Mach einen
-> One-Pager zur Sitzung von letzter Woche". Aufgaben aus Insilo-Meetings
-> landen als Checklist-Items in Duo → über alle Meetings aggregierbar.
-
-**Was wir bereits wissen:**
-
-- **Duo ist eine Cloud-App des Users** (`duo.aimighty.de`). Notizen +
-  Folders + Tasks, Multi-User. User baut Duo selbst und kann
-  Webhook-Empfänger einbauen.
-- **Empfohlene Integration:** Webhook-Push von Insilo nach Duo,
-  HMAC-Signatur. Insilo-Seite ist **fertig** — fehlt nur der Empfänger
-  in Duo. Voller Vertrag in `docs/WEBHOOKS.md`.
-
-**Erste Aufgabe in der nächsten Session:**
-
-1. Mit User abklären, welcher Stack in Duo läuft (Node/Python/Go?).
-2. Empfänger-Endpoint `POST /api/integrations/insilo` in Duo bauen:
-   - HMAC-SHA256-Verify mit `hmac.compare_digest`
-   - Idempotenz via `X-Insilo-Delivery-ID` (Tabelle
-     `processed_webhook_deliveries`)
-   - Upsert `notes` über `(external_source='insilo', external_id=meeting.id)`
-3. Optional: Checkbox-Parser für `## Offene Aufgaben` → Duo-Tasks.
-4. End-to-End-Test gegen die Box: in Insilo Meeting aufnehmen → auf
-   Meeting-Detail „An externe Systeme senden" klicken → Webhook
-   landet bei Duo.
-
-**Architektur-Skizze (in HANDOFF.md Header detaillierter):**
-
-```
-Meeting fertig (status="ready")
-        ↓
-1. Webhook-POST an konfigurierbare URL(s)
-        ↓
-2. File-Export-Adapter schreibt Markdown nach
-   hostPath /app/data/exports/<duo-pfad>/
-        ↓
-3. Duo bemerkt neuen .md → indexiert → OpenWebUI weiß Bescheid
-```
-
-**Markdown-Template-Vorschlag:**
-
-```markdown
----
-source: insilo
-meeting_id: <uuid>
-title: <Title>
-date: <ISO-Date>
-duration_min: <number>
-speakers: [<Name>, <Name>]
-tags: [<tag>, <tag>]
-template: <Template-Name>
----
-
-# <Title> — <Date>
-
-## Zusammenfassung
-…
-
-## Beschlüsse
-- …
-
-## Offene Aufgaben
-- [ ] <Was> (<Wer>, bis <Wann>)
-
-## Volltranskript
-[mm:ss] <Sprecher>: <Text>
-```
-
-**Bauteile, die wir wahrscheinlich brauchen:**
-
-| Komponente | Wo | Zweck |
-|---|---|---|
-| Webhook-Endpoint-Konfig | `org_settings`-Tabelle erweitern | Per-Org Webhook-URL(s) |
-| Webhook-Dispatcher | `app/tasks/notify.py` (NEU) | Celery-Task: POST nach status=ready |
-| File-Export-Adapter | `app/exports/markdown.py` (NEU) | Markdown rendern + schreiben |
-| Export-Pfad-Konfig | `org_settings` erweitern | hostPath für Duo-Ordner |
-| Trigger im Worker | `app/tasks/summarize.py` Ende | nach DB-Update → notify-Task |
-| API-Keys + Verwaltung | neue Tabelle `api_keys` + UI in `/einstellungen` | REST-API authentifizieren |
-| REST-API für Pull | `app/routers/api.py` (NEU) | GET /api/v1/external/meetings mit Token |
+Stand der Arbeit steht im HANDOFF-Kopf unter „Torwächter und
+Zeilensicherheit“.
 
 **Bevor du Code schreibst:** stelle die 4 Fragen oben, dann lies
 `docs/HANDOFF.md` $1 (Header-Banner) komplett. Erst dann planen.

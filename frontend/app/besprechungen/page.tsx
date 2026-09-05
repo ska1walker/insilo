@@ -1,6 +1,8 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { TagFilterBar } from "@/components/tag-filter-bar";
@@ -15,6 +17,7 @@ type LoadState =
   | { kind: "error"; message: string };
 
 export default function Home() {
+  const tPapierkorb = useTranslations("papierkorb");
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
@@ -52,14 +55,25 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-[1280px] px-6 py-10 md:px-12 md:py-16">
-      <div className="mb-10 flex items-baseline justify-between">
+      <div className="mb-10 flex items-baseline justify-between gap-4">
         <h1 className="text-3xl font-medium md:text-4xl">Besprechungen</h1>
-        {state.kind === "ok" && state.meetings.length > 0 && (
-          <p className="mono text-xs uppercase tracking-[0.08em] text-text-gedaempft">
-            {state.meetings.length}{" "}
-            {state.meetings.length === 1 ? "Aufnahme" : "Aufnahmen"}
-          </p>
-        )}
+        <div className="flex shrink-0 items-baseline gap-5">
+          {state.kind === "ok" && state.meetings.length > 0 && (
+            <p className="mono text-xs uppercase tracking-[0.08em] text-text-gedaempft">
+              {state.meetings.length}{" "}
+              {state.meetings.length === 1 ? "Aufnahme" : "Aufnahmen"}
+            </p>
+          )}
+          {/* Der Papierkorb gehört hierher, nicht in die Navigation: man
+              sucht ihn dort, wo man gelöscht hat. */}
+          <Link
+            href="/papierkorb"
+            className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer"
+          >
+            <Trash2 size={14} aria-hidden />
+            {tPapierkorb("link")}
+          </Link>
+        </div>
       </div>
 
       <TagFilterBar

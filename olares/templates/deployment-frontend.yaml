@@ -23,6 +23,11 @@ spec:
       component: frontend
   template:
     metadata:
+      annotations:
+        # Zwingt beide Pods zum Neustart, wenn sich das gemeinsame
+        # Geheimnis ändert. Ohne das behielten sie den alten Wert und
+        # der nächste Einzelneustart liefe in 401.
+        checksum/insilo-internal: {{ include "insilo.internalChecksum" . }}
       labels:
         app: insilo
         component: frontend
@@ -53,6 +58,12 @@ spec:
               value: "http://insilo-backend:8000"
             - name: NEXT_PUBLIC_USER
               value: "{{ .Values.bfl.username }}"
+            # Gemeinsames Geheimnis — der Torwächter vor dem Backend.
+            - name: INSILO_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: insilo-internal
+                  key: token
           resources:
             requests:
               cpu: 250m

@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.auth import CurrentUser, get_current_user
-from app.db import acquire
+from app.db import acquire_as
 from app.egress import ist_boxintern, ist_eigene_zone
 from app.llm_config import load_llm_config
 from app.stt_config import load_stt_config
@@ -70,7 +70,7 @@ def _host(url: str) -> str:
 
 @router.get("/egress", response_model=EgressRead)
 async def read_egress(user: CurrentUser = Depends(get_current_user)) -> EgressRead:
-    async with acquire() as conn:
+    async with acquire_as(user.user_id) as conn:
         llm = await load_llm_config(conn, user.org_id)
         # Drei Lagen statt zwei: clusterintern, eigene Box über die
         # öffentliche Adresse, fremder Anbieter. Nur das Letzte ist ein

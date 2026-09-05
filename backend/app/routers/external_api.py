@@ -17,7 +17,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from app.auth_api import ApiCaller, require_scope
-from app.db import acquire
+from app.db import acquire_als_schluessel
 from app.exports.markdown import render_meeting_markdown
 
 router = APIRouter(prefix="/api/external/v1", tags=["external-api"])
@@ -48,7 +48,7 @@ async def list_meetings(
     status: str | None = Query(None, max_length=32),
     caller: ApiCaller = Depends(READ_MEETINGS),
 ) -> dict[str, Any]:
-    async with acquire() as conn:
+    async with acquire_als_schluessel(caller.org_id) as conn:
         if status:
             rows = await conn.fetch(
                 """
@@ -194,7 +194,7 @@ async def get_meeting(
     meeting_id: UUID,
     caller: ApiCaller = Depends(READ_MEETINGS),
 ) -> dict[str, Any]:
-    async with acquire() as conn:
+    async with acquire_als_schluessel(caller.org_id) as conn:
         meeting, transcript, summary, tags, template_name = await _fetch_meeting_for_export(
             conn, meeting_id, caller.org_id
         )
@@ -216,7 +216,7 @@ async def get_meeting_markdown(
     meeting_id: UUID,
     caller: ApiCaller = Depends(READ_MEETINGS),
 ) -> Response:
-    async with acquire() as conn:
+    async with acquire_als_schluessel(caller.org_id) as conn:
         meeting, transcript, summary, tags, template_name = await _fetch_meeting_for_export(
             conn, meeting_id, caller.org_id
         )

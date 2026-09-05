@@ -19,8 +19,19 @@
 >
 > ## Torwächter und Zeilensicherheit (5. September 2026)
 >
-> **Noch nicht ausgerollt.** Code auf `main`, Migration **0017** gehört
-> dazu. Die Box läuft weiter auf v0.1.81.
+> **Ausgerollt und nachgemessen: v0.1.83 läuft auf der Box** (Helm-Rev 8,
+> alle fünf Pods auf 0.1.83-Images, alle sechs Health-Checks grün).
+> Migrationen **0016** und **0017** sind angewandt.
+>
+> Der Datenbanknutzer der Box (`insilo_kaivostudio_insilo`) ist **kein
+> Superuser und hat kein `bypassrls`** — die erzwungene Zeilensicherheit
+> greift dort also wirklich. Nachgemessen im laufenden System: ohne
+> Kontext **null Zeilen**, mit Nutzerkontext alle 16 Besprechungen, 15
+> Transkripte, 11 Zusammenfassungen. Der geforderte Nachweis aus einem
+> **anderen Pod** auf `insilo-backend:8000`: **401** — ohne alles, mit
+> behaupteter fremder Identität und mit geratenem Geheimnis. Vor dem
+> Eingriff lag ein `pg_dump` unter `~/insilo-sicherung/` auf der Box,
+> daneben `rueckweg.sql` (siehe unten).
 >
 > Vier Befunde, die zusammen einen einzigen Satz ergaben: **wer das
 > Backend erreichte, war, wer er zu sein behauptete.**
@@ -123,12 +134,36 @@
 > `kubectl logs -n insilo-kaivostudio <frontend-pod> -c olares-envoy-sidecar | grep -i remote-user`
 > — steht dort etwas, greift der Vorrang.
 >
+> ### Zwei Dinge, die erst das Ausrollen gezeigt hat
+>
+> **1. Erzwungene Zeilensicherheit blendet auch die Statusanzeige.**
+> `/health/llm` und `/health/stt` lasen `org_settings` ohne Kontext und
+> sahen unter `force` **null Zeilen**. Ergebnis auf der Box: „Sprachmodell
+> nicht eingerichtet", obwohl `https://llm.kaivostudio.olares.de/v1`
+> eingetragen war — und schlimmer `/health/stt` → **`mode=local`** für
+> eine Box, deren Ton an Speaches geht. Eine Anwendung, die
+> Datensouveränität *nachweisen* soll, hat damit den Weg nach draußen
+> unterschlagen. Behoben in **v0.1.83** (`acquire_als_dienst`), ein Test
+> hält es fest.
+>
+> **Die allgemeine Lehre:** wer `force row level security` einführt, muss
+> jede Stelle durchgehen, die org-gebundene Tabellen **ohne** Nutzer
+> liest — Health-Checks, Hintergrundaufgaben, Saatgut. Der Fehler ist
+> dabei nie „Zugriff verweigert", sondern **ein leeres Ergebnis**, und
+> ein leeres Ergebnis sieht aus wie eine gültige Antwort.
+>
+> **2. `helm rollback` nimmt die Migration nicht zurück.** Bliebe die
+> Zeilensicherheit erzwungen, während der alte Code keinen Kontext setzt,
+> sähe die App **keine einzige Zeile** — schlimmer als der Fehler, den
+> man zurücknehmen wollte. Vor jedem Rollback auf < 0.1.82 gehört deshalb
+> `~/insilo-sicherung/rueckweg.sql` eingespielt (setzt `no force` auf allen
+> 16 Tabellen).
+>
 > ---
 >
 > ## Protokoll und Papierkorb — drei Zusagen eingelöst (5. September 2026)
 >
-> **Noch nicht ausgerollt.** Der Code liegt auf `main`, die Box läuft
-> weiter auf v0.1.81. Migration **0016** gehört dazu.
+> **Ausgerollt mit v0.1.82/0.1.83.** Migration **0016** gehört dazu.
 >
 > Der Anlass war eine Bestandsaufnahme, keine Fehlermeldung: drei
 > Eigenschaften, mit denen Insilo gegenüber Kanzleien argumentiert,

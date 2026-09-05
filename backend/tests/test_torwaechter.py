@@ -216,6 +216,31 @@ def test_jeder_router_setzt_den_nutzerkontext() -> None:
     )
 
 
+def test_health_checks_lesen_org_tabellen_mit_kontext() -> None:
+    """Sonst melden sie das Gegenteil der Wirklichkeit.
+
+    Beim Ausrollen von v0.1.82 auf die Box gefunden: beide Checks lasen
+    `org_settings` ohne Kontext und sahen unter der erzwungenen
+    Zeilensicherheit **null Zeilen**. `/health/llm` meldete „nicht
+    eingerichtet", obwohl eine Adresse eingetragen war — und `/health/stt`
+    meldete `mode=local` für eine Box, deren Ton an einen externen Dienst
+    geht.
+
+    Der zweite Fall ist der Grund für diesen Test: eine Anwendung, die
+    Datensouveränität nachweisen soll, darf den Weg nach draußen nicht
+    unterschlagen.
+    """
+    quelle = (WURZEL / "backend/app/main.py").read_text(encoding="utf-8")
+    for name in ("health_llm", "health_stt"):
+        anfang = quelle.index(f"async def {name}(")
+        ende = quelle.index("@app.get", anfang + 10)
+        rumpf = quelle[anfang:ende]
+        assert "org_settings" in rumpf, f"{name} liest org_settings nicht mehr — Test anpassen"
+        assert "acquire_als_dienst()" in rumpf, (
+            f"{name} liest eine org-gebundene Tabelle ohne Kontext und sieht nichts"
+        )
+
+
 def test_hintergrundaufgaben_kennzeichnen_ihre_verbindung() -> None:
     """Sonst sähen sie unter erzwungener Sicherheit keine Zeile."""
     for name in ("transcribe", "summarize", "embed", "notify", "aufraeumen"):

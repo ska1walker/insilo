@@ -274,7 +274,12 @@ async def health_llm() -> dict:
     base = settings.llm_base_url
     key = settings.llm_api_key
     try:
-        async with acquire() as conn:
+        # Als Dienst, nicht ohne Kontext: `org_settings` steht seit
+        # Migration 0017 unter erzwungener Zeilensicherheit. Ohne Kontext
+        # sieht diese Abfrage null Zeilen und der Check meldete
+        # „nicht eingerichtet", während die App längst zusammenfasst —
+        # derselbe Widerspruch wie in v0.1.73, nur mit anderer Ursache.
+        async with acquire_als_dienst() as conn:
             row = await conn.fetchrow(
                 """
                 select llm_base_url, llm_api_key
@@ -316,7 +321,12 @@ async def health_stt() -> dict:
     base = settings.stt_base_url
     key = settings.stt_api_key
     try:
-        async with acquire() as conn:
+        # Als Dienst — siehe /health/llm. Hier wiegt es schwerer: ohne
+        # Kontext meldete der Check `mode=local` für eine Box, deren Ton
+        # an einen externen Dienst geht. Eine Anwendung, die
+        # Datensouveränität nachweist, darf den Weg nach draußen nicht
+        # unterschlagen.
+        async with acquire_als_dienst() as conn:
             row = await conn.fetchrow(
                 """
                 select stt_base_url, stt_api_key

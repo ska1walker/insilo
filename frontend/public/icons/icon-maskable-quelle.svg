@@ -1,16 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 160 160" fill="none" role="img" aria-label="Insilo">
-<title>Insilo — Wappen mit Monogramm I</title>
+<title>Insilo — Wappen, randlos für Android-Masken</title>
 <!--
   Quelle: Figma AImighty, Datei vMiwfm3bnxWLjZLxdbDF8a, Knoten 301:164
   („Icon-Labor" › „Gold fuer die Anwender-Apps" › „app goldgrund I").
 
-  Grund Sand #D6B265 mit Verlauf, Schild in Hanseatenblau, Monogramm in
-  Gold. Aus dieser Datei werden alle PNG-Größen erzeugt — für eine neue
-  Größe braucht es kein Figma.
+  Maskable-Fassung: ohne Eckenrundung und ohne Kante, weil Android auf
+  beliebige Formen beschneidet und seine eigene Maske setzt. Eine
+  Verkleinerung braucht es nicht — das Schild reicht nur bis 51 von 64
+  erlaubten Einheiten vom Mittelpunkt und liegt damit im garantierten
+  Innenkreis (80 % Durchmesser).
 -->
 <g id="insilo-wappen">
 <g clip-path="url(#clip0_239_130)">
-<rect width="160" height="160" rx="35.84" fill="url(#paint0_linear_239_130)"/>
+<rect width="160" height="160" fill="url(#paint0_linear_239_130)"/>
 <g id="Ellipse" filter="url(#filter0_f_239_130)">
 <ellipse cx="79.2" cy="-30.4" rx="108" ry="65.6" fill="white" fill-opacity="0.15"/>
 </g>
@@ -26,7 +28,6 @@
 </g>
 </g>
 <path id="I" d="M76.8331 93.5122V63.9308H82.2494V93.5122H76.8331Z" fill="url(#paint3_linear_239_130)"/>
-<rect id="Rectangle" x="1" y="1" width="158" height="158" rx="34.84" stroke="url(#paint4_linear_239_130)" stroke-width="2"/>
 </g>
 </g>
 <defs>
@@ -64,7 +65,7 @@
 <stop offset="1" stop-opacity="0.08"/>
 </linearGradient>
 <clipPath id="clip0_239_130">
-<rect width="160" height="160" rx="35.84" fill="white"/>
+<rect width="160" height="160" fill="white"/>
 </clipPath>
 </defs>
 </svg>

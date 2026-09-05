@@ -246,3 +246,41 @@ respektiert.
 - **Byte-Anzeige.** `webhook_deliveries.request_bytes` zählt erst seit
   Migration 0014; ältere Zustellungen tragen NULL und bleiben aus der
   Summe heraus.
+
+---
+
+## Symbol der Anwendung
+
+Kachel in Sand mit Verlauf (`#D6B265`), Schild in Hanseatenblau, Monogramm
+„I" in Gold. Quelle: Figma AImighty, Knoten **301:164** („Icon-Labor" ›
+„Gold fuer die Anwender-Apps" › „app goldgrund I"). Der Sandgrund ist der
+Ton, den die Farbtablette für **Anwender-Apps** vorsieht — er
+unterscheidet sie von den Werkzeugen, die der Kunde nie sieht.
+
+Zwei Vektorquellen unter `frontend/public/icons/`:
+
+| Quelle | Wofür | Warum eigen |
+|---|---|---|
+| `icon-quelle.svg` | Olares-Kachel, PWA „any" | zeigt das Symbol wie gestaltet, mit Eckenrundung |
+| `icon-maskable-quelle.svg` | Android-Maske, Apple-Touch | randlos, ohne Rundung und ohne Kante — beide Systeme runden selbst, eine mitgelieferte Rundung ergäbe einen doppelten Rand |
+
+**Alle PNG-Größen entstehen aus diesen beiden Dateien:**
+
+```bash
+node scripts/icons.mjs
+```
+
+Eine neue Größe ist eine Zeile in `ZIELE`, kein Figma. In v0.1.68 war
+`icons/` leer, während `manifest.json` drei Dateien versprach — wer die
+App auf den Home-Bildschirm legte, bekam kein Symbol. Deshalb ein Skript
+statt Handarbeit.
+
+**Verkleinert wird für die Android-Maske nichts.** Das Schild reicht nur
+bis 51 von 64 erlaubten Einheiten vom Mittelpunkt und liegt damit im
+garantierten Innenkreis (80 % Durchmesser). Das alte Symbol trug ein
+randnahes Zeichen und musste auf 78 % — dieses nicht. Wer die Vorlage
+ändert, rechnet das nach, statt es zu übernehmen.
+
+**Nicht dasselbe wie das Wappen in der Navigation.**
+`components/wappen.tsx` zeigt die Wortmarke (Schild *plus* Schriftzug) aus
+den Knoten 98:441/98:426 und bleibt davon unberührt.

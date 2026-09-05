@@ -34,7 +34,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.84              # = Chart.yaml.version
+  version: 0.1.85              # = Chart.yaml.version
   # Eine primäre Kategorie, wie es der AIMighty-Markt vorgibt. Die
   # frühere Dreierliste trug mit `Productivity_v112` einen Wert, den
   # dieser Markt ausdrücklich nicht mehr führt.
@@ -115,7 +115,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.84'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.85'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
@@ -148,12 +148,13 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.84 — neues Symbol.
+    v0.1.85 — das neue Symbol auch auf dem Home-Bildschirm.
 
-    - Die Kachel zeigt jetzt Wappen und Monogramm auf Sand, passend zur
-      Farbfamilie der Anwender-Apps. Nur Gestaltung; an der Anwendung
-      ändert sich nichts.
-    - Die Programmteile bleiben unverändert auf 0.1.83.
+    - In v0.1.84 wechselte nur die Kachel im Markt. Die Symbole für den
+      Home-Bildschirm stecken im Programm selbst und blieben deshalb auf
+      dem alten Zeichen; mit dieser Fassung ziehen sie nach.
+    - Wer die App bereits abgelegt hat: einmal neu ablegen, sonst behält
+      das System das gemerkte Bild.
 
   developer: kaivo.studio
   website: https://kaivo.studio

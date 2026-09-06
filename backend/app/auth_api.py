@@ -20,7 +20,7 @@ import bcrypt
 from fastapi import Depends, Header, HTTPException, Request
 
 from app import audit
-from app.db import acquire
+from app.db import acquire_als_dienst
 from app.errors import http_error
 
 KEY_PREFIX = "inskey_"
@@ -123,7 +123,18 @@ async def get_api_caller(
         )
     prefix = token[:KEY_PREFIX_LEN]
 
-    async with acquire() as conn:
+    # Als Dienst, nicht ohne Kontext: `api_keys` steht seit Migration 0017
+    # unter erzwungener Zeilensicherheit. Ohne Kontext liefert die Abfrage
+    # **null Zeilen**, und der Aufruf endete mit „Ungültiger
+    # Zugriffsschlüssel" für einen völlig gültigen — gemessen auf der Box
+    # am 6.9.2026.
+    #
+    # Ein Nutzerkontext ginge hier gar nicht: welche Organisation gemeint
+    # ist, steht erst fest, wenn der Schlüssel gefunden wurde. Das
+    # Nachschlagen ist ein Systemvorgang; ab dem Fund arbeiten die
+    # Endpunkte mit `acquire_als_schluessel(org_id)` und damit nur noch
+    # lesend auf einer Organisation.
+    async with acquire_als_dienst() as conn:
         rows = await conn.fetch(
             """
             select id, org_id, key_hash, scopes, name

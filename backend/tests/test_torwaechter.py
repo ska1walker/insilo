@@ -200,20 +200,67 @@ def test_zeilensicherheit_wird_erzwungen_und_drei_tabellen_ausgenommen() -> None
         assert gezwungen in sql
 
 
-def test_jeder_router_setzt_den_nutzerkontext() -> None:
-    """Ein `acquire()` ohne Kontext liefe unter erzwungener Sicherheit leer.
+# Wo `acquire()` ohne Kontext erlaubt ist — mit dem Grund, warum es dort
+# trägt. Alles andere muss `acquire_as`, `acquire_als_dienst` oder
+# `acquire_als_schluessel` nehmen.
+KONTEXTFREI_ERLAUBT = {
+    # `select 1` — rührt keine geschützte Tabelle an.
+    "main.py:health_db",
+    # Schreibt ins Protokoll. Die Regel `audit_log_insert` (Migration
+    # 0016) lässt das Einfügen ohne Kontext ausdrücklich zu; den Urheber
+    # schlägt `audit.akteur_nachschlagen` über `users` nach, und die
+    # Tabelle ist von `force` ausgenommen.
+    "main.py:_protokoll_schreiben",
+    # Löst die Identität überhaupt erst auf und liest dafür nur
+    # `users`, `orgs` und `user_org_roles` — die drei ausgenommenen.
+    "auth.py:_ensure_user_and_org",
+}
 
-    Ausnahmen sind benannt: `auth.py` löst die Identität erst auf, und
-    das Protokoll schreibt über eine eigene Regel.
+
+def test_kein_zugriff_auf_geschuetzte_tabellen_ohne_kontext() -> None:
+    """Die Fehlerklasse, die diese Umstellung zweimal produziert hat.
+
+    Unter erzwungener Zeilensicherheit ist der Fehler nie „Zugriff
+    verweigert", sondern **ein leeres Ergebnis** — und das sieht aus wie
+    eine gültige Antwort. Zweimal auf der Box eingefangen statt im Test:
+
+    - `/health/llm` und `/health/stt` meldeten „nicht eingerichtet" bzw.
+      `mode=local`, obwohl beides eingetragen war (v0.1.83).
+    - `get_api_caller` fand keinen Zugriffsschlüssel mehr und antwortete
+      „Ungültiger API-Schlüssel" auf einen gültigen (v0.1.87).
+
+    Der frühere Test sah nur in `app/routers/` nach — `auth_api.py` liegt
+    daneben und rutschte deshalb durch. Jetzt zählt das ganze Paket.
     """
     ohne_kontext: list[str] = []
-    for p in sorted((WURZEL / "backend/app/routers").glob("*.py")):
-        for nr, zeile in enumerate(p.read_text(encoding="utf-8").split("\n"), 1):
-            if re.search(r"\bacquire\(\) as conn", zeile):
-                ohne_kontext.append(f"{p.name}:{nr}")
+    for datei in sorted((WURZEL / "backend/app").rglob("*.py")):
+        # `db.py` ist die Definitionsstelle der Helfer selbst — dort steht
+        # `pool.acquire()`, das ist keine Verwendung.
+        if datei.name == "db.py":
+            continue
+        funktion = "?"
+        for nr, zeile in enumerate(datei.read_text(encoding="utf-8").split("\n"), 1):
+            m = re.match(r"\s*(?:async )?def (\w+)\(", zeile)
+            if m:
+                funktion = m.group(1)
+            if re.search(r"(?<!pool\.)\bacquire\(\) as conn", zeile):
+                ort = f"{datei.name}:{funktion}"
+                if ort not in KONTEXTFREI_ERLAUBT:
+                    ohne_kontext.append(f"{ort} (Zeile {nr})")
+
     assert not ohne_kontext, (
-        "Router ohne Nutzerkontext (acquire statt acquire_as): " + ", ".join(ohne_kontext)
+        "Zugriff ohne Kontext — unter `force` kommt dort nichts zurück: "
+        + ", ".join(ohne_kontext)
+        + ". Entweder acquire_as/acquire_als_dienst nehmen oder in "
+        "KONTEXTFREI_ERLAUBT mit Begründung eintragen."
     )
+
+
+def test_der_zugriffsschluessel_wird_als_dienst_nachgeschlagen() -> None:
+    """Ein Nutzerkontext ginge hier nicht — die Organisation steht erst
+    fest, wenn der Schlüssel gefunden ist."""
+    quelle = (WURZEL / "backend/app/auth_api.py").read_text(encoding="utf-8")
+    assert "acquire_als_dienst()" in quelle
 
 
 def test_health_checks_lesen_org_tabellen_mit_kontext() -> None:

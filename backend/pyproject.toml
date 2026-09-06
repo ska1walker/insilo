@@ -39,7 +39,10 @@ dependencies = [
 
   # Utilities
   "python-jose[cryptography]>=3.3.0",
-  "passlib[bcrypt]>=1.7.4",
+  # bcrypt direkt, nicht über passlib: passlib 1.7.4 (2020) ist mit
+  # bcrypt ab 4.1 unverträglich und hat die externe Schnittstelle auf
+  # der Box lahmgelegt. Siehe app/auth_api.py.
+  "bcrypt>=4.1",
   "orjson>=3.10.0",
   "python-dateutil>=2.9.0",
   "numpy>=1.26.0",

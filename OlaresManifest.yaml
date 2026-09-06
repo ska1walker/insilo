@@ -34,7 +34,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.87              # = Chart.yaml.version
+  version: 0.1.88              # = Chart.yaml.version
   # Eine primäre Kategorie, wie es der AIMighty-Markt vorgibt. Die
   # frühere Dreierliste trug mit `Productivity_v112` einen Wert, den
   # dieser Markt ausdrücklich nicht mehr führt.
@@ -115,7 +115,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.87'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.88'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Markt-Bilder: 1920×1080, erzeugt aus markt/vorlagen/ (siehe markt/README.md).
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/markt/aufmacher.png
@@ -152,12 +152,17 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.87 — Zugriffsschlüssel funktionieren jetzt wirklich.
+    v0.1.88 — eine frisch installierte Box lässt ihren ersten Nutzer herein.
 
-    - v0.1.86 hat die eine Hälfte behoben: Schlüssel ließen sich wieder
-      anlegen. Beim Benutzen scheiterten sie weiter — die Prüfung fand
-      den eigenen Schlüssel nicht mehr und meldete ihn als ungültig.
-    - Bereits ausgestellte Schlüssel bleiben gültig.
+    - Bisher endete der erste Aufruf einer neuen Installation mit
+      „Unknown identity": niemand legte die erste Organisation an. Jetzt
+      wird die erste Person, die eine leere Box öffnet, ihre Inhaberin.
+    - Danach bleibt es dabei: jeder weitere unbekannte Name wird
+      abgewiesen, bis die Inhaberin ihn einträgt.
+    - Der Datenschutz-Nachweis sagt nicht mehr zweimal dasselbe, wenn
+      kein externes Ziel eingerichtet ist.
+    - Neu im Quelltext: docs/HANDBUCH.md — Einrichtung und Betrieb für
+      den Kunden, in einem Dokument.
 
   developer: kaivo.studio
   website: https://kaivo.studio

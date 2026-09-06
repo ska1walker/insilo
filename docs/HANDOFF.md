@@ -17,6 +17,79 @@
 >
 > ---
 >
+> ## Die Sicherung war gebrochen — gefunden beim Üben (6. September 2026)
+>
+> Die Wiederherstellung einmal wirklich durchzuspielen war der letzte
+> offene Punkt. Sie hat nicht bestätigt, was man erwartet hatte, sondern
+> etwas gefunden:
+>
+> **`pg_dump` unter der Kennung der App bricht seit Migration 0017 ab.**
+>
+> ```
+> ERROR: query would be affected by row-level security policy for table "api_keys"
+> ```
+>
+> `force row level security` gilt auch für die Eigentümerin der Tabellen,
+> und `pg_dump` setzt `row_security = off`. Es verweigert dann lieber den
+> Dienst, als eine unvollständige Sicherung zu schreiben — die richtige
+> Voreinstellung. `--enable-row-security` würde still nur die sichtbaren
+> Zeilen sichern; eine Sicherung, der die Hälfte fehlt, ist schlimmer als
+> keine. `PGOPTIONS='-c app.dienst=1'` hilft **nicht**, weil pg_dump
+> `row_security` selbst ausschaltet.
+>
+> **Der Abzug gehört als Superuser gefahren** (`-U olares` auf der Box).
+> Steht mit dem vollständigen Befehl in `docs/DEPLOYMENT.md §5`.
+>
+> **Die Lehre ist nicht „RLS war ein Fehler".** Sie ist: eine
+> Sicherheitsmaßnahme verändert die Betriebsabläufe, die um sie herum
+> laufen — und die merkt man erst, wenn man sie ausführt. Der Ablauf war
+> vier Tage lang kaputt und niemandem aufgefallen, weil niemand gesichert
+> hat.
+>
+> **Die Wiederherstellung selbst trägt.** Am 6.9. gegen eine Kopie
+> gefahren: ohne einen einzigen Fehler durchgelaufen, alle acht geprüften
+> Tabellen deckungsgleich, Transkripttext lesbar zurück, erzwungene
+> Sicherheit auf 16 Tabellen mitgewandert. Zweite Hälfte geprüft: alle 16
+> Besprechungen gegen `/app/data` — **null Verweise ins Leere**. Die
+> Prüfdatenbank ist wieder entfernt.
+>
+> ---
+>
+> ## Der Aufräum-Job läuft (6. September 2026)
+>
+> Erster Beleg aus dem Betrieb, unaufgefordert: um 01:30 UTC hat der
+> tägliche Lauf **acht Tonaufnahmen von 114–116 Tagen** entfernt — über
+> der 90-Tage-Frist der Organisation — und Transkripte wie
+> Zusammenfassungen stehen gelassen. Genau die Trennung, für die die
+> beiden Fristen da sind: die Tonspur ist Rohmaterial, das
+> Gesprächsprotokoll der Aktenbestandteil. Der eingebettete Beat meldet
+> sich im Worker-Protokoll mit `beat: Starting...` und kennt die Aufgabe
+> `aufraeumen`.
+>
+> ---
+>
+> ## `Remote-User` kommt an — ohne eine einzige Anmeldung geprüft
+>
+> Offen war, ob der Vorrang in `frontend/middleware.ts` in Betrieb
+> überhaupt greift. Die Antwort ließ sich aus den Envoy-Protokollen
+> **anderer Apps derselben Box** lesen, die echten angemeldeten Verkehr
+> hatten:
+>
+> ```
+> [beacon]     'remote-user', 'kaivostudio'
+> [beacon]     'remote-groups', 'owner,lldap_admin'
+> [claudecode] 'remote-user', 'kaivostudio'
+> ```
+>
+> Der Auth-Dienst ist übrigens **nicht** Standard-Authelia, sondern
+> `beclab/auth:0.2.56` — was aus dessen Verhalten folgt, gehört gemessen
+> und nicht aus der Authelia-Doku übernommen. Gemessen liefert er
+> `Remote-*` nach oben, Envoys `allowed_upstream_headers` lässt das
+> Präfix durch, und `middleware.ts` überschreibt damit serverseitig, was
+> der Browser behauptet. **Die Identität ist nicht mehr fälschbar.**
+>
+> ---
+>
 > ## Torwächter und Zeilensicherheit (5. September 2026)
 >
 > **Ausgerollt und nachgemessen: v0.1.87 läuft auf der Box** (Helm-Rev 11,

@@ -150,12 +150,64 @@ Wir machen niemals Auto-Updates ohne Kunden-Einwilligung. Das wäre Vertrauensbr
 - Backup-Ziel: Kunde-eigener NAS oder verschlüsselter S3-Bucket (extern)
 - **NIEMALS** automatisches Backup in kaivo.studio-Infrastruktur
 
-### Insilo-spezifisch
+### Insilo-spezifisch — nachgemessen am 6.9.2026
 
-- DB-Dump-Funktion in der Admin-UI (manuell)
-- Export von Meeting-Daten als ZIP (Audio + Transkript + Notiz)
-- Vor jedem Major-Update wird automatisch ein Restore-Point erstellt
-- Audio-Originale in MinIO werden vom Olares-Velero erfasst
+Eine Sicherung besteht aus **zwei Hälften**. Wer nur eine zieht, kann nicht
+wiederherstellen:
+
+| Hälfte | Was drin ist |
+|---|---|
+| Die Datenbank | Besprechungen, Transkripte, Zusammenfassungen, Etiketten, Protokoll, Einstellungen, Zugriffsschlüssel |
+| `/app/data` | Die Tonaufnahmen **und** `konfiguration.json` (der Abzug der Einrichtung, 0600, **enthält Zugangsdaten**) |
+
+#### ⚠️ Der Abzug muss als Superuser laufen
+
+Seit Migration 0017 steht die Zeilensicherheit unter `force` und gilt damit
+auch für die Eigentümerin der Tabellen — also für den Datenbanknutzer der
+App. `pg_dump` unter dieser Kennung **bricht ab**:
+
+```
+ERROR: query would be affected by row-level security policy for table "api_keys"
+```
+
+Das ist die richtige Reaktion, keine Störung: `pg_dump` setzt
+`row_security = off` und verweigert lieber den Dienst, als eine
+**unvollständige** Sicherung zu erzeugen. `--enable-row-security` würde
+stattdessen still nur die sichtbaren Zeilen schreiben — und eine Sicherung,
+der die Hälfte fehlt, ist schlimmer als keine.
+
+Der Weg, der trägt (auf der Box nachgemessen):
+
+```bash
+kubectl exec -n os-platform citus-0 -- \
+  pg_dump -U olares -d <db-name> --no-owner --no-acl > sicherung.sql
+```
+
+`olares` ist der Superuser der Box-Datenbank und umgeht RLS. Den Namen der
+Datenbank liefert `DB_NAME` im Backend-Deployment.
+
+#### Wiederherstellung — einmal wirklich durchgespielt
+
+Am 6.9.2026 gegen eine Kopie gefahren, nicht behauptet: Abzug einspielen in
+eine frische Datenbank, dann vergleichen.
+
+```bash
+psql -U olares -d <neue-db> -v ON_ERROR_STOP=1 -f sicherung.sql
+```
+
+Ergebnis: **ohne einen einzigen Fehler durchgelaufen**, alle acht geprüften
+Tabellen deckungsgleich mit der Produktion (Besprechungen 16, Transkripte
+15, Zusammenfassungen 11, Zugriffsschlüssel 3, Protokoll 14, Vorlagen 5,
+Sprecher 1, Abschnitte 11), Transkripttext lesbar zurück, und die
+erzwungene Zeilensicherheit auf allen 16 Tabellen mitgewandert.
+
+Zur zweiten Hälfte: alle 16 Besprechungen prüften gegen `/app/data` — acht
+mit vorhandener Datei, acht ohne (Aufbewahrungsfrist abgelaufen oder nie
+hochgeladen), **null Verweise ins Leere**.
+
+- Olares' eigenes Velero sichert das Volume und ist von alledem nicht
+  betroffen — es arbeitet unterhalb der Datenbank.
+- Vor jedem Eingriff, der Daten anfassen kann, gehört ein Abzug dazu.
 
 ---
 

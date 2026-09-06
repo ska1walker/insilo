@@ -1,0 +1,103 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Insilo — Markt-Tafel</title>
+<style>
+  @font-face {
+    font-family: "Geist";
+    src: url("../../frontend/app/fonts/Geist-Variable.woff2") format("woff2");
+    font-weight: 100 900;
+  }
+  @font-face {
+    font-family: "GeistMono";
+    src: url("../../frontend/app/fonts/GeistMono-Variable.woff2") format("woff2");
+    font-weight: 100 900;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+
+  body {
+    background: #051729;
+    color: #fff;
+    font-family: "Geist", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 0 0;
+  }
+
+  .kicker {
+    font-family: "GeistMono", ui-monospace, monospace;
+    font-size: 16px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #caa960;
+    margin-bottom: 18px;
+  }
+
+  h2 {
+    font-size: 40px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    text-align: center;
+    max-width: 1180px;
+    line-height: 1.25;
+    margin-bottom: 40px;
+  }
+
+  h2 strong { font-weight: 500; }
+
+  .rahmen {
+    width: 1288px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    overflow: hidden;
+    box-shadow: 0 -6px 80px rgba(1, 12, 26, 0.6);
+  }
+
+  .rahmen img { width: 100%; display: block; }
+
+  .balken {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 18px;
+    background: #0a2238;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  .punkt {
+    width: 11px; height: 11px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .adresse {
+    margin-left: 18px;
+    font-family: "GeistMono", monospace;
+    font-size: 14px;
+    color: #afc0d2;
+    letter-spacing: 0.02em;
+  }
+</style>
+
+<p class="kicker" id="kicker"></p>
+<h2 id="titel"></h2>
+
+<div class="rahmen">
+  <div class="balken">
+    <span class="punkt"></span><span class="punkt"></span><span class="punkt"></span>
+    <span class="adresse">insilo.kanzlei.olares.com</span>
+  </div>
+  <img id="schirm" alt="">
+</div>
+
+<script>
+  // Inhalt kommt über die Adresszeile — eine Vorlage, vier Tafeln.
+  const p = new URLSearchParams(location.search);
+  document.getElementById("kicker").textContent = p.get("kicker") || "";
+  document.getElementById("titel").innerHTML = p.get("titel") || "";
+  document.getElementById("schirm").src = p.get("bild") || "";
+</script>

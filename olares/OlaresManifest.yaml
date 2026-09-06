@@ -117,10 +117,14 @@ permission:
 spec:
   versionName: '0.1.87'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
-  # Marketing assets — TODO Kai: durch echte Screenshots ersetzen vor Submission
-  featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
+  # Markt-Bilder: 1920×1080, erzeugt aus markt/vorlagen/ (siehe markt/README.md).
+  featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/markt/aufmacher.png
   promoteImage:
-    - https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
+    - https://raw.githubusercontent.com/ska1walker/insilo/main/markt/01-besprechungen.png
+    - https://raw.githubusercontent.com/ska1walker/insilo/main/markt/02-detail.png
+    - https://raw.githubusercontent.com/ska1walker/insilo/main/markt/03-protokoll.png
+    - https://raw.githubusercontent.com/ska1walker/insilo/main/markt/04-datenschutz.png
+    - https://raw.githubusercontent.com/ska1walker/insilo/main/markt/05-papierkorb.png
 
   fullDescription: |
     **Insilo** is on-premise meeting intelligence for compliance-driven organizations.

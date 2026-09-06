@@ -653,6 +653,8 @@
     "titel": "¿Qué sale de esta caja?",
     "allesBleibt": "Todo permanece en esta caja",
     "allesBleibtLang": "Ningún modelo de lenguaje fuera de la caja, ningún destino externo configurado.",
+    "keineZiele": "Ningún destino registrado",
+    "keineZieleLang": "En cuanto alguien introduzca un modelo de lenguaje fuera de la caja o un webhook, aparecerá aquí — con el volumen medido.",
     "llmExtern": "Modelo de lenguaje fuera de la caja",
     "llmExternLang": "Las transcripciones completas se envían a {host}.",
     "zieleAnzahl": "{count, plural, =1 {1 destino externo} other {# destinos externos}}",

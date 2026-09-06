@@ -160,10 +160,14 @@ export default function DatenschutzSeite() {
               </table>
             </div>
           ) : (
+            // Nicht die Aussage von oben wiederholen: der Streifen sagt
+            // bereits, dass nichts hinausgeht. Hier steht, was die
+            // Tabelle zeigen *würde* — sonst liest sich die Seite, als
+            // hätte jemand denselben Satz zweimal gesetzt.
             <div className="leerzustand mt-8">
               <ShieldCheck className="mx-auto h-8 w-8" strokeWidth={1.5} aria-hidden />
-              <h4>{t("allesBleibt")}</h4>
-              <p>{t("allesBleibtLang")}</p>
+              <h4>{t("keineZiele")}</h4>
+              <p>{t("keineZieleLang")}</p>
             </div>
           )}
         </>

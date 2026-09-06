@@ -653,6 +653,8 @@
     "titel": "What leaves this box?",
     "allesBleibt": "Everything stays on this box",
     "allesBleibtLang": "No language model outside the box, no external targets configured.",
+    "keineZiele": "No targets configured",
+    "keineZieleLang": "The moment someone enters a language model outside the box or a webhook, it appears here — with the measured volume.",
     "llmExtern": "Language model outside the box",
     "llmExternLang": "Full transcripts are sent to {host}.",
     "zieleAnzahl": "{count, plural, =1 {1 external target} other {# external targets}}",

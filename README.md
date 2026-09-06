@@ -48,12 +48,15 @@ insilo/
 ├── .env.example
 │
 ├── docs/                         # Konzept- und Designdokumente
+│   ├── HANDBUCH.md               # für den Kunden — Einrichtung und Betrieb
 │   ├── ARCHITECTURE.md
 │   ├── DESIGN.md
 │   ├── ROADMAP.md
 │   ├── SECURITY.md
 │   ├── DEPLOYMENT.md
 │   └── PLATFORM.md               # langfristige Multi-App-Vision
+│
+├── markt/                        # Bilder für den Olares-Markt (markt/README.md)
 │
 ├── frontend/                     # Next.js 15 PWA
 ├── backend/                      # FastAPI

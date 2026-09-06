@@ -1,0 +1,184 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Insilo — Markt-Aufmacher</title>
+<style>
+  @font-face {
+    font-family: "Geist";
+    src: url("../../frontend/app/fonts/Geist-Variable.woff2") format("woff2");
+    font-weight: 100 900;
+  }
+  @font-face {
+    font-family: "GeistMono";
+    src: url("../../frontend/app/fonts/GeistMono-Variable.woff2") format("woff2");
+    font-weight: 100 900;
+  }
+
+  :root {
+    --blau-900: #051729;
+    --blau-800: #0a2238;
+    --blau-700: #142e47;
+    --blau-300: #afc0d2;
+    --blau-200: #cfdbe7;
+    --gold-500: #caa960;
+    --gold-300: #dfc896;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--blau-900);
+    color: #fff;
+    font-family: "Geist", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: grid;
+    grid-template-columns: 800px 1fr;
+    align-items: center;
+    gap: 0;
+  }
+
+  .text {
+    padding: 0 0 0 112px;
+  }
+
+  .marke {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    margin-bottom: 56px;
+  }
+
+  .marke img { width: 104px; height: 104px; display: block; }
+
+  .marke h1 {
+    font-size: 76px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .kicker {
+    font-family: "GeistMono", ui-monospace, monospace;
+    font-size: 17px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-500);
+    margin-bottom: 24px;
+  }
+
+  .claim {
+    font-size: 46px;
+    font-weight: 400;
+    line-height: 1.22;
+    letter-spacing: -0.015em;
+    max-width: 660px;
+    margin-bottom: 34px;
+  }
+
+  .claim strong { font-weight: 500; color: var(--gold-300); }
+
+  .fliess {
+    font-size: 21px;
+    line-height: 1.6;
+    color: var(--blau-200);
+    max-width: 620px;
+    margin-bottom: 46px;
+  }
+
+  ul { list-style: none; display: grid; gap: 16px; }
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    font-size: 20px;
+    color: var(--blau-200);
+  }
+
+  li span.zeichen {
+    color: var(--gold-500);
+    font-family: "GeistMono", monospace;
+    font-size: 17px;
+  }
+
+  /* Der Schirm: echte Aufnahme der laufenden Anwendung, nicht nachgebaut. */
+  .schirm {
+    height: 1080px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 88px;
+  }
+
+  .rahmen {
+    width: 968px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(1, 12, 26, 0.6);
+  }
+
+  .rahmen img { width: 100%; display: block; }
+
+  .balken {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 18px;
+    background: var(--blau-800);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  .punkt {
+    width: 11px;
+    height: 11px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .adresse {
+    margin-left: 18px;
+    font-family: "GeistMono", monospace;
+    font-size: 14px;
+    color: var(--blau-300);
+    letter-spacing: 0.02em;
+  }
+</style>
+
+<div class="text">
+  <div class="marke">
+    <img src="../../frontend/public/icons/icon-quelle.svg" alt="">
+    <h1>Insilo</h1>
+  </div>
+
+  <p class="kicker">Besprechungen · Transkript · Zusammenfassung</p>
+
+  <p class="claim">Was gesagt wurde,<br><strong>bleibt auf Ihrer Box.</strong></p>
+
+  <p class="fliess">
+    Aufnahme, Transkription und Suche laufen auf Ihrer eigenen Maschine.
+    Kein US-Cloud-Dienst, keine Telemetrie. Was hinausgeht, geht hinaus,
+    weil Sie es eingetragen haben — und steht gemessen im Nachweis.
+  </p>
+
+  <ul>
+    <li><span class="zeichen">01</span> Whisper transkribiert lokal, mit Sprecher-Trennung</li>
+    <li><span class="zeichen">02</span> Zusammenfassungen nach Ihren eigenen Vorlagen</li>
+    <li><span class="zeichen">03</span> Protokoll und Papierkorb für die Datenschutz-Prüfung</li>
+  </ul>
+</div>
+
+<div class="schirm">
+  <div class="rahmen">
+    <div class="balken">
+      <span class="punkt"></span><span class="punkt"></span><span class="punkt"></span>
+      <span class="adresse">insilo.kanzlei.olares.com</span>
+    </div>
+    <img src="../roh/besprechungen.png" alt="Besprechungsliste in Insilo">
+  </div>
+</div>

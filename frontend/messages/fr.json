@@ -653,6 +653,8 @@
     "titel": "Qu'est-ce qui quitte ce boîtier ?",
     "allesBleibt": "Tout reste sur ce boîtier",
     "allesBleibtLang": "Aucun modèle de langage hors du boîtier, aucune destination externe configurée.",
+    "keineZiele": "Aucune destination enregistrée",
+    "keineZieleLang": "Dès que quelqu'un saisit un modèle de langage hors du boîtier ou un webhook, cela apparaît ici — avec le volume mesuré.",
     "llmExtern": "Modèle de langage hors du boîtier",
     "llmExternLang": "Les transcriptions complètes sont envoyées à {host}.",
     "zieleAnzahl": "{count, plural, =1 {1 destination externe} other {# destinations externes}}",

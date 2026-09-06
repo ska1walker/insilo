@@ -653,6 +653,8 @@
     "titel": "Was verlässt diese Box?",
     "allesBleibt": "Alles bleibt auf dieser Box",
     "allesBleibtLang": "Kein Sprachmodell außerhalb der Box, keine externen Ziele konfiguriert.",
+    "keineZiele": "Keine Ziele eingetragen",
+    "keineZieleLang": "Sobald jemand ein Sprachmodell außerhalb der Box oder einen Webhook einträgt, steht es hier — mit gemessener Menge.",
     "llmExtern": "Sprachmodell außerhalb der Box",
     "llmExternLang": "Vollständige Transkripte werden an {host} gesendet.",
     "zieleAnzahl": "{count, plural, =1 {1 externes Ziel} other {# externe Ziele}}",

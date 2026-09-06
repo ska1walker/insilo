@@ -653,6 +653,8 @@
     "titel": "Che cosa esce da questo box?",
     "allesBleibt": "Tutto resta su questo box",
     "allesBleibtLang": "Nessun modello linguistico fuori dal box, nessuna destinazione esterna configurata.",
+    "keineZiele": "Nessuna destinazione registrata",
+    "keineZieleLang": "Non appena qualcuno inserisce un modello linguistico fuori dal box o un webhook, compare qui — con il volume misurato.",
     "llmExtern": "Modello linguistico fuori dal box",
     "llmExternLang": "Le trascrizioni complete vengono inviate a {host}.",
     "zieleAnzahl": "{count, plural, =1 {1 destinazione esterna} other {# destinazioni esterne}}",

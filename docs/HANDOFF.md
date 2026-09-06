@@ -17,6 +17,42 @@
 >
 > ---
 >
+> ## Markt-Bilder und Handbuch (6. September 2026)
+>
+> Die letzten zwei Platzhalter vor einer Markt-Einreichung sind weg.
+> `spec.featuredImage` und `spec.promoteImage` zeigten beide auf
+> `icon.png`; jetzt stehen dort ein Aufmacher und fünf Tafeln unter
+> `markt/`, 1920×1080, gebaut aus zwei HTML-Vorlagen mit
+> `bash scripts/markt-bilder.sh`. Die Rohaufnahmen liegen mit im Repo
+> (`markt/roh/`), damit eine neue Beschriftung keine Demo-Umgebung
+> braucht. Aufgenommen aus einer lokalen Schau-Datenbank mit **frei
+> erfundenen** Kanzlei-Daten; die ist wieder weg.
+>
+> Dabei aufgefallen und behoben: die Datenschutz-Seite sagte ohne
+> eingerichtete Ziele **zweimal denselben Satz** — einmal im Streifen,
+> einmal im Leerzustand. Der Leerzustand sagt jetzt, was die Tabelle
+> zeigen *würde* (`egress.keineZiele`, in allen fünf Sprachen).
+>
+> `docs/HANDBUCH.md` ist neu: das erste Dokument in `docs/`, das für den
+> Kunden geschrieben ist und nicht für die Werkstatt. Einrichtung,
+> täglicher Weg, Fristen, die zwei Nachweise, Webhooks und
+> Zugriffsschlüssel, Sicherung.
+>
+> **Beim Schreiben gefunden — eine frische Box sperrt ihren ersten
+> Nutzer aus.** Seit die Selbstbedienung aus ist (`auto_provision`
+> Vorgabe `False`, das Chart setzt `INSILO_AUTO_PROVISION` nie), legt
+> niemand mehr den ersten Nutzer an: `konfiguration.wiederherstellen`
+> greift nur, wenn `/app/data/konfiguration.json` **existiert**, und das
+> tut sie bei einer Neuinstallation nicht. Der Kommentar in
+> `auth.py:33` verweist auf ein „Onboarding", das es nicht gibt. Das
+> Handbuch dokumentiert bis auf Weiteres den Weg über `psql`
+> (Abschnitt 2); die eigentliche Lösung — beim leeren Bestand die erste
+> Identität zur Inhaberin machen, danach weiter 401 — ist eine
+> Entscheidung für Kai, weil sie an genau der Stelle rührt, die er
+> zumachen wollte.
+>
+> ---
+>
 > ## Die Sicherung war gebrochen — gefunden beim Üben (6. September 2026)
 >
 > Die Wiederherstellung einmal wirklich durchzuspielen war der letzte

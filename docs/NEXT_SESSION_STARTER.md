@@ -170,18 +170,25 @@ Feature-Set:
   Erfolgsmeldung beweist nichts:
   `kubectl get pods -n insilo-kaivostudio -o jsonpath='{range .items[*]}{.spec.containers[*].image}{"\n"}{end}'`
 
-**Nächste Iteration: Absicherung des Backends**
+**Nächste Iteration: der erste Zugang einer frischen Box**
 
-Das Backend läuft ohne Envoy-Sidecar (die api-Entrance wurde in v0.1.12
-entfernt, Begründung im OlaresManifest) und liest die Identität allein aus
-`X-Bfl-User`. Wer den Dienst clusterintern erreicht, kann sich als
-beliebiger Nutzer ausgeben. Dazu ist die Zeilensicherheit zwar
-geschrieben, aber wirkungslos: der Nutzerkontext wurde nie gesetzt und
-`force` fehlte, während das Backend als Eigentümerin der Tabellen
-verbindet.
+Die Absicherung des Backends ist erledigt und ausgerollt (Torwächter,
+erzwungene Zeilensicherheit, keine Selbstbedienung mehr) — Stand im
+HANDOFF-Kopf unter „Torwächter und Zeilensicherheit“.
 
-Stand der Arbeit steht im HANDOFF-Kopf unter „Torwächter und
-Zeilensicherheit“.
+Genau daraus folgt der nächste offene Punkt: **eine frisch installierte
+Box sperrt ihren ersten Nutzer aus.** `auto_provision` ist Vorgabe
+`False`, das Chart setzt `INSILO_AUTO_PROVISION` nie, und
+`konfiguration.wiederherstellen` greift nur, wenn
+`/app/data/konfiguration.json` schon existiert. Bei einer echten
+Neuinstallation legt also niemand den ersten Nutzer an; der erste Aufruf
+endet mit 401 „Unknown identity“. `docs/HANDBUCH.md` Abschnitt 2
+dokumentiert bis auf Weiteres den Weg über `psql`.
+
+Die naheliegende Lösung — beim leeren Bestand wird die erste Identität
+Inhaberin einer neuen Organisation, jede weitere unbekannte weiter 401 —
+rührt an genau der Stelle, die Kai zumachen wollte. **Erst fragen, dann
+bauen.**
 
 **Bevor du Code schreibst:** stelle die 4 Fragen oben, dann lies
 `docs/HANDOFF.md` $1 (Header-Banner) komplett. Erst dann planen.
@@ -237,6 +244,8 @@ ssh olares@192.168.1.17 \
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
 | Migrationen | 17 im Repo (0001–0017), alle auf der Box angewendet |
+| Markt-Bilder | `markt/` — Aufmacher + fünf Tafeln, 1920×1080, neu bauen mit `bash scripts/markt-bilder.sh`; im OlaresManifest verlinkt |
+| Kundendoku | `docs/HANDBUCH.md` — das einzige Dokument in `docs/`, das nicht für die Werkstatt ist |
 
 ## Offene Issues / Bekannte Stolpersteine
 

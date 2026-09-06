@@ -126,12 +126,13 @@ Aus derselben Figma-Quelle, als Vektor geholt und aus einem
 sind schärfer als ein hochskaliertes Original. Quelle bleibt als
 `icons/icon-quelle.svg` im Repo.
 
-**Die maskable-Fassung braucht Abstand.** Android beschneidet App-Symbole
-auf beliebige Formen; garantiert sichtbar ist nur der innere Kreis mit
-80 % Durchmesser. Das Schild reicht in der Vorlage bis etwa 85 % der Höhe,
-seine Spitze wäre also abgeschnitten worden. `icon-maskable-512.png`
-zeigt es deshalb auf 78 % verkleinert und auf der Markenfläche zentriert;
-alle anderen Größen bleiben randnah wie in der Vorlage.
+**Die maskable-Fassung wird nachgerechnet, nicht verkleinert.** Android
+beschneidet App-Symbole auf beliebige Formen; garantiert sichtbar ist nur
+der innere Kreis mit 80 % Durchmesser. Beim alten Symbol reichte das Zeichen
+bis an den Rand und musste auf 78 % verkleinert werden. Beim heutigen
+Symbol (Idee 6, Sandgrund und Wappen) liegt das Schild innerhalb des
+Kreises — die Rechnung steht unten unter „Symbol der Anwendung". *(Bis zum
+06.09.2026 widersprach dieser Absatz dem Abschnitt unten.)*
 
 ### Auswahlfelder
 

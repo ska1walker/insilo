@@ -39,7 +39,7 @@ export function TagFilterBar({
 
   if (tags === null) {
     return (
-      <div className="mb-6 h-[34px] animate-pulse rounded-full bg-flaeche-1" />
+      <div className="mb-6 h-[34px] rounded-full bg-flaeche-3" />
     );
   }
 

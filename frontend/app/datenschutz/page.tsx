@@ -14,7 +14,7 @@ import { ScrollText, ShieldAlert, ShieldCheck, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { formatBytes } from "@/components/datenschutz-nachweis";
+import { formatBytes } from "@/lib/format";
 import { fetchEgress, type EgressRead } from "@/lib/api/egress";
 
 export default function DatenschutzSeite() {
@@ -40,7 +40,7 @@ export default function DatenschutzSeite() {
           <span>{t("nichtGeladen")}</span>
         </div>
       ) : lage === null ? (
-        <div className="mt-8 h-24 animate-pulse rounded-mittel bg-flaeche-1" />
+        <div className="mt-8 h-24 rounded-mittel bg-flaeche-3" />
       ) : (
         <>
           {/* Kernaussage — derselbe Zustand wie in der Navigation, nur

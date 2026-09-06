@@ -145,9 +145,9 @@ export default function MeetingDetail() {
   if (state.kind === "loading") {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-16 md:px-12">
-        <div className="h-8 w-1/2 animate-pulse rounded bg-flaeche-1" />
-        <div className="mt-4 h-4 w-1/3 animate-pulse rounded bg-flaeche-1" />
-        <div className="mt-12 h-14 w-full animate-pulse rounded bg-flaeche-1" />
+        <div className="h-8 w-1/2 rounded bg-flaeche-3" />
+        <div className="mt-4 h-4 w-1/3 rounded bg-flaeche-3" />
+        <div className="mt-12 h-14 w-full rounded bg-flaeche-3" />
       </main>
     );
   }

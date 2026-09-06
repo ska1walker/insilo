@@ -232,7 +232,7 @@ type T = Awaited<ReturnType<typeof getTranslations<"about">>>;
  *  summary below) without any interactivity. All strings i18n-driven. */
 function TranscriptMock({ t }: { t: T }) {
   return (
-    <div className="relative w-full overflow-hidden rounded-lg border border-trennlinie bg-seite shadow-sm">
+    <div className="relative w-full overflow-hidden rounded-lg border border-trennlinie bg-seite">
       {/* Pulse-Goldlinie am oberen Rand — Brand-Signatur lokal simuliert.
           Animation-Keyframes `pulse-line` sind global in globals.css. */}
       <div

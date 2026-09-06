@@ -59,7 +59,7 @@ export function LocaleSwitcher() {
   }
 
   if (state === null) {
-    return <div className="h-24 animate-pulse rounded bg-flaeche-1" />;
+    return <div className="h-24 rounded bg-flaeche-3" />;
   }
 
   const activeIsUser = state.user_setting !== null;

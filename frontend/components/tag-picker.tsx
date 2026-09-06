@@ -149,7 +149,7 @@ export function TagPicker({
       {open && (
         <div
           ref={popoverRef}
-          className="absolute left-0 top-full z-30 mt-2 w-[280px] rounded-lg border border-rand-betont bg-seite p-3 shadow-lg"
+          className="absolute left-0 top-full z-30 mt-2 w-[280px] rounded-lg border border-rand-betont bg-seite p-3"
           style={{ boxShadow: "0 8px 24px rgba(10,10,10,0.08)" }}
         >
           <input

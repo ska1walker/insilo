@@ -56,8 +56,8 @@ export function WebhookManager() {
   if (webhooks === null) {
     return (
       <div className="space-y-2">
-        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
-        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
+        <div className="h-12 rounded bg-flaeche-3" />
+        <div className="h-12 rounded bg-flaeche-3" />
       </div>
     );
   }
@@ -108,7 +108,7 @@ export function WebhookManager() {
       )}
 
       {webhooks.length > 0 && (
-        <div className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
+        <div className="divide-y divide-trennlinie rounded-lg border border-trennlinie bg-seite">
           {webhooks.map((w) =>
             editingId === w.id ? (
               <div key={w.id} className="p-3">

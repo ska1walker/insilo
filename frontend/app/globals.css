@@ -825,47 +825,8 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
 }
 
 @layer components {
-  .btn-primary {
-    background: var(--am-text-primaer);
-    color: var(--am-seite);
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.9375rem;
-    transition: background var(--duration-fast) ease;
-  }
-  .btn-primary:hover { background: #1f1f1f; }
-  .btn-primary:active { background: #2a2a2a; }
-  .btn-primary:disabled { background: var(--am-text-deaktiviert); cursor: not-allowed; }
-
-  .btn-secondary {
-    background: var(--am-seite);
-    color: var(--am-text-primaer);
-    border: 1px solid var(--am-rand-betont-farbe);
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.9375rem;
-    transition: all var(--duration-fast) ease;
-  }
-  .btn-secondary:hover {
-    background: var(--am-flaeche-1);
-    border-color: var(--am-text-sekundaer);
-  }
-
-  .btn-tertiary {
-    background: transparent;
-    color: var(--am-text-primaer);
-    padding: 8px 12px;
-    font-weight: 500;
-    font-size: 0.9375rem;
-    text-decoration: none;
-  }
-  .btn-tertiary:hover {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 4px;
-  }
+  /* Die Alt-Knöpfe .btn-primary/-secondary/-tertiary sind am 06.09.2026
+     entfernt worden — es gibt .btn-primaer, .btn-sekundaer, .btn-still. */
 
   .btn-record {
     background: var(--am-seite);
@@ -877,13 +838,12 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 16px rgba(201, 169, 97, 0.15);
-    transition: transform var(--duration-medium) var(--ease-out),
-                box-shadow var(--duration-medium) var(--ease-out),
-                background var(--duration-medium) var(--ease-out);
-    animation: pulse-idle 3.6s ease-in-out infinite;
+    /* Kein Schatten, kein Pulsieren im Ruhezustand, kein Hover-Versatz —
+       Bewegung trägt hier nur eine Information: läuft die Aufnahme. */
+    transition: background var(--am-dauer-kurz) ease,
+                border-color var(--am-dauer-kurz) ease;
   }
-  .btn-record:hover { transform: translateY(-1px); }
+  .btn-record:hover { border-color: var(--am-gold-600); }
   .btn-record:disabled { animation: none; opacity: 0.6; cursor: not-allowed; }
   .btn-record.recording {
     background: var(--am-gold-500);
@@ -893,15 +853,11 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   .btn-record-icon { width: 36px; height: 36px; }
   .btn-record.recording .btn-record-icon { fill: currentColor; }
 
-  @keyframes pulse-idle {
-    0%, 100% { box-shadow: 0 4px 16px rgba(201, 169, 97, 0.15),
-                            0 0 0 0 rgba(201, 169, 97, 0); }
-    50% { box-shadow: 0 4px 18px rgba(201, 169, 97, 0.22),
-                       0 0 0 10px rgba(201, 169, 97, 0.05); }
-  }
+  /* Der Ring während der Aufnahme: ein Zustand, keine Zierde — deshalb
+     die einzige Bewegung am Knopf. Gold aus dem Token, nie als Literal. */
   @keyframes pulse-gold {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(201, 169, 97, 0.4); }
-    50% { box-shadow: 0 0 0 16px rgba(201, 169, 97, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--am-gold-500) 40%, transparent); }
+    50% { box-shadow: 0 0 0 16px color-mix(in srgb, var(--am-gold-500) 0%, transparent); }
   }
 
   .recording-indicator {
@@ -940,24 +896,14 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     animation: stagger-in 220ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
   }
 
-  /* Button-Press-Feedback — kurzes Reindrücken für taktiles Gefühl */
-  .btn-primary:active,
-  .btn-secondary:active,
-  .btn-tertiary:active {
-    transform: scale(0.97);
-    transition: transform 80ms ease-out;
-  }
-
-  /* Hover-Lift bei klickbaren Karten — wird über bestehende Klassen
-     getriggert, aber zentral als Utility hinterlegt */
+  /* Klickbare Karten: Zustand über den Rand, nicht über Versatz oder
+     Schatten (Guide: kein Vergrößern bei Hover, kein Schattenwechsel). */
   .lift-on-hover {
-    transition: transform 160ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
-                box-shadow 160ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
-                border-color 160ms ease;
+    transition: border-color var(--am-dauer-kurz) ease,
+                background var(--am-dauer-kurz) ease;
   }
   .lift-on-hover:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(10, 10, 10, 0.05);
+    border-color: var(--am-rand-betont-farbe);
   }
 
   /* ── Schauerfunktion / Quick-Capture (v0.1.53) ───────────────────────
@@ -981,7 +927,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
       transform 80ms ease-out;
   }
   .quick-capture-trigger:hover {
-    background: rgba(201, 169, 97, 0.10);
+    background: var(--am-auswahl-flaeche);
     color: var(--am-gold-beschriftung);
   }
   .quick-capture-trigger:active {
@@ -999,8 +945,8 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     }
   }
   @keyframes quick-capture-hint {
-    0%, 88%, 100% { box-shadow: 0 0 0 0 rgba(201, 169, 97, 0); }
-    94% { box-shadow: 0 0 0 6px rgba(201, 169, 97, 0.12); }
+    0%, 88%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--am-gold-500) 0%, transparent); }
+    94% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--am-gold-500) 12%, transparent); }
   }
 
   /* Dark-Mode-Transition: triggered durch QuickCapture-useEffect
@@ -1008,7 +954,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
      Body-BG fade-to-black. !important damit der base-layer body{...}
      definitiv überschrieben wird (war v0.1.53-54 ein Problem). */
   body.quick-capture-active {
-    background: #0A0A0A !important;
+    background: var(--am-blau-950) !important;
     transition: background 280ms var(--ease-out);
   }
   body.quick-capture-active header {
@@ -1020,8 +966,8 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
      (Tailwind 4 JIT, layer-cascade oder service-worker-cache — Ursache
      nicht endgültig isoliert). Dedizierte Klasse mit !important = idiot-proof. */
   .quick-capture-shell {
-    background-color: #0A0A0A !important;
-    color: #ffffff;
+    background-color: var(--am-blau-950) !important;
+    color: var(--am-blau-25);
   }
 
   /* Page-Mount-Animation für die /idee-Component selbst. */
@@ -1041,15 +987,13 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   @keyframes pulse-gold-strong {
     0%, 100% {
       box-shadow:
-        0 0 0 0 rgba(201, 169, 97, 0.55),
-        0 0 0 0 rgba(201, 169, 97, 0.30),
-        0 0 60px rgba(201, 169, 97, 0.35);
+        0 0 0 0 color-mix(in srgb, var(--am-gold-500) 55%, transparent),
+        0 0 0 0 color-mix(in srgb, var(--am-gold-500) 30%, transparent);
     }
     50% {
       box-shadow:
-        0 0 0 16px rgba(201, 169, 97, 0),
-        0 0 0 32px rgba(201, 169, 97, 0),
-        0 0 80px rgba(201, 169, 97, 0.55);
+        0 0 0 16px color-mix(in srgb, var(--am-gold-500) 0%, transparent),
+        0 0 0 32px color-mix(in srgb, var(--am-gold-500) 0%, transparent);
     }
   }
 
@@ -1068,11 +1012,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
       transition: none !important;
     }
     .lift-on-hover { transition: none; }
-    .btn-primary:active,
-    .btn-secondary:active,
-    .btn-tertiary:active {
-      transform: none;
-    }
+    .animate-spin, .pill-recording::before, .btn-record.recording { animation: none !important; }
   }
 
   .input {
@@ -1086,9 +1026,13 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     transition: border-color var(--duration-fast) ease;
     width: 100%;
   }
-  .input:focus {
-    outline: none;
-    border-color: var(--am-text-primaer);
+  .input:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+    border-color: var(--am-rand-betont-farbe);
+  }
+  @media (pointer: coarse) {
+    .input { min-height: var(--am-ziel-beruehrung); }
   }
   .input::placeholder { color: var(--am-text-deaktiviert); }
 
@@ -1126,16 +1070,18 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     align-items: baseline;
     justify-content: space-between;
     gap: 16px;
-    padding: 16px 24px;
+    padding: var(--am-raum-4) var(--am-raum-6);
     border-bottom: 1px solid var(--am-trennlinie);
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    transition: background var(--am-dauer-kurz) ease;
   }
   .meeting-row:hover { background: var(--am-flaeche-1); }
+  /* Auswahl ist nicht Hover: eigene Fläche (Gold-200 hell, Blau-700 dunkel)
+     und 2 px Gold links. */
   .meeting-row.selected {
-    background: var(--am-gold-200);
+    background: var(--am-auswahl-flaeche);
     border-left: 2px solid var(--am-gold-500);
-    padding-left: 22px;
+    padding-left: calc(var(--am-raum-6) - 2px);
   }
 
   .pill {
@@ -1151,7 +1097,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
   /* Laufende Aufnahme trägt Gold — die Auszeichnung, nicht das Fehler-Rot. */
   .pill-recording {
-    background: var(--am-gold-200);
+    background: var(--am-auswahl-flaeche);
     color: var(--am-gold-beschriftung);
   }
   .pill-recording::before {

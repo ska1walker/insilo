@@ -105,7 +105,7 @@ export function ClusterAssignmentPanel({
 
   if (clusters === null) {
     return (
-      <div className="mb-5 h-12 animate-pulse rounded-lg bg-flaeche-1" />
+      <div className="mb-5 h-12 rounded-lg bg-flaeche-3" />
     );
   }
 

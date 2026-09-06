@@ -41,14 +41,18 @@ export async function removeTagFromMeeting(
   await apiDelete(`/api/v1/meetings/${meetingId}/tags/${tagId}`);
 }
 
-/** Kuratierte Farbpalette aus dem Designsystem — keine freie Hex-Eingabe. */
+/** Kuratierte Farbpalette aus dem AImighty-Designsystem — keine freie
+ *  Hex-Eingabe. Jede Farbe trägt als Text auf Weiß mindestens 4,5:1; das
+ *  reine Gold (#caa960, 2,24:1) fehlt deshalb, Gold heißt hier Gold-800.
+ *  Altpalette (Warmgrau, #C9A961, #A33A2F) ersetzt am 06.09.2026; bestehende
+ *  Tags behalten ihren gespeicherten Wert. */
 export const TAG_COLORS: { value: string; label: string }[] = [
-  { value: "#737065", label: "Standard (Meta)" },
-  { value: "#0A0A0A", label: "Schwarz" },
-  { value: "#9C8147", label: "Gold dunkel" },
-  { value: "#C9A961", label: "Gold" },
-  { value: "#4A7C59", label: "Grün" },
-  { value: "#B8893C", label: "Bernstein" },
-  { value: "#A33A2F", label: "Rot" },
-  { value: "#4A4842", label: "Anthrazit" },
+  { value: "#567595", label: "Standard" },      // blau-500
+  { value: "#335578", label: "Blau" },          // blau-600
+  { value: "#051729", label: "Hanseatenblau" }, // blau-900
+  { value: "#8b6c1f", label: "Gold" },          // gold-800
+  { value: "#007e46", label: "Grün" },          // erfolg
+  { value: "#066bb8", label: "Hinweisblau" },   // hinweis
+  { value: "#9f5100", label: "Bernstein" },     // achtung
+  { value: "#ad3f38", label: "Rot" },           // fehler
 ];

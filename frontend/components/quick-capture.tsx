@@ -45,26 +45,26 @@ type Phase =
 
 const SAVED_AUTO_RESET_MS = 5000;
 
-// Insilo brand tokens for the dark Car-Mode palette. Direct hex values
-// (not CSS vars) because inline style + var() showed parse issues in
-// some browser/build combinations — caused the BG to render white in
-// v0.1.53/.54. Hex bypasses any var-resolution path.
+// Die dunkle Car-Mode-Palette aus den AImighty-Token. Hex statt var(),
+// weil die Werte in Inline-Styles und im Gradient stehen — die Zahlen sind
+// dieselben wie in globals.css (Blau 950/25, Gold 500/300/700). Die laufende
+// Aufnahme trägt Gold, nicht Rot: Rot bleibt dem Fehler vorbehalten
+// (docs/DESIGN.md §3). Altpalette (#0A0A0A, #C9A961, #C84A3F) entfernt am
+// 06.09.2026.
 const COLORS = {
-  black: "#0A0A0A",
-  white: "#ffffff",
-  gold: "#C9A961",
-  goldLight: "#E6D4A3",
-  goldDeep: "#9C8147",
-  recording: "#C84A3F",
+  black: "#010c1a",     // --am-blau-950
+  white: "#f5f9fc",     // --am-blau-25
+  gold: "#caa960",      // --am-gold-500
+  goldLight: "#dfc896", // --am-gold-300
+  goldDeep: "#a4843a",  // --am-gold-700
+  recording: "#caa960", // --am-gold-500 — Gold zeichnet die Aufnahme aus
 } as const;
 
-// Gradient als Image-Layer; backgroundColor wird separat als Insilo-Black
-// gesetzt. Sicherer als Multi-Layer-`background`-Shorthand mit CSS-vars als
-// background-color (Browser-Parser handhabt das uneinheitlich).
+// Gradient als Image-Layer; backgroundColor wird separat gesetzt.
 const BG_GRADIENT_IDLE_IMG =
-  "radial-gradient(circle at 50% 42%, rgba(201, 169, 97, 0.10) 0%, transparent 55%)";
+  "radial-gradient(circle at 50% 42%, rgb(202 169 96 / 10%) 0%, transparent 55%)";
 const BG_GRADIENT_ACTIVE_IMG =
-  "radial-gradient(circle at 50% 42%, rgba(201, 169, 97, 0.22) 0%, transparent 60%)";
+  "radial-gradient(circle at 50% 42%, rgb(202 169 96 / 22%) 0%, transparent 60%)";
 
 /**
  * Schauerfunktion — Car-Mode-Aufnahme für unterwegs (auto, walking, shower).

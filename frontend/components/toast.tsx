@@ -39,10 +39,12 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+// Fehler verschwinden nie von selbst: Was verschwindet, wurde nicht gelesen
+// (AImighty-Guide, Kurzmeldungen). 0 heißt: steht, bis jemand schließt.
 const DEFAULT_DURATION: Record<ToastVariant, number> = {
   info: 4000,
   success: 4000,
-  error: 6000,
+  error: 0,
   undo: 5000,
 };
 

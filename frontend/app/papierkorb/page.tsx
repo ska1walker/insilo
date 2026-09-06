@@ -118,7 +118,7 @@ export default function PapierkorbSeite() {
       {lage.art === "laedt" && (
         <div className="mt-8 space-y-3" aria-live="polite" aria-busy="true">
           {[0, 1].map((i) => (
-            <div key={i} className="h-[88px] animate-pulse rounded-lg bg-flaeche-1" />
+            <div key={i} className="h-[88px] rounded-lg bg-flaeche-3" />
           ))}
         </div>
       )}

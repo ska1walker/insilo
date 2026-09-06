@@ -95,8 +95,8 @@ export function TemplatePrompts() {
   if (list === null) {
     return (
       <div className="space-y-2">
-        <div className="h-14 animate-pulse rounded bg-flaeche-1" />
-        <div className="h-14 animate-pulse rounded bg-flaeche-1" />
+        <div className="h-14 rounded bg-flaeche-3" />
+        <div className="h-14 rounded bg-flaeche-3" />
       </div>
     );
   }
@@ -134,7 +134,7 @@ export function TemplatePrompts() {
       {list.length === 0 ? (
         <p className="text-sm text-text-sekundaer">{t("noneYet")}</p>
       ) : (
-        <div className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
+        <div className="divide-y divide-trennlinie rounded-lg border border-trennlinie bg-seite">
           {list.map((tpl) => (
             <TemplateRow
               key={tpl.id}
@@ -603,8 +603,8 @@ function TemplateRow({
         <div className="border-t border-trennlinie px-5 py-5">
           {state.kind === "loading" && (
             <div className="space-y-2">
-              <div className="h-4 w-1/4 animate-pulse rounded bg-flaeche-1" />
-              <div className="h-40 animate-pulse rounded bg-flaeche-1" />
+              <div className="h-4 w-1/4 rounded bg-flaeche-3" />
+              <div className="h-40 rounded bg-flaeche-3" />
             </div>
           )}
 

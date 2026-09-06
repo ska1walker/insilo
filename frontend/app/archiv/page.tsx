@@ -98,7 +98,7 @@ export default function AskPage() {
             >
               {phase === "asking" ? (
                 <>
-                  <Sparkles className="h-3.5 w-3.5 animate-pulse" strokeWidth={1.75} />
+                  <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
                   Sucht …
                 </>
               ) : (
@@ -170,10 +170,10 @@ export default function AskPage() {
       {/* ── Loading skeleton ─────────────────────────────────────── */}
       {phase === "asking" && (
         <div className="mt-10 space-y-3" aria-busy="true">
-          <div className="h-4 w-1/3 animate-pulse rounded bg-flaeche-1" />
-          <div className="h-40 w-full animate-pulse rounded-lg bg-flaeche-1" />
-          <div className="h-4 w-1/4 animate-pulse rounded bg-flaeche-1" />
-          <div className="h-24 w-full animate-pulse rounded-lg bg-flaeche-1" />
+          <div className="h-4 w-1/3 rounded bg-flaeche-3" />
+          <div className="h-40 w-full rounded-lg bg-flaeche-3" />
+          <div className="h-4 w-1/4 rounded bg-flaeche-3" />
+          <div className="h-24 w-full rounded-lg bg-flaeche-3" />
         </div>
       )}
 

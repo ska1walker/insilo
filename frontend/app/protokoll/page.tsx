@@ -126,7 +126,7 @@ export default function ProtokollSeiteAnsicht() {
       {lage.art === "laedt" && (
         <div className="mt-8 space-y-2" aria-live="polite" aria-busy="true">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded-mittel bg-flaeche-1" />
+            <div key={i} className="h-14 rounded-mittel bg-flaeche-3" />
           ))}
         </div>
       )}

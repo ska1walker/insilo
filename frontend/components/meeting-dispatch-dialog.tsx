@@ -89,7 +89,7 @@ export function MeetingDispatchDialog({
       {/* Header fix + Body scrollt + Footer sticky — selbe Struktur wie
           voice-enrollment-dialog, damit die Action-Buttons bei kleinen
           Viewports immer sichtbar bleiben. */}
-      <div className="relative flex max-h-[90vh] w-full max-w-[560px] flex-col rounded-lg border border-trennlinie bg-seite shadow-2xl">
+      <div className="relative flex max-h-[90vh] w-full max-w-[560px] flex-col rounded-lg border border-trennlinie bg-seite">
         <div className="flex-shrink-0 border-b border-trennlinie p-6 pr-12">
           <button
             type="button"
@@ -127,7 +127,7 @@ export function MeetingDispatchDialog({
               })}
             </div>
           ) : (
-            <ul className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
+            <ul className="divide-y divide-trennlinie rounded-lg border border-trennlinie bg-seite">
               {webhooks.map((w) => (
                 <li key={w.id} className="px-4 py-3">
                   <label className="flex cursor-pointer items-start gap-3">

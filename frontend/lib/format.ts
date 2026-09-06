@@ -56,8 +56,18 @@ export function defaultMeetingTitle(
   return `${recordingLabel} ${dateShort} · ${time}`;
 }
 
-export function formatBytes(b: number): string {
-  if (b < 1024) return `${b} B`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-  return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+/** Byte-Größe in DIN-gerechter Schreibweise: kB/MB/GB, Dezimalkomma je
+ *  Sprache, eine Nachkommastelle unter 10. Bis zum 06.09.2026 gab es zwei
+ *  Fassungen (hier „KB", im Datenschutz-Nachweis „kB") — jetzt eine. */
+export function formatBytes(bytes: number, locale: string = "de"): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const einheiten = ["kB", "MB", "GB"];
+  let wert = bytes / 1024;
+  let i = 0;
+  while (wert >= 1024 && i < einheiten.length - 1) {
+    wert /= 1024;
+    i++;
+  }
+  const gerundet = wert < 10 ? Math.round(wert * 10) / 10 : Math.round(wert);
+  return `${gerundet.toLocaleString(locale)} ${einheiten[i]}`;
 }

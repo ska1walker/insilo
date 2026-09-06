@@ -84,7 +84,7 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
           {[0, 1].map((i) => (
             <div
               key={i}
-              className="h-[60px] animate-pulse rounded-lg bg-flaeche-1"
+              className="h-[60px] rounded-lg bg-flaeche-3"
             />
           ))}
         </div>

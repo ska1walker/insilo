@@ -207,7 +207,7 @@ export function VoiceEnrollmentDialog({
         sticky Footer unten. Damit bleibt der „Aufnahme starten"-Button
         immer sichtbar — auch bei kleinen Viewports und langem Nordwind-Text.
       */}
-      <div className="relative flex max-h-[90vh] w-full max-w-[640px] flex-col rounded-lg border border-trennlinie bg-seite shadow-2xl">
+      <div className="relative flex max-h-[90vh] w-full max-w-[640px] flex-col rounded-lg border border-trennlinie bg-seite">
         {/* Header — fix */}
         <div className="flex-shrink-0 border-b border-trennlinie p-6 pr-12">
           <button

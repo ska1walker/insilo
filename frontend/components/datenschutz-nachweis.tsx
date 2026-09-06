@@ -22,20 +22,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchEgress, type EgressRead } from "@/lib/api/egress";
-
-/** Byte-Größe in DIN-gerechter Schreibweise (Komma als Dezimaltrenner). */
-export function formatBytes(bytes: number, locale: string): string {
-  if (bytes < 1024) return `${bytes} B`;
-  const einheiten = ["kB", "MB", "GB"];
-  let wert = bytes / 1024;
-  let i = 0;
-  while (wert >= 1024 && i < einheiten.length - 1) {
-    wert /= 1024;
-    i++;
-  }
-  const gerundet = wert < 10 ? Math.round(wert * 10) / 10 : Math.round(wert);
-  return `${gerundet.toLocaleString(locale)} ${einheiten[i]}`;
-}
+import { formatBytes } from "@/lib/format";
 
 export function DatenschutzNachweis({ locale }: { locale: string }) {
   const t = useTranslations("egress");

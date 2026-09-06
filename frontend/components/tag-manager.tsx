@@ -37,8 +37,8 @@ export function TagManager() {
   if (tags === null) {
     return (
       <div className="space-y-2">
-        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
-        <div className="h-12 animate-pulse rounded bg-flaeche-1" />
+        <div className="h-12 rounded bg-flaeche-3" />
+        <div className="h-12 rounded bg-flaeche-3" />
       </div>
     );
   }
@@ -80,7 +80,7 @@ export function TagManager() {
       )}
 
       {tags.length > 0 && (
-        <div className="divide-y divide-border-subtle rounded-lg border border-trennlinie bg-seite">
+        <div className="divide-y divide-trennlinie rounded-lg border border-trennlinie bg-seite">
           {tags.map((tag) =>
             editingId === tag.id ? (
               <div key={tag.id} className="p-3">

@@ -755,7 +755,8 @@
       "speaker_create": "Speaker created",
       "speaker_update": "Speaker changed",
       "speaker_delete": "Speaker deleted",
-      "speaker_enroll": "Voice sample stored"
+      "speaker_enroll": "Voice sample stored",
+      "org_ersteinrichtung": "Initial setup — owner created"
     }
   },
   "papierkorb": {

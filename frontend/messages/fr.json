@@ -755,7 +755,8 @@
       "speaker_create": "Locuteur créé",
       "speaker_update": "Locuteur modifié",
       "speaker_delete": "Locuteur supprimé",
-      "speaker_enroll": "Échantillon vocal enregistré"
+      "speaker_enroll": "Échantillon vocal enregistré",
+      "org_ersteinrichtung": "Première configuration — propriétaire créé"
     }
   },
   "papierkorb": {

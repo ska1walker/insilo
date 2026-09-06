@@ -170,25 +170,23 @@ Feature-Set:
   Erfolgsmeldung beweist nichts:
   `kubectl get pods -n insilo-kaivostudio -o jsonpath='{range .items[*]}{.spec.containers[*].image}{"\n"}{end}'`
 
-**Nächste Iteration: der erste Zugang einer frischen Box**
+**Stand der Absicherung**
 
-Die Absicherung des Backends ist erledigt und ausgerollt (Torwächter,
-erzwungene Zeilensicherheit, keine Selbstbedienung mehr) — Stand im
-HANDOFF-Kopf unter „Torwächter und Zeilensicherheit“.
+Erledigt und ausgerollt: Torwächter, erzwungene Zeilensicherheit, keine
+Selbstbedienung mehr — Details im HANDOFF-Kopf unter „Torwächter und
+Zeilensicherheit“.
 
-Genau daraus folgt der nächste offene Punkt: **eine frisch installierte
-Box sperrt ihren ersten Nutzer aus.** `auto_provision` ist Vorgabe
-`False`, das Chart setzt `INSILO_AUTO_PROVISION` nie, und
-`konfiguration.wiederherstellen` greift nur, wenn
-`/app/data/konfiguration.json` schon existiert. Bei einer echten
-Neuinstallation legt also niemand den ersten Nutzer an; der erste Aufruf
-endet mit 401 „Unknown identity“. `docs/HANDBUCH.md` Abschnitt 2
-dokumentiert bis auf Weiteres den Weg über `psql`.
+Der Nachzügler daraus ist ebenfalls erledigt: `auth._erstzugang` lässt
+die erste Identität auf eine **leere** Box (keine Organisation) als
+Inhaberin herein, danach bleibt es beim 401. Vorher war eine frisch
+installierte Box unbenutzbar. Nachweis in
+`backend/tests/test_erstzugang.py`; HANDOFF-Kopf, eigener Abschnitt.
+**Noch nicht auf der Box** — die läuft auf 0.1.87, der Erstzugang ist
+erst im Repo.
 
-Die naheliegende Lösung — beim leeren Bestand wird die erste Identität
-Inhaberin einer neuen Organisation, jede weitere unbekannte weiter 401 —
-rührt an genau der Stelle, die Kai zumachen wollte. **Erst fragen, dann
-bauen.**
+Offen an der Stelle: **wer zuerst öffnet, ist Inhaber**, und weitere
+Personen brauchen immer noch `psql`. Eine Mitglieder-Verwaltung in der
+Oberfläche wäre der nächste sinnvolle Schritt.
 
 **Bevor du Code schreibst:** stelle die 4 Fragen oben, dann lies
 `docs/HANDOFF.md` $1 (Header-Banner) komplett. Erst dann planen.

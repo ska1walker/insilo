@@ -755,7 +755,8 @@
       "speaker_create": "Parlante creato",
       "speaker_update": "Parlante modificato",
       "speaker_delete": "Parlante eliminato",
-      "speaker_enroll": "Campione vocale registrato"
+      "speaker_enroll": "Campione vocale registrato",
+      "org_ersteinrichtung": "Prima configurazione — titolare creato"
     }
   },
   "papierkorb": {

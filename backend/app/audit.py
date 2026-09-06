@@ -151,9 +151,18 @@ _REGELN: list[tuple[frozenset[str], re.Pattern[str], str, str | None]] = [
      "speaker.delete", "speaker"),
 ]
 
+# Vorgänge, die an keinem Pfad hängen und deshalb nicht aus `_REGELN`
+# fallen können. Die Anmeldung ist kein Endpunkt — sie geschieht in
+# `auth.py`, bevor irgendein Router an die Reihe kommt.
+ERSTEINRICHTUNG = "org.ersteinrichtung"
+
+OHNE_PFAD: tuple[str, ...] = (ERSTEINRICHTUNG,)
+
 # Für die Oberfläche: alle Aktionen, die es geben kann. Der Filter im
 # Protokoll baut daraus seine Auswahl, statt zu raten, was vorkommt.
-AKTIONEN: tuple[str, ...] = tuple(dict.fromkeys(regel[2] for regel in _REGELN))
+AKTIONEN: tuple[str, ...] = tuple(
+    dict.fromkeys((*(regel[2] for regel in _REGELN), *OHNE_PFAD))
+)
 
 # Vorgänge, bei denen Daten die Box verlassen können. Die Oberfläche hebt
 # sie hervor — für einen Datenschutzbeauftragten ist das die

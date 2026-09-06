@@ -17,6 +17,53 @@
 >
 > ---
 >
+> ## Der erste Zugang auf eine leere Box (6. September 2026)
+>
+> Eine frisch installierte Box war unbenutzbar: `auto_provision` ist
+> Vorgabe `False`, das Chart setzt `INSILO_AUTO_PROVISION` nie, und
+> `konfiguration.wiederherstellen` greift nur, wenn der Abzug in
+> `/app/data` **schon** liegt. Bei einer echten Neuinstallation legte
+> also niemand den ersten Nutzer an, und der erste Aufruf endete mit
+> `401 Unknown identity`. Aufgefallen beim Schreiben des Handbuchs, nicht
+> durch einen Test — es gab keinen.
+>
+> **`auth._erstzugang`:** solange **keine** Organisation existiert, wird
+> die erste Identität ihre Inhaberin. Der Unterschied zur alten
+> Selbstbedienung ist nicht der Vorgang, sondern die Bedingung: dort
+> bekam *jeder* unbekannte Name jederzeit eine eigene Organisation, hier
+> geht es genau einmal. Ab der ersten bleibt es beim 401, auch für den
+> zweiten Namen eine Sekunde später.
+>
+> Drei Dinge, die dazugehören:
+>
+> - **`pg_advisory_xact_lock` vor dem Zählen.** Zwei gleichzeitige erste
+>   Aufrufe läsen sonst beide „leer" und legten zwei Organisationen an —
+>   jede mit eigener Inhaberin, die Aufnahmen der einen unsichtbar für
+>   die andere. `xact`, nicht die Sitzungsvariante: die bliebe an der
+>   Poolverbindung kleben (dieselbe Falle wie `set` ohne `local`).
+> - **Der Abzug wird sofort geschrieben.** Er trägt die Org-Kennung, und
+>   an der hängt `audio/<org-id>/`. Ohne ihn bekäme die Box nach einer
+>   Neuinstallation eine neue Kennung — genau der Fall, für den es den
+>   Abzug gibt. Scheitert er, kommt der Nutzer trotzdem hinein.
+> - **Ein Protokolleintrag** (`org.ersteinrichtung`). „Wer wurde wann
+>   Inhaber dieser Box" ist genau die Frage, für die das Protokoll da
+>   ist. Der Vorgang hängt an keinem Pfad, die Middleware kann ihn also
+>   nicht erfassen — deshalb `audit.OHNE_PFAD`, damit `AKTIONEN` ihn
+>   trotzdem kennt und die Oberfläche einen Namen dafür hat.
+>
+> `backend/tests/test_erstzugang.py` (10 Tests) prüft das an einer
+> Verbindungsattrappe statt am Quelltext: erste Identität kommt hinein,
+> **zweite bleibt draußen**, auf besetzter Box gar kein Erstzugang, für
+> einen bekannten Nutzer wird nicht einmal gesperrt. „Leer" ist derselbe
+> Ausdruck wie in `konfiguration.wiederherstellen` — ein Test hält die
+> beiden zusammen.
+>
+> Offen bleibt: **wer zuerst öffnet, ist Inhaber.** Auf einer Box mit
+> mehreren Olares-Konten ist das eine Reihenfolge-Frage, keine
+> Berechtigungsfrage. Steht so im Handbuch, Abschnitt 2.
+>
+> ---
+>
 > ## Markt-Bilder und Handbuch (6. September 2026)
 >
 > Die letzten zwei Platzhalter vor einer Markt-Einreichung sind weg.
@@ -38,18 +85,16 @@
 > täglicher Weg, Fristen, die zwei Nachweise, Webhooks und
 > Zugriffsschlüssel, Sicherung.
 >
-> **Beim Schreiben gefunden — eine frische Box sperrt ihren ersten
+> **Beim Schreiben gefunden — eine frische Box sperrte ihren ersten
 > Nutzer aus.** Seit die Selbstbedienung aus ist (`auto_provision`
-> Vorgabe `False`, das Chart setzt `INSILO_AUTO_PROVISION` nie), legt
+> Vorgabe `False`, das Chart setzt `INSILO_AUTO_PROVISION` nie), legte
 > niemand mehr den ersten Nutzer an: `konfiguration.wiederherstellen`
 > greift nur, wenn `/app/data/konfiguration.json` **existiert**, und das
-> tut sie bei einer Neuinstallation nicht. Der Kommentar in
-> `auth.py:33` verweist auf ein „Onboarding", das es nicht gibt. Das
-> Handbuch dokumentiert bis auf Weiteres den Weg über `psql`
-> (Abschnitt 2); die eigentliche Lösung — beim leeren Bestand die erste
-> Identität zur Inhaberin machen, danach weiter 401 — ist eine
-> Entscheidung für Kai, weil sie an genau der Stelle rührt, die er
-> zumachen wollte.
+> tut sie bei einer Neuinstallation nicht. Der Kommentar in `auth.py`
+> verwies auf ein „Onboarding", das es nicht gab. Der erste Aufruf einer
+> frisch installierten Box endete mit 401.
+>
+> **Behoben in `auth._erstzugang`** (siehe unten, eigener Abschnitt).
 >
 > ---
 >

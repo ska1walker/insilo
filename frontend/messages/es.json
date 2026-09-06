@@ -755,7 +755,8 @@
       "speaker_create": "Hablante creado",
       "speaker_update": "Hablante modificado",
       "speaker_delete": "Hablante eliminado",
-      "speaker_enroll": "Muestra de voz guardada"
+      "speaker_enroll": "Muestra de voz guardada",
+      "org_ersteinrichtung": "Configuración inicial: propietario creado"
     }
   },
   "papierkorb": {

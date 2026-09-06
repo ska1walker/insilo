@@ -65,45 +65,31 @@ Solange Insilo nicht im öffentlichen Markt steht, kommt es als
 
 ### Der erste Zugang
 
-> **Das braucht heute noch eine Hand an der Datenbank.** Insilo hat keine
-> eigene Anmeldung — die macht Olares — und legt seit Fassung 0.1.85
-> **niemanden mehr von selbst an**. Das war eine bewusste Entscheidung:
-> vorher bekam jeder ausgedachte Name eine frische Organisation und war
-> darin Inhaber. Ein Einrichtungsdialog, der die erste Person eintragen
-> würde, fehlt aber noch. Bis dahin bleibt der erste Aufruf einer frisch
-> installierten Box bei
-> *„Unknown identity. Ask an administrator to add this user."*
+Öffnen Sie Insilo. **Die erste Person, die eine frische Box öffnet, wird
+ihre Inhaberin** — Insilo legt dabei die Organisation an und trägt sie
+als `owner` ein.
 
-Die erste Person und ihre Organisation eintragen — einmal, mit dem
-Olares-Benutzernamen, unter dem sie sich anmeldet:
+Das geschieht genau einmal. Ab der ersten Organisation bekommt jeder
+weitere unbekannte Name die Antwort *„Unknown identity. Ask an
+administrator to add this user."* Insilo hat keine eigene Anmeldung —
+die macht Olares — und es legt niemanden von selbst an; die eine Ausnahme
+ist dieser erste Aufruf auf einer leeren Box.
 
-```bash
-kubectl exec -n os-platform citus-0 -- psql -U olares -d <db-name> <<'SQL'
-with o as (
-  insert into public.orgs (name, slug)
-  values ('Kanzlei Muster', 'kanzlei-muster')
-  returning id
-), u as (
-  insert into public.users (olares_username, display_name)
-  values ('vorname', 'Vorname Nachname')
-  returning id
-)
-insert into public.user_org_roles (user_id, org_id, role)
-select u.id, o.id, 'owner' from u, o;
-SQL
-```
+> **Wer zuerst öffnet, ist Inhaber.** Auf einer Box mit mehreren
+> Olares-Konten öffnet also am besten die Person zuerst, der Insilo
+> gehören soll. Ist es doch die falsche geworden, hilft nur der Weg über
+> die Datenbank (unten).
 
-Den Datenbanknamen liefert `DB_NAME` im Backend-Deployment.
-
-Nur bei einer **wirklich neuen** Box nötig. Wird Insilo auf einer Box neu
-installiert, auf der es schon lief, holt es Organisation und Personen aus
-dem Abzug in `/app/data` zurück (Abschnitt 8).
+Wird Insilo auf einer Box neu installiert, auf der es schon lief, kommt
+dieser Schritt gar nicht: Organisation und Personen holt Insilo aus dem
+Abzug in `/app/data` zurück (Abschnitt 8).
 
 ### Weitere Personen
 
 Kolleginnen und Kollegen legen Sie **in Olares** an — Insilo baut keine
 zweite Benutzerverwaltung daneben. Damit sie dieselben Besprechungen
-sehen, brauchen sie danach eine Zeile in derselben Organisation:
+sehen, brauchen sie danach eine Zeile in derselben Organisation. Dafür
+gibt es noch keine Oberfläche; es geht über die Box-Datenbank:
 
 ```bash
 kubectl exec -n os-platform citus-0 -- psql -U olares -d <db-name> <<'SQL'
@@ -116,9 +102,13 @@ with u as (
 insert into public.user_org_roles (user_id, org_id, role)
 select u.id, o.id, 'member'
 from u, public.orgs o
-where o.slug = 'kanzlei-muster';
+where o.deleted_at is null;
 SQL
 ```
+
+Den Datenbanknamen liefert `DB_NAME` im Backend-Deployment. Der
+Olares-Benutzername muss genau der sein, unter dem sich die Person
+anmeldet.
 
 Vier Rollen gibt es: `owner`, `admin`, `member`, `viewer`. Die ersten
 beiden sehen im Protokoll die Vorgänge **aller** Personen der
@@ -437,8 +427,10 @@ Installation (**Upload custom chart**).
 ## 10. Wenn etwas nicht geht
 
 **„Unknown identity. Ask an administrator to add this user."**
-Dieser Olares-Benutzername steht noch nicht in der Datenbank. Insilo legt
-niemanden mehr von selbst an — eintragen wie in Abschnitt 2 beschrieben.
+Dieser Olares-Benutzername gehört noch keiner Organisation an. Das ist
+kein Fehler, sondern die Regel: von selbst angelegt wird nur die **erste**
+Person auf einer leeren Box. Alle weiteren trägt die Inhaberin ein —
+Abschnitt 2, „Weitere Personen".
 
 **„Zusammenfassungen sind aus, bis das Sprachmodell eingerichtet ist."**
 Erwartet, solange unter Einstellungen keine Adresse steht. Abschnitt 3.1.

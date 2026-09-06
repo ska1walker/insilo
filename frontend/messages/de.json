@@ -755,7 +755,8 @@
       "speaker_create": "Sprecher angelegt",
       "speaker_update": "Sprecher geändert",
       "speaker_delete": "Sprecher gelöscht",
-      "speaker_enroll": "Stimmprobe hinterlegt"
+      "speaker_enroll": "Stimmprobe hinterlegt",
+      "org_ersteinrichtung": "Erste Einrichtung — Inhaber angelegt"
     }
   },
   "papierkorb": {

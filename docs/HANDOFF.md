@@ -58,6 +58,26 @@
 > Ausdruck wie in `konfiguration.wiederherstellen` — ein Test hält die
 > beiden zusammen.
 >
+> **Ausgerollt als v0.1.88** (Helm-Rev 12, 6.9.2026): alle fünf Pods auf
+> 0.1.88, sechs von sechs Health-Checks grün, `/health/stt` weiter
+> `mode=external`. Vor dem Eingriff ein Abzug unter
+> `~/insilo-sicherung/vor-0.1.88.sql` (276 KB, fehlerfrei).
+>
+> **Der Pfad selbst lässt sich auf dieser Box nicht zeigen** — sie hat
+> längst eine Organisation, er greift dort also bewusst nie. Genau das
+> wurde nachgemessen, und es ist die interessantere Hälfte:
+>
+> | Aufruf | Antwort |
+> |---|---|
+> | echter Nutzer, mit Geheimnis | **200** |
+> | ausgedachter Name, mit Geheimnis | **401** „Unknown identity" |
+> | echter Nutzer, ohne Geheimnis | **401** „only reachable through the Insilo frontend" |
+>
+> Danach unverändert: 1 Organisation, 1 Nutzer, **0 Zeilen**
+> `org.ersteinrichtung`. Der Versuch hat nichts angelegt. Der eigentliche
+> Erstzugang wäre erst auf einer wirklich frischen Installation zu sehen;
+> dort steht er hinter den zehn Tests.
+>
 > Offen bleibt: **wer zuerst öffnet, ist Inhaber.** Auf einer Box mit
 > mehreren Olares-Konten ist das eine Reihenfolge-Frage, keine
 > Berechtigungsfrage. Steht so im Handbuch, Abschnitt 2.
@@ -173,7 +193,8 @@
 >
 > ## Torwächter und Zeilensicherheit (5. September 2026)
 >
-> **Ausgerollt und nachgemessen: v0.1.87 läuft auf der Box** (Helm-Rev 11,
+> **Ausgerollt und nachgemessen: v0.1.88 läuft auf der Box** (Helm-Rev 12;
+> die Torwächter-Arbeit unten kam mit 0.1.87, Helm-Rev 11,
 > siehe „Drei blinde Flecken" unten). Zwischenstand v0.1.85 war (Helm-Rev 9,
 > alle fünf Pods auf 0.1.85-Images, alle sechs Health-Checks grün,
 > `/health/stt` meldet `mode=external`). 0.1.84 war ein

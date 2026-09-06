@@ -219,11 +219,11 @@ ssh olares@192.168.1.17 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.85** auf der Box, verifiziert 5.9.2026 (Helm-Rev 9, alle fünf Pods auf 0.1.85). |
+| Version | **v0.1.87** auf der Box, verifiziert 6.9.2026 (Helm-Rev 11, alle fünf Pods auf 0.1.87). |
 | Plattform | Olares OS (k3s) auf `192.168.1.17` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.85` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.87` |
 | Health | `/health`, `/health/db`, `/health/whisper`, `/health/llm`, `/health/embeddings` — alle echt seit v0.1.57 |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (**kein Vorgabewert**, siehe HANDOFF-Kopf); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |

@@ -19,7 +19,8 @@
 >
 > ## Torwächter und Zeilensicherheit (5. September 2026)
 >
-> **Ausgerollt und nachgemessen: v0.1.85 läuft auf der Box** (Helm-Rev 9,
+> **Ausgerollt und nachgemessen: v0.1.87 läuft auf der Box** (Helm-Rev 11,
+> siehe „Drei blinde Flecken" unten). Zwischenstand v0.1.85 war (Helm-Rev 9,
 > alle fünf Pods auf 0.1.85-Images, alle sechs Health-Checks grün,
 > `/health/stt` meldet `mode=external`). 0.1.84 war ein
 > `--chart-only`-Release für das neue Symbol, 0.1.85 hat die Bilder
@@ -137,7 +138,18 @@
 > `kubectl logs -n insilo-kaivostudio <frontend-pod> -c olares-envoy-sidecar | grep -i remote-user`
 > — steht dort etwas, greift der Vorrang.
 >
-> ### Zwei Dinge, die erst das Ausrollen gezeigt hat
+> ### Drei blinde Flecken — alle erst im Betrieb sichtbar
+>
+> **Ein Muster, dreimal derselbe Fehler.** Unter `force row level
+> security` ist der Fehler nie „Zugriff verweigert", sondern **ein leeres
+> Ergebnis** — und ein leeres Ergebnis sieht aus wie eine gültige
+> Antwort. Wer `force` einführt, muss jede Stelle durchgehen, die
+> org-gebundene Tabellen **ohne** Nutzer liest.
+>
+> Seit v0.1.87 prüft `test_kein_zugriff_auf_geschuetzte_tabellen_ohne_kontext`
+> das **ganze Paket** `backend/app/` statt nur `routers/` — genau dort
+> war `auth_api.py` durchgerutscht — mit einer benannten Ausnahmeliste
+> `KONTEXTFREI_ERLAUBT`, in der jeder Eintrag seinen Grund trägt.
 >
 > **1. Erzwungene Zeilensicherheit blendet auch die Statusanzeige.**
 > `/health/llm` und `/health/stt` lasen `org_settings` ohne Kontext und
@@ -155,7 +167,31 @@
 > dabei nie „Zugriff verweigert", sondern **ein leeres Ergebnis**, und
 > ein leeres Ergebnis sieht aus wie eine gültige Antwort.
 >
-> **2. `helm rollback` nimmt die Migration nicht zurück.** Bliebe die
+> **2. Der Zugriffsschlüssel fand sich selbst nicht mehr (v0.1.87).**
+> `get_api_caller` liest `public.api_keys`, um den Schlüssel zu prüfen —
+> ohne Kontext, denn welche Organisation gemeint ist, steht ja erst
+> danach fest. Unter `force` kamen null Zeilen zurück und ein völlig
+> gültiger Schlüssel wurde als „Ungültiger API-Schlüssel" abgewiesen.
+> Jetzt `acquire_als_dienst()`: das Nachschlagen ist ein Systemvorgang,
+> ab dem Fund arbeiten die Endpunkte mit `acquire_als_schluessel(org_id)`
+> und damit nur noch lesend auf einer Organisation.
+>
+> **Verdeckt wurde das von einem zweiten Fehler.** `passlib[bcrypt]`
+> stand ohne Obergrenze in `pyproject.toml`; passlib 1.7.4 (2020) ist mit
+> bcrypt ab 4.1 unverträglich, und auf der Box lief bcrypt 5.0.0. Damit
+> ließ sich **gar kein Schlüssel anlegen** — der Prüfpfad kam nie dran.
+> Erst nachdem v0.1.86 passlib entfernt hatte (bcrypt direkt; `checkpw`
+> liest die vorhandenen Hashes weiter), wurde der RLS-Fehler sichtbar.
+> **Zwei Fehler übereinander: den zweiten sieht man erst, wenn der erste
+> weg ist.**
+>
+> Nachgemessen auf der Box mit v0.1.87: Schlüssel anlegen 201, Liste
+> lesen 200 mit 16 Besprechungen, Markdown-Export 200 (866 Byte, mit
+> Frontmatter), ausgedachter Schlüssel 401, widerrufener Schlüssel 401 —
+> und im Protokoll steht `external.export_markdown · über-Schlüssel ·
+> Ausleitung=true`.
+>
+> **3. `helm rollback` nimmt die Migration nicht zurück.** Bliebe die
 > Zeilensicherheit erzwungen, während der alte Code keinen Kontext setzt,
 > sähe die App **keine einzige Zeile** — schlimmer als der Fehler, den
 > man zurücknehmen wollte. Vor jedem Rollback auf < 0.1.82 gehört deshalb

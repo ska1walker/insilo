@@ -250,13 +250,44 @@ def test_die_werksvorlagen_kennen_die_kurzfassung() -> None:
         )
 
 
-def test_die_migration_laesst_die_schnellnotiz_in_ruhe() -> None:
+def test_die_werksvorlagen_aendert_nur_der_seed() -> None:
+    """Eine Migration, die an den Werks-Vorlagen dreht, ist wirkungslos.
+
+    Der Init-Container führt jede Datei unter `/sql/` bei jedem Start aus,
+    und `0099_seed.sql` endet mit `on conflict (id) do update set
+    output_schema = excluded.output_schema, version = excluded.version`.
+    Der Seed überschreibt also alles, was eine Migration vorher an ihnen
+    geändert hat — auf der Box daran gesehen, dass die Versionsziffer nach
+    dem Ausrollen auf 2 stand statt auf 3.
+    """
     sql = (WURZEL / "supabase/migrations/0018_kurzfassung.sql").read_text(
         encoding="utf-8"
     )
-    assert "00000000-0000-0000-0000-000000000005" not in sql
-    # Wiederholbar: ein zweiter Lauf darf die Version nicht erneut hochzählen.
-    assert "not (output_schema->'properties' ? 'kurzfassung')" in sql
+    ohne_kommentar = "\n".join(
+        z for z in sql.splitlines() if not z.lstrip().startswith("--")
+    )
+    assert "public.templates" not in ohne_kommentar or "comment on column" in ohne_kommentar
+    assert "update public.templates" not in ohne_kommentar, (
+        "0018 ändert wieder Vorlagen — der Seed macht das gleich zunichte"
+    )
+
+
+def test_der_seed_zaehlt_die_vorlagen_hoch() -> None:
+    """Ein geändertes Schema ohne neue Versionsziffer ist eine stille Lüge.
+
+    `summaries.template_version` hält fest, welche Fassung eine
+    Zusammenfassung erzeugt hat. Bliebe sie stehen, sähen zwei
+    Zusammenfassungen aus derselben Fassung verschieden aus.
+    """
+    seed = (WURZEL / "supabase/seed.sql").read_text(encoding="utf-8")
+    bloecke = seed.split("-- ============================================================")
+    fuer_vorlagen = [b for b in bloecke if "output_schema" in b or "kurzfassung" in b]
+    mit_kurzfassung = [b for b in fuer_vorlagen if "kurzfassung" in b]
+    assert len(mit_kurzfassung) == 4, f"{len(mit_kurzfassung)} Vorlagen mit Kurzfassung"
+    for b in mit_kurzfassung:
+        assert re.search(r"\n  3\n\)", b), (
+            "eine Vorlage mit Kurzfassung steht noch auf der alten Version"
+        )
 
 
 def test_die_oberflaeche_kennt_dieselben_tat_felder() -> None:
@@ -277,3 +308,32 @@ def test_die_oberflaeche_kennt_dieselben_tat_felder() -> None:
     vorne = {m.strip().strip('",') for m in block.splitlines() if '"' in m}
     fehlend = _TASK_OBJECT_KEYS - vorne
     assert not fehlend, f"summary-view.tsx kennt diese Felder nicht: {sorted(fehlend)}"
+
+
+# ---------------------------------------------------------------------------
+# Der Fall, den erst die Box gezeigt hat
+# ---------------------------------------------------------------------------
+
+
+def test_ohne_kopf_wird_nichts_eingeklappt() -> None:
+    """Zwölf von zwölf Zusammenfassungen auf der Box hatten `kopf: []`.
+
+    Kurze Aufnahmen, bei denen das Modell nur `anwesende` und
+    `wichtige_aussagen` gefüllt hat — beides gehört unter „Mehr", und
+    eine Kurzfassung gab es für sie noch nicht. Wäre es dabei geblieben,
+    zeigte die Zusammenfassung oben **nichts** und versteckte alles
+    hinter einem Aufklapper.
+
+    Die Tests oben füllen jedes Feld und kommen an diesen Fall nie heran.
+    Gefunden hat ihn erst der Abruf gegen die laufende Box.
+    """
+    kopf, mehr = sortieren({"anwesende": ["A"], "wichtige_aussagen": ["x"]})
+    assert kopf == ["anwesende", "wichtige_aussagen"]
+    assert mehr == [], "es gibt nichts, was den Kopf tragen würde — also kein Aufklapper"
+
+
+def test_ein_einziges_kopf_feld_reicht_aber() -> None:
+    """Sobald oben etwas steht, darf der Rest weg."""
+    kopf, mehr = sortieren({"kurzfassung": "Ein Satz.", "anwesende": ["A"]})
+    assert kopf == ["kurzfassung"]
+    assert mehr == ["anwesende"]

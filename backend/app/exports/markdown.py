@@ -289,6 +289,20 @@ def sortieren(
             continue
         (kopf if rang(feld, schema) == "kopf" else mehr).append(feld)
     kopf.sort(key=lambda f: _KOPF_INDEX.get(f, len(_KOPF_INDEX)))
+
+    # Bliebe der Kopf leer, wird nichts eingeklappt.
+    #
+    # Auf der Box gemessen, direkt nach dem Ausrollen von v0.1.91: zwölf
+    # vorhandene Zusammenfassungen, **alle** mit `kopf: []`. Es sind kurze
+    # Aufnahmen, bei denen das Modell nur `anwesende` und
+    # `wichtige_aussagen` gefüllt hat — beides gehört unter „Mehr", und
+    # eine Kurzfassung gab es damals noch nicht. Das Ergebnis wäre eine
+    # Zusammenfassung gewesen, die oben nichts zeigt und alles hinter
+    # einem Aufklapper versteckt: genau das Gegenteil der Absicht.
+    #
+    # Einklappen lohnt nur, wenn oben etwas steht, das die Sache trägt.
+    if not kopf:
+        return mehr, []
     return kopf, mehr
 
 

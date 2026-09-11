@@ -193,7 +193,7 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   }$few$::jsonb,
   true,
   true,
-  2
+  3
 ),
 
 -- ============================================================
@@ -353,7 +353,7 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   }$few$::jsonb,
   true,
   true,
-  2
+  3
 ),
 
 -- ============================================================
@@ -517,7 +517,7 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   }$few$::jsonb,
   true,
   true,
-  2
+  3
 ),
 
 -- ============================================================
@@ -678,7 +678,7 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   }$few$::jsonb,
   true,
   true,
-  2
+  3
 ),
 
 -- ============================================================

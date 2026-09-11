@@ -14,6 +14,7 @@ import asyncpg
 import httpx
 from celery import shared_task
 
+from app import ablage
 from app.config import settings
 from app.db import dienst_kontext
 from app.speaker_matcher import (
@@ -419,6 +420,12 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
                     "auto-match voiceprint append failed for speaker %s",
                     match.org_speaker_id,
                 )
+
+        # Das Transkript neben die Aufnahme legen. Schon hier, nicht erst
+        # nach der Zusammenfassung: ohne eingerichtetes Sprachmodell
+        # kommt die nie, und der Wortlaut soll trotzdem als Datei
+        # dastehen.
+        await ablage.schreiben(conn, meeting_id)
     finally:
         await conn.close()
 

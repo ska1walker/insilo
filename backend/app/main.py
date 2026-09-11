@@ -15,7 +15,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app import audit, konfiguration
+from app import ablage, audit, konfiguration
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
 from app.db import acquire, acquire_als_dienst, close_pool, init_pool
@@ -116,6 +116,46 @@ async def konfig_abzug(request: Request, call_next):
             # Der Abzug ist eine Bequemlichkeit, keine Bedingung. Die
             # Änderung steht bereits in der Datenbank.
             log.warning("Konfigurations-Abzug übersprungen: %s", exc)
+    return antwort
+
+
+# ---------------------------------------------------------------------------
+# Markdown-Ablage — Transkript und Zusammenfassung neben der Aufnahme
+#
+# Dieselbe Bauart wie der Abzug oben, und aus demselben Grund: der Titel,
+# die Etiketten und die Sprechernamen lassen sich an fünf Stellen ändern,
+# und an jeder einzeln nachzuschreiben hieße, die sechste zu vergessen.
+# Welcher Vorgang die Dateien veraltet, steht in `ablage.AUSLOESER`;
+# erkannt wird er von derselben Tabelle, die auch das Protokoll füttert.
+#
+# Was die Verarbeitung selbst anstößt — Transkription und Zusammenfassung
+# — schreibt in den Aufgaben, nicht hier: die laufen im Worker und kommen
+# an dieser Middleware nie vorbei.
+# ---------------------------------------------------------------------------
+
+
+@app.middleware("http")
+async def markdown_ablage(request: Request, call_next):
+    antwort = await call_next(request)
+    if antwort.status_code >= 400:
+        return antwort
+
+    vorgang = audit.deuten(request.method, request.url.path)
+    if vorgang is None or vorgang.aktion not in ablage.AUSLOESER or not vorgang.kennung:
+        return antwort
+
+    try:
+        # Als Dienst: die Dateien lesen quer über Besprechung, Transkript,
+        # Zusammenfassung und Etiketten, und die stehen seit 0017 unter
+        # erzwungener Zeilensicherheit. Berechtigt ist der Aufruf bereits
+        # — der Endpunkt hat mit dem Nutzerkontext geantwortet, sonst
+        # stünde hier kein Status unter 400.
+        async with acquire_als_dienst() as conn:
+            await ablage.schreiben(conn, vorgang.kennung)
+    except Exception as exc:  # noqa: BLE001
+        # Wie beim Abzug: eine Bequemlichkeit, keine Bedingung. Die
+        # Änderung steht bereits in der Datenbank.
+        log.warning("Markdown-Ablage übersprungen: %s", exc)
     return antwort
 
 

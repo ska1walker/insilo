@@ -327,9 +327,25 @@ Alle persistenten Pfade folgen Olares-Konventionen:
 | Pfad im Container         | Olares-Lifecycle | Inhalt                              |
 |---------------------------|------------------|-------------------------------------|
 | `/app/data/audio/`        | Persistent       | Audio-Originale (alternativ MinIO)  |
+| `/app/data/konfiguration.json` | Persistent  | Abzug der Einrichtung, 0600, **enthält Zugangsdaten** |
 | `/app/data/models/`       | Persistent       | Vorgeladene Whisper-/BGE-Modelle    |
 | `/app/cache/temp/`        | Ephemer          | Zwischen-Verarbeitungsdateien       |
 | `/app/cache/uploads/`     | Ephemer          | Hochgeladene Chunks während Upload  |
+
+Je Besprechung liegen unter `audio/<org-id>/` drei Dateien mit demselben
+Stamm, damit sie in einer Auflistung beieinanderstehen:
+
+```
+<meeting-id>.webm                  die Tonaufnahme
+<meeting-id>.transkript.md         Wortlaut mit Sprechernamen
+<meeting-id>.zusammenfassung.md    die Zusammenfassung nach Vorlage
+```
+
+Die beiden Markdown-Dateien sind **abgeleitet**, nicht Quelle: die
+Datenbank bleibt die Wahrheit, `app/ablage.py` schreibt sie neu, wenn
+sich der Inhalt ändert. Sie gehen mit der Besprechung, wenn sie
+endgültig gelöscht wird; die Aufbewahrungsfrist für Aufnahmen lässt sie
+dagegen stehen (sie holt nur das Rohmaterial).
 
 **Empfehlung MVP:** Audio in MinIO statt `/app/data` — MinIO ist gemanaged, hat S3-API, leichteres Backup.
 

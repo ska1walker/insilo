@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel, Field
 
-from app import audit
+from app import ablage, audit
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire_as
 from app.errors import http_error
@@ -709,6 +709,11 @@ async def purge_meeting(
         # genau der Zustand, der am 19.8. dreizehn Dateien gekostet hat.
         if row["audio_path"]:
             delete_object(row["audio_path"])
+
+        # Und die beiden Markdown-Dateien daneben. Ohne das bliebe der
+        # Gesprächsinhalt auf der Platte liegen, nachdem jemand
+        # ausdrücklich „endgültig entfernen" gedrückt hat.
+        ablage.entfernen(user.org_id, meeting_id)
 
         await conn.execute(
             "delete from public.meetings where id = $1 and org_id = $2",

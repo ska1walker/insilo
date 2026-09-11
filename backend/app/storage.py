@@ -23,6 +23,7 @@ class _Backend(Protocol):
     def upload_bytes(self, key: str, data: bytes, content_type: str) -> None: ...
     def get_bytes(self, key: str) -> bytes: ...
     def delete_object(self, key: str) -> None: ...
+    def exists(self, key: str) -> bool: ...
     def get_audio_url(self, key: str, expires: timedelta) -> str: ...
 
 
@@ -53,6 +54,15 @@ class _S3Backend:
 
     def delete_object(self, key: str) -> None:
         self._client().delete_object(Bucket=settings.minio_bucket, Key=key)
+
+    def exists(self, key: str) -> bool:
+        from botocore.exceptions import ClientError
+
+        try:
+            self._client().head_object(Bucket=settings.minio_bucket, Key=key)
+            return True
+        except ClientError:
+            return False
 
     def get_audio_url(self, key: str, expires: timedelta) -> str:
         return self._client().generate_presigned_url(
@@ -88,6 +98,9 @@ class _LocalBackend:
     def delete_object(self, key: str) -> None:
         self._path(key).unlink(missing_ok=True)
 
+    def exists(self, key: str) -> bool:
+        return self._path(key).is_file()
+
     def get_audio_url(self, key: str, expires: timedelta) -> str:  # noqa: ARG002
         # Each path segment is encoded separately so slashes between
         # <org_id>/<filename> stay routable.
@@ -117,6 +130,16 @@ def get_bytes(key: str) -> bytes:
 
 def delete_object(key: str) -> None:
     backend.delete_object(key)
+
+
+def exists(key: str) -> bool:
+    """Liegt unter diesem Schlüssel etwas?
+
+    Für den Nachzug der Markdown-Dateien im Aufräumlauf: nur schreiben,
+    was fehlt. Beim lokalen Rücken ein `stat`, beim S3-Rücken ein
+    HEAD — beides billig genug für einen nächtlichen Durchgang.
+    """
+    return backend.exists(key)
 
 
 def get_presigned_url(key: str, expires: timedelta = timedelta(hours=1)) -> str:

@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 6. September 2026, Fassung 0.1.87.
+Stand: 11. September 2026, Fassung 0.1.89.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.
@@ -208,6 +208,32 @@ Zusammenfassung untereinander.
 - **Erneut zusammenfassen** — nach einer Änderung an der Vorlage oder
   wenn der erste Lauf nichts hergab.
 
+### Die Dateien im Datenverzeichnis
+
+Insilo legt zu jeder Besprechung drei Dateien ab, im selben Ordner und
+mit demselben Stamm:
+
+```
+/app/data/audio/<organisation>/
+    <besprechung>.webm                  die Tonaufnahme
+    <besprechung>.transkript.md         der Wortlaut, mit Sprechernamen
+    <besprechung>.zusammenfassung.md    die Zusammenfassung nach Ihrer Vorlage
+```
+
+Beide Markdown-Dateien tragen oben einen Kopf mit Titel, Datum, Dauer,
+Vorlage, Etiketten und Beteiligten — sie sind also auch ohne Insilo
+lesbar und lassen sich in ein Dokumentenmanagement, eine Akte oder einen
+Ordner ziehen, den Sie ohnehin sichern.
+
+Der Dateiname ist die interne Kennung, nicht der Titel: der lässt sich
+ändern, und zwei Besprechungen dürfen gleich heißen. Der Titel steht in
+der Datei, in der ersten Überschrift.
+
+Das Transkript entsteht direkt nach der Transkription — auch wenn nie
+eine Zusammenfassung folgt, weil kein Sprachmodell eingerichtet ist.
+Ändern Sie danach den Titel, die Etiketten oder einen Sprechernamen,
+schreibt Insilo die betroffene Datei neu.
+
 ### Das Archiv befragen
 
 **Archiv** beantwortet Fragen über alle Besprechungen hinweg und nennt
@@ -242,7 +268,12 @@ Es laufen **zwei Fristen nebeneinander**, und sie bedeuten Verschiedenes:
 Deshalb kann ein Eintrag im Papierkorb stehen und schon keine Aufnahme
 mehr haben — dann steht es dort auch dran. Transkript und Zusammenfassung
 bleiben in diesem Fall erhalten; sie brauchen einen Bruchteil des
-Platzes.
+Platzes. Das gilt auch für die beiden Markdown-Dateien aus Abschnitt 4:
+die Aufbewahrungsfrist holt das Rohmaterial, nicht das Protokoll.
+
+Beim **endgültigen** Löschen gehen sie dagegen mit — sonst läge der
+Gesprächsinhalt weiter auf der Platte, nachdem jemand ausdrücklich
+„endgültig entfernen" gedrückt hat.
 
 Ein Aufräumlauf setzt beide Fristen jede Nacht um 3:30 Uhr durch
 (Zeitzone des Containers; ohne gesetzte `TZ` ist das UTC). „Endgültig
@@ -364,7 +395,13 @@ nicht wiederherstellen.
 | Hälfte | Was drin ist |
 |---|---|
 | Die Datenbank | Besprechungen, Transkripte, Zusammenfassungen, Etiketten, Protokoll, Einstellungen, Zugriffsschlüssel |
-| `/app/data` | Die Tonaufnahmen **und** `konfiguration.json` — der Abzug der Einrichtung; er **enthält Zugangsdaten** und liegt mit Rechten 0600 |
+| `/app/data` | Die Tonaufnahmen, je Besprechung Transkript und Zusammenfassung als Markdown, **und** `konfiguration.json` — der Abzug der Einrichtung; er **enthält Zugangsdaten** und liegt mit Rechten 0600 |
+
+> **Diese Hälfte trägt seit Fassung 0.1.89 den Gesprächsinhalt im
+> Klartext**, nicht mehr nur den Ton. Wer `/app/data` sichert oder
+> kopiert, nimmt lesbare Protokolle mit. Behandeln Sie das Ziel
+> entsprechend — verschlüsselter Speicher, und nicht der Ordner, in den
+> ohnehin jeder schaut.
 
 Olares' eingebautes Velero sichert das Volume und ist von allem Folgenden
 nicht betroffen — es arbeitet unterhalb der Datenbank. Empfohlen: täglich

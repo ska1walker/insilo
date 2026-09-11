@@ -17,6 +17,61 @@
 >
 > ---
 >
+> ## Transkript und Zusammenfassung liegen als Datei daneben (11. September 2026)
+>
+> Im Datenverzeichnis lag bisher nur die Tonspur. Wer die Besprechung
+> außerhalb von Insilo brauchte — in der Akte, im Dokumentenmanagement,
+> in einem Ordner, den ohnehin jemand sichert — kam nur über die
+> Oberfläche oder die Schnittstelle daran. Seit v0.1.89 stehen je
+> Besprechung drei Dateien im selben Ordner, mit demselben Stamm:
+>
+> ```
+> audio/<org-id>/<meeting-id>.webm
+> audio/<org-id>/<meeting-id>.transkript.md
+> audio/<org-id>/<meeting-id>.zusammenfassung.md
+> ```
+>
+> Der Titel steht **in** der Datei, nicht im Namen: er lässt sich ändern,
+> und zwei Besprechungen dürfen gleich heißen. Gerendert wird mit
+> `exports/markdown.render_meeting_markdown` — der Funktion, die schon
+> den Webhook-Rumpf und `/api/external/v1/.../markdown` baut. Ihr
+> Docstring nannte „future file-drops" als Zweck; das hier ist er.
+>
+> **Vier Stellen, an denen die Dateien entstehen oder gehen:**
+>
+> | Wann | Wo |
+> |---|---|
+> | nach der Transkription | `tasks/transcribe.py` — **schon dort**, nicht erst nach der Zusammenfassung: ohne Sprachmodell kommt die nie |
+> | nach der Zusammenfassung | `tasks/summarize.py` |
+> | nach einer Änderung von Hand | Middleware `markdown_ablage` in `main.py` |
+> | beim endgültigen Löschen | `purge_meeting` **und** `_papierkorb_leeren` |
+>
+> Die Middleware liest ihre Auslöser aus `ablage.AUSLOESER` und erkennt
+> sie mit `audit.deuten` — derselben Tabelle, die das Protokoll füttert.
+> Eine zweite Pfadliste in `main.py` wäre die nächste, die veraltet. Ein
+> Test hält `AUSLOESER` gegen `audit.AKTIONEN`: ein Tippfehler dort
+> schaltete die Auffrischung sonst still ab.
+>
+> **Die Aufbewahrungsfrist lässt sie stehen.** Sie holt die Tonspur als
+> Rohmaterial; Transkript und Zusammenfassung sind ausdrücklich das, was
+> bleiben soll. Ein Test steht davor. Beim *endgültigen* Löschen gehen
+> sie dagegen mit — sonst läge der Gesprächsinhalt weiter auf der Platte,
+> nachdem jemand „endgültig entfernen" gedrückt hat.
+>
+> **Nachzug im Aufräumlauf.** `_markdown_nachziehen` schreibt, was fehlt
+> (geprüft mit dem neuen `storage.exists`). Das erledigt zwei Fälle mit
+> einem Handgriff: die Besprechungen von vor der Neuerung, und jeden
+> Schreibfehlschlag — der hält die Verarbeitung bewusst nicht auf, also
+> muss ihn jemand nachholen. Wer nicht bis 3:30 warten will, ruft die
+> Aufgabe von Hand.
+>
+> **Was sich für die Sicherung ändert, und das gehört gesagt:** die
+> Hälfte `/app/data` trägt jetzt den **Gesprächsinhalt im Klartext**,
+> nicht mehr nur Ton. Wer sie kopiert, nimmt lesbare Protokolle mit.
+> Steht im Handbuch, Abschnitt 8, als Kasten.
+>
+> ---
+>
 > ## Der erste Zugang auf eine leere Box (6. September 2026)
 >
 > Eine frisch installierte Box war unbenutzbar: `auto_provision` ist

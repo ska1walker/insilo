@@ -17,6 +17,59 @@
 >
 > ---
 >
+> ## Ausgerollt und nachgemessen — was die Box am Entwurf korrigiert hat (11. September 2026)
+>
+> **v0.1.92 läuft auf der Box** (Helm-Rev 16, alle fünf Pods, sechs von
+> sechs Health-Checks grün, Abzug vorher unter
+> `~/insilo-sicherung/vor-0.1.91.sql`). 0.1.91 war der Entwurf, 0.1.92
+> die Nachbesserung — und beide Befunde kamen aus der Messung, nicht aus
+> den Tests.
+>
+> **Befund 1: der Kopf war leer, also verschwand alles.** Der erste
+> Abruf gegen die laufende Box lieferte für **zwölf von zwölf**
+> Zusammenfassungen `kopf: []`. Es sind kurze Aufnahmen, bei denen das
+> Modell nur `anwesende` und `wichtige_aussagen` gefüllt hat — beides
+> gehört unter „Mehr", und eine Kurzfassung hatten sie noch nicht. Die
+> Ansicht hätte oben **nichts** gezeigt und alles hinter einen
+> Aufklapper gelegt. `sortieren` klappt jetzt gar nicht ein, wenn der
+> Kopf leer bliebe. Meine Tests füllen jedes Feld und kommen an diesen
+> Fall nie heran; das ist die Lehre, nicht der Fix.
+>
+> **Befund 2: die Migration konnte nie wirken.** Der Init-Container
+> führt jede Datei unter `/sql/` bei **jedem** Start aus, und
+> `0099_seed.sql` endet mit `on conflict (id) do update set
+> output_schema = excluded.output_schema, version = excluded.version`.
+> Der Seed besitzt die Werks-Vorlagen und schreibt sie bei jedem
+> Hochfahren neu; die Migration wurde Sekundenbruchteile später
+> überschrieben. Gesehen an der Versionsziffer — sie stand auf 2, wo die
+> Migration auf 3 gezählt hätte. Das Feld war trotzdem da, über den
+> Seed. Hätte ich nur „ist `kurzfassung` da?" gefragt, wäre es
+> durchgerutscht. **Was `seed.sql` besitzt, gehört in `seed.sql`.**
+>
+> **Die offene Annahme, jetzt belegt.** Ich hatte auf das Schema gesetzt
+> (Pflichtfeld plus Beschreibung) statt auf zwanzig Prompt-Texte in fünf
+> Sprachen. Ein „Erneut zusammenfassen" an einer Entwicklungs-Aufnahme
+> (Camping, 190 Wörter) gegen das echte Modell:
+>
+> > Der Austausch konzentrierte sich auf die subjektiven Vorzüge des
+> > Campings, insbesondere Entschleunigung und Einfachheit. Für ein
+> > anstehendes Community-Event wurde eine vorbereitende Maßnahme
+> > identifiziert. Konkrete Vereinbarungen oder verbindliche Ergebnisse
+> > liegen nicht vor.
+>
+> 276 Zeichen, drei Sätze, keine Aufzählung, keine Floskel-Einleitung —
+> und der Schlusssatz sagt von sich aus, dass nichts vereinbart wurde.
+> Vorlagenfassung 2 → 3, `kurzfassung` vorher `f`, nachher `t`.
+>
+> Danach lieferte der Endpunkt für diese Besprechung
+> `kopf: [kurzfassung, naechste_schritte, kernthemen]` und
+> `mehr: [anwesende, wichtige_aussagen]`, und die Markdown-Datei neben
+> der Aufnahme trug dieselbe Reihenfolge — vom Zusammenfassungs-Lauf
+> selbst neu geschrieben. Damit hängt die Kette aus v0.1.89 und v0.1.91
+> nachweislich zusammen.
+>
+> ---
+>
 > ## Die fertige Besprechung zeigt zuerst, was sie ergeben hat (11. September 2026)
 >
 > Kais Beobachtung, und sie stimmt: nach einer Aufnahme bekam man sechs

@@ -227,11 +227,11 @@ ssh olares@192.168.1.17 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.90** auf der Box, verifiziert 11.9.2026 (Helm-Rev 14, alle fünf Pods auf 0.1.90, sechs von sechs Health-Checks grün). |
+| Version | **v0.1.92** auf der Box, verifiziert 11.9.2026 (Helm-Rev 16, alle fünf Pods auf 0.1.92, sechs von sechs Health-Checks grün). |
 | Plattform | Olares OS (k3s) auf `192.168.1.17` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.90` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.92` |
 | Health | `/health`, `/health/db`, `/health/whisper`, `/health/llm`, `/health/embeddings` — alle echt seit v0.1.57 |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (**kein Vorgabewert**, siehe HANDOFF-Kopf); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |
@@ -244,7 +244,7 @@ ssh olares@192.168.1.17 \
 | Webhooks | Auslöser pro Webhook: `manual` (Default, sicher) oder `auto` |
 | i18n | next-intl@4, 5 Sprachen (DE/EN/FR/ES/IT), Locale in `/einstellungen` umschaltbar |
 | Storage | hostPath `/app/data/audio/` für Audio, Postgres für Rest |
-| Migrationen | 17 im Repo (0001–0017), alle auf der Box angewendet |
+| Migrationen | 18 im Repo (0001–0018), alle auf der Box angewendet. **Werks-Vorlagen gehören in `seed.sql`, nicht in eine Migration** — der Seed läuft bei jedem Start und überschreibt sie |
 | Markt-Bilder | `markt/` — Aufmacher + fünf Tafeln, 1920×1080, neu bauen mit `bash scripts/markt-bilder.sh`; im OlaresManifest verlinkt |
 | Kundendoku | `docs/HANDBUCH.md` — das einzige Dokument in `docs/`, das nicht für die Werkstatt ist |
 | Dateien je Besprechung | `audio/<org>/<id>.webm` + `.transkript.md` + `.zusammenfassung.md` (v0.1.89, `app/ablage.py`); Nachzug im Aufräumlauf |

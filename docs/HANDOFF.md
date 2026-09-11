@@ -70,6 +70,40 @@
 > nicht mehr nur Ton. Wer sie kopiert, nimmt lesbare Protokolle mit.
 > Steht im Handbuch, Abschnitt 8, als Kasten.
 >
+> **Ausgerollt und nachgemessen (11.9.2026, Helm-Rev 14, v0.1.90):**
+> alle fünf Pods auf 0.1.90, sechs von sechs Health-Checks grün, Abzug
+> vorher unter `~/insilo-sicherung/vor-0.1.89.sql`. Vorher lagen unter
+> `/app/data/audio` **8 Dateien, alle `.webm`**. Nach einem Nachzug von
+> Hand: 8 `.webm`, **11 `.transkript.md`, 11 `.zusammenfassung.md`**.
+>
+> Die 11 statt der erwarteten 15 waren kein Fehler, sondern die Zahl,
+> die ich vorher falsch geschätzt hatte: es gibt 15 Transkript-Zeilen,
+> aber **vier davon haben null Segmente und null Zeichen** — leere
+> Aufnahmen, hängengeblieben auf `transcribed`. Der Wächter in
+> `ablage.schreiben` überspringt sie richtig; eine Datei, die nur aus
+> einer Kopfzeile besteht, behauptet Inhalt, den es nicht gibt.
+>
+> **Direkt danach gefunden, in der ersten Datei, die ich geöffnet habe:**
+> `## Analyse` als *erster* Abschnitt jeder Zusammenfassung — das
+> `_analyse`-Denkfeld aus dem CoT-Prompt (v0.1.40). Die Oberfläche
+> klappt es als „LLM-Überlegungen" ein, `exports/markdown.py` kannte die
+> Regel nicht. Es stand damit seit jeher auch im Webhook-Rumpf und in
+> `/api/external/v1/.../markdown` — nur hatte es dort niemand gesehen.
+> Behoben in v0.1.90 (`_intern`), ein Test hält die Regel an die der
+> Oberfläche gebunden. Danach: `grep -rl "## Analyse"` über das
+> Datenverzeichnis → **0**.
+>
+> Die 22 alten Dateien mussten dafür von Hand weg: der Nachzug heilt
+> **Fehlendes, nicht Veraltetes**. Bei einer Renderer-Änderung ist das
+> der Handgriff — steht als Absatz in `_markdown_nachziehen`.
+>
+> **Nicht auf der Box bewiesen:** dass die Middleware bei einer Änderung
+> von Hand auslöst. Sie ist registriert und trägt die fünf Auslöser
+> (nachgesehen im laufenden Pod), und `ablage.schreiben` selbst hat eben
+> 22 Dateien geschrieben. Der Auslöser selbst steht unter Test, nicht
+> unter Messung: ihn vorzuführen hieße, einen Titel in Kais Daten zu
+> ändern, und das Protokoll hielte den Vorgang unlöschbar fest.
+>
 > ---
 >
 > ## Der erste Zugang auf eine leere Box (6. September 2026)

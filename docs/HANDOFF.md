@@ -97,12 +97,25 @@
 > **Fehlendes, nicht Veraltetes**. Bei einer Renderer-Änderung ist das
 > der Handgriff — steht als Absatz in `_markdown_nachziehen`.
 >
-> **Nicht auf der Box bewiesen:** dass die Middleware bei einer Änderung
-> von Hand auslöst. Sie ist registriert und trägt die fünf Auslöser
-> (nachgesehen im laufenden Pod), und `ablage.schreiben` selbst hat eben
-> 22 Dateien geschrieben. Der Auslöser selbst steht unter Test, nicht
-> unter Messung: ihn vorzuführen hieße, einen Titel in Kais Daten zu
-> ändern, und das Protokoll hielte den Vorgang unlöschbar fest.
+> **Die Middleware, auf der Box vorgeführt** (auf Kais Zusage, an der
+> Testaufnahme „Test 1, 2, 3 …"):
+>
+> | Zeit | Vorgang | Datei |
+> |---|---|---|
+> | 07:57:23 | Ausgangszustand nach dem Nachzug | `# Aufnahme vom 18.08. · 16:49` |
+> | 08:02:20 | `PATCH /meetings/<id>`, neuer Titel | **beide** Dateien neu, neuer Titel in Kopfzeile und Überschrift |
+> | 08:02:39 | Titel zurückgesetzt | beide Dateien wieder auf dem Original |
+>
+> Danach geprüft: `grep -rl "Probe Middleware"` über das
+> Datenverzeichnis → **0**, Bestand unverändert bei 8 / 11 / 11.
+>
+> **Kostenpunkt, und der gehört notiert:** im Protokoll stehen **drei**
+> `meeting.update`-Zeilen, nicht zwei. Der erste Versuch scheiterte an
+> einer Zitierung im Shell-Aufruf und brach mit Exit-Code 1 ab — der
+> PATCH war da aber schon durch, nur das Auslesen der Antwort stolperte
+> danach, und der Traceback ging in `2>/dev/null`. **Ein Exit-Code sagt
+> nichts darüber, ob der Aufruf angekommen ist.** Bei einem Vorgang, den
+> das Protokoll unlöschbar festhält, ist das keine Kleinigkeit.
 >
 > ---
 >

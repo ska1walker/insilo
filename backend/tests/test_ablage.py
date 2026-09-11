@@ -33,7 +33,10 @@ SEGMENTE = [
     {"start": 4.0, "end": 9.0, "text": "Zur Nachtragsforderung.", "speaker": "s2"},
 ]
 SPRECHER = [{"id": "s1", "name": "Dr. Beispiel"}, {"id": "s2", "name": "Herr Muster"}]
-INHALT = {"anliegen": "Durchsetzung offener Nachtragsforderungen."}
+INHALT = {
+    "_analyse": "Das Transkript dokumentiert einen Testlauf ohne Inhalt.",
+    "anliegen": "Durchsetzung offener Nachtragsforderungen.",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -243,6 +246,56 @@ async def test_markdown_wird_als_text_abgelegt(speicher, monkeypatch) -> None:
     )
     await ablage.schreiben(Verbindung(), BESPRECHUNG)
     assert typen and all(t.startswith("text/markdown") for t in typen)
+
+
+@pytest.mark.asyncio
+async def test_die_ueberlegungen_des_modells_stehen_nicht_in_der_akte(speicher) -> None:
+    """Auf der Box am 11.9.2026 gesehen — als **erster** Abschnitt.
+
+    Seit v0.1.40 lässt der Prompt das Modell erst überlegen und dann
+    antworten; die Überlegung landet unter `_analyse`.
+    `frontend/components/summary-view.tsx` klappt sie als
+    „LLM-Überlegungen" ein. Im Renderer fehlte dieselbe Regel, und so
+    stand sie im Webhook-Rumpf, in `/api/external/v1/.../markdown` und in
+    der neuen Datei ganz oben:
+
+        ## Analyse
+        Das Transkript dokumentiert ausschließlich einen technischen
+        Testlauf …
+
+    In einem Protokoll, das jemand in die Akte legt, hat das nichts
+    verloren. Wer es braucht, findet es in `summaries.content`.
+    """
+    geschrieben, _ = speicher
+    await ablage.schreiben(Verbindung(), BESPRECHUNG)
+    text = next(
+        v for k, v in geschrieben.items() if k.endswith(ablage.SUFFIX_ZUSAMMENFASSUNG)
+    )
+
+    assert "Testlauf ohne Inhalt" not in text
+    assert "Analyse" not in text
+    # Der eigentliche Inhalt steht weiter da.
+    assert "Nachtragsforderungen" in text
+
+
+def test_die_regel_ist_dieselbe_wie_in_der_oberflaeche() -> None:
+    """Zwei Regeln für dasselbe wären die nächste, die auseinanderläuft."""
+    from pathlib import Path
+
+    from app.exports.markdown import _intern
+
+    assert _intern("_analyse") is True
+    assert _intern("_gedanken") is True
+    assert _intern("anliegen") is False
+
+    wurzel = Path(__file__).resolve().parents[2]
+    ansicht = (wurzel / "frontend/components/summary-view.tsx").read_text(
+        encoding="utf-8"
+    )
+    assert 'startsWith("_")' in ansicht, (
+        "die Oberfläche filtert nicht mehr am Unterstrich — dann gehört "
+        "`_intern` mit angepasst"
+    )
 
 
 # ---------------------------------------------------------------------------

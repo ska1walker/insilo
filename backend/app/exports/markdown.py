@@ -232,12 +232,31 @@ def _render_summary_sections(content: dict[str, Any]) -> str:
 
     seen = set(leading_keys)
     for k, v in content.items():
-        if k in seen:
+        if k in seen or _intern(k):
             continue
         sec = _render_section(k, v)
         if sec:
             sections.append(sec)
     return "\n".join(sections)
+
+
+def _intern(schluessel: str) -> bool:
+    """Denkfelder des Sprachmodells — `_analyse` und Verwandte.
+
+    Seit v0.1.40 lässt der Prompt das Modell erst überlegen und dann
+    antworten; die Überlegung landet unter einem Schlüssel mit
+    Unterstrich. `frontend/components/summary-view.tsx` klappt sie als
+    „LLM-Überlegungen" ein, damit der Hauptteil sauber bleibt — hier
+    fehlte dieselbe Regel, und die Überlegung stand als erster Abschnitt
+    im Webhook-Rumpf, in `/api/external/v1/.../markdown` und seit
+    v0.1.89 in der Datei neben der Aufnahme. Auf der Box gesehen:
+    „## Analyse — Das Transkript dokumentiert ausschließlich einen
+    technischen Testlauf …" als Kopf einer Zusammenfassung.
+
+    Wer die Überlegung braucht, findet sie in `summaries.content`. In
+    einem Protokoll, das jemand in die Akte legt, hat sie nichts verloren.
+    """
+    return schluessel.startswith("_")
 
 
 # ─── Frontmatter + meta line ───────────────────────────────────────────

@@ -167,6 +167,13 @@ async def _markdown_nachziehen(conn: asyncpg.Connection) -> dict[str, int]:
     beides neu geschrieben; wo sie liegt, ist der Rest schon gelaufen.
     Ein `stat` je Besprechung ist billig genug für einen nächtlichen
     Durchgang.
+
+    **Der Lauf heilt Fehlendes, nicht Veraltetes.** Eine Datei, die da
+    ist, wird nicht angefasst — was ihr Inhalt sagt, weiß er nicht. Für
+    laufende Änderungen ist das richtig: die schreiben Middleware und
+    Aufgaben ohnehin sofort nach. Ändert sich dagegen der *Renderer*,
+    stehen die alten Dateien weiter da; dann gehören sie einmal von Hand
+    entfernt, und der nächste Lauf schreibt sie neu.
     """
     faellig = await conn.fetch(
         """

@@ -176,6 +176,8 @@
     "infoDefault": "Information"
   },
   "transcript": {
+    "transkriptZeigen": "Afficher la transcription",
+    "transkriptAnzahl": "{n, plural, =1 {1 intervention} other {# interventions}}",
     "label": "Transcription",
     "stats": "{model} · {language} · {words} mots",
     "savedFlag": "enregistré",
@@ -228,7 +230,9 @@
   },
   "summary": {
     "emptyExtract": "L'IA n'a extrait aucun contenu de la transcription. Celle-ci contenait probablement trop peu de matériel.",
-    "internalThoughts": "Afficher le raisonnement du LLM"
+    "internalThoughts": "Afficher le raisonnement du LLM",
+    "mehrZeigen": "Plus du compte rendu",
+    "mehrAnzahl": "{n, plural, =1 {1 section de plus} other {# sections de plus}}"
   },
   "statusPill": {
     "draft": "Brouillon",
@@ -574,6 +578,11 @@
     "speakerBullet4": "Sans jeton — aucun compte HuggingFace requis"
   },
   "summaryLabels": {
+    "tldr": "En bref",
+    "summary": "En bref",
+    "anliegen": "Objet",
+    "kurzfassung": "En bref",
+    "kerninhalt": "L'essentiel",
     "zusammenfassung": "Synthèse",
     "kernpunkte": "Points clés",
     "entscheidungen": "Décisions",

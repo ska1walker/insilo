@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 11. September 2026, Fassung 0.1.90.
+Stand: 11. September 2026, Fassung 0.1.91.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.
@@ -197,8 +197,22 @@ Startbildschirm hinzufügen" wie eine App ablegen.
 
 ### Ansehen und nacharbeiten
 
-Auf der Besprechungsseite stehen Tonaufnahme, Transkript und
-Zusammenfassung untereinander.
+Auf der Besprechungsseite steht oben, was die Besprechung ergeben hat:
+eine Kurzfassung in zwei bis vier Sätzen, dann die Beschlüsse mit
+Verantwortlichen und Fristen, dann die offenen Aufgaben und die
+Kernthemen. Alles Weitere — Anwesende, wichtige Aussagen, offene Fragen
+— liegt unter **Mehr aus der Zusammenfassung**, der Wortlaut unter
+**Wortlaut anzeigen**.
+
+Was oben steht, hängt an der Vorlage: eine Kanzlei-Vorlage führt mit
+Fristen und Sachverhalt, eine Vertriebsvorlage mit dem Follow-up. Leere
+Abschnitte fallen weg, statt als Überschrift ohne Inhalt dazustehen.
+
+> Die **Kurzfassung** gibt es seit Fassung 0.1.91. Ältere Besprechungen
+> haben sie nicht — sie entsteht beim nächsten „Erneut zusammenfassen".
+> Insilo erzeugt sie nicht von selbst für alles Vorhandene: das wäre ein
+> Sprachmodell-Aufruf je Besprechung, ungefragt, und bei einem externen
+> Endpunkt eine Ausleitung obendrein.
 
 - **Sprecher zuweisen** — einen Abschnitt antippen und den Namen wählen.
   Das wirkt auf alle Abschnitte derselben Stimme.

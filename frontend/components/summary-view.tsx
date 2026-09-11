@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { Summary } from "@/lib/api/meetings";
 
@@ -15,6 +16,24 @@ import type { Summary } from "@/lib/api/meetings";
  * key isn't covered by `summaryLabels` (e.g. an org-custom field) we
  * fall back to a title-cased version of the key itself.
  */
+
+/**
+ * Welches Feld eines Objekts der Satz ist, und nicht die Randangabe.
+ *
+ * Gegenstück zu `_TASK_OBJECT_KEYS` in
+ * `backend/app/exports/markdown.py` — die Markdown-Datei baut aus
+ * denselben Feldern ihre Häkchenliste. Wer hier etwas ergänzt, ergänzt
+ * es dort; ein Test hält die beiden zusammen.
+ */
+const TAT_FELDER = [
+  "beschluss",
+  "aufgabe",
+  "task",
+  "naechster_schritt",
+  "schritt",
+  "aussage",
+  "text",
+] as const;
 
 function isEmpty(v: unknown): boolean {
   if (v === null || v === undefined) return true;
@@ -59,20 +78,56 @@ export function SummaryView({ summary }: { summary: Summary }) {
     ([k, v]) => !k.startsWith("_") && !isEmpty(v),
   );
 
+  // Welche Felder oben stehen, entscheidet das Backend
+  // (`exports/markdown.sortieren`) — eine Stelle für Ansicht und Datei.
+  // Ohne die Angabe steht alles oben: eine ältere Antwort soll nichts
+  // verstecken, das sie nicht einordnen kann.
+  const vorhanden = new Map(entries);
+  const kopfNamen = (summary.kopf ?? entries.map(([k]) => k)).filter((k) =>
+    vorhanden.has(k),
+  );
+  const mehrNamen = (summary.mehr ?? []).filter((k) => vorhanden.has(k));
+
   if (entries.length === 0 && internalEntries.length === 0) {
     return <p className="text-sm text-text-gedaempft">{t("emptyExtract")}</p>;
   }
 
   return (
     <div className="space-y-8">
-      {entries.map(([key, value]) => (
+      {kopfNamen.map((key) => (
         <SummarySection
           key={key}
           keyName={key}
-          value={value}
+          value={vorhanden.get(key)}
           humanLabel={humanLabel}
         />
       ))}
+
+      {mehrNamen.length > 0 && (
+        <details className="group border-t border-trennlinie pt-6">
+          <summary className="mono flex cursor-pointer select-none items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer">
+            <ChevronRight
+              size={14}
+              aria-hidden
+              className="transition-transform group-open:rotate-90"
+            />
+            {t("mehrZeigen")}
+            <span className="normal-case tracking-normal">
+              · {t("mehrAnzahl", { n: mehrNamen.length })}
+            </span>
+          </summary>
+          <div className="mt-6 space-y-8">
+            {mehrNamen.map((key) => (
+              <SummarySection
+                key={key}
+                keyName={key}
+                value={vorhanden.get(key)}
+                humanLabel={humanLabel}
+              />
+            ))}
+          </div>
+        </details>
+      )}
 
       {internalEntries.length > 0 && (
         <details className="group border-t border-trennlinie pt-6 text-sm">
@@ -166,6 +221,36 @@ function SummaryValue({
       ([, v]) => !isEmpty(v),
     );
     if (entries.length === 0) return null;
+
+    // Ein Beschluss führt mit dem Beschluss, nicht mit der Frist.
+    //
+    // `jsonb` behält die Reihenfolge der Schlüssel **nicht** — Postgres
+    // sortiert nach Länge, also steht `frist` (5) vor `beschluss` (9)
+    // und `verantwortlich` (14) dahinter. Auf der Box gesehen:
+    // „Frist 15.10.2026 · Beschluss Frist zur Zahlung setzen". Solange
+    // das unter „Mehr" lag, fiel es niemandem auf; seit die Beschlüsse
+    // oben stehen, ist es das Erste, was jemand liest.
+    const satz = TAT_FELDER.find((k) => typeof (value as Record<string, unknown>)[k] === "string");
+    if (satz) {
+      const rest = entries.filter(([k]) => k !== satz);
+      return (
+        <div>
+          <p className="text-base leading-relaxed text-text-primaer">
+            {String((value as Record<string, unknown>)[satz])}
+          </p>
+          {rest.length > 0 && (
+            <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.8125rem] text-text-gedaempft">
+              {rest.map(([k, v]) => (
+                <span key={k}>
+                  {humanLabel(k)}: <span className="text-text-sekundaer">{String(v)}</span>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      );
+    }
+
     return (
       <dl className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-[180px_1fr]">
         {entries.map(([k, v]) => (

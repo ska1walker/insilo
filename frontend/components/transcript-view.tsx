@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { ClusterAssignmentPanel } from "@/components/cluster-assignment-panel";
@@ -30,6 +30,15 @@ export function TranscriptView({
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pickerIdx, setPickerIdx] = useState<number | null>(null);
+  // Eingeklappt. Der Wortlaut ist bei einer Stunde Besprechung rund
+  // zehnmal so lang wie die Zusammenfassung darüber und schiebt alles,
+  // wofür jemand hergekommen ist, aus dem Bild. Wer ihn braucht, klappt
+  // ihn auf — wer Sprecher zuweist, bekommt ihn von selbst.
+  const [offen, setOffen] = useState(false);
+
+  useEffect(() => {
+    if (mode === "edit") setOffen(true);
+  }, [mode]);
 
   // Reset on parent update (e.g. poll refresh).
   useEffect(() => {
@@ -166,6 +175,24 @@ export function TranscriptView({
         </div>
       </div>
 
+      <details
+        open={offen}
+        onToggle={(e) => setOffen(e.currentTarget.open)}
+      >
+        <summary className="mono group flex cursor-pointer select-none items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer">
+          <ChevronRight
+            size={14}
+            aria-hidden
+            className="transition-transform group-open:rotate-90"
+          />
+          {t("transkriptZeigen")}
+          {segments.length > 0 && (
+            <span className="normal-case tracking-normal">
+              · {t("transkriptAnzahl", { n: segments.length })}
+            </span>
+          )}
+        </summary>
+
       {mode === "edit" && (
         <>
           <ClusterAssignmentPanel
@@ -191,7 +218,7 @@ export function TranscriptView({
         </p>
       )}
 
-      <div className="rounded-lg border border-trennlinie bg-seite p-8">
+      <div className="mt-6 rounded-lg border border-trennlinie bg-seite p-8">
         {segments.length === 0 && (
           <p className="text-sm text-text-gedaempft">{t("noSpeech")}</p>
         )}
@@ -257,6 +284,7 @@ export function TranscriptView({
       {mode === "edit" && (
         <p className="mt-4 text-xs text-text-gedaempft">{t("editTip")}</p>
       )}
+      </details>
     </section>
   );
 }

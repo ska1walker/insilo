@@ -176,6 +176,8 @@
     "infoDefault": "Aviso"
   },
   "transcript": {
+    "transkriptZeigen": "Mostrar la transcripción",
+    "transkriptAnzahl": "{n, plural, =1 {1 intervención} other {# intervenciones}}",
     "label": "Transcripción",
     "stats": "{model} · {language} · {words} palabras",
     "savedFlag": "guardado",
@@ -228,7 +230,9 @@
   },
   "summary": {
     "emptyExtract": "La IA no ha extraído contenido de la transcripción. Probablemente la transcripción contenía muy poco material.",
-    "internalThoughts": "Mostrar el razonamiento del LLM"
+    "internalThoughts": "Mostrar el razonamiento del LLM",
+    "mehrZeigen": "Más del acta",
+    "mehrAnzahl": "{n, plural, =1 {1 sección más} other {# secciones más}}"
   },
   "statusPill": {
     "draft": "Borrador",
@@ -574,6 +578,11 @@
     "speakerBullet4": "Sin token — no requiere cuenta de HuggingFace"
   },
   "summaryLabels": {
+    "tldr": "En resumen",
+    "summary": "En resumen",
+    "anliegen": "Asunto",
+    "kurzfassung": "En resumen",
+    "kerninhalt": "Lo esencial",
     "zusammenfassung": "Resumen",
     "kernpunkte": "Puntos clave",
     "entscheidungen": "Decisiones",

@@ -17,6 +17,63 @@
 >
 > ---
 >
+> ## Die fertige Besprechung zeigt zuerst, was sie ergeben hat (11. September 2026)
+>
+> Kais Beobachtung, und sie stimmt: nach einer Aufnahme bekam man sechs
+> bis zehn Felder gleichen Gewichts und darunter den **vollständig
+> ausgeklappten** Wortlaut. `transcript-view.tsx` hatte gar kein
+> Aufklappen. Bei einer Stunde Besprechung ist das Transkript rund
+> zehnmal so lang wie die Zusammenfassung — gemessen habe ich das nicht,
+> die Box trägt nur kurze Testaufnahmen (längste Zusammenfassung: 1234
+> Zeichen bei 190 Wörtern); hochgerechnet ist es das Verhältnis.
+>
+> Drei Teile, in dieser Reihenfolge gebaut:
+>
+> | Teil | Wirkt auf |
+> |---|---|
+> | Wortlaut eingeklappt, mit Anzahl der Beiträge | alle vorhandenen Besprechungen, sofort |
+> | Zusammenfassung in Kopf und „Mehr" | alle vorhandenen, sofort |
+> | Feld `kurzfassung` | erst beim nächsten Zusammenfassen |
+>
+> **Die Reihenfolge steht im Backend**, in
+> `exports/markdown.KOPF_FELDER` / `sortieren`. Der Endpunkt schickt
+> `summary.kopf` und `summary.mehr` fertig mit; `summary-view.tsx` führt
+> **keine** eigene Feldliste. Das war die eigentliche Entwurfsfrage: es
+> gibt fünf Werks-Vorlagen und eigene Felder obendrein, und eine fest
+> verdrahtete Liste hätte einer Kanzlei-Vorlage („Anliegen,
+> Sachverhalt, Fristen") einen leeren Kopf gegeben. Eine Vorlage kann
+> jedes Feld selbst einordnen (`"x-rang": "kopf"` / `"mehr"` am
+> Schema); die Liste im Code ist nur die Vorbelegung. Ein Test prüft,
+> dass **jede** der fünf Werks-Vorlagen zwei bis vier Felder im Kopf
+> bekommt und etwas übrig bleibt, das sich einklappen lässt.
+>
+> Der Markdown-Export nimmt dieselbe Ordnung — die Datei kennt kein
+> Aufklappen, aber die Reihenfolge, in der jemand liest.
+>
+> **Zwei Dinge, die erst am laufenden Bild auffielen:**
+>
+> 1. **Die Beschluss-Karte führte mit der Frist.** `jsonb` behält die
+>    Schlüsselreihenfolge nicht — Postgres sortiert nach Länge, also
+>    `frist` (5) vor `beschluss` (9). Solange das unter „Mehr" lag, sah
+>    es niemand; oben ist es das Erste, was jemand liest. Die Ansicht
+>    rendert Beschlüsse jetzt wie der Export: der Satz als Zeile,
+>    Verantwortliche und Frist gedämpft darunter. Ein Test bindet die
+>    Feldnamen an `_TASK_OBJECT_KEYS`.
+> 2. **Die neuen Transkript-Texte lagen im falschen Namensraum** und
+>    erschienen als `TRANSCRIPT.TRANSKRIPTZEIGEN`. Beim Umhängen ist mir
+>    ein hängendes Komma in vier `messages/*.json` geblieben — die
+>    Dateien waren kurz ungültig. Seitdem prüfe ich am Ende die
+>    Schlüsselmengen aller fünf Sprachen gegeneinander (723, keine
+>    Abweichung).
+>
+> **Und einer, der keiner war:** bei 390 px zeigte meine
+> headless-Aufnahme waagerecht abgeschnittenen Text — auch auf Seiten,
+> die ich nicht angefasst hatte. Mit echter Geräte-Emulation (375 px)
+> ist der Überlauf **0**. `--window-size` allein bildet kein Telefon
+> nach; wer damit Layout beurteilt, meldet Fehler, die es nicht gibt.
+>
+> ---
+>
 > ## Transkript und Zusammenfassung liegen als Datei daneben (11. September 2026)
 >
 > Im Datenverzeichnis lag bisher nur die Tonspur. Wer die Besprechung

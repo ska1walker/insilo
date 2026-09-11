@@ -13,6 +13,7 @@ from app import ablage, audit
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire_as
 from app.errors import http_error
+from app.exports.markdown import sortieren
 from app.storage import delete_object, get_presigned_url, upload_bytes
 from app.tasks.notify import enqueue as enqueue_webhook
 from app.tasks.transcribe import transcribe_meeting
@@ -214,7 +215,7 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
             """
             select s.content, s.llm_model, s.generation_time_ms,
                    s.created_at, s.template_id, s.template_version,
-                   t.name as template_name
+                   t.name as template_name, t.output_schema
             from public.summaries s
             join public.templates t on t.id = s.template_id
             where s.meeting_id = $1 and s.is_current = true
@@ -267,8 +268,19 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
         content = summary_row["content"]
         if isinstance(content, str):
             content = json.loads(content)
+        schema = summary_row["output_schema"]
+        if isinstance(schema, str):
+            schema = json.loads(schema)
+
+        # Welche Felder oben stehen, entscheidet `exports.markdown` — eine
+        # Stelle für Ansicht und Datei. Die Oberfläche bekommt die fertige
+        # Reihenfolge und braucht keine eigene Tabelle mit Feldnamen; sonst
+        # liefen die beiden auseinander, sobald jemand eine Vorlage ändert.
+        kopf, mehr = sortieren(content, schema)
         dto["summary"] = {
             "content": content,
+            "kopf": kopf,
+            "mehr": mehr,
             "llm_model": summary_row["llm_model"],
             "generation_time_ms": summary_row["generation_time_ms"],
             "created_at": summary_row["created_at"].isoformat() if summary_row["created_at"] else None,

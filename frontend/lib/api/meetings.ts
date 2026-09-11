@@ -37,6 +37,14 @@ export type MeetingStatus =
 
 export type Summary = {
   content: Record<string, unknown>;
+  /**
+   * Welche Felder oben stehen und welche unter „Mehr" — bestimmt das
+   * Backend aus der Vorlage (`exports/markdown.sortieren`), damit
+   * Ansicht und Markdown-Datei dieselbe Ordnung zeigen. Optional:
+   * eine ältere Antwort kennt die Felder nicht, dann steht alles oben.
+   */
+  kopf?: string[];
+  mehr?: string[];
   llm_model: string;
   generation_time_ms: number;
   created_at: string | null;

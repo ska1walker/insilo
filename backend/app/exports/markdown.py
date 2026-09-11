@@ -49,6 +49,8 @@ _SECTION_TITLES: dict[str, str] = {
     "cross_selling_potenziale": "Cross-Selling-Potenziale",
     "kundenwuensche": "Kundenwünsche",
     "wiedervorlage": "Wiedervorlage",
+    "kurzfassung": "Kurzfassung",
+    "kerninhalt": "Kerninhalt",
     "zusammenfassung": "Zusammenfassung",
     "tldr": "Zusammenfassung",
 }
@@ -215,26 +217,107 @@ def _render_section(key: str, value: Any) -> str:
     return f"## {_pretty(key)}\n\n{body}\n"
 
 
-def _render_summary_sections(content: dict[str, Any]) -> str:
-    """Render every top-level key in the summary as its own section."""
+# ─── Was oben steht ────────────────────────────────────────────────────
+#
+# Eine Besprechung liefert sechs bis zehn Felder gleichen Gewichts. Wer
+# nach einer Aufnahme draufschaut, will drei Dinge: was kam dabei heraus,
+# was ist zu tun, worum ging es. Der Rest ist Beleg und darf warten.
+#
+# Die Reihenfolge steht **hier**, nicht im Bauteil: die Oberfläche bekommt
+# sie vom Endpunkt, der Markdown-Export benutzt dieselbe. Sonst liefen
+# Ansicht und Datei auseinander, sobald jemand eine Vorlage ändert.
+#
+# Eine Vorlage kann jedes Feld selbst einordnen — `"x-rang": "kopf"` oder
+# `"mehr"` an der Eigenschaft im `output_schema`. Die Liste hier ist die
+# Vorbelegung für die Werks-Vorlagen, damit keine davon wandern muss.
+
+KOPF_FELDER: tuple[str, ...] = (
+    # 1. Was dabei herauskam — die Kurzfassung in Prosa.
+    "kurzfassung",
+    "tldr",
+    "zusammenfassung",
+    "summary",
+    "kerninhalt",          # Schnellnotiz: die Notiz selbst ist die Kurzfassung
+    # 2. Was zu tun ist. Beschlüsse tragen Verantwortliche und Frist und
+    #    stehen deshalb vor den offenen Aufgaben.
+    "beschluesse",
+    "naechste_schritte",
+    "naechste_schritte_mandat",
+    "vereinbarte_naechste_schritte",
+    "wichtige_termine_fristen",
+    "wiedervorlage",
+    "follow_up_datum",
+    # 3. Worum es ging.
+    "kernthemen",
+    "anliegen",
+    "sachverhalt",
+    "schmerzpunkte",       # Vertriebsgespräch
+    "bestandsuebersicht",  # Jahresgespräch
+)
+
+_KOPF_INDEX = {feld: i for i, feld in enumerate(KOPF_FELDER)}
+
+
+def rang(feld: str, schema: dict[str, Any] | None = None) -> str:
+    """`"kopf"` oder `"mehr"` — was die Vorlage sagt, sonst die Vorbelegung."""
+    if _intern(feld):
+        return "mehr"
+    eigenschaft = ((schema or {}).get("properties") or {}).get(feld)
+    if isinstance(eigenschaft, dict):
+        gesetzt = eigenschaft.get("x-rang")
+        if gesetzt in ("kopf", "mehr"):
+            return gesetzt
+    return "kopf" if feld in _KOPF_INDEX else "mehr"
+
+
+def sortieren(
+    content: dict[str, Any], schema: dict[str, Any] | None = None
+) -> tuple[list[str], list[str]]:
+    """Die gefüllten Felder in Kopf und Rest teilen.
+
+    Der Kopf folgt `KOPF_FELDER`; ein Feld, das eine Vorlage selbst
+    hochstuft, hängt sich hinten an. Der Rest behält die Reihenfolge des
+    Schemas — die hat sich jemand überlegt.
+
+    Leere Felder fallen raus. Ein Kopf mit einer leeren Überschrift ist
+    schlimmer als ein kurzer Kopf.
+    """
+    kopf: list[str] = []
+    mehr: list[str] = []
+    for feld, wert in content.items():
+        if _intern(feld) or _leer(wert):
+            continue
+        (kopf if rang(feld, schema) == "kopf" else mehr).append(feld)
+    kopf.sort(key=lambda f: _KOPF_INDEX.get(f, len(_KOPF_INDEX)))
+    return kopf, mehr
+
+
+def _leer(wert: Any) -> bool:
+    if wert is None:
+        return True
+    if isinstance(wert, str):
+        return not wert.strip()
+    if isinstance(wert, (list, dict)):
+        return not wert
+    return False
+
+
+def _render_summary_sections(
+    content: dict[str, Any], schema: dict[str, Any] | None = None
+) -> str:
+    """Render every top-level key in the summary as its own section.
+
+    Kopf zuerst, dann der Rest — dieselbe Ordnung, die die Oberfläche
+    zeigt. Die Datei kennt kein Aufklappen, also steht hier alles
+    untereinander; nur eben in der Reihenfolge, in der jemand es liest.
+    """
     if not content or not isinstance(content, dict):
         return ""
 
-    # If the LLM returned a short summary string under a known alias,
-    # promote it to the lead "Zusammenfassung" section.
+    kopf, mehr = sortieren(content, schema)
     sections: list[str] = []
-    leading_keys = ("tldr", "zusammenfassung", "summary")
-    for k in leading_keys:
-        if k in content and content[k]:
-            sec = _render_section(k, content[k])
-            if sec:
-                sections.append(sec)
-
-    seen = set(leading_keys)
-    for k, v in content.items():
-        if k in seen or _intern(k):
-            continue
-        sec = _render_section(k, v)
+    for k in (*kopf, *mehr):
+        sec = _render_section(k, content[k])
         if sec:
             sections.append(sec)
     return "\n".join(sections)
@@ -336,7 +419,10 @@ def render_meeting_markdown(
     `meeting` keys expected: id, title, recorded_at, duration_sec, language.
     `transcript` keys expected: segments (list of {start, text, speaker}),
         speakers (list of {id, name}), full_text, language.
-    `summary` keys expected: content (the template-shaped JSON), llm_model.
+    `summary` keys expected: content (the template-shaped JSON), llm_model,
+        and optionally `schema` — das `output_schema` der Vorlage, aus dem
+        `x-rang` gelesen wird. Fehlt es, greift die Vorbelegung in
+        `KOPF_FELDER`.
     `tags`: list of {name, color}. `template_name`: pretty name for the
     frontmatter + header line.
     """
@@ -385,7 +471,7 @@ def render_meeting_markdown(
     if summary and isinstance(summary, dict):
         content = summary.get("content") or {}
         if isinstance(content, dict) and content:
-            rendered = _render_summary_sections(content)
+            rendered = _render_summary_sections(content, summary.get("schema"))
             if rendered:
                 parts.append(rendered)
 

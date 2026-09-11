@@ -176,6 +176,8 @@
     "infoDefault": "Note"
   },
   "transcript": {
+    "transkriptZeigen": "Show the transcript",
+    "transkriptAnzahl": "{n, plural, =1 {1 turn} other {# turns}}",
     "label": "Transcript",
     "stats": "{model} · {language} · {words} words",
     "savedFlag": "saved",
@@ -228,7 +230,9 @@
   },
   "summary": {
     "emptyExtract": "The AI extracted no content from the transcript. The transcript likely contained too little material.",
-    "internalThoughts": "Show LLM reasoning"
+    "internalThoughts": "Show LLM reasoning",
+    "mehrZeigen": "More from the summary",
+    "mehrAnzahl": "{n, plural, =1 {1 more section} other {# more sections}}"
   },
   "statusPill": {
     "draft": "Draft",
@@ -574,6 +578,11 @@
     "speakerBullet4": "Token-free — no HuggingFace account needed"
   },
   "summaryLabels": {
+    "tldr": "In short",
+    "summary": "In short",
+    "anliegen": "The matter",
+    "kurzfassung": "In short",
+    "kerninhalt": "The gist",
     "zusammenfassung": "Summary",
     "kernpunkte": "Key points",
     "entscheidungen": "Decisions",

@@ -176,6 +176,8 @@
     "infoDefault": "Avviso"
   },
   "transcript": {
+    "transkriptZeigen": "Mostra la trascrizione",
+    "transkriptAnzahl": "{n, plural, =1 {1 intervento} other {# interventi}}",
     "label": "Trascrizione",
     "stats": "{model} · {language} · {words} parole",
     "savedFlag": "salvato",
@@ -228,7 +230,9 @@
   },
   "summary": {
     "emptyExtract": "L'IA non ha estratto alcun contenuto dalla trascrizione. La trascrizione conteneva probabilmente troppo poco materiale.",
-    "internalThoughts": "Mostra il ragionamento del LLM"
+    "internalThoughts": "Mostra il ragionamento del LLM",
+    "mehrZeigen": "Altro dal verbale",
+    "mehrAnzahl": "{n, plural, =1 {1 sezione in più} other {# sezioni in più}}"
   },
   "statusPill": {
     "draft": "Bozza",
@@ -574,6 +578,11 @@
     "speakerBullet4": "Senza token — non serve un account HuggingFace"
   },
   "summaryLabels": {
+    "tldr": "In breve",
+    "summary": "In breve",
+    "anliegen": "Oggetto",
+    "kurzfassung": "In breve",
+    "kerninhalt": "Il nocciolo",
     "zusammenfassung": "Sintesi",
     "kernpunkte": "Punti chiave",
     "entscheidungen": "Decisioni",

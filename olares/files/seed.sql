@@ -126,6 +126,10 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
         "type": "string",
         "description": "2-3 Sätze: Worauf liegt der Fokus dieses Meetings? Welche Felder werden gefüllt, welche bleiben leer und warum?"
       },
+      "kurzfassung": {
+        "type": "string",
+        "description": "Zwei bis vier Sätze: Was hat diese Besprechung ergeben? Ergebnis und Folgen, nicht der Ablauf. Keine Aufzählung, keine Wiederholung der Einzelfelder, keine Einleitung wie \"In diesem Meeting wurde besprochen\". Wenn das Transkript zu wenig hergibt, lass das Feld leer."
+      },
       "anwesende": { "type": "array", "items": { "type": "string" } },
       "kernthemen": { "type": "array", "items": { "type": "string" } },
       "wichtige_aussagen": {
@@ -152,7 +156,7 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
       "offene_fragen": { "type": "array", "items": { "type": "string" } },
       "naechste_schritte": { "type": "array", "items": { "type": "string" } }
     },
-    "required": ["_analyse", "kernthemen", "beschluesse", "naechste_schritte"]
+    "required": ["_analyse", "kurzfassung", "kernthemen", "beschluesse", "naechste_schritte"]
   }$schema$::jsonb,
   $few$[Kai Böhm]: Wir müssen heute klären, wie wir mit dem neuen Hosting-Setup umgehen. Lea, du hattest dir die Angebote angeschaut.
 [Lea Schmidt]: Ja. Hetzner und IONOS sind beide ähnlich teuer, aber Hetzner hat den besseren Support. Ich würde Hetzner nehmen.
@@ -285,6 +289,10 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
         "type": "string",
         "description": "2-3 Sätze: Worum geht es im Mandat? Welche Felder werden mangels Datenlage leer bleiben?"
       },
+      "kurzfassung": {
+        "type": "string",
+        "description": "Zwei bis vier Sätze: Was hat diese Besprechung ergeben? Ergebnis und Folgen, nicht der Ablauf. Keine Aufzählung, keine Wiederholung der Einzelfelder, keine Einleitung wie \"In diesem Meeting wurde besprochen\". Wenn das Transkript zu wenig hergibt, lass das Feld leer."
+      },
       "mandantenname": { "type": "string" },
       "sachverhalt": { "type": "string" },
       "rechtsfragen": { "type": "array", "items": { "type": "string" } },
@@ -303,7 +311,7 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
       "honorarvereinbarung": { "type": "string" },
       "naechste_schritte_mandat": { "type": "array", "items": { "type": "string" } }
     },
-    "required": ["_analyse", "sachverhalt", "vereinbarte_leistungen", "naechste_schritte_mandat"]
+    "required": ["_analyse", "kurzfassung", "sachverhalt", "vereinbarte_leistungen", "naechste_schritte_mandat"]
   }$schema$::jsonb,
   $few$[Dr. Wagner]: Frau Müller, schildern Sie mir bitte den Sachverhalt.
 [Frau Müller]: Mein Arbeitgeber hat mir letzte Woche mündlich gekündigt, ohne schriftliche Bestätigung. Ich arbeite seit zwölf Jahren in der Firma.
@@ -446,6 +454,10 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
         "type": "string",
         "description": "2-3 Sätze: Wie verlief das Gespräch, worauf stützt sich die Verkaufschance-Einschätzung, welche BANT-Felder fehlen?"
       },
+      "kurzfassung": {
+        "type": "string",
+        "description": "Zwei bis vier Sätze: Was hat diese Besprechung ergeben? Ergebnis und Folgen, nicht der Ablauf. Keine Aufzählung, keine Wiederholung der Einzelfelder, keine Einleitung wie \"In diesem Meeting wurde besprochen\". Wenn das Transkript zu wenig hergibt, lass das Feld leer."
+      },
       "kunde": { "type": "string" },
       "schmerzpunkte": { "type": "array", "items": { "type": "string" } },
       "aktuelle_loesung": { "type": "string" },
@@ -466,7 +478,7 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
         "enum": ["hoch", "mittel", "niedrig", "unklar"]
       }
     },
-    "required": ["_analyse", "schmerzpunkte", "vereinbarte_naechste_schritte"]
+    "required": ["_analyse", "kurzfassung", "schmerzpunkte", "vereinbarte_naechste_schritte"]
   }$schema$::jsonb,
   $few$[Markus (Vertrieb)]: Vielen Dank für die Zeit, Frau Schäfer. Welche Themen treiben Sie aktuell um?
 [Frau Schäfer]: Wir wachsen schneller als geplant — 40 % mehr Mitarbeiter dieses Jahr. Unser HR-Tool kommt nicht mit. Wir verlieren Tage mit Workarounds in Excel.
@@ -601,6 +613,10 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
         "type": "string",
         "description": "2-3 Sätze: Wie steht die Kundenbeziehung? Welche Veränderungen vs. Vorjahr sind wesentlich?"
       },
+      "kurzfassung": {
+        "type": "string",
+        "description": "Zwei bis vier Sätze: Was hat diese Besprechung ergeben? Ergebnis und Folgen, nicht der Ablauf. Keine Aufzählung, keine Wiederholung der Einzelfelder, keine Einleitung wie \"In diesem Meeting wurde besprochen\". Wenn das Transkript zu wenig hergibt, lass das Feld leer."
+      },
       "kunde": { "type": "string" },
       "anwesende": { "type": "array", "items": { "type": "string" } },
       "bestandsuebersicht": { "type": "array", "items": { "type": "string" } },
@@ -620,7 +636,7 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
       },
       "wiedervorlage": { "type": "string" }
     },
-    "required": ["_analyse", "bestandsuebersicht", "beschluesse", "wiedervorlage"]
+    "required": ["_analyse", "kurzfassung", "bestandsuebersicht", "beschluesse", "wiedervorlage"]
   }$schema$::jsonb,
   $few$[Berater Klein]: Herr Vogel, schön Sie zu sehen. Wir blicken aufs letzte Jahr zurück — was hat sich bei Ihnen verändert?
 [Herr Vogel]: Wir haben den dritten Standort eröffnet, in Hamburg. Damit sind wir jetzt auf 85 Mitarbeiter. Außerdem haben wir die GmbH in eine GmbH & Co. KG umgewandelt.

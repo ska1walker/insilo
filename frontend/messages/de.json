@@ -176,6 +176,8 @@
     "infoDefault": "Hinweis"
   },
   "transcript": {
+    "transkriptZeigen": "Wortlaut anzeigen",
+    "transkriptAnzahl": "{n, plural, =1 {1 Beitrag} other {# Beiträge}}",
     "label": "Transkript",
     "stats": "{model} · {language} · {words} Wörter",
     "savedFlag": "gespeichert",
@@ -228,7 +230,9 @@
   },
   "summary": {
     "emptyExtract": "Die KI hat keine Inhalte aus dem Transkript extrahiert. Das Transkript enthielt vermutlich zu wenig Material.",
-    "internalThoughts": "LLM-Überlegungen anzeigen"
+    "internalThoughts": "LLM-Überlegungen anzeigen",
+    "mehrZeigen": "Mehr aus der Zusammenfassung",
+    "mehrAnzahl": "{n, plural, =1 {1 weiterer Abschnitt} other {# weitere Abschnitte}}"
   },
   "statusPill": {
     "draft": "Entwurf",
@@ -574,6 +578,11 @@
     "speakerBullet4": "Token-frei — keine HuggingFace-Anmeldung nötig"
   },
   "summaryLabels": {
+    "tldr": "Kurzfassung",
+    "summary": "Kurzfassung",
+    "anliegen": "Anliegen",
+    "kurzfassung": "Kurzfassung",
+    "kerninhalt": "Kerninhalt",
     "zusammenfassung": "Zusammenfassung",
     "kernpunkte": "Kernpunkte",
     "entscheidungen": "Entscheidungen",

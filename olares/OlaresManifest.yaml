@@ -34,7 +34,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.92              # = Chart.yaml.version
+  version: 0.1.93              # = Chart.yaml.version
   # Eine primäre Kategorie, wie es der AIMighty-Markt vorgibt. Die
   # frühere Dreierliste trug mit `Productivity_v112` einen Wert, den
   # dieser Markt ausdrücklich nicht mehr führt.
@@ -95,6 +95,7 @@ middleware:
 permission:
   appCache: true                # für /app/cache (Whisper-Modelle, temp uploads)
   appData: true                 # für /app/data (Audio, persistente Daten)
+  appCommon: true               # für /app/common (geteilter Ordner, Relay-Export)
   # userData: []                # MVP: kein Zugriff auf User-Home-Verzeichnis
 
   # Kein `provider`-Block: ab Schema 0.12.0 verbietet die Prüfung ihn, und
@@ -115,7 +116,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.92'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.93'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Markt-Bilder: 1920×1080, erzeugt aus markt/vorlagen/ (siehe markt/README.md).
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/markt/aufmacher.png
@@ -152,6 +153,15 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
+    v0.1.93 — Meeting-Export für Relay (cross-app drop).
+
+    - Fertige Meeting-Zusammenfassungen werden zusätzlich als Markdown-Datei
+      (Frontmatter, atomares Schreiben) in das gemeinsame appCommon-Verzeichnis
+      exportiert. Relay liest sie automatisch ein und zeigt sie im neuen
+      Meetings-Bereich.
+    - Löschen eines Meetings entfernt auch die exportierte Datei; ein
+      Backfill-Endpoint exportiert alle fertigen Meetings nachträglich.
+
     v0.1.92 — Nachbesserung zu 0.1.91.
 
     - Bei Besprechungen ohne Kurzfassung wurde die ganze Zusammenfassung

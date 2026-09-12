@@ -12,7 +12,7 @@ import asyncpg
 import httpx
 from celery import shared_task
 
-from app import ablage
+from app import ablage, relay_drop
 from app.config import settings
 from app.db import dienst_kontext
 from app.llm_config import load_llm_config
@@ -627,6 +627,9 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         # die Vorlage im Kopf ist jetzt eine andere, wenn jemand „erneut
         # zusammenfassen" mit einer anderen gewählt hat.
         await ablage.schreiben(conn, meeting_id)
+        # Zusätzlich in das gemeinsame Verzeichnis für Relay (deaktiviert,
+        # wenn MEETING_EXPORT_DIR leer ist).
+        await relay_drop.schreiben(conn, meeting_id)
     finally:
         await conn.close()
 

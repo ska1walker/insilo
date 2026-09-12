@@ -35,7 +35,10 @@ spec:
         # shadowed by the mount overlay. Chown the mount before the app starts.
         - name: init-chown
           image: docker.io/beclab/aboveos-busybox:1.37.0
-          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data']
+          # /app/common ist der geteilte appCommon-Ordner: nur die
+          # Top-Stage gehört (nicht -R — da liegen fremde Caches),
+          # dann der Insilo-Unterordner für den Relay-Export.
+          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data && chown 1000:1000 /app/common && mkdir -p /app/common/insilo-meetings']
           securityContext:
             runAsUser: 0
           volumeMounts:
@@ -43,6 +46,8 @@ spec:
               mountPath: /app/cache
             - name: app-data
               mountPath: /app/data
+            - name: app-common
+              mountPath: /app/common
       containers:
         - name: worker
           image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag | default .Chart.AppVersion }}"
@@ -110,12 +115,18 @@ spec:
               value: "local"
             - name: STORAGE_LOCAL_PATH
               value: "/app/data/audio"
+            # Gemeinsames Verzeichnis für den Relay-Export (appCommon).
+            # Der Worker schreibt die Dateien beim Zusammenfassen.
+            - name: MEETING_EXPORT_DIR
+              value: "/app/common/insilo-meetings"
 
           volumeMounts:
             - name: app-data
               mountPath: /app/data
             - name: app-cache
               mountPath: /app/cache
+            - name: app-common
+              mountPath: /app/common
 
           resources:
             requests:
@@ -133,4 +144,8 @@ spec:
         - name: app-cache
           hostPath:
             path: {{ .Values.userspace.appCache }}
+            type: DirectoryOrCreate
+        - name: app-common
+          hostPath:
+            path: {{ .Values.userspace.appCommon }}
             type: DirectoryOrCreate

@@ -119,6 +119,82 @@
 
 ---
 
+## Backlog — Konkrete Feature-Wünsche (aufgenommen 2026-09-03)
+
+> Arbeitsliste konkreter Produktwünsche. Nicht phasengebunden — wird bei
+> der Planung in die passenden Phasen eingeordnet. `[ ]` = offen.
+
+### 1. Audio-Upload / Import bestehender Audiodateien
+- [ ] Import-Flow für bestehende Audiodateien (Dateiauswahl bzw.
+      Teilen-Sheet → Upload → Transkription), nicht nur Live-Aufnahme
+- [ ] UI: Datei-Import auf dem Aufnahme-Screen bzw. Meeting-Liste
+- [ ] Sonderfälle: große Dateien (Progress), Batch-Import, Metadaten
+      (Titel, Datum, Sprache) beim Import
+- [ ] Bestand prüfen: `POST /api/v1/recordings` nimmt bereits
+      Multipart-Uploads (`UploadFile`) — es fehlt der Frontend-Pfad,
+      kein Audio-Player zum Abspielen der importierten Datei nötig
+
+### 2. Härten — Audio-Retention & Retry bei Pipeline-Fehlern
+- [ ] Garantie: Schlägt ein Schritt nach der Aufnahme fehl
+      (Transkription, Diarization, Summary), bleibt das Audio dauerhaft
+      erhalten — keine Löschung durch Fehlerpfad oder Aufräum-Job
+- [ ] Automatischer Retry (exponentieller Backoff) für fehlgeschlagene
+      Transkriptionen
+- [ ] Manueller Re-Transcribe im Frontend (analog zu
+      `retry-summary`; bisher nur `POST /meetings/{id}/retry-summary`,
+      kein Retry für die Transkription)
+- [ ] Fehlerfall-Nachweis im Datenschutz-Nachweis: Audio verlässt die
+      Box nicht, nur weil ein Schritt fehlschlug
+- [ ] Wechselwirkung mit Soft-Delete / 30-Tage-Frist klären
+
+### 3. Gruppieren von „Idee" — Tageszusammenfassung
+- [ ] Alle als „Idee" aufgenommenen Files eines Tages (`/idee`,
+      `quick_mode`, Schnellnotiz-Template) zu **einer** Notiz
+      zusammenfassen
+- [ ] Konfigurierbar unter Einstellungen (Gruppierung an/aus,
+      ggf. Zeitpunkt der Zusammenfassung)
+- [ ] Grenzfälle: leere Tage, Mix aus Idee + regulären Meetings,
+      spätere Ergänzung am selben Tag
+
+### 4. Sofortaufnahme (Autostart-Capture)
+- [ ] Aufnahme startet beim Öffnen des „Sofortaufnahme"-Einstiegs
+      automatisch (PWA-Shortcut/Home-Screen-Icon auf `/idee`, nicht das
+      Dashboard)
+- [ ] Modus: quick (Schnellnotiz, `quick_mode`), Default aktiv
+- [ ] Setting pro Gerät (localStorage `insilo.autostartCapture`,
+      off|quick) unter Einstellungen, kein Backend-Änderung
+- [ ] „Verwerfen"-Button in der Quick-Capture während der Aufnahme
+      (Abbruch ohne Upload) gegen versehentliche Autostart-Aufnahmen
+- [ ] Webhook-Dispatch unverändert (wie quick_mode)
+- [ ] i18n (5 Sprachen) + PWA-Shortcut in manifest.json
+- [ ] Verifikation: type-check, build, lint, manueller Permission-Flow
+
+### 5. Notizen an das Hermes-Agent-Wiki senden (Umsetzung klären)
+- [ ] Notizen (Schnellnotizen/Ideen, Meeting-Summaries) ins LLM-Wiki von
+      Hermes Agent übernehmen
+- [ ] Vorschlag: Markdown-Export (existiert: `exports/markdown.py`) →
+      `.md`-Datei → an Hermes senden → Hermes legt sie ins Wiki ab
+- [ ] Zu klären: Zugriffsweg auf der Box — Hermes-CLI headless vs.
+      HTTP-API des hermesagent-Pods vs. Wings/WebUI-API vs. Messaging-
+      Bridge vs. Olares-Files/Drive-Ordner als Austausch
+- [ ] Zu klären: Trigger (manuell je Notiz / nach Summary / Batch) +
+      Hermes-Adresse/Token in den Insilo-Einstellungen
+- [ ] Constraint: keine Cross-Namespace-Directcalls → nur über
+      Entrance-URL/Middleware; Datenschutz-Nachweis (Hermes läuft auf
+      der Box, nutzt aber ggf. externe LLMs)
+
+### 6. Notiz an Open WebUI senden
+- [ ] Notiz in Open WebUI ablegen — idealerweise als Notiz, alternativ
+      als Wissen (Knowledge-Bibliothek, RAG)
+- [ ] Ansatz: Open-WebUI-REST-API (`/api/v1/notes/*`, `/api/v1/knowledge/*`,
+      Bearer-Auth per API-Key), Aufruf aus Insilo-Backend über die
+      Olares-Entrance-URL
+- [ ] Zu klären: Notiz vs. Wissen (Wissen = Chunking/RAG über LLM,
+      Notiz = sichtbare Markdown-Notiz), eigene Knowledge-Collection pro
+      Tag/Projekt, Trigger + Einstellungen
+
+---
+
 ## Bewusste Auslassungen (nicht im MVP)
 
 - ❌ Mobile Native Apps — PWA reicht

@@ -41,7 +41,10 @@ spec:
         # See deployment-worker.yaml for why this is needed.
         - name: init-chown
           image: docker.io/beclab/aboveos-busybox:1.37.0
-          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data']
+          # /app/common ist der geteilte appCommon-Ordner: nur die
+          # Top-Stage gehört (nicht -R — da liegen fremde Caches),
+          # dann der Insilo-Unterordner für den Relay-Export.
+          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data && chown 1000:1000 /app/common && mkdir -p /app/common/insilo-meetings']
           securityContext:
             runAsUser: 0
           volumeMounts:
@@ -49,6 +52,8 @@ spec:
               mountPath: /app/cache
             - name: app-data
               mountPath: /app/data
+            - name: app-common
+              mountPath: /app/common
 
         # Applies schema + seed against the Olares-provided Postgres. Runs
         # with a retry loop so the natural pod-restart cycle covers the
@@ -235,6 +240,10 @@ spec:
               value: "local"
             - name: STORAGE_LOCAL_PATH
               value: "/app/data/audio"
+            # Gemeinsames Verzeichnis für den Relay-Export (appCommon).
+            # Leer im Code = deaktiviert; hier immer gesetzt.
+            - name: MEETING_EXPORT_DIR
+              value: "/app/common/insilo-meetings"
 
             # ---- App-Konfiguration ------------------------------------------
             - name: APP_LANG
@@ -268,6 +277,8 @@ spec:
               mountPath: /app/data
             - name: app-cache
               mountPath: /app/cache
+            - name: app-common
+              mountPath: /app/common
 
           resources:
             requests:
@@ -292,6 +303,10 @@ spec:
         - name: app-cache
           hostPath:
             path: {{ .Values.userspace.appCache }}
+            type: DirectoryOrCreate
+        - name: app-common
+          hostPath:
+            path: {{ .Values.userspace.appCommon }}
             type: DirectoryOrCreate
         - name: sql
           configMap:

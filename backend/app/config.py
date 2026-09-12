@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     storage_backend: str = "minio"
     storage_local_path: str = "/app/data/audio"
 
+    # Gemeinsames Verzeichnis, in das die Meeting-Zusammenfassungen als
+    # Markdown-Datei kopiert werden (Olares appCommon, von Relay gelesen).
+    # Leer = deaktiviert. Siehe app/relay_drop.py.
+    meeting_export_dir: str = ""
+
     # --- MinIO / S3 (only used when storage_backend == "minio") ---
     minio_endpoint: str = "http://localhost:9000"
     minio_access_key: str = "insilo_dev"

@@ -15,7 +15,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app import ablage, audit, konfiguration
+from app import ablage, audit, konfiguration, relay_drop
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
 from app.db import acquire, acquire_als_dienst, close_pool, init_pool
@@ -152,6 +152,7 @@ async def markdown_ablage(request: Request, call_next):
         # stünde hier kein Status unter 400.
         async with acquire_als_dienst() as conn:
             await ablage.schreiben(conn, vorgang.kennung)
+            await relay_drop.schreiben(conn, vorgang.kennung)
     except Exception as exc:  # noqa: BLE001
         # Wie beim Abzug: eine Bequemlichkeit, keine Bedingung. Die
         # Änderung steht bereits in der Datenbank.

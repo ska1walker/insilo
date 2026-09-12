@@ -33,7 +33,7 @@ from typing import Any
 import asyncpg
 from celery import shared_task
 
-from app import ablage
+from app import ablage, relay_drop
 from app.config import settings
 from app.db import dienst_kontext
 from app.storage import delete_object, exists
@@ -186,6 +186,13 @@ async def _markdown_nachziehen(conn: asyncpg.Connection) -> dict[str, int]:
 
     geschrieben = 0
     for zeile in faellig:
+        # Relay-Kopie: eigener Speicher, eigener Fehlschlag — unabhängig
+        # von der Ablage-Datei prüfen und nachziehen.
+        if relay_drop.fehlt(zeile["id"]) and await relay_drop.schreiben(
+            conn, zeile["id"]
+        ):
+            geschrieben += 1
+
         schluessel = ablage.schluessel(
             zeile["org_id"], zeile["id"], ablage.SUFFIX_TRANSKRIPT
         )

@@ -46,7 +46,7 @@ section() {
 extract() {
   # extract <file> <yaml-path-like-prefix>
   # Tiny grep-based reader. Avoids needing yq.
-  grep -E "^[[:space:]]*${2}:" "$1" | head -1 | sed -E "s/.*${2}:[[:space:]]*['\"]?([^'\"#]+)['\"]?.*/\1/" | xargs
+  grep -E "^[[:space:]]*${2}:" "$1" | sed -n 1p | sed -E "s/.*${2}:[[:space:]]*['\"]?([^'\"#]+)['\"]?.*/\1/" | xargs
 }
 
 # ---------------------------------------------------------------------------
@@ -58,7 +58,7 @@ section "version sync (Chart.yaml ↔ OlaresManifest)"
 CHART_VERSION="$(extract "$CHART_FILE" "version")"
 CHART_APP_VERSION="$(extract "$CHART_FILE" "appVersion")"
 MANIFEST_VERSION="$(extract "$MANIFEST_FILE" "  version")"
-MANIFEST_VERSIONNAME="$(grep -E "^[[:space:]]*versionName:" "$MANIFEST_FILE" | head -1 | sed -E "s/.*versionName:[[:space:]]*['\"]?([^'\"#]+)['\"]?.*/\1/" | xargs)"
+MANIFEST_VERSIONNAME="$(grep -E "^[[:space:]]*versionName:" "$MANIFEST_FILE" | sed -n 1p | sed -E "s/.*versionName:[[:space:]]*['\"]?([^'\"#]+)['\"]?.*/\1/" | xargs)"
 
 if [[ "$CHART_VERSION" == "$CHART_APP_VERSION" ]]; then
   ok "Chart.yaml: version == appVersion ($CHART_VERSION)"
@@ -92,7 +92,7 @@ if [[ ! -f "$ROOT_MANIFEST_FILE" ]]; then
   fail "$ROOT_MANIFEST_FILE missing — Olares Market expects a root-level manifest"
 else
   ROOT_MANIFEST_VERSION="$(extract "$ROOT_MANIFEST_FILE" "  version")"
-  ROOT_MANIFEST_VERSIONNAME="$(grep -E "^[[:space:]]*versionName:" "$ROOT_MANIFEST_FILE" | head -1 | sed -E "s/.*versionName:[[:space:]]*['\"]?([^'\"#]+)['\"]?.*/\1/" | xargs)"
+  ROOT_MANIFEST_VERSIONNAME="$(grep -E "^[[:space:]]*versionName:" "$ROOT_MANIFEST_FILE" | sed -n 1p | sed -E "s/.*versionName:[[:space:]]*['\"]?([^'\"#]+)['\"]?.*/\1/" | xargs)"
 
   if [[ "$ROOT_MANIFEST_VERSION" == "$MANIFEST_VERSION" ]]; then
     ok "root vs chart: metadata.version matches ($ROOT_MANIFEST_VERSION)"
@@ -203,7 +203,7 @@ section "neue Wertschlüssel sind upgrade-sicher dereferenziert"
 # einzige Tag die gerade gebaute Version ist. Genau daran ist der Release
 # v0.1.79 gescheitert: der Guard hat nichts gefunden und deshalb den Build
 # abgebrochen, statt "nichts zu prüfen" zu melden.
-PREV_TAG="$(git tag --list 'v*' --sort=-v:refname 2>/dev/null | grep -v "^v${CHART_VERSION}$" | head -1 || true)"
+PREV_TAG="$(git tag --list 'v*' --sort=-v:refname 2>/dev/null | grep -v "^v${CHART_VERSION}$" | sed -n 1p || true)"
 
 if [[ -z "$PREV_TAG" ]]; then
   skip "kein vorheriger Tag gefunden"
@@ -327,7 +327,7 @@ if command -v helm >/dev/null 2>&1; then
   budget() {
     # budget <manifest-key> -> value in m (cpu) or Mi (memory)
     local key="$1" raw
-    raw="$(grep -E "^[[:space:]]*${key}:" "$MANIFEST_FILE" | head -1 | sed -E "s/.*${key}:[[:space:]]*([^[:space:]#]+).*/\1/")"
+    raw="$(grep -E "^[[:space:]]*${key}:" "$MANIFEST_FILE" | sed -n 1p | sed -E "s/.*${key}:[[:space:]]*([^[:space:]#]+).*/\1/")"
     case "$raw" in
       *m)  echo "${raw%m}" ;;
       *Gi) echo $(( ${raw%Gi} * 1024 )) ;;

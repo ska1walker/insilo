@@ -9,8 +9,9 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel, Field
 
-from app import ablage, audit
+from app import ablage, audit, relay_drop
 from app.auth import CurrentUser, get_current_user
+from app.config import settings
 from app.db import acquire_as
 from app.errors import http_error
 from app.exports.markdown import sortieren
@@ -541,6 +542,32 @@ async def retry_summary(
     return {"status": "queued", "meeting_id": str(meeting_id)}
 
 
+@router.post("/meetings/export-backfill", status_code=200)
+async def export_backfill(user: CurrentUser = Depends(get_current_user)) -> dict:
+    """Alle fertigen Zusammenfassungen in das Relay-Verzeichnis schreiben.
+
+    Einmaliger Nachzug für Besprechungen, die vor der Aktivierung von
+    `MEETING_EXPORT_DIR` fertig waren. Ohne gesetztes Verzeichnis ist
+    der Export deaktiviert — dann antwortet der Endpunkt mit 409.
+    """
+    if not (settings.meeting_export_dir or "").strip():
+        raise HTTPException(409, "meeting export is disabled")
+    async with acquire_as(user.user_id) as conn:
+        zeilen = await conn.fetch(
+            """
+            select id from public.meetings
+            where deleted_at is null and status = 'ready'
+            order by recorded_at desc
+            limit 500
+            """
+        )
+        geschrieben = 0
+        for zeile in zeilen:
+            if await relay_drop.schreiben(conn, zeile["id"]):
+                geschrieben += 1
+    return {"geschrieben": geschrieben, "geprueft": len(zeilen)}
+
+
 class MeetingPatch(BaseModel):
     """Partial update — only fields actually sent get modified."""
 
@@ -726,6 +753,8 @@ async def purge_meeting(
         # Gesprächsinhalt auf der Platte liegen, nachdem jemand
         # ausdrücklich „endgültig entfernen" gedrückt hat.
         ablage.entfernen(user.org_id, meeting_id)
+        # Und die Kopie im gemeinsamen Relay-Verzeichnis.
+        relay_drop.entfernen(meeting_id)
 
         await conn.execute(
             "delete from public.meetings where id = $1 and org_id = $2",

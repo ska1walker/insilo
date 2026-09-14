@@ -75,16 +75,18 @@
 ```
 1. AUFNAHME (PWA)
    ───────────────
-   MediaRecorder API → WebM/Opus, Mono, 16 kHz
-   Chunking: 30s-Chunks für Resilienz
-   Lokales Caching in IndexedDB
+   MediaRecorder API → WebM/Opus (Safari: MP4/AAC), 1-s-Stücke
+   Jedes Stück sofort in IndexedDB (lib/aufnahmen.ts), gelöscht erst
+   nach 201 der Box. Nicht gesendete bietet components/offene-aufnahmen.tsx an.
 
 2. UPLOAD
    ──────
-   PWA → POST /api/v1/recordings/upload (chunked, resumable)
-   User-Identität aus Olares-Header (X-Bfl-User)
-   Audio landet in MinIO Bucket "insilo-audio"
-   Erzeugt: meetings.id, meetings.status = "uploading"
+   PWA → POST /api/v1/recordings (ein Multipart-Rumpf, nicht in Stücken)
+   Frontend-Pod: eigener Route Handler streamt ans Backend — an der
+   Middleware vorbei, die den Rumpf bei 10 MB kappt (HANDOFF, 14.9.2026)
+   Kopfzeilen: lib/weiterleitung.ts (Geheimnis, Identität aus Remote-User)
+   Audio landet unter /app/data/audio/<org-id>/
+   Erzeugt: meetings.id
 
 3. JOB-DISPATCH
    ────────────
@@ -138,8 +140,9 @@
 
 **Macht:**
 - Audio-Aufnahme mit MediaRecorder API
-- Lokales Audio-Caching in IndexedDB (Offline-Aufnahme)
-- Chunked Resumable Upload
+- Sicherung jeder Aufnahme in IndexedDB, bis die Box sie angenommen hat
+- Upload als ein Rumpf; erneut senden, als Datei speichern (kein
+  wiederaufnehmbarer Upload in Stücken — nie gebaut, früher hier behauptet)
 - Live-Updates über WebSocket-Verbindung zum Backend
 - Box-Profil-Verwaltung (Multi-Box-Support für Berater)
 - Service Worker für Offline-Capability

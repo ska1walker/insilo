@@ -153,6 +153,18 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
+    v0.1.96 — Keine Aufnahme geht beim Senden mehr verloren.
+
+    - Aufnahmen über etwa zehn Minuten kamen nicht auf der Box an: das
+      Frontend schnitt sie bei 10 MB ab, und die Aufnahme war danach weg.
+      Jetzt geht der Ton ungekürzt durch.
+    - Jede Aufnahme wird während des Aufnehmens auf dem Gerät gesichert und
+      erst gelöscht, wenn die Box sie angenommen hat. Scheitert das Senden,
+      schließt sich der Tab oder stürzt er ab, bietet Insilo sie beim
+      nächsten Öffnen an: erneut senden, als Datei speichern oder verwerfen.
+    - Das Protokoll des Backends verzeichnet die Bereitschaftsprobe nicht
+      mehr bei jedem Aufruf und reicht damit weiter zurück.
+
     v0.1.95 — Insilo lässt sich wieder auf bestehende Boxen aktualisieren.
 
     - 0.1.93 und 0.1.94 verlangten den gemeinsamen Ordner der Box. Den

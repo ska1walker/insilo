@@ -17,6 +17,94 @@
 >
 > ---
 >
+> ## Eine Besprechung von 90 Minuten ging beim Hochladen verloren (14. September 2026)
+>
+> Auf der Box **insilo-aimighty** (0.1.95) mit dem Handy aufgenommen, „Stopp
+> & speichern", die Anzeige stand auf „Wird gespeichert" — danach war die
+> Aufnahme weg. Die Analyse kam vom Nutzer, hier nachgeprüft:
+>
+> - Frontend-Protokoll: `Request body exceeded 10MB for /api/v1/recordings`
+> - `audit_log`: `meeting.create → HTTP 400`, keine Zeile in `meetings`
+>
+> **Ursache.** Alle `/api/*`-Aufrufe liefen durch `middleware.ts`. Passt die
+> Middleware auf einen Pfad, klont Next.js 15.5 den Rumpf, um ihn ihr
+> anzubieten, und beendet **beide** Datenströme bei
+> `experimental.middlewareClientMaxBodySize` (Vorgabe 10 MB) —
+> `node_modules/next/dist/server/body-streams.js`. Das Backend bekam
+> 10 MB eines Multipart-Rumpfs von rund 90 MB (128 kbit/s ≈ 1 MB pro
+> Minute) und lehnte ab. Der Kommentar in `middleware.ts` behauptete das
+> Gegenteil („streamt"); er war nie gemessen worden.
+>
+> **Warum sie weg war, nicht nur nicht gesendet.** Die Tonstücke lagen
+> ausschließlich in `chunksRef` im Arbeitsspeicher des Tabs. Beim Fehler
+> ging die Ansicht auf „Bereit" mit einer Zeile Fehlertext zurück; der
+> nächste Start oder ein Seitenwechsel löschte sie. `frontend/lib/db.ts`
+> hatte IndexedDB-Funktionen, die nie jemand aufrief. Retten ließ sie sich
+> nur aus dem noch offenen Tab (Skript über die Entwicklerwerkzeuge, das
+> die Stücke aus dem React-Baum holt — dem Nutzer geliefert, nicht im
+> Repo).
+>
+> **Gemessen, bevor entschieden wurde** — lokal mit `next start` gegen eine
+> Attrappe, die Bytes zählt, 500-MB-Upload per curl, Prozessspeicher (RSS)
+> mitgeschrieben:
+>
+> | Variante | Backend | Ergebnis | RSS-Zuwachs | danach |
+> |---|---|---|---|---|
+> | A: Grenze auf `500mb` (Vorschlag der Analyse) | langsam | **HTTP 500**, `socket hang up` | 464 MB | 480 MB belegt |
+> | B: eigener Route Handler, Middleware ausgenommen | langsam | 201, alle Bytes | 277 MB | Ausgangswert |
+> | B | schnell | 201, alle Bytes, 0,6 s | 507 MB | Ausgangswert |
+> | B, 200 MB | langsam | 201, curl auf ~10 MB/s gebremst | 145 MB | Ausgangswert |
+>
+> A scheiterte, weil der Multipart-Rahmen die 500-MiB-Datei ein paar
+> hundert Bytes über die Grenze hob: die Kante wandert nur, und der
+> Speicher bleibt belegt. B bremst den Browser auf das Tempo des Backends
+> (Gegendruck) und gibt den Speicher wieder frei. „Nur ein Stück im
+> Speicher" stimmt für B trotzdem nicht — Node puffert großzügig, solange
+> Platz ist. Der Frontend-Pod hat 1 GiB.
+>
+> **v0.1.96, drei Teile:**
+>
+> 1. `frontend/app/api/v1/recordings/route.ts` streamt den Upload ans
+>    Backend; `middleware.ts` nimmt genau diesen Pfad aus
+>    (`/api/((?!v1/recordings$).*)` — ein Unterpfad ginge sonst über die
+>    Weiterleitung ohne Geheimnis). Beide bauen die Kopfzeilen über
+>    `lib/weiterleitung.ts`. Der Handler entfernt `expect`: undici lehnt
+>    jede Anfrage damit ab, gefunden beim Messen mit curl.
+> 2. `lib/aufnahmen.ts` schreibt jede Sekunde ein Stück in IndexedDB und
+>    löscht erst nach 201. Scheitert das Senden, bleibt eine Karte mit
+>    „Erneut senden", „Als Datei speichern", „Verwerfen" (fragt nach);
+>    verwaiste Aufnahmen (Tab zu, abgestürzt, neu geladen) bietet
+>    `components/offene-aufnahmen.tsx` über jeder Ansicht an. Web Locks
+>    verhindern, dass zwei Tabs dieselbe Aufnahme senden. `lib/db.ts` ist
+>    entfernt.
+> 3. Das Backend lässt erfolgreiche `GET /health` aus dem Zugriffsprotokoll
+>    (`OhneBereitschaftsprobe` in `app/main.py`). Die Probe alle 5 s hatte
+>    das Protokoll auf rund 16 Minuten verkürzt.
+>
+> **Belegt:** `frontend/tests/weiterleitung.test.ts` (Matcher über
+> `unstable_doesMiddlewareMatch`; 32 MB durch den Handler, Geheimnis
+> gesetzt, Browserwert überschrieben, `expect` entfernt; 502 ohne Backend),
+> `frontend/tests/aufnahmen.test.ts`, `backend/tests/test_zugriffsprotokoll.py`,
+> `test_torwaechter.py` angepasst. Vitest läuft jetzt in CI. Im
+> Headless-Chrome mit simuliertem Mikrofon durchgespielt: Stücke während
+> der Aufnahme gesichert; Box lehnt ab → Karte; neu geladen → Liste;
+> erneut gesendet → byte-gleicher Upload, Sicherung gelöscht; Tab mitten
+> in der Aufnahme abgestürzt → angeboten, Verwerfen fragt nach.
+>
+> **Offen:**
+> - Erneut senden kann doppelt anlegen, wenn der erste Upload ankam, die
+>   Antwort aber nicht. Lieber doppelt als verloren; ein
+>   Idempotenzschlüssel im Backend wäre die saubere Lösung.
+> - Safari löscht Website-Daten nach sieben Tagen ohne Besuch, außer die
+>   Seite ist als App auf dem Startbildschirm. Eine nicht gesendete
+>   Aufnahme sollte also bald gesendet oder gespeichert werden.
+> - Keine Fortschrittsanzeige beim Upload; 90 MB brauchen über ein
+>   Mobilnetz eine Minute und mehr unter „Wird gespeichert".
+> - Nimmt Safari auf dem iPhone im Hintergrund oder bei gesperrtem
+>   Bildschirm auf? Nicht Teil dieses Fixes, nicht gemessen.
+>
+> ---
+>
 > ## 0.1.93 und 0.1.94 ließen sich auf bestehende Boxen nicht ausrollen (14. September 2026)
 >
 > Vor dem Rollout auf Kais Box gefunden, nicht danach. Das Chart bindet

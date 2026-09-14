@@ -192,6 +192,18 @@ des Browsers ab.
 Transkription → Sprechertrennung → Zusammenfassung. Die Ansicht
 aktualisiert sich selbst, Sie müssen nicht warten.
 
+Während der Aufnahme sichert Insilo sie laufend auf dem Gerät, im
+Speicher des Browsers. Dort bleibt sie, bis die Box sie angenommen hat.
+Kommt sie nicht an — Funkloch, Box nicht erreichbar, Tab geschlossen,
+Akku leer —, steht beim nächsten Öffnen oben **„Aufnahme nicht
+gesendet"** mit drei Möglichkeiten: **Erneut senden**, **Als Datei
+speichern** oder **Verwerfen**. Verwerfen fragt nach; von selbst
+verschwindet eine Aufnahme nicht.
+
+Senden Sie eine solche Aufnahme bald. Safari löscht die Daten einer
+Website, die sieben Tage nicht geöffnet wurde — außer Insilo liegt als
+App auf dem Startbildschirm.
+
 Insilo ist eine PWA — auf dem Telefon können Sie sie über „Zum
 Startbildschirm hinzufügen" wie eine App ablegen.
 
@@ -539,6 +551,14 @@ Aufnahme und Transkription laufen davon unabhängig weiter.
 Spracherkennung eingetragen haben: fehlt die Modell-ID, lehnt der
 Endpunkt jede Anfrage ab. Welche Kennungen er kennt, steht bei ihm unter
 `/v1/models`.
+
+**„Aufnahme nicht gesendet".** Die Aufnahme ist auf dem Gerät, nur nicht
+auf der Box. „Erneut senden", sobald die Box erreichbar ist. Nennt die
+Meldung eine HTTP-Nummer, hat die Box geantwortet und abgelehnt — dann
+„Als Datei speichern", damit der Ton sicher ist, und mit dem Zeitpunkt
+an den Support. Insilo hat keinen Knopf, um eine Datei hochzuladen; die
+gespeicherte Datei ist die vollständige Aufnahme (WebM, auf dem iPhone
+M4A) und spielt im Browser oder in VLC.
 
 **„Mikrofonzugriff verweigert".** Eine Einstellung des Browsers, nicht
 von Insilo. Im Schloss-Symbol der Adresszeile die Freigabe für die

@@ -244,8 +244,8 @@ def test_die_oberflaeche_kennt_den_vorgang() -> None:
 
     Ohne `OHNE_PFAD` stünde im Protokoll der technische Name.
     """
-    from pathlib import Path
     import json
+    from pathlib import Path
 
     from app import audit
 

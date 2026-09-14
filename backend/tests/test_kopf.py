@@ -60,7 +60,7 @@ WERKS_VORLAGEN: dict[str, list[str]] = {
 
 
 def _gefuellt(felder: list[str]) -> dict[str, str]:
-    return {f: "x" for f in felder}
+    return dict.fromkeys(felder, "x")
 
 
 # ---------------------------------------------------------------------------

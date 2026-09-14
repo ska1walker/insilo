@@ -462,14 +462,14 @@ async def test_nachzug_schreibt_nur_was_fehlt(monkeypatch, speicher) -> None:
     vorhanden = {f"{ORG}/{BESPRECHUNG}.transkript.md"}
     monkeypatch.setattr(aufraeumen, "exists", lambda k: k in vorhanden)
 
-    ANDERE = UUID("d0000000-0000-4000-8000-000000000002")
+    andere = UUID("d0000000-0000-4000-8000-000000000002")
 
     class Lauf(Verbindung):
         async def fetch(self, sql: str, *args):
             if "from public.meetings m" in sql and "transcripts" in sql:
                 return [
                     {"id": BESPRECHUNG, "org_id": ORG},
-                    {"id": ANDERE, "org_id": ORG},
+                    {"id": andere, "org_id": ORG},
                 ]
             return await super().fetch(sql, *args)
 

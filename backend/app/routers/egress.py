@@ -19,7 +19,6 @@ from pydantic import BaseModel
 
 from app import relay_drop
 from app.auth import CurrentUser, get_current_user
-from app.config import settings
 from app.db import acquire_as
 from app.egress import ist_boxintern, ist_eigene_zone
 from app.llm_config import load_llm_config

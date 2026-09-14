@@ -37,6 +37,12 @@ export type AufnahmeKopf = {
   bytes: number;
   /** Gemessene Dauer beim Stopp; fehlt, wenn der Tab vorher endete. */
   dauerMs: number | null;
+  /**
+   * Ein Stück ließ sich nicht schreiben (meist: Speicher voll). Gesichert
+   * ist dann nur der Anfang bis `zuletzt` — und genau das muss dastehen,
+   * statt einen gekürzten Rest als die ganze Aufnahme anzubieten.
+   */
+  unvollstaendig?: boolean;
   templateId?: string;
   audioLanguage?: string;
   quickMode?: boolean;
@@ -126,9 +132,15 @@ export function istVerwaist(
   return jetzt - kopf.zuletzt > VERWAIST_NACH_MS;
 }
 
-/** Gemessene Dauer, sonst die Spanne bis zum letzten Stück. */
+/**
+ * Wie lang das ist, was in IndexedDB liegt: die gemessene Dauer, sonst —
+ * nach einem Absturz oder einem gescheiterten Schreiben — die Spanne bis
+ * zum letzten geschriebenen Stück.
+ */
 export function dauerVon(kopf: AufnahmeKopf): number {
-  return kopf.dauerMs ?? Math.max(0, kopf.zuletzt - kopf.begonnen);
+  const bisZumLetztenStueck = Math.max(0, kopf.zuletzt - kopf.begonnen);
+  if (kopf.unvollstaendig) return bisZumLetztenStueck;
+  return kopf.dauerMs ?? bisZumLetztenStueck;
 }
 
 export function dateinameVon(kopf: AufnahmeKopf): string {
@@ -145,21 +157,35 @@ export function dateinameVon(kopf: AufnahmeKopf): string {
 
 // ─── Während der Aufnahme ────────────────────────────────────────────
 
+// Wie viele Aufnahmen in diesem Tab gerade laufen. Wer nach dem Senden
+// die Seite wechseln will, fragt vorher: ein Seitenwechsel beendet den
+// Recorder, und der Rest der Besprechung würde nie aufgenommen.
+let laufend = 0;
+
+export function nimmtGeradeAuf(): boolean {
+  return laufend > 0;
+}
+
 /**
  * Eine Aufnahme, die gerade entsteht. Schreibt jedes Stück in Reihenfolge
  * weg und hält die Sperre, bis `loslassen()` gerufen wird.
  *
  * Scheitert das Schreiben (kein Speicher, IndexedDB gesperrt), läuft die
- * Aufnahme im Arbeitsspeicher weiter; `gesichert` wird dann `false`, und
- * die Oberfläche bietet die Datei direkt zum Speichern an.
+ * Aufnahme im Arbeitsspeicher weiter; `gesichert` wird dann `false`, der
+ * Kopf in IndexedDB als `unvollstaendig` markiert, und die Oberfläche
+ * bietet die vollständige Datei aus dem Arbeitsspeicher zum Speichern an.
  */
 export class Sicherung {
   gesichert = true;
   private nr = 0;
   private kette: Promise<void> = Promise.resolve();
   private freigeben: (() => void) | null = null;
+  private abgesagt = false;
+  private aktiv = true;
 
-  private constructor(readonly kopf: AufnahmeKopf) {}
+  private constructor(readonly kopf: AufnahmeKopf) {
+    laufend++;
+  }
 
   static async beginnen(angaben: AufnahmeAngaben): Promise<Sicherung> {
     const jetzt = Date.now();
@@ -191,26 +217,44 @@ export class Sicherung {
     return s;
   }
 
+  private beenden() {
+    if (this.aktiv) laufend--;
+    this.aktiv = false;
+  }
+
   anhaengen(stueck: Blob): void {
-    if (!this.gesichert) return;
+    if (!this.gesichert || this.abgesagt) return;
     const nr = this.nr++;
     this.kette = this.kette.then(async () => {
-      if (!this.gesichert) return;
+      if (!this.gesichert || this.abgesagt) return;
       try {
         const daten = await stueck.arrayBuffer();
         const d = await db();
         const tx = d.transaction(["koepfe", "stuecke"], "readwrite");
-        this.kopf.stuecke = nr + 1;
-        this.kopf.bytes += daten.byteLength;
-        this.kopf.zuletzt = Date.now();
+        const kopf = {
+          ...this.kopf,
+          stuecke: nr + 1,
+          bytes: this.kopf.bytes + daten.byteLength,
+          zuletzt: Date.now(),
+        };
         await Promise.all([
           tx.objectStore("stuecke").put({ id: this.kopf.id, nr, daten }),
-          tx.objectStore("koepfe").put({ ...this.kopf }),
+          tx.objectStore("koepfe").put(kopf),
           tx.done,
         ]);
+        // Erst nach dem Schreiben übernehmen: der Kopf beschreibt, was
+        // wirklich in IndexedDB liegt.
+        Object.assign(this.kopf, kopf);
       } catch (fehler) {
         console.error("recording backup failed", fehler);
         this.gesichert = false;
+        this.kopf.unvollstaendig = true;
+        try {
+          await (await db()).put("koepfe", { ...this.kopf });
+        } catch {
+          /* dann bleibt der Kopf ohne Markierung; die Karte in diesem Tab
+             sagt trotzdem „nicht gesichert" */
+        }
       }
     });
   }
@@ -220,6 +264,7 @@ export class Sicherung {
    * Format fest, das der Recorder tatsächlich geliefert hat.
    */
   async abschliessen(dauerMs: number, mimeType?: string): Promise<void> {
+    this.beenden();
     await this.kette;
     this.kopf.dauerMs = dauerMs;
     if (mimeType) this.kopf.mimeType = mimeType;
@@ -231,17 +276,73 @@ export class Sicherung {
     }
   }
 
-  /** Gibt die Aufnahme für andere Ansichten und Tabs frei. */
-  loslassen(): void {
-    this.freigeben?.();
-    this.freigeben = null;
-    melden();
+  /**
+   * Ausdrücklich abgebrochen: nichts mehr schreiben, warten, bis das
+   * letzte Schreiben durch ist, dann löschen. In dieser Reihenfolge — sonst
+   * legt das letzte Stück, das der Recorder beim Stoppen noch liefert, die
+   * Aufnahme nach dem Löschen wieder an, nur ohne Anfang.
+   */
+  async absagen(): Promise<void> {
+    this.abgesagt = true;
+    this.beenden();
+    await this.kette;
+    try {
+      await verwerfen(this.kopf.id);
+    } catch {
+      /* nichts gesichert — nichts zu löschen */
+    }
+    this.loslassen();
   }
+
+  /**
+   * Gibt die Aufnahme für andere Ansichten und Tabs frei — erst, wenn das
+   * letzte Stück geschrieben ist, damit niemand einen halben Stand sendet.
+   */
+  loslassen(): void {
+    this.beenden();
+    void this.kette.then(() => {
+      this.freigeben?.();
+      this.freigeben = null;
+      melden();
+    });
+  }
+}
+
+// ─── In diesem Tab gescheitert ───────────────────────────────────────
+
+/**
+ * Aufnahmen, deren Senden in diesem Tab scheiterte, samt Ton aus dem
+ * Arbeitsspeicher. Sie liegen hier und nicht im Zustand einer Komponente:
+ * sonst wäre die vollständige Kopie mit dem nächsten Seitenwechsel weg —
+ * und ohne IndexedDB (voll, gesperrt) war sie die einzige.
+ * Die Sperre hält die `Sicherung`, bis der Eintrag erledigt ist.
+ */
+export type Gescheitert = { sicherung: Sicherung; ton: Blob; fehler: string };
+
+let gescheitert: Gescheitert[] = [];
+
+export function gescheiterteImTab(): readonly Gescheitert[] {
+  return gescheitert;
+}
+
+export function alsGescheitertAblegen(eintrag: Gescheitert): void {
+  gescheitert = [...gescheitert, eintrag];
+  melden();
+}
+
+export function gescheitertErledigt(id: string): void {
+  const eintrag = gescheitert.find((g) => g.sicherung.kopf.id === id);
+  gescheitert = gescheitert.filter((g) => g !== eintrag);
+  if (eintrag) eintrag.sicherung.loslassen();
+  else melden();
 }
 
 // ─── Nach der Aufnahme ───────────────────────────────────────────────
 
-/** Aufnahmen, die niemand gerade aufnimmt oder sendet — älteste zuerst. */
+/**
+ * Aufnahmen aus IndexedDB, die niemand gerade aufnimmt oder sendet und die
+ * nicht schon als gescheitert in diesem Tab liegen — älteste zuerst.
+ */
 export async function offeneAufnahmen(): Promise<AufnahmeKopf[]> {
   let koepfe: AufnahmeKopf[];
   try {
@@ -253,18 +354,37 @@ export async function offeneAufnahmen(): Promise<AufnahmeKopf[]> {
   const gesperrt = lm
     ? new Set(((await lm.query()).held ?? []).map((l) => l.name ?? ""))
     : null;
+  const imTab = new Set(gescheitert.map((g) => g.sicherung.kopf.id));
   const jetzt = Date.now();
   return koepfe
-    .filter((k) => k.stuecke > 0 && istVerwaist(k, gesperrt, jetzt))
+    .filter(
+      (k) => k.stuecke > 0 && !imTab.has(k.id) && istVerwaist(k, gesperrt, jetzt),
+    )
     .sort((a, b) => a.begonnen - b.begonnen);
 }
 
+/**
+ * Setzt den Ton aus den Stücken zusammen. Über einen Cursor und in
+ * Zwischen-Blobs, nicht mit `getAll`: sonst lägen 90 MB als ArrayBuffer
+ * und noch einmal als Blob gleichzeitig im Speicher eines Telefons.
+ */
 async function tonAusSpeicher(kopf: AufnahmeKopf): Promise<Blob> {
-  const stuecke = await (await db()).getAll("stuecke", alleStuecke(kopf.id));
-  return new Blob(
-    stuecke.map((s) => s.daten),
-    { type: kopf.mimeType },
-  );
+  const teile: Blob[] = [];
+  let puffer: ArrayBuffer[] = [];
+  const tx = (await db()).transaction("stuecke");
+  for (
+    let cursor = await tx.store.openCursor(alleStuecke(kopf.id));
+    cursor;
+    cursor = await cursor.continue()
+  ) {
+    puffer.push(cursor.value.daten);
+    if (puffer.length >= 60) {
+      teile.push(new Blob(puffer));
+      puffer = [];
+    }
+  }
+  if (puffer.length) teile.push(new Blob(puffer));
+  return new Blob(teile, { type: kopf.mimeType });
 }
 
 export async function verwerfen(id: string): Promise<void> {
@@ -290,7 +410,9 @@ export async function senden(
   const besprechung = await createMeeting({
     blob: ton ?? (await tonAusSpeicher(kopf)),
     title: kopf.titel,
-    durationMs: dauerVon(kopf),
+    // Mit dem Ton aus dem Arbeitsspeicher gilt die gemessene Dauer, auch
+    // wenn IndexedDB nur einen Teil hat.
+    durationMs: ton && kopf.dauerMs !== null ? kopf.dauerMs : dauerVon(kopf),
     mimeType: kopf.mimeType,
     templateId: kopf.templateId,
     audioLanguage: kopf.audioLanguage,

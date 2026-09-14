@@ -803,6 +803,7 @@
     "fehlerNetz": "No se pudo contactar con la box. Compruebe la conexión y envíela de nuevo.",
     "andererTab": "Esta grabación se está enviando ahora desde otra pestaña.",
     "speichernFehler": "No se pudo guardar el archivo.",
-    "gesendet": "Grabación enviada."
+    "gesendet": "Grabación enviada.",
+    "teilweise": "Solo se guardó el comienzo hasta esta duración: el almacenamiento del dispositivo estaba lleno. Envíe o guarde lo que hay."
   }
 }

@@ -803,6 +803,7 @@
     "fehlerNetz": "Die Box war nicht erreichbar. Prüfen Sie die Verbindung und senden Sie erneut.",
     "andererTab": "Diese Aufnahme wird gerade in einem anderen Tab gesendet.",
     "speichernFehler": "Die Datei konnte nicht gespeichert werden.",
-    "gesendet": "Aufnahme gesendet."
+    "gesendet": "Aufnahme gesendet.",
+    "teilweise": "Gesichert ist nur der Anfang bis zu dieser Länge — der Speicher des Geräts war voll. Senden oder speichern Sie, was da ist."
   }
 }

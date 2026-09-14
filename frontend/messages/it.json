@@ -803,6 +803,7 @@
     "fehlerNetz": "La box non è raggiungibile. Verifichi la connessione e invii di nuovo.",
     "andererTab": "Questa registrazione è in corso di invio da un'altra scheda.",
     "speichernFehler": "Non è stato possibile salvare il file.",
-    "gesendet": "Registrazione inviata."
+    "gesendet": "Registrazione inviata.",
+    "teilweise": "È salvato solo l'inizio fino a questa durata: la memoria del dispositivo era piena. Invii o salvi ciò che c'è."
   }
 }

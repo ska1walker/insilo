@@ -803,6 +803,7 @@
     "fehlerNetz": "La box est injoignable. Vérifiez la connexion et renvoyez.",
     "andererTab": "Cet enregistrement est en cours d'envoi dans un autre onglet.",
     "speichernFehler": "Le fichier n'a pas pu être enregistré.",
-    "gesendet": "Enregistrement envoyé."
+    "gesendet": "Enregistrement envoyé.",
+    "teilweise": "Seul le début jusqu'à cette durée est sauvegardé — le stockage de l'appareil était plein. Envoyez ou enregistrez ce qui est disponible."
   }
 }

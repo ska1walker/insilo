@@ -21,10 +21,15 @@ import {
   alsDateiSpeichern,
   beiAenderung,
   dauerVon,
+  gescheiterteImTab,
+  gescheitertErledigt,
+  nimmtGeradeAuf,
   offeneAufnahmen,
+  senden,
   sendenMitSperre,
   verwerfen,
   type AufnahmeKopf,
+  type Gescheitert,
 } from "@/lib/aufnahmen";
 import { formatDuration } from "@/lib/format";
 
@@ -66,6 +71,9 @@ export function OffeneAufnahme({
 
   useEffect(() => setFehler(fehlerAnfangs), [fehlerAnfangs]);
 
+  // Mit dem Ton aus dem Arbeitsspeicher zählt die ganze Aufnahme, sonst
+  // das, was in IndexedDB liegt.
+  const dauer = ton && kopf.dauerMs !== null ? kopf.dauerMs : dauerVon(kopf);
   const mb = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
@@ -112,10 +120,14 @@ export function OffeneAufnahme({
       <div className="min-w-0 flex-1">
         <p className="font-medium">{t("titel")}</p>
         <p className="mono mt-1 text-xs text-text-gedaempft">
-          {kopf.titel} · {formatDuration(dauerVon(kopf))} · {mb} MB
+          {kopf.titel} · {formatDuration(dauer)} · {mb} MB
         </p>
         <p className="mt-2 text-sm text-text-sekundaer">
-          {gesichert ? t("gesichert") : t("nichtGesichert")}
+          {ton && !gesichert
+            ? t("nichtGesichert")
+            : kopf.unvollstaendig
+              ? t("teilweise")
+              : t("gesichert")}
         </p>
         {fehler && <p className="mt-2 text-sm text-fehler">{fehler}</p>}
 
@@ -175,16 +187,22 @@ export function OffeneAufnahme({
   );
 }
 
-/** Die Liste über jeder Ansicht. Leer, solange nichts offen ist. */
+/**
+ * Die Liste über jeder Ansicht: erst, was in diesem Tab gescheitert ist
+ * (mit dem vollständigen Ton aus dem Arbeitsspeicher), dann Verwaistes aus
+ * IndexedDB. Leer, solange nichts offen ist.
+ */
 export function OffeneAufnahmen() {
   const t = useTranslations("aufnahmeSicherung");
   const router = useRouter();
   const pathname = usePathname();
   const toast = useToast();
-  const [offen, setOffen] = useState<AufnahmeKopf[]>([]);
+  const [imTab, setImTab] = useState<readonly Gescheitert[]>([]);
+  const [verwaist, setVerwaist] = useState<AufnahmeKopf[]>([]);
 
   const laden = useCallback(() => {
-    offeneAufnahmen().then(setOffen, () => setOffen([]));
+    setImTab(gescheiterteImTab());
+    offeneAufnahmen().then(setVerwaist, () => setVerwaist([]));
   }, []);
 
   useEffect(() => {
@@ -200,23 +218,55 @@ export function OffeneAufnahmen() {
     };
   }, [laden, pathname]);
 
-  if (offen.length === 0) return null;
+  // Liegt eine Aufnahme nur noch im Arbeitsspeicher, fragt der Browser
+  // vor dem Schließen nach.
+  const nurImSpeicher = imTab.some((g) => !g.sicherung.gesichert);
+  useEffect(() => {
+    if (!nurImSpeicher) return;
+    const warnen = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ""; // Safari fragt nur mit gesetztem returnValue
+    };
+    window.addEventListener("beforeunload", warnen);
+    return () => window.removeEventListener("beforeunload", warnen);
+  }, [nurImSpeicher]);
+
+  function gesendet(kopf: AufnahmeKopf, besprechung: MeetingDto) {
+    laden();
+    // Kein Seitenwechsel, solange aufgenommen wird: er beendete den
+    // Recorder, und der Rest der Besprechung ginge verloren.
+    if (kopf.quickMode || nimmtGeradeAuf()) {
+      toast.show({ message: t("gesendet"), variant: "success" });
+    } else {
+      router.push(`/m/${besprechung.id}`);
+    }
+  }
+
+  if (imTab.length === 0 && verwaist.length === 0) return null;
 
   return (
     <div className="mx-auto flex max-w-[720px] flex-col gap-3 px-6 pt-6 md:px-12">
-      {offen.map((kopf) => (
+      {imTab.map((g) => (
+        <OffeneAufnahme
+          key={g.sicherung.kopf.id}
+          kopf={g.sicherung.kopf}
+          ton={g.ton}
+          gesichert={g.sicherung.gesichert}
+          fehler={g.fehler}
+          senden={() => senden(g.sicherung.kopf, g.ton)}
+          nachSenden={(besprechung) => {
+            gescheitertErledigt(g.sicherung.kopf.id);
+            gesendet(g.sicherung.kopf, besprechung);
+          }}
+          nachVerwerfen={() => gescheitertErledigt(g.sicherung.kopf.id)}
+        />
+      ))}
+      {verwaist.map((kopf) => (
         <OffeneAufnahme
           key={kopf.id}
           kopf={kopf}
           senden={() => sendenMitSperre(kopf)}
-          nachSenden={(besprechung) => {
-            laden();
-            if (kopf.quickMode) {
-              toast.show({ message: t("gesendet"), variant: "success" });
-            } else {
-              router.push(`/m/${besprechung.id}`);
-            }
-          }}
+          nachSenden={(besprechung) => gesendet(kopf, besprechung)}
           nachVerwerfen={laden}
         />
       ))}

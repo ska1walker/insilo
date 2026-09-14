@@ -77,6 +77,19 @@
 >    `components/offene-aufnahmen.tsx` über jeder Ansicht an. Web Locks
 >    verhindern, dass zwei Tabs dieselbe Aufnahme senden. `lib/db.ts` ist
 >    entfernt.
+>
+>    Eine unabhängige Prüfung vor dem Release fand vier Lücken, alle
+>    geschlossen: „Erneut senden" während einer laufenden Aufnahme leitete
+>    weiter und beendete sie (jetzt Kurzmeldung, solange
+>    `nimmtGeradeAuf()`); in der Schnellnotiz ließ sich während des
+>    erneuten Sendens eine neue starten (Knopf gesperrt); scheiterte ein
+>    Schreiben mitten in der Aufnahme, wurde der gekürzte Rest als
+>    „gesichert" angeboten (Kopf trägt jetzt `unvollstaendig`); und
+>    „Abbrechen" legte über das letzte Stück, das der Recorder beim Stoppen
+>    liefert, eine Aufnahme ohne Anfang wieder an (`Sicherung.absagen()`
+>    wartet die Schreibkette ab). Gescheiterte Aufnahmen samt Ton aus dem
+>    Arbeitsspeicher liegen seitdem tabweit in `lib/aufnahmen.ts` statt im
+>    Zustand einer Komponente und überstehen damit Seitenwechsel in der App.
 > 3. Das Backend lässt erfolgreiche `GET /health` aus dem Zugriffsprotokoll
 >    (`OhneBereitschaftsprobe` in `app/main.py`). Die Probe alle 5 s hatte
 >    das Protokoll auf rund 16 Minuten verkürzt.
@@ -89,7 +102,11 @@
 > Headless-Chrome mit simuliertem Mikrofon durchgespielt: Stücke während
 > der Aufnahme gesichert; Box lehnt ab → Karte; neu geladen → Liste;
 > erneut gesendet → byte-gleicher Upload, Sicherung gelöscht; Tab mitten
-> in der Aufnahme abgestürzt → angeboten, Verwerfen fragt nach.
+> in der Aufnahme abgestürzt → angeboten, Verwerfen fragt nach; Abbrechen
+> hinterlässt nichts; gescheiterte Aufnahme übersteht einen Seitenwechsel
+> und lässt sich während einer neuen Aufnahme senden, ohne sie zu beenden.
+> Die zusammengesetzten Dateien (nach Stopp und nach Absturz) liest ffmpeg
+> vollständig.
 >
 > **Offen:**
 > - Erneut senden kann doppelt anlegen, wenn der erste Upload ankam, die

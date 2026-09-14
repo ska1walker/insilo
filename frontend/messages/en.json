@@ -803,6 +803,7 @@
     "fehlerNetz": "The box could not be reached. Check the connection and send again.",
     "andererTab": "This recording is being sent from another tab right now.",
     "speichernFehler": "The file could not be saved.",
-    "gesendet": "Recording sent."
+    "gesendet": "Recording sent.",
+    "teilweise": "Only the beginning up to this length is saved — the device's storage was full. Send or save what is there."
   }
 }

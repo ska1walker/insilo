@@ -42,6 +42,13 @@ describe("dauerVon", () => {
     expect(dauerVon(kopf({ dauerMs: 1234 }))).toBe(1234);
   });
 
+  it("reports only what was stored when a write failed", () => {
+    // dauerMs is the full recording; IndexedDB only holds up to `zuletzt`.
+    const k = kopf({ dauerMs: 90 * 60 * 1000, unvollstaendig: true });
+    expect(dauerVon(k)).toBe(k.zuletzt - k.begonnen);
+    expect(dauerVon({ ...k, zuletzt: k.begonnen + 60_000 })).toBe(60_000);
+  });
+
   it("uses the span to the last chunk when the tab ended first", () => {
     expect(dauerVon(kopf())).toBe(90 * 60 * 1000);
     expect(dauerVon(kopf({ zuletzt: 0 }))).toBe(0);

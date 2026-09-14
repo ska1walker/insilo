@@ -14,7 +14,14 @@ import { useEffect, useRef, useState } from "react";
 import { AufnahmeWelle } from "@/components/aufnahme-welle";
 import { useSendefehler } from "@/components/offene-aufnahmen";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
-import { alsDateiSpeichern, senden, Sicherung } from "@/lib/aufnahmen";
+import {
+  alsDateiSpeichern,
+  alsGescheitertAblegen,
+  gescheitertErledigt,
+  senden,
+  Sicherung,
+  type Gescheitert,
+} from "@/lib/aufnahmen";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
 
 const PREFERRED_MIME_TYPES = [
@@ -107,14 +114,10 @@ export function QuickCapture() {
   const aktivRef = useRef(true);
   const tAufnahme = useTranslations("aufnahmeSicherung");
   const sendefehler = useSendefehler();
-  // Die zuletzt gescheiterte Notiz. Wird sie nicht erledigt, gibt der
-  // nächste Start oder das Verlassen sie an die Liste über den Ansichten ab.
-  const [gescheitert, setGescheitert] = useState<{
-    sicherung: Sicherung;
-    ton: Blob;
-  } | null>(null);
-  const gescheitertRef = useRef(gescheitert);
-  gescheitertRef.current = gescheitert;
+  // Die zuletzt gescheiterte Notiz, wie sie hier angeboten wird. Sie
+  // gehört der Liste in `lib/aufnahmen.ts`: startet jemand die nächste oder
+  // verlässt die Ansicht, bleibt sie dort und erscheint über den Ansichten.
+  const [gescheitert, setGescheitert] = useState<Gescheitert | null>(null);
   const [sendetErneut, setSendetErneut] = useState(false);
 
   // Dark-Mode-Transition: body-class steuert globalen Fade. globals.css
@@ -135,14 +138,11 @@ export function QuickCapture() {
         window.clearTimeout(savedResetRef.current);
       }
       sicherungRef.current?.loslassen();
-      gescheitertRef.current?.sicherung.loslassen();
     };
   }, []);
 
-  const ungesichert =
-    phase === "recording" ||
-    phase === "saving" ||
-    (gescheitert !== null && !gescheitert.sicherung.gesichert);
+  // Gescheiterte Notizen bewacht die Liste in der Hülle.
+  const ungesichert = phase === "recording" || phase === "saving";
   useEffect(() => {
     if (!ungesichert) return;
     const warnen = (e: BeforeUnloadEvent) => {
@@ -214,11 +214,8 @@ export function QuickCapture() {
       setPhase("unsupported");
       return;
     }
-    // Eine liegen gebliebene Notiz geht an die Liste über den Ansichten.
-    if (gescheitert) {
-      gescheitert.sicherung.loslassen();
-      setGescheitert(null);
-    }
+    // Eine liegen gebliebene Notiz bleibt in der Liste über den Ansichten.
+    setGescheitert(null);
     setPhase("requesting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -254,6 +251,10 @@ export function QuickCapture() {
         setElapsed(Date.now() - startedAtRef.current);
       }, 250);
     } catch (err) {
+      stopTracksAndTick();
+      releaseWakeLock();
+      void sicherungRef.current?.absagen();
+      sicherungRef.current = null;
       const name = (err as DOMException)?.name;
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setPhase("denied");
@@ -294,16 +295,15 @@ export function QuickCapture() {
     try {
       await senden(sicherung.kopf, ton);
       sicherung.loslassen();
-      gesendet();
+      if (aktivRef.current) gesendet();
     } catch (err) {
       console.error("upload failed", err);
-      if (!aktivRef.current) {
-        sicherung.loslassen();
-        return;
-      }
+      const eintrag = { sicherung, ton, fehler: sendefehler(err) };
+      alsGescheitertAblegen(eintrag);
+      if (!aktivRef.current) return;
       setPhase("error");
-      setError(sendefehler(err));
-      setGescheitert({ sicherung, ton });
+      setError(eintrag.fehler);
+      setGescheitert(eintrag);
     }
   }
 
@@ -322,7 +322,8 @@ export function QuickCapture() {
     setError(null);
     try {
       await senden(gescheitert.sicherung.kopf, gescheitert.ton);
-      gescheitert.sicherung.loslassen();
+      gescheitertErledigt(gescheitert.sicherung.kopf.id);
+      if (!aktivRef.current) return;
       setGescheitert(null);
       gesendet();
     } catch (err) {
@@ -384,6 +385,9 @@ export function QuickCapture() {
             onClick={startRecording}
             ariaLabel={t("tapToStart")}
             kind="idle"
+            // Nicht während erneut gesendet wird: sonst liefe die neue
+            // Aufnahme, während die alte als „weitergegeben" zurückkommt.
+            disabled={sendetErneut}
           />
         ) : phase === "requesting" ? (
           <MicButton ariaLabel={t("requestingMic")} kind="loading" />
@@ -506,10 +510,12 @@ function MicButton({
   onClick,
   ariaLabel,
   kind,
+  disabled = false,
 }: {
   onClick?: () => void;
   ariaLabel: string;
   kind: "idle" | "recording" | "loading";
+  disabled?: boolean;
 }) {
   const baseClasses =
     "immersive-in-delayed mt-12 flex h-44 w-44 items-center justify-center rounded-full transition-transform sm:h-56 sm:w-56";
@@ -520,7 +526,8 @@ function MicButton({
         type="button"
         onClick={onClick}
         aria-label={ariaLabel}
-        className={`${baseClasses} active:scale-95`}
+        disabled={disabled}
+        className={`${baseClasses} active:scale-95 disabled:opacity-40`}
         style={{
           background: COLORS.gold,
           color: COLORS.black,

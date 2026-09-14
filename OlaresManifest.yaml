@@ -153,6 +153,14 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
+    v0.1.95 — Insilo lässt sich wieder auf bestehende Boxen aktualisieren.
+
+    - 0.1.93 und 0.1.94 verlangten den gemeinsamen Ordner der Box. Den
+      vergibt Olares aber nur bei der Installation — auf einer Box, auf
+      der Insilo schon vorher lief, fehlte er, und das Update scheiterte.
+      Jetzt bindet Insilo den Ordner nur ein, wenn Olares ihn bereitstellt.
+      Fehlt er, bleibt der Export für andere Apps aus.
+
     v0.1.94 — Korrektur am Chart zu 0.1.93.
 
     - Insilo übernimmt beim Start nicht mehr den gemeinsamen Ordner der

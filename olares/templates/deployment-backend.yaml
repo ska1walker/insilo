@@ -50,7 +50,11 @@ spec:
           #
           # Lesen kann Relay trotzdem: `mkdir` unter root legt 0755 an,
           # die Dateien entstehen mit 0644.
+          {{- if (.Values.userspace).appCommon }}
           command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data && mkdir -p /app/common/insilo-meetings && chown 1000:1000 /app/common/insilo-meetings']
+          {{- else }}
+          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data']
+          {{- end }}
           securityContext:
             runAsUser: 0
           volumeMounts:
@@ -58,8 +62,10 @@ spec:
               mountPath: /app/cache
             - name: app-data
               mountPath: /app/data
+            {{- if (.Values.userspace).appCommon }}
             - name: app-common
               mountPath: /app/common
+            {{- end }}
 
         # Applies schema + seed against the Olares-provided Postgres. Runs
         # with a retry loop so the natural pod-restart cycle covers the
@@ -246,10 +252,12 @@ spec:
               value: "local"
             - name: STORAGE_LOCAL_PATH
               value: "/app/data/audio"
+            {{- if (.Values.userspace).appCommon }}
             # Gemeinsames Verzeichnis für den Relay-Export (appCommon).
             # Leer im Code = deaktiviert; hier immer gesetzt.
             - name: MEETING_EXPORT_DIR
               value: "/app/common/insilo-meetings"
+            {{- end }}
 
             # ---- App-Konfiguration ------------------------------------------
             - name: APP_LANG
@@ -283,8 +291,10 @@ spec:
               mountPath: /app/data
             - name: app-cache
               mountPath: /app/cache
+            {{- if (.Values.userspace).appCommon }}
             - name: app-common
               mountPath: /app/common
+            {{- end }}
 
           resources:
             requests:
@@ -310,10 +320,12 @@ spec:
           hostPath:
             path: {{ .Values.userspace.appCache }}
             type: DirectoryOrCreate
+        {{- if (.Values.userspace).appCommon }}
         - name: app-common
           hostPath:
             path: {{ .Values.userspace.appCommon }}
             type: DirectoryOrCreate
+        {{- end }}
         - name: sql
           configMap:
             name: insilo-migrations

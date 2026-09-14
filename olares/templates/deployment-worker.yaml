@@ -44,7 +44,11 @@ spec:
           #
           # Lesen kann Relay trotzdem: `mkdir` unter root legt 0755 an,
           # die Dateien entstehen mit 0644.
+          {{- if (.Values.userspace).appCommon }}
           command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data && mkdir -p /app/common/insilo-meetings && chown 1000:1000 /app/common/insilo-meetings']
+          {{- else }}
+          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data']
+          {{- end }}
           securityContext:
             runAsUser: 0
           volumeMounts:
@@ -52,8 +56,10 @@ spec:
               mountPath: /app/cache
             - name: app-data
               mountPath: /app/data
+            {{- if (.Values.userspace).appCommon }}
             - name: app-common
               mountPath: /app/common
+            {{- end }}
       containers:
         - name: worker
           image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag | default .Chart.AppVersion }}"
@@ -121,18 +127,22 @@ spec:
               value: "local"
             - name: STORAGE_LOCAL_PATH
               value: "/app/data/audio"
+            {{- if (.Values.userspace).appCommon }}
             # Gemeinsames Verzeichnis für den Relay-Export (appCommon).
             # Der Worker schreibt die Dateien beim Zusammenfassen.
             - name: MEETING_EXPORT_DIR
               value: "/app/common/insilo-meetings"
+            {{- end }}
 
           volumeMounts:
             - name: app-data
               mountPath: /app/data
             - name: app-cache
               mountPath: /app/cache
+            {{- if (.Values.userspace).appCommon }}
             - name: app-common
               mountPath: /app/common
+            {{- end }}
 
           resources:
             requests:
@@ -151,7 +161,9 @@ spec:
           hostPath:
             path: {{ .Values.userspace.appCache }}
             type: DirectoryOrCreate
+        {{- if (.Values.userspace).appCommon }}
         - name: app-common
           hostPath:
             path: {{ .Values.userspace.appCommon }}
             type: DirectoryOrCreate
+        {{- end }}

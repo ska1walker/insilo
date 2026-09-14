@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 14. September 2026, Fassung 0.1.93.
+Stand: 14. September 2026, Fassung 0.1.95.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.
@@ -262,13 +262,18 @@ Was dort liegt, und was nicht:
   Etiketten;
 - **nicht der Wortlaut.** Das Transkript bleibt in Insilo.
 
-> **Das ist eingeschaltet, und es lässt sich nicht abschalten.** Der
-> Ordner ist im Chart fest eingetragen; es gibt dafür heute weder eine
-> Einstellung noch einen Schalter. Jede App mit Zugriff auf den
+> **Wo Olares den gemeinsamen Ordner bereitstellt, ist das eingeschaltet —
+> und es gibt dafür keinen Schalter.** Jede App mit Zugriff auf den
 > gemeinsamen Ordner sieht die Zusammenfassungen **aller** Besprechungen —
-> bei einer Kanzlei also Mandantennamen, Sachverhalte und Fristen.
-> Die Box verlassen sie dabei nicht, Insilo aber schon. Prüfen Sie vor dem
-> Update, welche Apps auf Ihrer Box den gemeinsamen Ordner nutzen.
+> bei einer Kanzlei also Mandantennamen, Sachverhalte und Fristen. Die Box
+> verlassen sie dabei nicht, Insilo aber schon. Prüfen Sie vor dem Update,
+> welche Apps auf Ihrer Box den gemeinsamen Ordner nutzen.
+>
+> Stellt Olares den Ordner **nicht** bereit, bleibt der Export aus. Das ist
+> der Fall, wenn Insilo schon vor Fassung 0.1.93 auf der Box installiert
+> war: Olares vergibt die Ordner bei der Installation, und ein Update
+> übernimmt die Werte von damals. Ob der Export läuft, zeigt der
+> Datenschutz-Nachweis — steht dort kein gemeinsamer Ordner, ist er aus.
 
 Der Datenschutz-Nachweis führt den Ordner als eigenes Ziel und zählt, wie
 viele Zusammenfassungen dort liegen (Abschnitt 6). Beim endgültigen

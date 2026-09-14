@@ -543,6 +543,33 @@ if command -v helm >/dev/null 2>&1; then
     fail "helm template failed:"
     sed 's/^/    /' /tmp/helm-template.log
   fi
+
+  # Kein hostPath ohne Pfad — auch nicht mit den Werten einer ALTEN
+  # Installation.
+  #
+  # Olares setzt `userspace.<x>` nur für die Berechtigungen, die eine App
+  # bei der INSTALLATION angefordert hat, und ein Upgrade spielt genau
+  # diese Werte zurück (Constraint 9). v0.1.93 kam mit `appCommon` dazu
+  # und renderte auf jeder Box, die Insilo schon vorher hatte,
+  # `hostPath.path: ` — leer. Die API lehnt das ab: "volumes[2].hostPath.path:
+  # Required value". Gefunden per `kubectl apply --dry-run=server` gegen
+  # Kais Box, bevor es jemand ausrollte. Der Stub trägt alle Pfade und
+  # hätte es nie gezeigt — also hier einmal mit dem, was eine Installation
+  # von vor 0.1.93 wirklich hat.
+  ALT_WERTE="$(mktemp)"
+  awk '!/^[[:space:]]+appCommon:/' olares/values-olares-stub.yaml > "$ALT_WERTE"
+  if helm template insilo olares/ -f "$ALT_WERTE" >/tmp/helm-template-alt.log 2>&1; then
+    LEERE_PFADE="$(grep -cE '^[[:space:]]+path:[[:space:]]*$' /tmp/helm-template-alt.log || true)"
+    if [[ "$LEERE_PFADE" == "0" ]]; then
+      ok "ohne userspace.appCommon: kein hostPath ohne Pfad"
+    else
+      fail "ohne userspace.appCommon rendern $LEERE_PFADE hostPath mit leerem Pfad — die API lehnt das Deployment ab"
+    fi
+  else
+    fail "helm template ohne userspace.appCommon failed:"
+    sed 's/^/    /' /tmp/helm-template-alt.log
+  fi
+  rm -f "$ALT_WERTE"
 else
   yellow "  ! helm not installed — skipping lint/template"
 fi

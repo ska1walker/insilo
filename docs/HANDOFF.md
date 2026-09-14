@@ -17,6 +17,46 @@
 >
 > ---
 >
+> ## 0.1.93 und 0.1.94 ließen sich auf bestehende Boxen nicht ausrollen (14. September 2026)
+>
+> Vor dem Rollout auf Kais Box gefunden, nicht danach. Das Chart bindet
+> seit 0.1.93 `hostPath: {{ .Values.userspace.appCommon }}` ein. Olares
+> setzt `userspace.<x>` aber nur für Berechtigungen, die eine App bei der
+> **Installation** angefordert hat — und ein Update spielt genau diese
+> Werte zurück (Constraint 9). Kais Installation stammt von vor 0.1.93:
+> `helm get values` kennt `appData` und `appCache`, **kein**
+> `appCommon`. Marcs Beispielpfad `/olares/userspaces/kaivostudio/Common`
+> existiert auf der Box nicht einmal.
+>
+> Gerendert mit den echten Werten der Box: `path: ` leer. Gegen die echte
+> API geprüft (`kubectl apply --dry-run=server`, ändert nichts):
+>
+> ```
+> The Deployment "insilo-backend" is invalid:
+> * spec.template.spec.volumes[2].hostPath.path: Required value
+> ```
+>
+> **Ob der Markt dasselbe Problem hat, ist nicht gemessen.** Es hängt
+> daran, ob Olares bei einem Markt-Update eine neu angeforderte
+> Berechtigung nachträglich einträgt. Tut es das nicht, scheitert jede
+> Installation von vor 0.1.93 beim Update auf 0.1.93 oder 0.1.94.
+>
+> **v0.1.95:** Einhängen, Umgebungsvariable und `mkdir` im Init-Container
+> nur, wenn `(.Values.userspace).appCommon` gesetzt ist. Fehlt der Wert,
+> bleibt der Export aus — `relay_drop` antwortet dann ohnehin mit
+> `None`, und der Nachweis zeigt keinen gemeinsamen Ordner. Beide Fälle
+> gerendert und gegen die API der Box trocken geprüft: gültig.
+> `check-chart.sh` rendert jetzt zusätzlich mit Werten ohne `appCommon`
+> und schlägt bei jedem leeren hostPath-Pfad an; gegen das Chart von
+> 0.1.94 zeigt er 2.
+>
+> Der Stub `values-olares-stub.yaml` trägt alle Pfade und hätte das nie
+> gezeigt. Eine neue Berechtigung ist ein neuer Wertschlüssel, und für
+> neue Wertschlüssel gilt dasselbe wie in §4a: auf einer bestehenden
+> Installation fehlen sie.
+>
+> ---
+>
 > ## PR #1 von Marc: Zusammenfassungen für Relay — übernommen, mit fünf Korrekturen (14. September 2026)
 >
 > [PR #1](https://github.com/ska1walker/insilo/pull/1) kam von Marcs Konto,

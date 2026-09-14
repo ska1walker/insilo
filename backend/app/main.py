@@ -78,6 +78,30 @@ async def lifespan(app: FastAPI):
 
 log = logging.getLogger(__name__)
 
+
+class OhneBereitschaftsprobe(logging.Filter):
+    """Lässt erfolgreiche Aufrufe von `/health` aus dem Zugriffsprotokoll.
+
+    Kubernetes fragt alle fünf Sekunden, bei zwei Workern also doppelt.
+    Am 14.9.2026 reichte das Protokoll des Backends deshalb nur rund
+    16 Minuten zurück, als eine verlorene Aufnahme untersucht wurde. Ein
+    Fehler auf `/health` bleibt sichtbar — der ist dann die Nachricht.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if not isinstance(args, tuple) or len(args) < 5:
+            return True
+        _, methode, pfad, _, status = args[:5]
+        return not (
+            methode == "GET" and pfad == "/health" and isinstance(status, int) and status < 400
+        )
+
+
+# uvicorn richtet sein Logging ein, bevor es die App importiert — auch in
+# jedem Worker —, der Filter bleibt also hängen.
+logging.getLogger("uvicorn.access").addFilter(OhneBereitschaftsprobe())
+
 app = FastAPI(
     title="Insilo API",
     description="Souveräne Meeting-Intelligenz für deutschen Mittelstand",

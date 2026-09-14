@@ -72,10 +72,17 @@
 > im gemergten ska1walker/insilo#1 eine Zusammenfassung aller Korrekturen
 > bekommen.
 >
-> **Unbeantwortet:** ob ein Markt-Update eine neu angeforderte Berechtigung
-> nachträglich in die Werte einträgt. Davon hängt ab, ob bestehende
-> Markt-Installationen mit 0.1.93 kaputt gehen oder den Export einfach nie
-> bekommen — beides wäre bis zum Merge von #64 möglich.
+> **#64 gemergt und live** (14.9.2026, Squash `5d1512b2`, Deploy grün).
+> Vorher Live-Katalog gegen den Branch verglichen: Insilo war der einzige
+> Unterschied, `main` unbewegt. Danach live: `insilo 0.1.95`, Chart HTTP
+> 200 und **byte-gleich** mit `dist/insilo-0.1.95.tgz`, keine Übernahme des
+> gemeinsamen Ordners, fünf `appCommon`-Bedingungen im Template, weiter 20
+> Apps.
+>
+> **Unbeantwortet bleibt:** ob ein Markt-Update eine neu angeforderte
+> Berechtigung nachträglich in die Werte einträgt. Mit 0.1.95 ist das
+> keine Bruchstelle mehr, sondern nur noch die Frage, ob bestehende
+> Markt-Installationen den Export bekommen oder nicht.
 >
 > ---
 >

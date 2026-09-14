@@ -263,10 +263,20 @@ Stand 19.8.2026 sind auf Kais Box drei Quellen eingetragen:
 der Markt den offiziellen Katalog nicht mehr. Das Umschalten lohnt erst,
 wenn die App in der Zielquelle wirklich steht.
 
-**Der Zugriff aufs Repo ist READ, nicht write.** Die HANDOFF-Notiz „Kai
-hat Schreibzugriff" stimmt nicht mehr (`gh api repos/bayerhazard/aimighty-market`
-meldet `push: false`). Der in §4.4 des Playbooks beschriebene Weg —
-committen und pushen — steht damit nicht offen; es bleibt Fork + PR.
+**Schreibzugriff aufs Repo besteht wieder** (seit 5.9.2026;
+`gh api repos/bayerhazard/aimighty-market` meldet `push: true`, am 14.9.
+nachgemessen). Der eingespielte Weg ist trotzdem **Branch + PR + selbst
+mergen** — so sind alle Beacon-Veröffentlichungen (#53–#62) und Insilo
+0.1.95 (#64) gelaufen. Der Merge löst „Deploy to Cloudflare Pages" aus.
+
+**Vor dem Merge den Live-Katalog gegen den Branch vergleichen** (Name und
+Version jeder App, nicht nur die Anzahl) — ein Deploy aus dem Repo
+ersetzt, was jemand direkt aufgespielt hat (§5a). Am 14.9. war Insilo der
+einzige Unterschied. Python-`urllib` bekommt vom Katalog 403 (Cloudflare
+blockt die Kennung); `curl` geht.
+
+**Veraltete eigene PRs schließen.** #63 (0.1.90) stand noch offen, als
+der Markt längst 0.1.93 führte — gemergt hätte er zurückgesetzt.
 
 **So wurde Insilo eingereicht** (19.8.2026,
 [PR #1](https://github.com/bayerhazard/aimighty-market/pull/1)):

@@ -61,8 +61,6 @@
     "uploadFailed": "Error al subir.",
     "defaultTitlePrefix": "Grabación del",
     "micStartFailed": "No se ha podido iniciar el micrófono. Compruebe los permisos del navegador.",
-    "uploadFailedHttp": "Error al subir (HTTP {status}). ¿Está accesible el backend?",
-    "uploadFailedTryAgain": "Error al subir. Inténtelo de nuevo.",
     "audioLanguageLabel": "Idioma de la grabación",
     "audioLanguageAuto": "Detección automática",
     "audioLanguageHint": "Pista enviada a Whisper para la transcripción. El formato del acta sigue, no obstante, el idioma de su interfaz.",
@@ -646,9 +644,7 @@
     "defaultTitlePrefix": "Idea del",
     "deniedBody": "Acceso al micrófono denegado. Permita el acceso a Insilo en la configuración del navegador.",
     "unsupportedBody": "Este navegador no admite grabación de audio. Utilice Chrome o Safari.",
-    "micStartFailed": "No se ha podido iniciar el micrófono. Compruebe los permisos del navegador.",
-    "uploadFailedHttp": "Error al enviar (HTTP {status}). ¿Está accesible la caja?",
-    "uploadFailedTryAgain": "Error al enviar. Inténtelo de nuevo."
+    "micStartFailed": "No se ha podido iniciar el micrófono. Compruebe los permisos del navegador."
   },
   "darstellung": {
     "title": "Apariencia",
@@ -791,5 +787,22 @@
     "fehler": "No ha funcionado. Inténtelo de nuevo.",
     "zurueck": "A las reuniones",
     "link": "Papelera"
+  },
+  "aufnahmeSicherung": {
+    "titel": "Grabación no enviada",
+    "gesichert": "Está guardada en este dispositivo y permanece allí hasta que la box la haya aceptado.",
+    "nichtGesichert": "Solo existe en la memoria de esta pestaña. Guárdela como archivo antes de salir de la página.",
+    "erneutSenden": "Enviar de nuevo",
+    "sendet": "Enviando …",
+    "alsDatei": "Guardar como archivo",
+    "verwerfen": "Descartar",
+    "verwerfenFrage": "¿Descartar esta grabación de forma definitiva? También se eliminará de este dispositivo.",
+    "verwerfenJa": "Descartar definitivamente",
+    "behalten": "Conservar",
+    "fehlerHttp": "La box no aceptó la grabación (HTTP {status}).",
+    "fehlerNetz": "No se pudo contactar con la box. Compruebe la conexión y envíela de nuevo.",
+    "andererTab": "Esta grabación se está enviando ahora desde otra pestaña.",
+    "speichernFehler": "No se pudo guardar el archivo.",
+    "gesendet": "Grabación enviada."
   }
 }

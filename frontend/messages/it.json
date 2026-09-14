@@ -61,8 +61,6 @@
     "uploadFailed": "Upload non riuscito.",
     "defaultTitlePrefix": "Registrazione del",
     "micStartFailed": "Impossibile avviare il microfono. Verifichi i permessi del browser.",
-    "uploadFailedHttp": "Upload non riuscito (HTTP {status}). Il backend è raggiungibile?",
-    "uploadFailedTryAgain": "Upload non riuscito. Riprovi.",
     "audioLanguageLabel": "Lingua della registrazione",
     "audioLanguageAuto": "Rilevamento automatico",
     "audioLanguageHint": "Suggerimento inviato a Whisper per la trascrizione. Il formato del verbale segue comunque la lingua della Sua interfaccia.",
@@ -646,9 +644,7 @@
     "defaultTitlePrefix": "Idea del",
     "deniedBody": "Accesso al microfono negato. Conceda l'accesso a Insilo nelle impostazioni del browser.",
     "unsupportedBody": "Questo browser non supporta la registrazione audio. Utilizzi Chrome o Safari.",
-    "micStartFailed": "Impossibile avviare il microfono. Verifichi i permessi del browser.",
-    "uploadFailedHttp": "Invio non riuscito (HTTP {status}). Il box è raggiungibile?",
-    "uploadFailedTryAgain": "Invio non riuscito. Riprovi."
+    "micStartFailed": "Impossibile avviare il microfono. Verifichi i permessi del browser."
   },
   "darstellung": {
     "title": "Aspetto",
@@ -791,5 +787,22 @@
     "fehler": "Non ha funzionato. Riprovi.",
     "zurueck": "Alle riunioni",
     "link": "Cestino"
+  },
+  "aufnahmeSicherung": {
+    "titel": "Registrazione non inviata",
+    "gesichert": "È salvata su questo dispositivo e vi rimane finché la box non l'ha accettata.",
+    "nichtGesichert": "Esiste solo nella memoria di questa scheda. La salvi come file prima di lasciare la pagina.",
+    "erneutSenden": "Invia di nuovo",
+    "sendet": "Invio in corso …",
+    "alsDatei": "Salva come file",
+    "verwerfen": "Scarta",
+    "verwerfenFrage": "Scartare definitivamente questa registrazione? Verrà eliminata anche da questo dispositivo.",
+    "verwerfenJa": "Scarta definitivamente",
+    "behalten": "Conserva",
+    "fehlerHttp": "La box non ha accettato la registrazione (HTTP {status}).",
+    "fehlerNetz": "La box non è raggiungibile. Verifichi la connessione e invii di nuovo.",
+    "andererTab": "Questa registrazione è in corso di invio da un'altra scheda.",
+    "speichernFehler": "Non è stato possibile salvare il file.",
+    "gesendet": "Registrazione inviata."
   }
 }

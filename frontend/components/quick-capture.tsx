@@ -12,9 +12,9 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { AufnahmeWelle } from "@/components/aufnahme-welle";
-import { ApiError } from "@/lib/api/client";
-import { createMeeting } from "@/lib/api/meetings";
+import { useSendefehler } from "@/components/offene-aufnahmen";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
+import { alsDateiSpeichern, senden, Sicherung } from "@/lib/aufnahmen";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
 
 const PREFERRED_MIME_TYPES = [
@@ -103,6 +103,19 @@ export function QuickCapture() {
   const tickRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const savedResetRef = useRef<number | null>(null);
+  const sicherungRef = useRef<Sicherung | null>(null);
+  const aktivRef = useRef(true);
+  const tAufnahme = useTranslations("aufnahmeSicherung");
+  const sendefehler = useSendefehler();
+  // Die zuletzt gescheiterte Notiz. Wird sie nicht erledigt, gibt der
+  // nächste Start oder das Verlassen sie an die Liste über den Ansichten ab.
+  const [gescheitert, setGescheitert] = useState<{
+    sicherung: Sicherung;
+    ton: Blob;
+  } | null>(null);
+  const gescheitertRef = useRef(gescheitert);
+  gescheitertRef.current = gescheitert;
+  const [sendetErneut, setSendetErneut] = useState(false);
 
   // Dark-Mode-Transition: body-class steuert globalen Fade. globals.css
   // versteckt zusätzlich den normalen Insilo-Header während aktiv.
@@ -113,14 +126,32 @@ export function QuickCapture() {
 
   // Cleanup all browser resources on unmount.
   useEffect(() => {
+    aktivRef.current = true;
     return () => {
+      aktivRef.current = false;
       stopTracksAndTick();
       releaseWakeLock();
       if (savedResetRef.current !== null) {
         window.clearTimeout(savedResetRef.current);
       }
+      sicherungRef.current?.loslassen();
+      gescheitertRef.current?.sicherung.loslassen();
     };
   }, []);
+
+  const ungesichert =
+    phase === "recording" ||
+    phase === "saving" ||
+    (gescheitert !== null && !gescheitert.sicherung.gesichert);
+  useEffect(() => {
+    if (!ungesichert) return;
+    const warnen = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ""; // Safari fragt nur mit gesetztem returnValue
+    };
+    window.addEventListener("beforeunload", warnen);
+    return () => window.removeEventListener("beforeunload", warnen);
+  }, [ungesichert]);
 
   function stopTracksAndTick() {
     if (tickRef.current !== null) {
@@ -183,6 +214,11 @@ export function QuickCapture() {
       setPhase("unsupported");
       return;
     }
+    // Eine liegen gebliebene Notiz geht an die Liste über den Ansichten.
+    if (gescheitert) {
+      gescheitert.sicherung.loslassen();
+      setGescheitert(null);
+    }
     setPhase("requesting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -195,8 +231,17 @@ export function QuickCapture() {
         mimeType: mime,
         ...ASR_RECORDER_OPTIONS,
       });
+      const sicherung = await Sicherung.beginnen({
+        mimeType: mime,
+        titel: defaultMeetingTitle(Date.now(), locale, t("defaultTitlePrefix")),
+        quickMode: true,
+      });
+      sicherungRef.current = sicherung;
       recorder.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data);
+        if (ev.data && ev.data.size > 0) {
+          chunksRef.current.push(ev.data);
+          sicherung.anhaengen(ev.data);
+        }
       };
       recorder.start(1000);
       recorderRef.current = recorder;
@@ -238,32 +283,53 @@ export function QuickCapture() {
     stopTracksAndTick();
     releaseWakeLock();
 
-    const mimeType = recorder.mimeType || "audio/webm";
-    const blob = new Blob(chunksRef.current, { type: mimeType });
-    const now = Date.now();
-    const title = defaultMeetingTitle(now, locale, t("defaultTitlePrefix"));
+    const sicherung = sicherungRef.current;
+    sicherungRef.current = null;
+    if (!sicherung) return;
+    const mimeType = recorder.mimeType || sicherung.kopf.mimeType;
+    const ton = new Blob(chunksRef.current, { type: mimeType });
+    chunksRef.current = [];
+    await sicherung.abschliessen(durationMs, mimeType);
 
     try {
-      await createMeeting({
-        blob,
-        title,
-        durationMs,
-        mimeType,
-        quickMode: true,
-      });
-      setPhase("saved");
-      savedResetRef.current = window.setTimeout(() => {
-        setPhase("idle");
-        setElapsed(0);
-        savedResetRef.current = null;
-      }, SAVED_AUTO_RESET_MS);
+      await senden(sicherung.kopf, ton);
+      sicherung.loslassen();
+      gesendet();
     } catch (err) {
-      setPhase("error");
-      if (err instanceof ApiError) {
-        setError(t("uploadFailedHttp", { status: err.status }));
-      } else {
-        setError(t("uploadFailedTryAgain"));
+      console.error("upload failed", err);
+      if (!aktivRef.current) {
+        sicherung.loslassen();
+        return;
       }
+      setPhase("error");
+      setError(sendefehler(err));
+      setGescheitert({ sicherung, ton });
+    }
+  }
+
+  function gesendet() {
+    setPhase("saved");
+    savedResetRef.current = window.setTimeout(() => {
+      setPhase("idle");
+      setElapsed(0);
+      savedResetRef.current = null;
+    }, SAVED_AUTO_RESET_MS);
+  }
+
+  async function erneutSenden() {
+    if (!gescheitert) return;
+    setSendetErneut(true);
+    setError(null);
+    try {
+      await senden(gescheitert.sicherung.kopf, gescheitert.ton);
+      gescheitert.sicherung.loslassen();
+      setGescheitert(null);
+      gesendet();
+    } catch (err) {
+      console.error("upload retry failed", err);
+      setError(sendefehler(err));
+    } finally {
+      setSendetErneut(false);
     }
   }
 
@@ -373,6 +439,47 @@ export function QuickCapture() {
           >
             {error}
           </p>
+        )}
+
+        {phase === "error" && gescheitert && (
+          <div className="mt-6 flex max-w-sm flex-col items-center gap-3 text-center">
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>
+              {gescheitert.sicherung.gesichert
+                ? tAufnahme("gesichert")
+                : tAufnahme("nichtGesichert")}
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={erneutSenden}
+                disabled={sendetErneut}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full px-6 text-base font-medium transition-transform active:scale-95"
+                style={{ background: COLORS.gold, color: COLORS.black }}
+              >
+                {sendetErneut && (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                )}
+                {sendetErneut ? tAufnahme("sendet") : tAufnahme("erneutSenden")}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  void alsDateiSpeichern(
+                    gescheitert.sicherung.kopf,
+                    gescheitert.ton,
+                  ).catch(() => setError(tAufnahme("speichernFehler")))
+                }
+                disabled={sendetErneut}
+                className="min-h-[44px] rounded-full px-6 text-base font-medium"
+                style={{
+                  color: COLORS.goldLight,
+                  border: "1px solid rgba(201, 169, 97, 0.45)",
+                }}
+              >
+                {tAufnahme("alsDatei")}
+              </button>
+            </div>
+          </div>
         )}
       </main>
 

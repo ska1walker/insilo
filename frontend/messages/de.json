@@ -61,8 +61,6 @@
     "uploadFailed": "Upload fehlgeschlagen.",
     "defaultTitlePrefix": "Aufnahme vom",
     "micStartFailed": "Das Mikrofon konnte nicht gestartet werden. Bitte prüfen Sie die Browser-Berechtigungen.",
-    "uploadFailedHttp": "Upload fehlgeschlagen (HTTP {status}). Backend erreichbar?",
-    "uploadFailedTryAgain": "Upload fehlgeschlagen. Bitte erneut versuchen.",
     "audioLanguageLabel": "Aufnahmesprache",
     "audioLanguageAuto": "Automatisch erkennen",
     "audioLanguageHint": "Hinweis an Whisper für die Transkription. Das Protokoll-Format folgt unabhängig davon Ihrer UI-Sprache.",
@@ -646,9 +644,7 @@
     "defaultTitlePrefix": "Idee vom",
     "deniedBody": "Mikrofon-Zugriff verweigert. Bitte erlauben Sie Insilo den Zugriff in den Browser-Einstellungen.",
     "unsupportedBody": "Dieser Browser unterstützt keine Audio-Aufnahme. Bitte nutzen Sie Chrome oder Safari.",
-    "micStartFailed": "Mikrofon konnte nicht gestartet werden. Bitte Browser-Berechtigungen prüfen.",
-    "uploadFailedHttp": "Senden fehlgeschlagen (HTTP {status}). Box erreichbar?",
-    "uploadFailedTryAgain": "Senden fehlgeschlagen. Bitte erneut versuchen."
+    "micStartFailed": "Mikrofon konnte nicht gestartet werden. Bitte Browser-Berechtigungen prüfen."
   },
   "darstellung": {
     "title": "Darstellung",
@@ -791,5 +787,22 @@
     "fehler": "Das hat nicht geklappt. Bitte erneut versuchen.",
     "zurueck": "Zu den Besprechungen",
     "link": "Papierkorb"
+  },
+  "aufnahmeSicherung": {
+    "titel": "Aufnahme nicht gesendet",
+    "gesichert": "Sie ist auf diesem Gerät gesichert und bleibt es, bis die Box sie angenommen hat.",
+    "nichtGesichert": "Sie liegt nur im Speicher dieses Tabs. Speichern Sie sie als Datei, bevor Sie die Seite verlassen.",
+    "erneutSenden": "Erneut senden",
+    "sendet": "Wird gesendet …",
+    "alsDatei": "Als Datei speichern",
+    "verwerfen": "Verwerfen",
+    "verwerfenFrage": "Aufnahme endgültig verwerfen? Sie ist danach auch auf diesem Gerät gelöscht.",
+    "verwerfenJa": "Endgültig verwerfen",
+    "behalten": "Behalten",
+    "fehlerHttp": "Die Box hat die Aufnahme nicht angenommen (HTTP {status}).",
+    "fehlerNetz": "Die Box war nicht erreichbar. Prüfen Sie die Verbindung und senden Sie erneut.",
+    "andererTab": "Diese Aufnahme wird gerade in einem anderen Tab gesendet.",
+    "speichernFehler": "Die Datei konnte nicht gespeichert werden.",
+    "gesendet": "Aufnahme gesendet."
   }
 }

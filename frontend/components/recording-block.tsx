@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { AufnahmeWelle } from "@/components/aufnahme-welle";
+import { OffeneAufnahme, useSendefehler } from "@/components/offene-aufnahmen";
 import { RecordingIndicator } from "@/components/recording-indicator";
-import { ApiError } from "@/lib/api/client";
 import { useEgress } from "@/lib/api/egress";
-import { createMeeting } from "@/lib/api/meetings";
 import { listTemplates, type TemplateDto } from "@/lib/api/templates";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
+import { senden, Sicherung, verwerfen } from "@/lib/aufnahmen";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
 
 const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
@@ -28,6 +28,9 @@ type Phase =
   | "unsupported";
 
 type Variant = "full" | "compact";
+
+/** Eine Aufnahme, deren Senden hier gescheitert ist. */
+type Gescheitert = { sicherung: Sicherung; ton: Blob; fehler: string };
 
 const PREFERRED_MIME_TYPES = [
   "audio/webm;codecs=opus",
@@ -69,6 +72,16 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef<number>(0);
   const tickRef = useRef<number | null>(null);
+  const sicherungRef = useRef<Sicherung | null>(null);
+  const aktivRef = useRef(true);
+  const sendefehler = useSendefehler();
+
+  // Gescheiterte Aufnahmen bleiben als Karte stehen, bis sie gesendet,
+  // gespeichert oder verworfen sind — auch während schon die nächste
+  // läuft. Der Ref spiegelt die Liste für das Aufräumen beim Verlassen.
+  const [gescheitert, setGescheitert] = useState<Gescheitert[]>([]);
+  const gescheitertRef = useRef<Gescheitert[]>([]);
+  gescheitertRef.current = gescheitert;
 
   const [templates, setTemplates] = useState<TemplateDto[] | null>(null);
   const [selectedTemplate, setSelectedTemplate] =
@@ -82,8 +95,33 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   }, []);
 
   useEffect(() => {
-    return () => stopTracksAndTick();
+    aktivRef.current = true;
+    return () => {
+      aktivRef.current = false;
+      stopTracksAndTick();
+      // Wer die Ansicht verlässt, gibt seine Aufnahmen frei: gesicherte
+      // erscheinen dann in der Liste über jeder Ansicht. Eine laufende
+      // endet hier; was bis dahin geschrieben ist, bleibt erhalten.
+      sicherungRef.current?.loslassen();
+      gescheitertRef.current.forEach((g) => g.sicherung.loslassen());
+    };
   }, []);
+
+  // Solange eine Aufnahme läuft, gesendet wird oder nur im Arbeitsspeicher
+  // liegt, fragt der Browser vor dem Schließen nach.
+  const ungesichert =
+    phase === "recording" ||
+    phase === "saving" ||
+    gescheitert.some((g) => !g.sicherung.gesichert);
+  useEffect(() => {
+    if (!ungesichert) return;
+    const warnen = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ""; // Safari fragt nur mit gesetztem returnValue
+    };
+    window.addEventListener("beforeunload", warnen);
+    return () => window.removeEventListener("beforeunload", warnen);
+  }, [ungesichert]);
 
   function stopTracksAndTick() {
     if (tickRef.current !== null) {
@@ -116,8 +154,18 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         mimeType: mime,
         ...ASR_RECORDER_OPTIONS,
       });
+      const sicherung = await Sicherung.beginnen({
+        mimeType: mime,
+        titel: defaultMeetingTitle(Date.now(), locale, t("defaultTitlePrefix")),
+        templateId: selectedTemplate,
+        audioLanguage,
+      });
+      sicherungRef.current = sicherung;
       recorder.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data);
+        if (ev.data && ev.data.size > 0) {
+          chunksRef.current.push(ev.data);
+          sicherung.anhaengen(ev.data);
+        }
       };
       recorder.start(1000);
       recorderRef.current = recorder;
@@ -156,30 +204,42 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
     stopTracksAndTick();
 
-    const mimeType = recorder.mimeType || "audio/webm";
-    const blob = new Blob(chunksRef.current, { type: mimeType });
-    const now = Date.now();
-    const title = defaultMeetingTitle(now, locale, t("defaultTitlePrefix"));
+    const sicherung = sicherungRef.current;
+    sicherungRef.current = null;
+    if (!sicherung) return;
+    const mimeType = recorder.mimeType || sicherung.kopf.mimeType;
+    const ton = new Blob(chunksRef.current, { type: mimeType });
+    chunksRef.current = [];
+    await sicherung.abschliessen(durationMs, mimeType);
 
     try {
-      const meeting = await createMeeting({
-        blob,
-        title,
-        durationMs,
-        mimeType,
-        templateId: selectedTemplate,
-        audioLanguage,
-      });
+      const meeting = await senden(sicherung.kopf, ton);
+      sicherung.loslassen();
       router.push(`/m/${meeting.id}`);
     } catch (err) {
+      // Früher stand hier `setPhase("idle")` und eine Zeile Fehlertext —
+      // und die Aufnahme lag nur noch in `chunksRef`, bis zum nächsten
+      // Start oder Seitenwechsel. So ging am 14.9.2026 eine Besprechung
+      // von 90 Minuten verloren.
       console.error("upload failed", err);
-      setPhase("idle");
-      if (err instanceof ApiError) {
-        setError(t("uploadFailedHttp", { status: err.status }));
-      } else {
-        setError(t("uploadFailedTryAgain"));
+      // Schon weg von der Ansicht: niemand zeigt hier eine Karte, also
+      // freigeben — dann bietet die Liste über den Ansichten sie an.
+      if (!aktivRef.current) {
+        sicherung.loslassen();
+        return;
       }
+      setPhase("idle");
+      setElapsed(0);
+      setGescheitert((liste) => [
+        ...liste,
+        { sicherung, ton, fehler: sendefehler(err) },
+      ]);
     }
+  }
+
+  function erledigt(g: Gescheitert) {
+    g.sicherung.loslassen();
+    setGescheitert((liste) => liste.filter((x) => x !== g));
   }
 
   function cancel() {
@@ -194,6 +254,14 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
     }
     chunksRef.current = [];
     stopTracksAndTick();
+    // Abbrechen ist die ausdrückliche Absage — die Sicherung geht mit.
+    const sicherung = sicherungRef.current;
+    sicherungRef.current = null;
+    if (sicherung) {
+      void verwerfen(sicherung.kopf.id)
+        .catch(() => {})
+        .finally(() => sicherung.loslassen());
+    }
     setPhase("idle");
     setElapsed(0);
     if (variant === "full") router.push("/");
@@ -209,6 +277,26 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
       {phase === "recording" && <RecordingIndicator />}
 
       <div className="w-full text-center">
+        {gescheitert.length > 0 && (
+          <div className="mb-10 flex flex-col gap-3">
+            {gescheitert.map((g) => (
+              <OffeneAufnahme
+                key={g.sicherung.kopf.id}
+                kopf={g.sicherung.kopf}
+                ton={g.ton}
+                gesichert={g.sicherung.gesichert}
+                fehler={g.fehler}
+                senden={() => senden(g.sicherung.kopf, g.ton)}
+                nachSenden={(meeting) => {
+                  erledigt(g);
+                  router.push(`/m/${meeting.id}`);
+                }}
+                nachVerwerfen={() => erledigt(g)}
+              />
+            ))}
+          </div>
+        )}
+
         <StatusEyebrow phase={phase} />
 
         {(phase === "recording" || phase === "saving") && (

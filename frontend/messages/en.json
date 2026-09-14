@@ -61,8 +61,6 @@
     "uploadFailed": "Upload failed.",
     "defaultTitlePrefix": "Recording of",
     "micStartFailed": "The microphone could not be started. Please check the browser permissions.",
-    "uploadFailedHttp": "Upload failed (HTTP {status}). Is the backend reachable?",
-    "uploadFailedTryAgain": "Upload failed. Please try again.",
     "audioLanguageLabel": "Recording language",
     "audioLanguageAuto": "Auto-detect",
     "audioLanguageHint": "Hint passed to Whisper for transcription. The summary format still follows your UI language.",
@@ -646,9 +644,7 @@
     "defaultTitlePrefix": "Idea from",
     "deniedBody": "Microphone access denied. Please allow Insilo access in the browser settings.",
     "unsupportedBody": "This browser does not support audio recording. Please use Chrome or Safari.",
-    "micStartFailed": "Could not start the microphone. Please check browser permissions.",
-    "uploadFailedHttp": "Sending failed (HTTP {status}). Is the box reachable?",
-    "uploadFailedTryAgain": "Sending failed. Please try again."
+    "micStartFailed": "Could not start the microphone. Please check browser permissions."
   },
   "darstellung": {
     "title": "Appearance",
@@ -791,5 +787,22 @@
     "fehler": "That did not work. Please try again.",
     "zurueck": "To the meetings",
     "link": "Trash"
+  },
+  "aufnahmeSicherung": {
+    "titel": "Recording not sent",
+    "gesichert": "It is saved on this device and stays there until the box has accepted it.",
+    "nichtGesichert": "It exists only in this tab's memory. Save it as a file before you leave the page.",
+    "erneutSenden": "Send again",
+    "sendet": "Sending …",
+    "alsDatei": "Save as file",
+    "verwerfen": "Discard",
+    "verwerfenFrage": "Discard this recording permanently? It will also be deleted from this device.",
+    "verwerfenJa": "Discard permanently",
+    "behalten": "Keep",
+    "fehlerHttp": "The box did not accept the recording (HTTP {status}).",
+    "fehlerNetz": "The box could not be reached. Check the connection and send again.",
+    "andererTab": "This recording is being sent from another tab right now.",
+    "speichernFehler": "The file could not be saved.",
+    "gesendet": "Recording sent."
   }
 }

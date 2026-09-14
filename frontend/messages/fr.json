@@ -61,8 +61,6 @@
     "uploadFailed": "Échec de l'envoi.",
     "defaultTitlePrefix": "Enregistrement du",
     "micStartFailed": "Impossible de démarrer le microphone. Veuillez vérifier les autorisations du navigateur.",
-    "uploadFailedHttp": "Échec de l'envoi (HTTP {status}). Le backend est-il joignable ?",
-    "uploadFailedTryAgain": "Échec de l'envoi. Veuillez réessayer.",
     "audioLanguageLabel": "Langue de l'enregistrement",
     "audioLanguageAuto": "Détection automatique",
     "audioLanguageHint": "Indication transmise à Whisper pour la transcription. Le format du compte-rendu suit indépendamment la langue de votre interface.",
@@ -646,9 +644,7 @@
     "defaultTitlePrefix": "Idée du",
     "deniedBody": "Accès au microphone refusé. Veuillez autoriser Insilo dans les paramètres du navigateur.",
     "unsupportedBody": "Ce navigateur ne prend pas en charge l'enregistrement audio. Veuillez utiliser Chrome ou Safari.",
-    "micStartFailed": "Impossible de démarrer le microphone. Vérifiez les autorisations du navigateur.",
-    "uploadFailedHttp": "Envoi échoué (HTTP {status}). Le boîtier est-il accessible ?",
-    "uploadFailedTryAgain": "Envoi échoué. Veuillez réessayer."
+    "micStartFailed": "Impossible de démarrer le microphone. Vérifiez les autorisations du navigateur."
   },
   "darstellung": {
     "title": "Affichage",
@@ -791,5 +787,22 @@
     "fehler": "Cela n'a pas fonctionné. Veuillez réessayer.",
     "zurueck": "Vers les réunions",
     "link": "Corbeille"
+  },
+  "aufnahmeSicherung": {
+    "titel": "Enregistrement non envoyé",
+    "gesichert": "Il est sauvegardé sur cet appareil et y reste jusqu'à ce que la box l'ait accepté.",
+    "nichtGesichert": "Il n'existe que dans la mémoire de cet onglet. Enregistrez-le comme fichier avant de quitter la page.",
+    "erneutSenden": "Renvoyer",
+    "sendet": "Envoi en cours …",
+    "alsDatei": "Enregistrer comme fichier",
+    "verwerfen": "Supprimer",
+    "verwerfenFrage": "Supprimer définitivement cet enregistrement ? Il sera également effacé de cet appareil.",
+    "verwerfenJa": "Supprimer définitivement",
+    "behalten": "Conserver",
+    "fehlerHttp": "La box n'a pas accepté l'enregistrement (HTTP {status}).",
+    "fehlerNetz": "La box est injoignable. Vérifiez la connexion et renvoyez.",
+    "andererTab": "Cet enregistrement est en cours d'envoi dans un autre onglet.",
+    "speichernFehler": "Le fichier n'a pas pu être enregistré.",
+    "gesendet": "Enregistrement envoyé."
   }
 }

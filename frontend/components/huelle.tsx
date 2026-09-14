@@ -22,6 +22,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { DatenschutzNachweis } from "@/components/datenschutz-nachweis";
+import { OffeneAufnahmen } from "@/components/offene-aufnahmen";
 import { Wappen } from "@/components/wappen";
 import {
   Archive,
@@ -187,7 +188,12 @@ export function Huelle({ children }: { children: ReactNode }) {
 
         {/* Kein <main> hier: die Ansichten bringen ihr eigenes mit.
             Wird beim Seiten-Umzug zusammengeführt. */}
-        <div className="huelle-inhalt">{children}</div>
+        <div className="huelle-inhalt">
+          {/* Nicht gesendete Aufnahmen stehen über jeder Ansicht, bis sie
+              erledigt sind — siehe lib/aufnahmen.ts. */}
+          <OffeneAufnahmen />
+          {children}
+        </div>
 
         {ablage ? <aside className="huelle-ablage">{ablage}</aside> : null}
       </div>

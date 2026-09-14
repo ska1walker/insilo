@@ -227,11 +227,11 @@ ssh olares@192.168.1.17 \
 
 | Bereich | Stand |
 |---|---|
-| Version | **v0.1.92** auf der Box, verifiziert 11.9.2026 (Helm-Rev 16, alle fünf Pods auf 0.1.92, sechs von sechs Health-Checks grün). |
+| Version | **v0.1.95** auf der Box, verifiziert 14.9.2026 (Helm-Rev 17, alle fünf Pods auf 0.1.95, sechs von sechs Health-Checks grün). Relay-Export auf dieser Box **aus** (kein `appCommon` in den Installationswerten). |
 | Plattform | Olares OS (k3s) auf `192.168.1.17` |
 | Box-User | `kaivostudio` |
 | URL | `https://e5d605f3.kaivostudio.olares.de` |
-| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.92` |
+| Container | `ghcr.io/ska1walker/insilo-{frontend,backend,whisper,embeddings}:0.1.95` |
 | Health | `/health`, `/health/db`, `/health/whisper`, `/health/llm`, `/health/embeddings` — alle echt seit v0.1.57 |
 | LLM | Per-Org konfigurierbar via `/einstellungen` (**kein Vorgabewert**, siehe HANDOFF-Kopf); Qwen2.5-tuned Prompts mit Few-Shot, 5-Sprachen-Prompts (v0.1.46) |
 | Diarization | Lokal, token-frei (Silero-VAD + SpeechBrain ECAPA + sklearn), WebM-fähig seit v0.1.44 |

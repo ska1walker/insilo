@@ -55,6 +55,28 @@
 > neue Wertschlüssel gilt dasselbe wie in §4a: auf einer bestehenden
 > Installation fehlen sie.
 >
+> **Ausgerollt auf Kais Box: v0.1.95** (Helm-Rev 17, Abzug vorher unter
+> `~/insilo-sicherung/vor-0.1.95.sql`). Das echte Paket vorher mit den
+> Werten der Box gerendert und trocken gegen die API geprüft: gültig.
+> Danach: fünf Pods auf 0.1.95, sechs von sechs Health-Checks grün,
+> `MEETING_EXPORT_DIR` leer, `/app/common` nicht eingehängt, der
+> Nachweis ohne Freigabe-Ziel, der Nachzug-Endpunkt antwortet 409. **Auf
+> Kais Box ist der Export also aus** — genau das, was ohne `appCommon`
+> passieren soll.
+>
+> **Markt:** [aimighty-market#64](https://github.com/bayerhazard/aimighty-market/pull/64)
+> hebt insilo von Marcs 0.1.93 auf 0.1.95, lokal gegen `wrangler pages dev`
+> bewiesen (Hash bewegt sich, 20 Apps wie live, Chart byte-gleich, keine
+> Übernahme des gemeinsamen Ordners). Mein alter #63 (0.1.90) war noch
+> offen und hätte beim Mergen **zurückgesetzt** — geschlossen. Marc hat
+> im gemergten ska1walker/insilo#1 eine Zusammenfassung aller Korrekturen
+> bekommen.
+>
+> **Unbeantwortet:** ob ein Markt-Update eine neu angeforderte Berechtigung
+> nachträglich in die Werte einträgt. Davon hängt ab, ob bestehende
+> Markt-Installationen mit 0.1.93 kaputt gehen oder den Export einfach nie
+> bekommen — beides wäre bis zum Merge von #64 möglich.
+>
 > ---
 >
 > ## PR #1 von Marc: Zusammenfassungen für Relay — übernommen, mit fünf Korrekturen (14. September 2026)

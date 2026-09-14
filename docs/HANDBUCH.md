@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 14. September 2026, Fassung 0.1.95.
+Stand: 14. September 2026, Fassung 0.1.96.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.

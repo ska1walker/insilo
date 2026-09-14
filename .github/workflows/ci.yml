@@ -45,6 +45,10 @@ jobs:
         working-directory: frontend
         run: npm run type-check
 
+      - name: tests
+        working-directory: frontend
+        run: npx vitest run
+
       - name: build
         working-directory: frontend
         run: npm run build

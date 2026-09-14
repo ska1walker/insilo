@@ -161,14 +161,28 @@ def test_authelia_gewinnt_ueber_den_browser() -> None:
     `Remote-User` gewinnt. Fällt das weg, ist die Absicherung still
     verschwunden.
     """
-    quelle = (WURZEL / "frontend/middleware.ts").read_text(encoding="utf-8")
-    assert 'request.headers.get("Remote-User")' in quelle
+    quelle = (WURZEL / "frontend/lib/weiterleitung.ts").read_text(encoding="utf-8")
+    assert 'eingang.get("Remote-User")' in quelle
     assert 'kopfzeilen.set("X-Bfl-User", vonAuthelia)' in quelle
+
+
+def test_beide_wege_ans_backend_setzen_dieselben_kopfzeilen() -> None:
+    """Middleware und Upload-Handler teilen sich eine Funktion.
+
+    Seit dem 14.9.2026 laufen Tonaufnahmen an der Middleware vorbei
+    (sie kappte den Rumpf bei 10 MB). Hätte der Upload-Handler eigene
+    Kopfzeilen gebaut, wäre der Torwächter an genau dieser Stelle
+    auseinandergelaufen. Ob der Handler sie wirklich setzt, misst
+    `frontend/tests/weiterleitung.test.ts`.
+    """
+    for datei in ("frontend/middleware.ts", "frontend/app/api/v1/recordings/route.ts"):
+        quelle = (WURZEL / datei).read_text(encoding="utf-8")
+        assert "weiterleitungsKopfzeilen(request.headers)" in quelle, datei
 
 
 def test_middleware_haengt_das_geheimnis_serverseitig_an() -> None:
     """Und entfernt, was der Browser selbst mitgeschickt hat."""
-    quelle = (WURZEL / "frontend/middleware.ts").read_text(encoding="utf-8")
+    quelle = (WURZEL / "frontend/lib/weiterleitung.ts").read_text(encoding="utf-8")
     assert "process.env.INSILO_INTERNAL_TOKEN" in quelle
     assert 'kopfzeilen.set("X-Insilo-Internal"' in quelle
     assert 'kopfzeilen.delete("X-Insilo-Internal")' in quelle

@@ -1,4 +1,4 @@
-# Handoff — Stand & Learnings (Mai–August 2026, **letzte Aktualisierung: 19. August**)
+# Handoff — Stand & Learnings (Mai–September 2026, **letzte Aktualisierung: 14. September**)
 
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
@@ -108,7 +108,33 @@
 > Die zusammengesetzten Dateien (nach Stopp und nach Absturz) liest ffmpeg
 > vollständig.
 >
+> **Ausgerollt auf Kais Box: v0.1.96** (Helm-Rev 18, fünf Pods auf 0.1.96,
+> sechs von sechs Health-Checks; Abzug vorher unter
+> `~/insilo-sicherung/vor-0.1.96.sql`, Probelauf gegen die API vorher
+> fehlerfrei). Nachgemessen durch das Frontend der Box (Port-Forward auf
+> `svc/insilo`), jeweils mit `language=xx`: der Handler prüft die Sprache
+> erst, wenn FastAPI das ganze Formular gelesen hat. Ein vollständiger
+> Rumpf ergibt also `meeting.invalid_language`, und angelegt wird nichts.
+>
+> | | 0.1.95 | 0.1.96 |
+> |---|---|---|
+> | 14,6 MB | `Request body exceeded 10MB`, `socket hang up`, HTTP 500 nach 31 s | vollständig, 0,9 s |
+> | 80 MB (90 Minuten) | — | vollständig, 4,6 s |
+> | `next-server` RSS | — | 100 MB → Spitze 178 MB; nach drei 80-MB-Uploads 193 MB (wiederverwendet, nicht angehäuft) |
+> | `GET /health` im Backend-Log | 36 Zeilen in 3 Minuten | 0 seit dem Start |
+>
+> **Im AImighty-Markt live** (PR #65, gemergt, Deploy grün): Katalog 20
+> Apps, Insilo 0.1.96, Chart byte-gleich mit `dist/insilo-0.1.96.tgz`,
+> Hash identisch mit dem vorher lokal geprüften Branch. Die Box
+> insilo-aimighty bekommt das Update damit über den Markt.
+>
 > **Offen:**
+> - Die Box insilo-aimighty ist nicht nachgemessen — kein Zugang von hier.
+>   Nach dem Update dort einmal eine Aufnahme über zehn Minuten.
+> - Die Markt-Beschreibung (`fullDescription`) verspricht „or upload
+>   existing audio". Einen Knopf zum Hochladen einer Datei gibt es in der
+>   Oberfläche nicht (kein `type="file"` im Frontend). Prüfen und
+>   entweder bauen oder den Satz streichen.
 > - Erneut senden kann doppelt anlegen, wenn der erste Upload ankam, die
 >   Antwort aber nicht. Lieber doppelt als verloren; ein
 >   Idempotenzschlüssel im Backend wäre die saubere Lösung.

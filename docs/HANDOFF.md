@@ -79,6 +79,15 @@
 >
 > 294 Tests grün (vorher 277), fünf Sprachen deckungsgleich (725 Schlüssel).
 >
+> **Nach dem Tag gemessen:** alle vier Images zu 0.1.93 antworten bei
+> ghcr.io mit 200 — der Markt ist wieder installierbar. **Aber** der Markt
+> liefert weiter Marcs ursprüngliches Chart aus, mit
+> `chown 1000:1000 /app/common`. Befunde 1, 2, 3 und 5 stecken in den
+> Images und greifen darüber; Befund 4 steckt nur in unserem Chart. Das
+> Markt-Chart zu ersetzen braucht eine neue Version: der Katalog-Hash
+> entsteht aus `ID:name:version`, ein getauschtes Chart unter derselben
+> Nummer holt eine bereits synchronisierte Box nicht neu.
+>
 > ---
 >
 > ## Ausgerollt und nachgemessen — was die Box am Entwurf korrigiert hat (11. September 2026)

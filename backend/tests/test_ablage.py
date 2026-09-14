@@ -475,7 +475,9 @@ async def test_nachzug_schreibt_nur_was_fehlt(monkeypatch, speicher) -> None:
 
     ergebnis = await aufraeumen._markdown_nachziehen(Lauf())
 
-    assert ergebnis == {"geschrieben": 1, "geprueft": 2}
+    # Der Export für andere Apps ist im Test aus (kein MEETING_EXPORT_DIR),
+    # also wird nichts freigegeben — und das soll auch so dastehen.
+    assert ergebnis == {"geschrieben": 1, "freigegeben": 0, "geprueft": 2}
     # Nur die fehlende wurde angefasst — die vorhandene blieb liegen.
     assert all(k.startswith(f"{ORG}/") for k in geschrieben)
     assert geschrieben, "die fehlende Datei wurde nicht geschrieben"

@@ -17,7 +17,9 @@ from urllib.parse import urlsplit
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from app import relay_drop
 from app.auth import CurrentUser, get_current_user
+from app.config import settings
 from app.db import acquire_as
 from app.egress import ist_boxintern, ist_eigene_zone
 from app.llm_config import load_llm_config
@@ -27,7 +29,7 @@ router = APIRouter(prefix="/api/v1", tags=["egress"])
 
 
 class ZielRead(BaseModel):
-    art: str  # "stt" | "llm" | "webhook"
+    art: str  # "stt" | "llm" | "webhook" | "freigabe"
     host: str
     beschreibung: str
 
@@ -56,6 +58,13 @@ class EgressRead(BaseModel):
 
     webhooks_aktiv: int
     ziele: list[ZielRead]
+
+    # Der gemeinsame Ordner, in den die Zusammenfassungen für andere Apps
+    # gelegt werden (`relay_drop`). Die Box verlassen sie dabei nicht —
+    # `alles_bleibt` bleibt davon unberührt —, Insilo aber schon: jede App
+    # mit Zugriff auf den gemeinsamen Ordner liest mit. Genau danach fragt
+    # der Nachweis, also steht es hier. `None` = Export aus.
+    freigabe_ordner: str | None = None
 
     # null = es gab nie eine Zustellung. 0 wäre eine Messung, die es so
     # nicht gibt: jeder Payload hat einen Rumpf.
@@ -144,6 +153,18 @@ async def read_egress(user: CurrentUser = Depends(get_current_user)) -> EgressRe
             )
         )
 
+    # Gezählt, nicht geschätzt: wie viele Zusammenfassungen dort liegen.
+    freigabe = relay_drop.verzeichnis_und_anzahl()
+    if freigabe is not None:
+        ordner, anzahl = freigabe
+        ziele.append(
+            ZielRead(
+                art="freigabe",
+                host=ordner,
+                beschreibung=str(anzahl),
+            )
+        )
+
     gemessen = int(summe["gemessen"] or 0) if summe else 0
     zuletzt = summe["zuletzt"] if summe else None
 
@@ -164,6 +185,7 @@ async def read_egress(user: CurrentUser = Depends(get_current_user)) -> EgressRe
         stt_host=_host(stt.base_url) if (stt_extern or stt_eigene_box) else None,
         webhooks_aktiv=len(webhooks),
         ziele=ziele,
+        freigabe_ordner=freigabe[0] if freigabe else None,
         gesendete_bytes=int(summe["bytes"]) if gemessen and summe["bytes"] else None,
         zustellungen=gemessen,
         letzter_versand=zuletzt.isoformat() if zuletzt else None,

@@ -10,7 +10,7 @@
  * steht, was tatsächlich hinausging".
  */
 
-import { ScrollText, ShieldAlert, ShieldCheck, Share2 } from "lucide-react";
+import { FolderOpen, ScrollText, ShieldAlert, ShieldCheck, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -135,6 +135,12 @@ export default function DatenschutzSeite() {
                             strokeWidth={1.75}
                             aria-hidden
                           />
+                        ) : z.art === "freigabe" ? (
+                          <FolderOpen
+                            className="h-4 w-4 text-text-gedaempft"
+                            strokeWidth={1.75}
+                            aria-hidden
+                          />
                         ) : (
                           <Share2
                             className="h-4 w-4 text-text-gedaempft"
@@ -146,12 +152,16 @@ export default function DatenschutzSeite() {
                       <td>
                         <span className="block text-text-primaer">{z.host}</span>
                         <span className="text-[0.8125rem] text-text-gedaempft">
-                          {z.art === "stt"
-                            ? t("zielStt")
-                            : z.art === "llm"
-                              ? t("zielLlm")
-                              : t("zielWebhook")}
-                          {z.beschreibung ? ` · ${z.beschreibung}` : ""}
+                          {z.art === "freigabe"
+                            ? t("zielFreigabe", { n: Number(z.beschreibung) || 0 })
+                            : z.art === "stt"
+                              ? t("zielStt")
+                              : z.art === "llm"
+                                ? t("zielLlm")
+                                : t("zielWebhook")}
+                          {z.art !== "freigabe" && z.beschreibung
+                            ? ` · ${z.beschreibung}`
+                            : ""}
                         </span>
                       </td>
                     </tr>

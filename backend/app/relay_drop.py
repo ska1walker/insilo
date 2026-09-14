@@ -188,6 +188,38 @@ async def schreiben(conn: asyncpg.Connection, meeting_id: UUID) -> str | None:
         return None
 
 
+def _gehoert_zu(datei: Path, meeting_id: UUID | str) -> bool:
+    """Trägt diese Datei wirklich diese Besprechung?
+
+    Der Dateiname führt nur die ersten acht Zeichen der Kennung — so steht
+    es im Vertrag mit Relay, und daran wird hier nichts geändert. Acht
+    Hex-Zeichen sind aber 32 Bit: zwei Besprechungen können sie teilen.
+    Ohne diese Prüfung löschte `entfernen(A)` die Datei von B mit, und
+    `fehlt(B)` meldete „liegt schon", solange A's Datei da war — dann
+    bekäme B nie eine.
+
+    Die volle Kennung steht in der Frontmatter unter `insilo_id`. Gelesen
+    wird nur der Kopf, nicht die ganze Datei.
+    """
+    gesucht = f'insilo_id: "{meeting_id}"'
+    try:
+        with open(datei, encoding="utf-8") as f:
+            for _ in range(20):
+                zeile = f.readline()
+                if not zeile:
+                    break
+                if zeile.strip() == gesucht:
+                    return True
+    except OSError:
+        return False
+    return False
+
+
+def _dateien_von(verzeichnis: Path, meeting_id: UUID | str) -> list[Path]:
+    vorlauf = str(meeting_id)[:8]
+    return [d for d in verzeichnis.glob(f"*--{vorlauf}.md") if _gehoert_zu(d, meeting_id)]
+
+
 def fehlt(meeting_id: UUID | str) -> bool:
     """`True`, wenn der Export an ist und die Datei nicht liegt.
 
@@ -197,9 +229,8 @@ def fehlt(meeting_id: UUID | str) -> bool:
     verzeichnis = _verzeichnis()
     if verzeichnis is None:
         return False
-    vorlauf = str(meeting_id)[:8]
     try:
-        return not any(verzeichnis.glob(f"*--{vorlauf}.md"))
+        return not _dateien_von(verzeichnis, meeting_id)
     except Exception:  # noqa: BLE001
         return False
 
@@ -207,19 +238,46 @@ def fehlt(meeting_id: UUID | str) -> bool:
 def entfernen(meeting_id: UUID | str) -> bool:
     """Die Datei entfernen. `True`, wenn danach keine mehr da ist.
 
-    Wie `ablage.entfernen`: eine fehlende Datei ist kein Fehler.
+    Wie `ablage.entfernen`: eine fehlende Datei ist kein Fehler. Entfernt
+    wird nur, was nachweislich zu dieser Besprechung gehört — siehe
+    `_gehoert_zu`.
     """
     verzeichnis = _verzeichnis()
     if verzeichnis is None:
         return True
-    vorlauf = str(meeting_id)[:8]
     try:
-        for datei in verzeichnis.glob(f"*--{vorlauf}.md"):
+        for datei in _dateien_von(verzeichnis, meeting_id):
             datei.unlink()
         return True
     except Exception as exc:  # noqa: BLE001
-        log.warning("Relay-Export %s ließ sich nicht entfernen: %s", vorlauf, exc)
+        log.warning("Relay-Export %s ließ sich nicht entfernen: %s", meeting_id, exc)
         return False
 
 
-__all__ = ["SCHEMA", "dateiname", "entfernen", "fehlt", "schreiben"]
+def verzeichnis_und_anzahl() -> tuple[str, int] | None:
+    """Für den Datenschutz-Nachweis: wohin, und wie viele liegen dort.
+
+    `None`, wenn der Export aus ist. Gezählt werden fertige Dateien —
+    ein `.tmp` aus einem abgebrochenen Lauf ist keine Freigabe. Ist der
+    Ordner nicht lesbar, steht er trotzdem im Nachweis, mit 0: dass
+    Insilo dort hinschreiben *will*, gehört gesagt, auch wenn es gerade
+    nicht klappt.
+    """
+    verzeichnis = _verzeichnis()
+    if verzeichnis is None:
+        return None
+    try:
+        anzahl = sum(1 for _ in verzeichnis.glob("*.md"))
+    except OSError:
+        anzahl = 0
+    return str(verzeichnis), anzahl
+
+
+__all__ = [
+    "SCHEMA",
+    "dateiname",
+    "entfernen",
+    "fehlt",
+    "schreiben",
+    "verzeichnis_und_anzahl",
+]

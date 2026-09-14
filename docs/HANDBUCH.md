@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 11. September 2026, Fassung 0.1.91.
+Stand: 14. September 2026, Fassung 0.1.93.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.
@@ -248,6 +248,38 @@ eine Zusammenfassung folgt, weil kein Sprachmodell eingerichtet ist.
 Ändern Sie danach den Titel, die Etiketten oder einen Sprechernamen,
 schreibt Insilo die betroffene Datei neu.
 
+### Zusammenfassungen für andere Apps
+
+Seit Fassung 0.1.93 legt Insilo jede fertige Zusammenfassung zusätzlich
+in einen **gemeinsamen Ordner** der Box (`/app/common/insilo-meetings`).
+Andere Apps, die diesen Ordner anfordern, können sie dort lesen — gedacht
+ist das für **Relay**, das die Besprechungen in seinem eigenen
+Meetings-Bereich zeigt.
+
+Was dort liegt, und was nicht:
+
+- **die Zusammenfassung** mit Titel, Datum, Dauer, Beteiligten und
+  Etiketten;
+- **nicht der Wortlaut.** Das Transkript bleibt in Insilo.
+
+> **Das ist eingeschaltet, und es lässt sich nicht abschalten.** Der
+> Ordner ist im Chart fest eingetragen; es gibt dafür heute weder eine
+> Einstellung noch einen Schalter. Jede App mit Zugriff auf den
+> gemeinsamen Ordner sieht die Zusammenfassungen **aller** Besprechungen —
+> bei einer Kanzlei also Mandantennamen, Sachverhalte und Fristen.
+> Die Box verlassen sie dabei nicht, Insilo aber schon. Prüfen Sie vor dem
+> Update, welche Apps auf Ihrer Box den gemeinsamen Ordner nutzen.
+
+Der Datenschutz-Nachweis führt den Ordner als eigenes Ziel und zählt, wie
+viele Zusammenfassungen dort liegen (Abschnitt 6). Beim endgültigen
+Löschen einer Besprechung verschwindet auch ihre Datei dort.
+
+Für Besprechungen, die vor dem Update fertig waren, gibt es einen
+Nachzug: er legt alle fertigen Zusammenfassungen auf einmal in den Ordner.
+Anstoßen dürfen ihn nur Inhaberinnen und Verwaltende, und er steht als
+**Ausleitung** im Protokoll. Der nächtliche Aufräumlauf holt fehlende
+Dateien ohnehin von selbst nach.
+
 ### Das Archiv befragen
 
 **Archiv** beantwortet Fragen über alle Besprechungen hinweg und nennt
@@ -332,6 +364,12 @@ steht sein Name da und wie viel dorthin ging.
 Die Anzeige ist bewusst nicht pauschal „0 Byte": sobald ein externes
 Sprachmodell oder ein Webhook eingerichtet ist, wäre das falsch.
 
+Ein Ziel steht dort, **obwohl** es die Box nicht verlässt: der gemeinsame
+Ordner für andere Apps (Abschnitt 4). Die Aussage „Alles bleibt auf
+dieser Box" stimmt dann weiterhin — aber darunter steht, dass die
+Zusammenfassungen für andere Apps lesbar liegen, und wie viele es sind.
+Wer nur auf den grünen Haken schaut, soll das nicht übersehen.
+
 ### „Wer hat das veranlasst?"
 
 **Protokoll** (Verweis unter dem Nachweis). Jede Änderung und jede
@@ -410,6 +448,11 @@ nicht wiederherstellen.
 |---|---|
 | Die Datenbank | Besprechungen, Transkripte, Zusammenfassungen, Etiketten, Protokoll, Einstellungen, Zugriffsschlüssel |
 | `/app/data` | Die Tonaufnahmen, je Besprechung Transkript und Zusammenfassung als Markdown, **und** `konfiguration.json` — der Abzug der Einrichtung; er **enthält Zugangsdaten** und liegt mit Rechten 0600 |
+
+`/app/common/insilo-meetings` ist **keine** dritte Hälfte: dort liegt nur
+eine Kopie der Zusammenfassungen, und Insilo legt sie aus der Datenbank
+jederzeit neu an. Wer den gemeinsamen Ordner sichert, sichert sie
+trotzdem mit — im Klartext.
 
 > **Diese Hälfte trägt seit Fassung 0.1.89 den Gesprächsinhalt im
 > Klartext**, nicht mehr nur den Ton. Wer `/app/data` sichert oder

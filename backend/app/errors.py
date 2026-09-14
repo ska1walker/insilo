@@ -72,6 +72,13 @@ ERRORS: dict[str, dict[str, str]] = {
         "es": "Reunión no encontrada.",
         "it": "Riunione non trovata.",
     },
+    "meeting.export_forbidden": {
+        "de": "Den Export aller Besprechungen dürfen nur Inhaberinnen und Verwaltende anstoßen.",
+        "en": "Only owners and administrators may export all meetings.",
+        "fr": "Seuls les propriétaires et les administrateurs peuvent exporter toutes les réunions.",
+        "es": "Solo los propietarios y administradores pueden exportar todas las reuniones.",
+        "it": "Solo i titolari e gli amministratori possono esportare tutte le riunioni.",
+    },
     "meeting.no_transcript": {
         "de": "Noch kein Transkript verfügbar.",
         "en": "No transcript available yet.",

@@ -171,3 +171,120 @@ async def test_fehlt_erkennt_nachzugbedarf(exportdir) -> None:
     assert relay_drop.fehlt(BESPRECHUNG) is True
     await relay_drop.schreiben(Verbindung(), BESPRECHUNG)
     assert relay_drop.fehlt(BESPRECHUNG) is False
+
+
+# ---------------------------------------------------------------------------
+# Zwei Besprechungen mit denselben acht Anfangszeichen
+# ---------------------------------------------------------------------------
+
+
+def _datei_fuer(verzeichnis, kennung, stunde: int) -> None:
+    import datetime as dt
+
+    name = relay_drop.dateiname(
+        {"id": kennung, "recorded_at": dt.datetime(2026, 9, 1, stunde, 0, tzinfo=dt.UTC)}
+    )
+    (verzeichnis / name).write_text(f'---\ninsilo_id: "{kennung}"\n---\n', encoding="utf-8")
+
+
+A = UUID("7dac31c7-0000-4000-8000-00000000000a")
+B = UUID("7dac31c7-ffff-4fff-8fff-ffffffffffff")
+
+
+def test_entfernen_trifft_nicht_die_nachbarin(exportdir) -> None:
+    """Gefunden im Review von PR #1, vorgeführt vor dem Fix.
+
+    Der Dateiname führt nur acht Zeichen der Kennung, und `entfernen`
+    suchte nach genau diesen acht. Wer Besprechung A endgültig löschte,
+    löschte damit auch die Exportdatei von B — auf einem Löschpfad, der
+    ohnehin unumkehrbar ist.
+    """
+    _datei_fuer(exportdir, A, 9)
+    _datei_fuer(exportdir, B, 14)
+
+    assert relay_drop.entfernen(A) is True
+
+    uebrig = sorted(p.name for p in exportdir.iterdir())
+    assert len(uebrig) == 1, f"B ist mit verschwunden: {uebrig}"
+    assert relay_drop.fehlt(A) is True
+    assert relay_drop.fehlt(B) is False
+
+
+def test_fehlt_verwechselt_nicht_die_nachbarin(exportdir) -> None:
+    """Liegt nur A's Datei, darf `fehlt(B)` nicht „schon da" melden.
+
+    Sonst bekäme B im nächtlichen Nachzug nie eine Datei.
+    """
+    _datei_fuer(exportdir, A, 9)
+    assert relay_drop.fehlt(A) is False
+    assert relay_drop.fehlt(B) is True
+
+
+# ---------------------------------------------------------------------------
+# Was im Review von PR #1 dazukam
+# ---------------------------------------------------------------------------
+
+
+def test_der_export_aller_besprechungen_steht_im_protokoll() -> None:
+    """Er legt die Zusammenfassungen einer ganzen Organisation in einen
+    Ordner, den andere Apps lesen. Ohne Regel lief er am Protokoll vorbei —
+    gefunden hat das `test_jeder_schreibende_endpunkt_wird_gedeutet`, der
+    im PR rot war.
+    """
+    from app import audit
+
+    vorgang = audit.deuten("POST", "/api/v1/meetings/export-backfill")
+    assert vorgang is not None
+    assert vorgang.aktion == "meeting.export_backfill"
+    assert vorgang.aktion in audit.AUSLEITUNG, (
+        "der Export gehört zu dem, wonach ein Datenschutzbeauftragter fragt"
+    )
+
+
+def test_den_export_duerfen_nur_inhaber_und_verwaltende() -> None:
+    import inspect
+
+    from app.routers.meetings import export_backfill
+
+    quelle = inspect.getsource(export_backfill)
+    assert '("owner", "admin")' in quelle
+    assert "meeting.export_forbidden" in quelle
+    # Die Prüfung muss vor der Abfrage der Besprechungen stehen.
+    assert quelle.index("export_forbidden") < quelle.index("from public.meetings")
+
+
+def test_der_nachweis_zeigt_den_ordner_mit_gezaehlter_anzahl(exportdir) -> None:
+    _datei_fuer(exportdir, A, 9)
+    _datei_fuer(exportdir, B, 14)
+    (exportdir / "halb.md.tmp").write_text("abgebrochen", encoding="utf-8")
+
+    ordner, anzahl = relay_drop.verzeichnis_und_anzahl()
+    assert ordner == str(exportdir)
+    assert anzahl == 2, "ein .tmp aus einem abgebrochenen Lauf ist keine Freigabe"
+
+
+def test_ohne_export_kein_eintrag_im_nachweis(tmp_path, monkeypatch) -> None:
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "meeting_export_dir", "")
+    assert relay_drop.verzeichnis_und_anzahl() is None
+
+
+def test_das_chart_uebernimmt_nicht_den_gemeinsamen_ordner() -> None:
+    """`/app/common` gehört allen Apps, die ihn anfordern.
+
+    Der PR setzte bei jedem Start `chown 1000:1000 /app/common` — die
+    oberste Stufe eines Ordners, in dem andere Apps mit anderer Kennung
+    ihre eigenen Ordner haben. Übernommen werden darf nur der eigene
+    Unterordner.
+    """
+    from pathlib import Path
+
+    wurzel = Path(__file__).resolve().parents[2]
+    for datei in ("deployment-backend.yaml", "deployment-worker.yaml"):
+        text = (wurzel / "olares/templates" / datei).read_text(encoding="utf-8")
+        befehl = next(z for z in text.splitlines() if "command:" in z and "chown" in z)
+        assert "chown 1000:1000 /app/common " not in befehl + " ", (
+            f"{datei}: der gemeinsame Ordner wird wieder übernommen"
+        )
+        assert "chown 1000:1000 /app/common/insilo-meetings" in befehl, datei

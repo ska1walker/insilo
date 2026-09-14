@@ -673,6 +673,7 @@
     "zuletzt": "last {when}",
     "zielLlm": "Language model",
     "zielWebhook": "Webhook",
+    "zielFreigabe": "Shared with other apps · {n, plural, =0 {no summary yet} =1 {1 summary} other {# summaries}} · every app with access to the shared folder can read them",
     "nichtGeladen": "State unavailable.",
     "navBleibt": "Stays on this box",
     "navZiele": "{count, plural, =1 {1 target external} other {# targets external}}",
@@ -727,6 +728,7 @@
     "ausleitungMarke": "Export",
     "zurueck": "To the privacy record",
     "aktionen": {
+      "meeting_export_backfill": "All meetings shared with other apps",
       "meeting_create": "Recording created",
       "meeting_update": "Meeting changed",
       "meeting_delete": "Moved to trash",

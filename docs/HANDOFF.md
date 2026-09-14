@@ -17,6 +17,70 @@
 >
 > ---
 >
+> ## PR #1 von Marc: Zusammenfassungen für Relay — übernommen, mit fünf Korrekturen (14. September 2026)
+>
+> [PR #1](https://github.com/ska1walker/insilo/pull/1) kam von Marcs Konto,
+> geschrieben von einem Coding-Agenten auf seiner Box („OpenCode
+> (Olares)"). Er legt jede fertige Zusammenfassung zusätzlich als Markdown
+> in den gemeinsamen Ordner der Box (`/app/common/insilo-meetings`), den
+> Relay mitliest. Gut gebaut — `relay_drop.py` benutzt `_einsammeln` und
+> `render_meeting_markdown` wieder, schreibt atomar, wirft nicht. Marcs
+> Commit ist unverändert übernommen (`bc9f1fa`), die Korrekturen liegen
+> darüber.
+>
+> **Dringend, und der Grund für den schnellen Tag:** der Markt listete
+> Insilo **0.1.93 seit dem 12.9.**, aber keines der vier Images
+> existierte (alle 404 bei ghcr.io), und es gab keinen Tag. Jede
+> Installation oder Aktualisierung aus dem Markt hätte einen Pod ohne
+> Image bekommen. Kais Box (0.1.92, von Hand ausgerollt) war nicht
+> betroffen.
+>
+> **Die fünf Befunde:**
+>
+> 1. **Löschen traf die Nachbarin.** Der Dateiname führt nur acht Zeichen
+>    der Kennung, und `entfernen`/`fehlt` suchten genau danach. Wer A
+>    endgültig löschte, löschte B's Exportdatei mit, sobald die ersten acht
+>    Zeichen gleich waren — vorgeführt, bevor ich es behoben habe.
+>    Umgekehrt meldete `fehlt(B)` „liegt schon", solange A's Datei da war.
+>    Jetzt prüft `_gehoert_zu` die volle Kennung in der Frontmatter. Der
+>    Dateiname bleibt, wie er ist — er ist Vertrag mit Relay.
+> 2. **Der Nachzug-Endpunkt lief am Protokoll vorbei.** Gefunden hat das
+>    ein vorhandener Wächter: `test_jeder_schreibende_endpunkt_wird_gedeutet`
+>    war im PR **rot** — die Testsuite wurde also nicht ganz laufen
+>    gelassen. Jetzt `meeting.export_backfill`, als Ausleitung.
+> 3. **Jedes Mitglied durfte alles exportieren**, auch mit Leserolle. Jetzt
+>    nur `owner` und `admin`, dieselbe Grenze wie beim Protokoll.
+> 4. **Das Chart übernahm den gemeinsamen Ordner.** Bei jedem Start
+>    `chown 1000:1000 /app/common` — die oberste Stufe eines Ordners, der
+>    allen Apps gehört, die ihn anfordern. Jetzt nur der eigene
+>    Unterordner. Relay liest trotzdem: root legt 0755 an, die Dateien
+>    entstehen mit 0644.
+> 5. **Der Datenschutz-Nachweis wusste nichts davon.** Die Zusammenfassungen
+>    verlassen die Box nicht, aber Insilo — jede App mit Zugriff auf den
+>    gemeinsamen Ordner liest mit. Jetzt eigenes Ziel `freigabe`, mit
+>    gezählter Anzahl Dateien. „Alles bleibt auf dieser Box" stimmt dann
+>    weiterhin und steht auch weiter da; darunter steht, wo die Kopien
+>    liegen.
+>
+> Dazu ein kleiner: der nächtliche Nachzug zählte Relay- und Ablage-Dateien
+> in denselben Zähler. Jetzt `freigegeben` getrennt.
+>
+> **Offen, und das ist die Entscheidung für Kai und Marc: der Export ist
+> an und lässt sich nicht abschalten.** `MEETING_EXPORT_DIR` steht fest im
+> Chart; eine Einstellung gibt es nicht. Für eine Kanzlei heißt das:
+> Mandantennamen, Sachverhalte und Fristen liegen für jede App mit
+> Zugriff auf den gemeinsamen Ordner lesbar. Ich habe das nicht
+> eigenmächtig umgedreht — Relay hängt daran, und der Markt versprach es
+> bereits. Es steht jetzt aber sichtbar im Nachweis, im Handbuch (§4, als
+> Kasten) und im Freigabetext. Ein Schalter bräuchte einen neuen
+> Wertschlüssel, und der muss wegen der Einfrier-Regel (Constraint 9) mit
+> `hasKey` gelesen werden — `| default true` machte aus einem gesetzten
+> `false` wieder `true`.
+>
+> 294 Tests grün (vorher 277), fünf Sprachen deckungsgleich (725 Schlüssel).
+>
+> ---
+>
 > ## Ausgerollt und nachgemessen — was die Box am Entwurf korrigiert hat (11. September 2026)
 >
 > **v0.1.92 läuft auf der Box** (Helm-Rev 16, alle fünf Pods, sechs von

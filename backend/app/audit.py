@@ -98,6 +98,11 @@ _REGELN: list[tuple[frozenset[str], re.Pattern[str], str, str | None]] = [
      "meeting.delete", "meeting"),
     (frozenset({"POST"}), re.compile(r"^/api/v1/recordings$"),
      "meeting.create", "meeting"),
+    # Vor `/meetings/{id}`-Regeln unkritisch — `export-backfill` ist keine
+    # Kennung und passt auf keine davon. Steht hier, weil er zu den
+    # Besprechungen gehört.
+    (frozenset({"POST"}), re.compile(r"^/api/v1/meetings/export-backfill$"),
+     "meeting.export_backfill", None),
 
     # ── Ausleitung: Inhalte gehen an ein Sprachmodell ──────────────────
     (frozenset({"POST"}), re.compile(r"^/api/v1/ask$"), "archive.ask", None),
@@ -168,6 +173,10 @@ AKTIONEN: tuple[str, ...] = tuple(
 # sie hervor — für einen Datenschutzbeauftragten ist das die
 # interessanteste Teilmenge.
 AUSLEITUNG: frozenset[str] = frozenset({
+    # Legt die Zusammenfassungen aller fertigen Besprechungen in einen
+    # Ordner, den andere Apps lesen. Die Box verlassen sie dabei nicht,
+    # Insilo schon — und genau danach fragt der Nachweis.
+    "meeting.export_backfill",
     "meeting.dispatch",
     "external.export_markdown",
     "external.read_meeting",

@@ -553,6 +553,19 @@ async def export_backfill(user: CurrentUser = Depends(get_current_user)) -> dict
     if not (settings.meeting_export_dir or "").strip():
         raise HTTPException(409, "meeting export is disabled")
     async with acquire_as(user.user_id) as conn:
+        # Nur Inhaber und Verwaltende. Der Aufruf legt die
+        # Zusammenfassungen **aller** Besprechungen der Organisation in
+        # einen Ordner, den andere Apps lesen — das ist keine Entscheidung,
+        # die ein Mitglied oder eine Leserin für alle trifft. Dieselbe
+        # Grenze wie beim Protokoll, das alle Vorgänge nur diesen beiden
+        # Rollen zeigt.
+        rolle = await conn.fetchval(
+            "select role from public.user_org_roles where user_id = $1 and org_id = $2",
+            user.user_id,
+            user.org_id,
+        )
+        if rolle not in ("owner", "admin"):
+            raise http_error(403, "meeting.export_forbidden")
         zeilen = await conn.fetch(
             """
             select id from public.meetings

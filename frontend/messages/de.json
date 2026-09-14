@@ -673,6 +673,7 @@
     "zuletzt": "zuletzt {when}",
     "zielLlm": "Sprachmodell",
     "zielWebhook": "Webhook",
+    "zielFreigabe": "Für andere Apps freigegeben · {n, plural, =0 {noch keine Zusammenfassung} =1 {1 Zusammenfassung} other {# Zusammenfassungen}} · jede App mit Zugriff auf den gemeinsamen Ordner liest mit",
     "nichtGeladen": "Zustand nicht abrufbar.",
     "navBleibt": "Bleibt auf der Box",
     "navZiele": "{count, plural, =1 {1 Ziel extern} other {# Ziele extern}}",
@@ -727,6 +728,7 @@
     "ausleitungMarke": "Ausleitung",
     "zurueck": "Zum Datenschutz-Nachweis",
     "aktionen": {
+      "meeting_export_backfill": "Alle Besprechungen an andere Apps freigegeben",
       "meeting_create": "Aufnahme angelegt",
       "meeting_update": "Besprechung geändert",
       "meeting_delete": "In den Papierkorb gelegt",

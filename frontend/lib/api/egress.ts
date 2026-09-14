@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { apiGet } from "./client";
 
 export type EgressZiel = {
-  art: "stt" | "llm" | "webhook";
+  /**
+   * `freigabe` ist der gemeinsame Ordner für andere Apps. Er verlässt die
+   * Box nicht, Insilo aber schon — `beschreibung` trägt dann die Zahl der
+   * Zusammenfassungen, die dort liegen.
+   */
+  art: "stt" | "llm" | "webhook" | "freigabe";
   host: string;
   beschreibung: string;
 };
@@ -32,6 +37,8 @@ export type EgressRead = {
 
   webhooks_aktiv: number;
   ziele: EgressZiel[];
+  /** Der gemeinsame Ordner, falls der Export an ist. */
+  freigabe_ordner?: string | null;
   /**
    * null = es gab nie eine Zustellung. Bewusst nicht 0 — das Paket
    * verlangt gemessene Werte, und "noch nichts gesendet" ist etwas

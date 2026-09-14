@@ -185,13 +185,16 @@ async def _markdown_nachziehen(conn: asyncpg.Connection) -> dict[str, int]:
     )
 
     geschrieben = 0
+    freigegeben = 0
     for zeile in faellig:
         # Relay-Kopie: eigener Speicher, eigener Fehlschlag — unabhängig
-        # von der Ablage-Datei prüfen und nachziehen.
+        # von der Ablage-Datei prüfen und nachziehen. Eigener Zähler: das
+        # Protokoll des Laufs soll sagen, *was* nachgezogen wurde, und eine
+        # Besprechung, die beides bekommt, zählte sonst doppelt.
         if relay_drop.fehlt(zeile["id"]) and await relay_drop.schreiben(
             conn, zeile["id"]
         ):
-            geschrieben += 1
+            freigegeben += 1
 
         schluessel = ablage.schluessel(
             zeile["org_id"], zeile["id"], ablage.SUFFIX_TRANSKRIPT
@@ -205,7 +208,7 @@ async def _markdown_nachziehen(conn: asyncpg.Connection) -> dict[str, int]:
         if await ablage.schreiben(conn, zeile["id"]):
             geschrieben += 1
 
-    return {"geschrieben": geschrieben, "geprueft": len(faellig)}
+    return {"geschrieben": geschrieben, "freigegeben": freigegeben, "geprueft": len(faellig)}
 
 
 async def _durchlauf() -> dict[str, Any]:
@@ -224,7 +227,12 @@ async def _durchlauf() -> dict[str, Any]:
         "aufnahmen": aufnahmen,
         "markdown": markdown,
     }
-    if papierkorb["entfernt"] or aufnahmen["entfernt"] or markdown["geschrieben"]:
+    if (
+        papierkorb["entfernt"]
+        or aufnahmen["entfernt"]
+        or markdown["geschrieben"]
+        or markdown["freigegeben"]
+    ):
         log.info("Aufräumen: %s", ergebnis)
     return ergebnis
 

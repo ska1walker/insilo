@@ -35,10 +35,16 @@ spec:
         # shadowed by the mount overlay. Chown the mount before the app starts.
         - name: init-chown
           image: docker.io/beclab/aboveos-busybox:1.37.0
-          # /app/common ist der geteilte appCommon-Ordner: nur die
-          # Top-Stage gehört (nicht -R — da liegen fremde Caches),
-          # dann der Insilo-Unterordner für den Relay-Export.
-          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data && chown 1000:1000 /app/common && mkdir -p /app/common/insilo-meetings']
+          # /app/common ist der geteilte appCommon-Ordner — er gehört
+          # **allen** Apps, die ihn anfordern, nicht Insilo. Übernommen
+          # wird deshalb nur der eigene Unterordner, nie die oberste Stufe:
+          # ein `chown` dort bei jedem Start zöge anderen Apps mit anderer
+          # Kennung den Boden unter ihren eigenen Ordnern weg. Anlegen darf
+          # der Init-Container ohnehin, er läuft als root.
+          #
+          # Lesen kann Relay trotzdem: `mkdir` unter root legt 0755 an,
+          # die Dateien entstehen mit 0644.
+          command: ['sh', '-c', 'chown -R 1000:1000 /app/cache /app/data && mkdir -p /app/common/insilo-meetings && chown 1000:1000 /app/common/insilo-meetings']
           securityContext:
             runAsUser: 0
           volumeMounts:

@@ -673,6 +673,7 @@
     "zuletzt": "última {when}",
     "zielLlm": "Modelo de lenguaje",
     "zielWebhook": "Webhook",
+    "zielFreigabe": "Compartido con otras aplicaciones · {n, plural, =0 {aún ningún resumen} =1 {1 resumen} other {# resúmenes}} · cualquier aplicación con acceso a la carpeta compartida puede leerlos",
     "nichtGeladen": "Estado no disponible.",
     "navBleibt": "Permanece en la caja",
     "navZiele": "{count, plural, =1 {1 destino externo} other {# destinos externos}}",
@@ -727,6 +728,7 @@
     "ausleitungMarke": "Salida",
     "zurueck": "Al comprobante de protección de datos",
     "aktionen": {
+      "meeting_export_backfill": "Todas las reuniones compartidas con otras aplicaciones",
       "meeting_create": "Grabación creada",
       "meeting_update": "Reunión modificada",
       "meeting_delete": "Movida a la papelera",

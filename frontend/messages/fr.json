@@ -673,6 +673,7 @@
     "zuletzt": "dernier {when}",
     "zielLlm": "Modèle de langage",
     "zielWebhook": "Webhook",
+    "zielFreigabe": "Partagé avec d'autres applications · {n, plural, =0 {aucun compte rendu pour l'instant} =1 {1 compte rendu} other {# comptes rendus}} · toute application ayant accès au dossier partagé peut les lire",
     "nichtGeladen": "État indisponible.",
     "navBleibt": "Reste sur le boîtier",
     "navZiele": "{count, plural, =1 {1 cible externe} other {# cibles externes}}",
@@ -727,6 +728,7 @@
     "ausleitungMarke": "Sortie",
     "zurueck": "Vers le relevé de confidentialité",
     "aktionen": {
+      "meeting_export_backfill": "Toutes les réunions partagées avec d'autres applications",
       "meeting_create": "Enregistrement créé",
       "meeting_update": "Réunion modifiée",
       "meeting_delete": "Mise à la corbeille",

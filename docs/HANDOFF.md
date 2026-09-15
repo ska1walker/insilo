@@ -104,6 +104,31 @@
 > gleiche Kennung und gleicher Beginn bei Aufnahme und Datei über zwei
 > Versuche, Datum aus Dateiname und Änderungsdatum.
 >
+> **Ausgerollt auf Kais Box: v0.1.98** (Helm-Rev 20, fünf Pods auf 0.1.98,
+> sechs von sechs Health-Checks; Abzug vorher `~/insilo-sicherung/vor-0.1.98.sql`;
+> Migration 0019 angewendet, Index `meetings_org_client_id_key` vorhanden).
+> Nachgemessen durch das Frontend der Box, ohne eine Besprechung anzulegen:
+>
+> | | 0.1.97 | 0.1.98 |
+> |---|---|---|
+> | 600 MB ⇒ 413, `next-server` RSS | Spitze 798 MB | 78 → **110 MB** (cgroup ≤ 73 MB) |
+> | 10 MB mit 30 kB/s (`language=xx`) | — (lokal ohne Hülle: 408 nach 329 s) | **400 nach 342 s**, alle Bytes gelesen |
+> | Ablage | 33 → 33 | 33 → 33 |
+>
+> Die RSS-Proben kamen etwa sekündlich (über `kubectl exec`); eine kurze
+> Spitze zwischen zwei Proben ist nicht ausgeschlossen, in 0.1.97 hielt
+> sie aber rund eine Minute an. Keine Neustarts.
+>
+> **Im AImighty-Markt live** (PR #67, gemergt, Deploy grün): 20 Apps,
+> Insilo 0.1.98, Chart byte-gleich, Hash identisch mit dem lokal geprüften
+> Branch.
+>
+> **Offen:** Wiedererkennung und Aufnahmedatum sind nur gegen Attrappen und
+> den Index auf der Box geprüft, nicht mit einer echten Besprechung (auf
+> Kais Box bewusst nicht angelegt). Die Eingangsschicht (Envoy/Authelia)
+> hat eigene Zeitlimits, die hier nicht gemessen sind — der Port-Forward
+> umgeht sie.
+>
 > ---
 >
 > ## 0.1.97: Audiodatei hochladen, Bildschirm wach, Sendefortschritt (15. September 2026)

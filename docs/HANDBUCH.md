@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 14. September 2026, Fassung 0.1.96.
+Stand: 15. September 2026, Fassung 0.1.97.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.
@@ -190,7 +190,15 @@ des Browsers ab.
 
 „Stopp & speichern" beendet die Aufnahme. Danach läuft im Hintergrund:
 Transkription → Sprechertrennung → Zusammenfassung. Die Ansicht
-aktualisiert sich selbst, Sie müssen nicht warten.
+aktualisiert sich selbst, Sie müssen nicht warten. Beim Senden zeigt
+Insilo, wie weit es ist („42 % · 38 MB von 90 MB"); bei einer langen
+Aufnahme über das Mobilnetz kann das einige Minuten dauern.
+
+Solange aufgenommen oder gesendet wird, hält Insilo den Bildschirm wach —
+ein gesperrtes Telefon hält den Browser sonst an. Kann der Browser das
+nicht (ältere Geräte, eine auf dem iPhone-Startbildschirm abgelegte App
+vor iOS 18.4), steht ein Hinweis unter der Zeit: dann den Bildschirm
+bitte selbst nicht sperren.
 
 Während der Aufnahme sichert Insilo sie laufend auf dem Gerät, im
 Speicher des Browsers. Dort bleibt sie, bis die Box sie angenommen hat.
@@ -206,6 +214,25 @@ App auf dem Startbildschirm.
 
 Insilo ist eine PWA — auf dem Telefon können Sie sie über „Zum
 Startbildschirm hinzufügen" wie eine App ablegen.
+
+### Eine vorhandene Aufnahme hochladen
+
+Unter dem Mikrofon steht **Audiodatei hochladen**. Insilo nimmt die
+üblichen Formate — m4a (auch vom iPhone), mp3, wav, ogg, webm, flac, aac
+— bis 500 MB und verarbeitet sie wie eine Aufnahme, mit der gewählten
+Vorlage und Aufnahmesprache. Das geht auch ohne Mikrofon-Freigabe.
+
+- Der Titel ist der Dateiname. Eine Datei, die Insilo selbst über „Als
+  Datei speichern" abgelegt hat, bekommt ihren ursprünglichen Titel zurück.
+- Als Datum der Besprechung gilt der Tag des Hochladens.
+- Die Länge steht spätestens nach der Transkription richtig da, auch wenn
+  der Browser sie vorher nicht auslesen konnte.
+- Sehr lange Dateien (mehrere Stunden) können an der Zeitgrenze der
+  Spracherkennung scheitern. Teilen Sie sie dann auf.
+
+Scheitert das Senden, bleibt ein Hinweis mit **Erneut versuchen** und
+**Andere Datei wählen** stehen. Verloren geht dabei nichts — die Datei
+liegt ja weiter auf Ihrem Gerät.
 
 ### Ansehen und nacharbeiten
 
@@ -556,9 +583,9 @@ Endpunkt jede Anfrage ab. Welche Kennungen er kennt, steht bei ihm unter
 auf der Box. „Erneut senden", sobald die Box erreichbar ist. Nennt die
 Meldung eine HTTP-Nummer, hat die Box geantwortet und abgelehnt — dann
 „Als Datei speichern", damit der Ton sicher ist, und mit dem Zeitpunkt
-an den Support. Insilo hat keinen Knopf, um eine Datei hochzuladen; die
-gespeicherte Datei ist die vollständige Aufnahme (WebM, auf dem iPhone
-M4A) und spielt im Browser oder in VLC.
+an den Support. Die gespeicherte Datei ist die vollständige Aufnahme
+(WebM, auf dem iPhone M4A); über **Audiodatei hochladen** lässt sie sich
+später wieder einspielen.
 
 **„Mikrofonzugriff verweigert".** Eine Einstellung des Browsers, nicht
 von Insilo. Im Schloss-Symbol der Adresszeile die Freigabe für die

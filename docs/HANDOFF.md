@@ -17,6 +17,98 @@
 >
 > ---
 >
+> ## 0.1.97: Audiodatei hochladen, Bildschirm wach, Sendefortschritt (15. September 2026)
+>
+> Die drei Lücken, die nach dem Vorfall vom 14.9. offen blieben, dazu
+> Backend-Befunde, die erst beim Hochladen fremder Dateien sichtbar wurden.
+>
+> **Befunde, jeweils im Code nachgelesen:**
+> - Der Markt versprach „upload existing audio", die Oberfläche hatte kein
+>   `type="file"`. Wer „Als Datei speichern" nutzte, konnte nicht zurück.
+> - mp3, flac, aac und das `audio/x-m4a` des iPhones landeten als `.webm`
+>   (`_audio_key`), `routers/audio.py` lieferte sie als
+>   `application/octet-stream`. Drei Stellen mit drei eigenen Listen —
+>   jetzt eine: `app/audioformat.py`.
+> - `max_upload_mb` stand in `config.py` und wurde nirgends geprüft.
+>   `create_recording` las die Datei ganz in den Speicher, schrieb synchron
+>   im Event-Loop und **vor** der Vorlagenprüfung — eine 400 ließ eine
+>   verwaiste Datei zurück; eine kaputte `template_id` gab 500.
+> - Die Dauer kam nur vom Browser. Whisper kennt die echte, sie wurde nie
+>   gespeichert.
+> - Der Aufnahmeblock hatte keine Wake-Lock-Sperre; die Schnellnotiz gab
+>   ihre vor dem Senden frei und holte sie nach `visibilitychange` nie
+>   zurück.
+>
+> **Entscheidungen:**
+> - Eine hochgeladene Datei bekommt **keine** Sicherung in IndexedDB und
+>   keinen Eintrag in der Liste über den Ansichten: sie liegt ja weiter auf
+>   dem Gerät. Scheitert das Senden, bleibt ein Hinweis im Aufnahmeblock
+>   mit „Erneut versuchen" / „Andere Datei wählen". (Vorschlag aus der
+>   Designprüfung; eine `Sicherung.fuerDatei` hätte vier Sonderfälle in
+>   Karte und Liste gebraucht.)
+> - Upload per `XMLHttpRequest` (`lib/api/hochladen.ts`), weil `fetch`
+>   keinen Sendefortschritt meldet. Kopfzeilen aus derselben reinen
+>   Funktion wie `apiRequest` (`anfrageKopfzeilen`). Netzfehler sind
+>   ausdrücklich kein `ApiError`. Bei 100 % steht „Gesendet — die Box
+>   verarbeitet die Aufnahme …", weil der Next-Server noch puffert.
+> - `useSendefehler` zeigt bei 4xx den `detail`-Text der Box — sonst sähe
+>   niemand die 413-Meldung. Dadurch zeigt auch die Karte einer
+>   gescheiterten Aufnahme jetzt den Grund statt nur „HTTP 400".
+> - Dauer nach der Transkription zurückgeschrieben (`_dauer_sekunden` in
+>   `tasks/transcribe.py`), vor `status = transcribed`. Ablage, Relay und
+>   Zusammenfassung lesen danach aus der Datenbank. Nur der Webhook
+>   `meeting.created` trägt noch den Wert des Browsers (bei einer Datei
+>   ohne auslesbare Metadaten: 1 s).
+> - Kein Feld für das Aufnahmedatum: eine eingespielte Datei trägt das
+>   Upload-Datum. Steht so im HANDBUCH.
+> - `navigator.storage.persist()` einmal pro Tab beim Start einer
+>   Sicherung. Firefox fragt dabei nach; Chrome und Safari entscheiden
+>   still.
+>
+> **Unabhängige Prüfung vor dem Release** fand einen echten Fehler:
+> Chrome meldet `.webm` als `video/webm` (und `.3gp` als `video/3gpp`) —
+> der neue Knopf lehnte ausgerechnet die Dateien ab, die „Als Datei
+> speichern" erzeugt. `mimeFuerDatei` nimmt bei `video/…` jetzt den Typ der
+> Endung; `pruefeDatei` lässt nur Typen durch, die `audio_endung` kennt
+> (`audio/amr` hätte die Box als `.webm` abgelegt). Außerdem: Warnung vor
+> dem Schließen auch beim Datei-Upload; Fehlschlag nach Seitenwechsel als
+> Kurzmeldung; nach 413 kein „Erneut versuchen"; Schreiben liegt im `try`
+> (halb geschriebene Datei wird gelöscht), `except Exception` statt
+> `BaseException` (Abbruch im COMMIT soll keine Besprechung ohne Ton
+> hinterlassen); ohne `duration` vom fremden STT-Dienst zählt das Ende des
+> letzten Segments. Die Endpunkt-Attrappe liest die Bytes jetzt wirklich —
+> mit entferntem `seek(0)` in `_groesse` schlägt ein Test an (geprüft).
+>
+> **Belegt:** pytest 337 (neu `test_hochladen.py`: Formattabelle,
+> gemeinsame Liste, stückweises Schreiben, 201 mit byte-gleichem Inhalt,
+> Endung und Medientyp ohne verwertbaren Typ, 413 und kaputte Vorlage ohne
+> geschriebene Datei, gescheiterter Insert löscht die Datei,
+> `_dauer_sekunden` inkl. Segment-Ersatz), vitest 33 (Kopfzeilen, XHR mit Attrappe: 201/413/
+> Netzfehler/Drosselung auf ganze Prozent; Dateityp, Größe, Titel aus
+> Dateiname — auch der von `dateinameVon` erzeugte; `Wachhalter` inkl.
+> spät eintreffender Sperre). Headless-Chrome gegen `next start` und eine
+> Attrappe: die sechs Szenarien aus 0.1.96 weiter grün; neu: mp3 hochladen
+> ⇒ Titel, Dateiname, `audio/mpeg`, Dauer 20 000 ms aus den Metadaten;
+> `insilo-aufnahme-2026-09-14-0905.webm` (Chrome: `video/webm`) ⇒
+> angenommen, Titel „Aufnahme vom 14.09. · 09:05", `audio/webm`;
+> Ablehnung ⇒ Hinweis mit Text der Box, keine Karte, zweiter Versuch geht
+> durch; Textdatei ⇒ abgelehnt, nichts gesendet; 36 MB gegen langsame
+> Attrappe ⇒ „12 % · 4,5 MB von 34 MB", dann „verarbeitet"; Wake Lock
+> (Stub) während der Aufnahme genau einmal angefordert, nach dem Senden
+> freigegeben; ohne Wake Lock erscheint der Hinweis.
+>
+> **Offen:**
+> - Wie groß die Olares-Eingangsschicht (Envoy/Authelia) einen Rumpf
+>   durchlässt, ist nicht gemessen — die Messungen laufen über einen
+>   Port-Forward am Envoy vorbei. Der Vorfall zeigt nur: mindestens 10 MB
+>   kamen bis zum Next-Server.
+> - Sehr lange Dateien: Whisper dekodiert mehrfach in den Speicher, der
+>   Worker wartet höchstens 25 Minuten.
+> - Idempotenzschlüssel gegen doppeltes Anlegen beim erneuten Senden
+>   (siehe 0.1.96).
+>
+> ---
+>
 > ## Eine Besprechung von 90 Minuten ging beim Hochladen verloren (14. September 2026)
 >
 > Auf der Box **insilo-aimighty** (0.1.95) mit dem Handy aufgenommen, „Stopp

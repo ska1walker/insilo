@@ -153,6 +153,22 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
+    v0.1.97 — Vorhandene Aufnahmen hochladen, Fortschritt beim Senden.
+
+    - Audiodatei hochladen: m4a, mp3, wav, ogg, webm, flac und aac bis
+      500 MB, mit Vorlage und Aufnahmesprache wie bei einer Aufnahme. Auch
+      eine über „Als Datei speichern" gesicherte Aufnahme lässt sich so
+      wieder einspielen.
+    - Beim Senden steht, wie weit es ist, statt minutenlang nur „Wird
+      gespeichert".
+    - Der Bildschirm bleibt wach, solange aufgenommen oder gesendet wird;
+      ein gesperrtes Telefon hielt die Aufnahme sonst an.
+    - Die Länge einer Besprechung kommt jetzt aus der Spracherkennung,
+      nicht mehr aus dem Browser.
+    - mp3, flac und aac wurden bisher unter falscher Endung abgelegt und
+      ließen sich im Browser nicht abspielen. Zu große Dateien lehnt die
+      Box jetzt ab, bevor sie etwas schreibt.
+
     v0.1.96 — Keine Aufnahme geht beim Senden mehr verloren.
 
     - Aufnahmen über etwa zehn Minuten kamen nicht auf der Box an: das

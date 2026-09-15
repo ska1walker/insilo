@@ -131,7 +131,12 @@ async def _aufnahmen_altern(conn: asyncpg.Connection) -> dict[str, int]:
         where m.audio_path is not null
           and m.audio_deleted_at is null
           and o.audio_retention_days > 0
-          and m.recorded_at + make_interval(days => o.audio_retention_days) <= now()
+          -- Ab dem Hochladen, nicht ab der Aufnahme: seit 0.1.98 kann
+          -- `recorded_at` aus dem Browser kommen und weit zurückliegen. Eine
+          -- alte Diktatdatei verlöre ihren Ton sonst in der Nacht nach dem
+          -- Hochladen, womöglich vor der Transkription.
+          and greatest(m.recorded_at, m.created_at)
+              + make_interval(days => o.audio_retention_days) <= now()
         """
     )
 

@@ -114,6 +114,13 @@ ERRORS: dict[str, dict[str, str]] = {
         "es": "El segmento {idx} hace referencia a un hablante desconocido {sid}.",
         "it": "Il segmento {idx} fa riferimento al parlante sconosciuto {sid}.",
     },
+    "meeting.recording_in_trash": {
+        "de": "Diese Aufnahme wurde schon gesendet und liegt als „{titel}“ im Papierkorb. Holen Sie sie dort zurück.",
+        "en": "This recording was already sent and is in the trash as “{titel}”. Restore it from there.",
+        "fr": "Cet enregistrement a déjà été envoyé et se trouve dans la corbeille sous « {titel} ». Restaurez-le depuis la corbeille.",
+        "es": "Esta grabación ya se envió y está en la papelera como «{titel}». Restáurela desde allí.",
+        "it": "Questa registrazione è già stata inviata e si trova nel cestino come «{titel}». La ripristini da lì.",
+    },
     "meeting.audio_too_large": {
         "de": "Die Datei ist zu groß. Insilo nimmt Aufnahmen bis {max_mb} MB an.",
         "en": "The file is too large. Insilo accepts recordings up to {max_mb} MB.",

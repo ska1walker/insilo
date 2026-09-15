@@ -3,11 +3,13 @@
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, BinaryIO
 from uuid import UUID, uuid4
 
+import asyncpg
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
@@ -312,7 +314,104 @@ _ALLOWED_RECORDING_LANGS: frozenset[str] = frozenset({"de", "en", "fr", "es", "i
 _QUICK_NOTE_TEMPLATE_ID = UUID("00000000-0000-0000-0000-000000000005")
 
 
-@router.post("/recordings", status_code=201)
+# Die Spalten, die eine angelegte Besprechung als Antwort braucht — beim
+# Anlegen und bei einer erkannten Wiederholung dieselben.
+_BESPRECHUNG_SPALTEN = """id, title, recorded_at, duration_sec, audio_size_bytes,
+                 audio_path, status, template_id,
+                 metadata->>'mime_type' as audio_mime"""
+
+_FRUEHESTE_AUFNAHME = datetime(2000, 1, 1, tzinfo=UTC)
+
+
+def _kennung(roh: str | None) -> str | None:
+    """Die Kennung der Aufnahme aus dem Browser, oder `None`.
+
+    Eine unbrauchbare Kennung lässt den Upload nicht scheitern — sie schützt
+    dann nur nicht vor einer Wiederholung. Abgelehnt wird eine Aufnahme nie
+    wegen eines Hilfsfelds.
+    """
+    if not roh or not roh.strip():
+        return None
+    try:
+        return str(UUID(roh.strip()))
+    except ValueError:
+        return None
+
+
+def _aufnahmezeit(roh: str | None, jetzt: datetime | None = None) -> datetime | None:
+    """Wann aufgenommen wurde, wenn der Browser es weiß — sonst `None`.
+
+    Bis 0.1.97 galt der Zeitpunkt des Hochladens. Eine erneut gesendete
+    Aufnahme vom Vormittag stand dann am Nachmittag, eine eingespielte Datei
+    vom Vormonat ganz oben. Angenommen werden ISO 8601 mit Zeitzone und
+    Millisekunden seit 1970; alles vor 2000 oder mehr als einen Tag in der
+    Zukunft (falsche Geräteuhr) fällt auf „jetzt" zurück.
+    """
+    if not roh or not roh.strip():
+        return None
+    text = roh.strip()
+    try:
+        if text.isdigit():
+            zeit = datetime.fromtimestamp(int(text) / 1000, tz=UTC)
+        else:
+            zeit = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            if zeit.tzinfo is None:
+                return None
+    except (ValueError, OverflowError, OSError):
+        return None
+    jetzt = jetzt or datetime.now(UTC)
+    if zeit < _FRUEHESTE_AUFNAHME or zeit > jetzt + timedelta(days=1):
+        return None
+    return zeit
+
+
+async def _schon_angelegt(user: CurrentUser, kennung: str) -> asyncpg.Record | None:
+    # `metadata ? 'client_id'` steht nur da, damit Postgres den Teilindex aus
+    # 0019 benutzt — ohne liest es die ganze Tabelle.
+    async with acquire_as(user.user_id) as conn:
+        return await conn.fetchrow(
+            f"""
+            select {_BESPRECHUNG_SPALTEN}, deleted_at
+            from public.meetings
+            where org_id = $1 and metadata ? 'client_id' and metadata->>'client_id' = $2
+            limit 1
+            """,
+            user.org_id,
+            kennung,
+        )
+
+
+def _wiederholung(request: Request, row: asyncpg.Record) -> JSONResponse:
+    """Dieselbe Aufnahme kam ein zweites Mal: die vorhandene Besprechung.
+
+    200 statt 201 — angelegt wurde nichts. Keine zweite Transkription, kein
+    zweiter Webhook; im Protokoll steht der Aufruf mit dem Vermerk.
+
+    Liegt sie im Papierkorb, 409: der Browser behält seine Sicherung (bei
+    200 löschte er sie und landete auf einer Seite, die es nicht gibt), und
+    der Text sagt, wo sie ist.
+    """
+    if row["deleted_at"] is not None:
+        raise http_error(409, "meeting.recording_in_trash", titel=row["title"])
+    audit.ergaenze(
+        request.scope,
+        kennung=row["id"],
+        zusatz={"titel": row["title"], "wiederholung": True},
+    )
+    return JSONResponse(
+        status_code=200,
+        content=_meeting_row_to_dto(row, audio_url=get_presigned_url(row["audio_path"])),
+    )
+
+
+def _entfernen(key: str) -> None:
+    try:
+        delete_object(key)
+    except Exception:
+        log.exception("could not remove audio %s", key)
+
+
+@router.post("/recordings", status_code=201, response_model=None)
 async def create_recording(
     request: Request,
     audio: UploadFile = File(...),
@@ -322,8 +421,10 @@ async def create_recording(
     template_id: str | None = Form(default=None),
     language: str | None = Form(default=None),
     quick_mode: bool = Form(default=False),
+    client_id: str | None = Form(default=None),
+    recorded_at: str | None = Form(default=None),
     user: CurrentUser = Depends(get_current_user),
-) -> dict:
+) -> dict | JSONResponse:
     # Normalize the language input:
     #   - missing / "" / "auto" → NULL (faster-whisper auto-detects)
     #   - "de"/"en"/"fr"/"es"/"it" → stored verbatim
@@ -343,6 +444,15 @@ async def create_recording(
     groesse = _groesse(audio.file)
     if groesse > settings.max_upload_mb * 1024 * 1024:
         raise http_error(413, "meeting.audio_too_large", max_mb=settings.max_upload_mb)
+
+    # Dieselbe Aufnahme schon angelegt? Dann nichts schreiben — die Antwort
+    # auf den ersten Versuch ist nur nicht beim Browser angekommen.
+    kennung = _kennung(client_id)
+    if kennung is not None:
+        vorhanden = await _schon_angelegt(user, kennung)
+        if vorhanden is not None:
+            return _wiederholung(request, vorhanden)
+    aufnahmezeit = _aufnahmezeit(recorded_at)
 
     endung = audio_endung(mime_type, audio.filename)
     # Ohne verwertbaren Typ (manche Dateiauswahl liefert keinen) gilt der,
@@ -372,6 +482,8 @@ async def create_recording(
     metadata: dict[str, Any] = {"mime_type": mime_type}
     if quick_mode:
         metadata["quick_mode"] = True
+    if kennung is not None:
+        metadata["client_id"] = kennung
 
     # Validate template visibility if one was passed (otherwise the
     # summarize task falls back to the system default).
@@ -394,20 +506,18 @@ async def create_recording(
         await run_in_threadpool(upload_file, key, audio.file, mime_type)
         async with acquire_as(user.user_id) as conn:
             row = await conn.fetchrow(
-                """
+                f"""
                 insert into public.meetings (
                     id, org_id, created_by, title, status,
                     duration_sec, audio_path, audio_size_bytes,
-                    language, template_id, metadata
+                    language, template_id, metadata, recorded_at
                 )
                 values (
                     $1, $2, $3, $4, 'queued',
                     $5, $6, $7,
-                    $8, $9, $10::jsonb
+                    $8, $9, $10::jsonb, coalesce($11::timestamptz, now())
                 )
-                returning id, title, recorded_at, duration_sec, audio_size_bytes,
-                         audio_path, status, template_id,
-                         metadata->>'mime_type' as audio_mime
+                returning {_BESPRECHUNG_SPALTEN}
                 """,
                 meeting_id,
                 user.org_id,
@@ -419,7 +529,16 @@ async def create_recording(
                 db_language,
                 tpl_uuid,
                 json.dumps(metadata),
+                aufnahmezeit,
             )
+    except asyncpg.UniqueViolationError:
+        # Zwei Wiederholungen gleichzeitig: beide kamen an der Prüfung oben
+        # vorbei, der Index (0019) lässt nur eine Zeile zu.
+        _entfernen(key)
+        vorhanden = await _schon_angelegt(user, kennung) if kennung else None
+        if vorhanden is None:
+            raise
+        return _wiederholung(request, vorhanden)
     except Exception:
         # Ohne Zeile gehört die Datei niemandem; der Aufräumlauf fände sie
         # nie, weil er von den Zeilen aus sucht. Das gilt auch für eine
@@ -427,15 +546,29 @@ async def create_recording(
         # Anfrage während des COMMIT ab, kann die Zeile schon stehen — dann
         # ist eine übrig gebliebene Datei das kleinere Übel als eine
         # Besprechung ohne Ton.
-        try:
-            delete_object(key)
-        except Exception:
-            log.exception("could not remove audio %s after failed insert", key)
+        _entfernen(key)
         raise
 
     # Hand off transcription to the Celery worker. The HTTP response returns
     # immediately; the frontend polls status until it flips to "ready".
-    transcribe_meeting.delay(str(meeting_id))
+    try:
+        transcribe_meeting.delay(str(meeting_id))
+    except Exception:
+        # Die Zeile steht schon. Eine 500 hier ließe den Browser erneut
+        # senden — und seit 0.1.98 bekäme er dann diese Besprechung zurück,
+        # die ewig „in Warteschlange" stünde. Also als fehlgeschlagen
+        # markieren: sichtbar, und „Neu verarbeiten" reiht sie wieder ein.
+        log.exception("could not queue transcription for %s", meeting_id)
+        async with acquire_as(user.user_id) as conn:
+            await conn.execute(
+                """
+                update public.meetings
+                set status = 'failed', error_message = $2, updated_at = now()
+                where id = $1
+                """,
+                meeting_id,
+                "Transkription konnte nicht gestartet werden (Warteschlange nicht erreichbar).",
+            )
     enqueue_webhook(meeting_id, "meeting.created")
 
     # Die Besprechung ist der Gegenstand, um den es bei einer Rückfrage

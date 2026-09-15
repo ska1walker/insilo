@@ -10,10 +10,12 @@ schon geschriebene Datei verwaist zurück.
 from __future__ import annotations
 
 import io
+import json
 from contextlib import asynccontextmanager
-from datetime import UTC
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+import asyncpg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -116,29 +118,45 @@ ORG = UUID("a0000000-0000-4000-8000-000000000001")
 NUTZER = UUID("b0000000-0000-4000-8000-000000000001")
 
 
+def _zeile(meeting_id, titel="Probe", key="org/x.mp3", mime="audio/mpeg", zeit=None, geloescht=None):
+    return {
+        "id": meeting_id, "title": titel, "recorded_at": zeit or datetime.now(UTC),
+        "duration_sec": 1, "audio_size_bytes": 10, "audio_path": key,
+        "status": "queued", "template_id": None, "audio_mime": mime,
+        "deleted_at": geloescht,
+    }
+
+
 class _Verbindung:
     def __init__(self, *, vorlage_sichtbar: bool = True, insert_scheitert: bool = False) -> None:
         self.vorlage_sichtbar = vorlage_sichtbar
-        self.insert_scheitert = insert_scheitert
+        self.insert_scheitert: BaseException | bool = insert_scheitert
         self.eingefuegt: tuple | None = None
+        # Antworten auf die Suche nach einer schon angelegten Besprechung, in
+        # Reihenfolge; leer heißt: nichts gefunden.
+        self.funde: list[dict | None] = []
+        self.gesucht: list[tuple] = []
+        self.ausgefuehrt: list[tuple] = []
+
+    async def execute(self, sql: str, *args):
+        self.ausgefuehrt.append((sql, args))
 
     async def fetchval(self, sql: str, *args):
         return 1 if self.vorlage_sichtbar else None
 
     async def fetchrow(self, sql: str, *args):
+        if "insert into public.meetings" not in sql:
+            self.gesucht.append(args)
+            return self.funde.pop(0) if self.funde else None
+        if isinstance(self.insert_scheitert, BaseException):
+            raise self.insert_scheitert
         if self.insert_scheitert:
             raise RuntimeError("datenbank weg")
         self.eingefuegt = args
-        meeting_id, _org, _user, titel, dauer, key, groesse, _sprache, vorlage, metadaten = args
-        import json
-        from datetime import datetime
-
-        return {
-            "id": meeting_id, "title": titel, "recorded_at": datetime.now(UTC),
-            "duration_sec": dauer, "audio_size_bytes": groesse, "audio_path": key,
-            "status": "queued", "template_id": vorlage,
-            "audio_mime": json.loads(metadaten)["mime_type"],
-        }
+        meeting_id, _org, _user, titel, dauer, key, groesse, _sprache, vorlage, metadaten, zeit = args
+        zeile = _zeile(meeting_id, titel, key, json.loads(metadaten)["mime_type"], zeit)
+        zeile.update(duration_sec=dauer, audio_size_bytes=groesse, template_id=vorlage)
+        return zeile
 
 
 @pytest.fixture
@@ -246,3 +264,114 @@ def test_scheitert_der_insert_wird_die_datei_wieder_geloescht(aufbau) -> None:
     assert antwort.status_code == 500
     assert len(geschrieben) == 1 and geschrieben[0].endswith(".mp3")
     assert geloescht == geschrieben
+
+
+# ---------------------------------------------------------------------------
+# Wiederholungen und Aufnahmezeit (0.1.98)
+# ---------------------------------------------------------------------------
+
+
+def test_eine_wiederholung_liefert_die_vorhandene_besprechung_und_schreibt_nichts(aufbau) -> None:
+    """Der erste Upload kam an, die Antwort nicht — „Erneut senden" legt nichts doppelt an."""
+    klient, geschrieben, _, verbindung = aufbau
+    kennung = str(uuid4())
+    vorhanden = uuid4()
+    verbindung.funde = [_zeile(vorhanden, "Jour fixe")]
+    antwort = _senden(klient, 10, client_id=kennung)
+    assert antwort.status_code == 200
+    assert antwort.json()["id"] == str(vorhanden)
+    assert geschrieben == []
+    assert verbindung.eingefuegt is None
+    assert verbindung.gesucht == [(ORG, kennung)]
+
+
+def test_die_kennung_wird_mit_der_besprechung_gespeichert(aufbau) -> None:
+    klient, _, _, verbindung = aufbau
+    kennung = str(uuid4())
+    assert _senden(klient, 10, client_id=kennung.upper()).status_code == 201
+    assert json.loads(verbindung.eingefuegt[9])["client_id"] == kennung
+
+
+def test_eine_unbrauchbare_kennung_laesst_den_upload_nicht_scheitern(aufbau) -> None:
+    klient, geschrieben, _, verbindung = aufbau
+    assert _senden(klient, 10, client_id="keine-uuid").status_code == 201
+    assert "client_id" not in json.loads(verbindung.eingefuegt[9])
+    assert verbindung.gesucht == []
+    assert len(geschrieben) == 1
+
+
+def test_zwei_gleichzeitige_wiederholungen_ergeben_eine_besprechung(aufbau) -> None:
+    """Beide kamen an der Prüfung vorbei; der Index (0019) lässt nur eine Zeile zu."""
+    klient, geschrieben, geloescht, verbindung = aufbau
+    vorhanden = uuid4()
+    verbindung.insert_scheitert = asyncpg.UniqueViolationError("meetings_org_client_id_key")
+    # Vor dem Schreiben nichts gefunden, nach dem Konflikt die Zeile des anderen.
+    verbindung.funde = [None, _zeile(vorhanden)]
+    antwort = _senden(klient, 10, client_id=str(uuid4()))
+    assert antwort.status_code == 200
+    assert antwort.json()["id"] == str(vorhanden)
+    assert len(geschrieben) == 1
+    assert geloescht == geschrieben  # die doppelte Datei ist wieder weg
+
+
+def test_ohne_kennung_bleibt_ein_konflikt_ein_fehler(aufbau) -> None:
+    klient, geschrieben, geloescht, verbindung = aufbau
+    verbindung.insert_scheitert = asyncpg.UniqueViolationError("anderer_index")
+    assert _senden(klient, 10).status_code == 500
+    assert geloescht == geschrieben
+
+
+def test_aufnahmezeit_geht_in_die_besprechung(aufbau) -> None:
+    klient, _, _, verbindung = aufbau
+    assert _senden(klient, 10, recorded_at="2026-09-14T07:05:00.000Z").status_code == 201
+    assert verbindung.eingefuegt[10] == datetime(2026, 9, 14, 7, 5, tzinfo=UTC)
+
+
+JETZT = datetime(2026, 9, 15, 8, 0, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    ("roh", "erwartet"),
+    [
+        ("2026-09-14T07:05:00Z", datetime(2026, 9, 14, 7, 5, tzinfo=UTC)),
+        ("2026-09-14T09:05:00+02:00", datetime(2026, 9, 14, 7, 5, tzinfo=UTC)),
+        ("1789369500000", datetime(2026, 9, 14, 7, 5, tzinfo=UTC)),
+        ("2026-09-14T07:05:00", None),  # ohne Zeitzone mehrdeutig
+        ("1999-12-31T23:59:59Z", None),  # Geräteuhr auf null
+        ("2026-09-17T08:00:00Z", None),  # mehr als einen Tag in der Zukunft
+        ("", None),
+        (None, None),
+        ("gestern", None),
+        ("99999999999999999999", None),
+    ],
+)
+def test_aufnahmezeit(roh: str | None, erwartet: datetime | None) -> None:
+    from app.routers.meetings import _aufnahmezeit
+
+    assert _aufnahmezeit(roh, JETZT) == erwartet
+
+
+def test_eine_wiederholung_aus_dem_papierkorb_ergibt_409_und_schreibt_nichts(aufbau) -> None:
+    """Bei 200 löschte der Browser seine Sicherung und landete auf einer 404."""
+    klient, geschrieben, _, verbindung = aufbau
+    verbindung.funde = [_zeile(uuid4(), "Jour fixe", geloescht=datetime.now(UTC))]
+    antwort = _senden(klient, 10, client_id=str(uuid4()))
+    assert antwort.status_code == 409
+    assert "Jour fixe" in antwort.json()["detail"]
+    assert geschrieben == []
+
+
+def test_scheitert_das_einreihen_steht_die_besprechung_als_fehlgeschlagen(aufbau, monkeypatch) -> None:
+    """Keine 500 nach dem Anlegen — sonst bekäme eine Wiederholung eine ewig wartende Besprechung."""
+    from app.routers import meetings
+
+    def _broker_weg(*a, **k):
+        raise ConnectionError("kvrocks nicht erreichbar")
+
+    monkeypatch.setattr(meetings, "transcribe_meeting", type("T", (), {"delay": staticmethod(_broker_weg)}))
+    klient, _, geloescht, verbindung = aufbau
+    antwort = _senden(klient, 10)
+    assert antwort.status_code == 201
+    assert geloescht == []  # die Besprechung hat ihren Ton
+    sql, args = verbindung.ausgefuehrt[-1]
+    assert "status = 'failed'" in sql and args[0] == verbindung.eingefuegt[0]

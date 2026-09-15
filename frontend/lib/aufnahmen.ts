@@ -23,6 +23,7 @@
  * konnten Blobs in IndexedDB nicht zuverlässig ablegen.
  */
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import type { Fortschritt } from "@/lib/api/hochladen";
 import { createMeeting, type MeetingDto } from "@/lib/api/meetings";
 
 export type AufnahmeKopf = {
@@ -109,6 +110,25 @@ export function beiAenderung(rueckruf: () => void): () => void {
     kanal?.close();
     window.removeEventListener(KANAL, rueckruf);
   };
+}
+
+let dauerhaftAngefragt = false;
+
+/**
+ * Bittet den Browser, die Sicherungen nicht von selbst zu räumen. Ohne das
+ * darf er IndexedDB bei Platzmangel leeren — samt einer nicht gesendeten
+ * Aufnahme. Einmal pro Tab, ohne zu warten; eine Absage ändert nichts am
+ * Aufnehmen. Firefox fragt dabei nach, Chrome und Safari entscheiden still.
+ */
+function dauerhaftAnfragen(): void {
+  if (dauerhaftAngefragt || typeof navigator === "undefined") return;
+  dauerhaftAngefragt = true;
+  const speicher = navigator.storage;
+  if (!speicher?.persist || !speicher.persisted) return;
+  void speicher
+    .persisted()
+    .then((schon) => (schon ? true : speicher.persist()))
+    .catch(() => {});
 }
 
 function locks(): LockManager | null {
@@ -207,6 +227,7 @@ export class Sicherung {
         });
       });
     }
+    dauerhaftAnfragen();
     try {
       await (await db()).put("koepfe", s.kopf);
       melden();
@@ -406,6 +427,7 @@ export async function verwerfen(id: string): Promise<void> {
 export async function senden(
   kopf: AufnahmeKopf,
   ton?: Blob,
+  beiFortschritt?: (f: Fortschritt) => void,
 ): Promise<MeetingDto> {
   const besprechung = await createMeeting({
     blob: ton ?? (await tonAusSpeicher(kopf)),
@@ -417,6 +439,7 @@ export async function senden(
     templateId: kopf.templateId,
     audioLanguage: kopf.audioLanguage,
     quickMode: kopf.quickMode,
+    beiFortschritt,
   });
   try {
     await verwerfen(kopf.id);
@@ -434,14 +457,15 @@ export async function senden(
  */
 export async function sendenMitSperre(
   kopf: AufnahmeKopf,
+  beiFortschritt?: (f: Fortschritt) => void,
 ): Promise<MeetingDto | null> {
   const lm = locks();
-  if (!lm) return senden(kopf);
+  if (!lm) return senden(kopf, undefined, beiFortschritt);
   try {
     return await lm.request(
       SPERRE + kopf.id,
       { ifAvailable: true },
-      async (sperre) => (sperre ? senden(kopf) : null),
+      async (sperre) => (sperre ? senden(kopf, undefined, beiFortschritt) : null),
     );
   } finally {
     // Die Sperre ist jetzt frei. Solange sie hielt, hat jede Liste diese

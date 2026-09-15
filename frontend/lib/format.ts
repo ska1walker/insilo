@@ -71,3 +71,25 @@ export function formatBytes(bytes: number, locale: string = "de"): string {
   const gerundet = wert < 10 ? Math.round(wert * 10) / 10 : Math.round(wert);
   return `${gerundet.toLocaleString(locale)} ${einheiten[i]}`;
 }
+
+/**
+ * Fortschritt eines Uploads für die Anzeige: ganze Prozent und die Mengen in
+ * derselben Schreibweise wie `formatBytes`. `fertig` heißt: der Browser hat
+ * alles abgeschickt — die Box ist damit noch nicht fertig, der Server puffert
+ * und schreibt noch. Die Oberfläche sagt dann „Wird verarbeitet", statt bei
+ * 100 % stehen zu bleiben.
+ */
+export function fortschrittWerte(
+  geladen: number,
+  gesamt: number,
+  locale: string = "de",
+): { prozent: number; geladen: string; gesamt: string; fertig: boolean } {
+  const sicherGesamt = Math.max(gesamt, 1);
+  const begrenzt = Math.min(Math.max(geladen, 0), sicherGesamt);
+  return {
+    prozent: Math.floor((begrenzt / sicherGesamt) * 100),
+    geladen: formatBytes(begrenzt, locale),
+    gesamt: formatBytes(gesamt, locale),
+    fertig: gesamt > 0 && geladen >= gesamt,
+  };
+}

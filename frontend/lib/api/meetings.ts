@@ -1,4 +1,5 @@
 import { apiDelete, apiGet, apiPost, apiPut, apiRequest } from "./client";
+import { hochladen, type Fortschritt } from "./hochladen";
 import type { TagDto } from "./tags";
 
 export type TranscriptSegment = {
@@ -103,18 +104,23 @@ export async function createMeeting(args: {
    * webhook auto-dispatch even for `trigger=manual` webhooks.
    */
   quickMode?: boolean;
+  /**
+   * Dateiname fürs Formular. Beim Hochladen einer Datei ihr Name — das
+   * Backend nimmt dessen Endung, wenn der Typ nichts sagt.
+   */
+  dateiname?: string;
+  beiFortschritt?: (f: Fortschritt) => void;
 }): Promise<MeetingDto> {
   const form = new FormData();
-  form.append("audio", args.blob, "recording");
+  form.append("audio", args.blob, args.dateiname ?? "recording");
   form.append("title", args.title);
   form.append("duration_ms", String(args.durationMs));
   form.append("mime_type", args.mimeType);
   if (args.templateId) form.append("template_id", args.templateId);
   if (args.audioLanguage) form.append("language", args.audioLanguage);
   if (args.quickMode) form.append("quick_mode", "true");
-  return apiRequest<MeetingDto>("/api/v1/recordings", {
-    method: "POST",
-    body: form,
+  return hochladen<MeetingDto>("/api/v1/recordings", form, {
+    beiFortschritt: args.beiFortschritt,
   });
 }
 

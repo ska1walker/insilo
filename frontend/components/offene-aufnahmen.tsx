@@ -16,6 +16,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import { ApiError } from "@/lib/api/client";
+import type { Fortschritt } from "@/lib/api/hochladen";
 import type { MeetingDto } from "@/lib/api/meetings";
 import {
   alsDateiSpeichern,
@@ -31,16 +32,41 @@ import {
   type AufnahmeKopf,
   type Gescheitert,
 } from "@/lib/aufnahmen";
-import { formatDuration } from "@/lib/format";
+import { formatDuration, fortschrittWerte } from "@/lib/format";
 
+/**
+ * Fehler beim Senden als Satz. Hat die Box mit einem eigenen Text abgelehnt
+ * (etwa „Die Datei ist zu groß …"), steht der da — sonst sähe niemand, was
+ * sie meint. Sonst die HTTP-Nummer, und ohne Antwort: nicht erreichbar.
+ */
 export function useSendefehler() {
   const t = useTranslations("aufnahmeSicherung");
   return useCallback(
-    (fehler: unknown) =>
-      fehler instanceof ApiError
-        ? t("fehlerHttp", { status: fehler.status })
-        : t("fehlerNetz"),
+    (fehler: unknown) => {
+      if (!(fehler instanceof ApiError)) return t("fehlerNetz");
+      const detail = (fehler.body as { detail?: unknown } | null)?.detail;
+      if (fehler.status >= 400 && fehler.status < 500 && typeof detail === "string") {
+        return detail;
+      }
+      return t("fehlerHttp", { status: fehler.status });
+    },
     [t],
+  );
+}
+
+/** „42 % · 38,1 MB von 90,4 MB", am Ende „Wird verarbeitet …". */
+export function useFortschrittText() {
+  const t = useTranslations("aufnahmeSicherung");
+  const locale = useLocale();
+  return useCallback(
+    (f: Fortschritt | null): string | null => {
+      if (!f) return null;
+      const w = fortschrittWerte(f.geladen, f.gesamt, locale);
+      return w.fertig
+        ? t("verarbeitet")
+        : t("fortschritt", { prozent: w.prozent, geladen: w.geladen, gesamt: w.gesamt });
+    },
+    [t, locale],
   );
 }
 
@@ -58,15 +84,17 @@ export function OffeneAufnahme({
   ton?: Blob;
   gesichert?: boolean;
   fehler?: string | null;
-  senden: () => Promise<MeetingDto | null>;
+  senden: (beiFortschritt: (f: Fortschritt) => void) => Promise<MeetingDto | null>;
   nachSenden: (besprechung: MeetingDto) => void;
   nachVerwerfen: () => void;
 }) {
   const t = useTranslations("aufnahmeSicherung");
   const locale = useLocale();
   const sendefehler = useSendefehler();
+  const fortschrittText = useFortschrittText();
   const [fehler, setFehler] = useState<string | null>(fehlerAnfangs);
   const [sendet, setSendet] = useState(false);
+  const [fortschritt, setFortschritt] = useState<Fortschritt | null>(null);
   const [fragt, setFragt] = useState(false);
 
   useEffect(() => setFehler(fehlerAnfangs), [fehlerAnfangs]);
@@ -82,8 +110,9 @@ export function OffeneAufnahme({
   async function erneutSenden() {
     setSendet(true);
     setFehler(null);
+    setFortschritt(null);
     try {
-      const besprechung = await senden();
+      const besprechung = await senden(setFortschritt);
       if (besprechung) nachSenden(besprechung);
       else setFehler(t("andererTab"));
     } catch (e) {
@@ -91,6 +120,7 @@ export function OffeneAufnahme({
       setFehler(sendefehler(e));
     } finally {
       setSendet(false);
+      setFortschritt(null);
     }
   }
 
@@ -162,7 +192,9 @@ export function OffeneAufnahme({
               {sendet && (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               )}
-              {sendet ? t("sendet") : t("erneutSenden")}
+              {sendet
+                ? (fortschrittText(fortschritt) ?? t("sendet"))
+                : t("erneutSenden")}
             </button>
             <button
               type="button"
@@ -253,7 +285,7 @@ export function OffeneAufnahmen() {
           ton={g.ton}
           gesichert={g.sicherung.gesichert}
           fehler={g.fehler}
-          senden={() => senden(g.sicherung.kopf, g.ton)}
+          senden={(beiFortschritt) => senden(g.sicherung.kopf, g.ton, beiFortschritt)}
           nachSenden={(besprechung) => {
             gescheitertErledigt(g.sicherung.kopf.id);
             gesendet(g.sicherung.kopf, besprechung);
@@ -265,7 +297,7 @@ export function OffeneAufnahmen() {
         <OffeneAufnahme
           key={kopf.id}
           kopf={kopf}
-          senden={() => sendenMitSperre(kopf)}
+          senden={(beiFortschritt) => sendenMitSperre(kopf, beiFortschritt)}
           nachSenden={(besprechung) => gesendet(kopf, besprechung)}
           nachVerwerfen={laden}
         />

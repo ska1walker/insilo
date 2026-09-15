@@ -11,7 +11,7 @@
 // backend via cluster DNS. Avoids CORS + a second Authelia hop on the
 // invisible api entrance.
 // Local dev: NEXT_PUBLIC_API_URL=http://localhost:8000 in .env.local.
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 const DEV_USER = process.env.NEXT_PUBLIC_USER ?? "devuser";
 
 export class ApiError extends Error {
@@ -29,10 +29,10 @@ const LOCALE_COOKIE = "insilo-locale";
 const SUPPORTED_LOCALES = new Set(["de", "en", "fr", "es", "it"]);
 
 /** Read the in-app locale override the LocaleSwitcher writes to a cookie.
- *  Returns null on the server (no document) or when no/invalid cookie. */
-function readLocaleCookie(): string | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(
+ *  Returns null when there is no/invalid cookie. */
+export function localeAusCookie(cookie: string | null): string | null {
+  if (!cookie) return null;
+  const match = cookie.match(
     new RegExp("(?:^|; )" + LOCALE_COOKIE + "=([^;]+)"),
   );
   if (!match) return null;
@@ -40,15 +40,16 @@ function readLocaleCookie(): string | null {
   return SUPPORTED_LOCALES.has(value) ? value : null;
 }
 
-export async function apiRequest<T>(
-  path: string,
-  options: RequestOptions = {},
-): Promise<T> {
-  const { body, headers, ...rest } = options;
-
-  const finalHeaders: Record<string, string> = {
-    ...((headers as Record<string, string>) ?? {}),
-  };
+/**
+ * Die Kopfzeilen jeder Anfrage ans Backend — für `apiRequest` und für den
+ * Upload mit Fortschritt (`lib/api/hochladen.ts`), der kein `fetch` benutzen
+ * kann. Zweimal gebaut liefe es beim nächsten Umbau auseinander.
+ */
+export function anfrageKopfzeilen(
+  cookie: string | null,
+  eigene: Record<string, string> = {},
+): Record<string, string> {
+  const kopfzeilen: Record<string, string> = { ...eigene };
 
   // Die Identität geht mit — sie ist derzeit die einzige Quelle.
   //
@@ -68,18 +69,29 @@ export async function apiRequest<T>(
   // sobald Authelia ihn liefert. Nach innen verlangt das Backend seit
   // 0017 das gemeinsame Geheimnis — ein Aufruf direkt an
   // `insilo-backend:8000` kommt gar nicht mehr an, egal was er behauptet.
-  finalHeaders["X-Bfl-User"] = DEV_USER;
+  kopfzeilen["X-Bfl-User"] = DEV_USER;
 
   // Forward the in-app locale override (LocaleSwitcher → cookie) as
   // Accept-Language so the backend's error i18n picks the same language
   // as the UI. Without this the browser-set Accept-Language wins, which
   // diverges as soon as the user manually overrides via /einstellungen.
-  if (!finalHeaders["Accept-Language"]) {
-    const cookieLocale = readLocaleCookie();
-    if (cookieLocale) {
-      finalHeaders["Accept-Language"] = cookieLocale;
-    }
+  if (!kopfzeilen["Accept-Language"]) {
+    const cookieLocale = localeAusCookie(cookie);
+    if (cookieLocale) kopfzeilen["Accept-Language"] = cookieLocale;
   }
+  return kopfzeilen;
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  const { body, headers, ...rest } = options;
+
+  const finalHeaders = anfrageKopfzeilen(
+    typeof document === "undefined" ? null : document.cookie,
+    (headers as Record<string, string>) ?? {},
+  );
 
   let finalBody: BodyInit | null | undefined = undefined;
   if (body !== undefined && body !== null) {

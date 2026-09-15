@@ -49,6 +49,7 @@ RUN deluser node 2>/dev/null || true && \
 COPY --from=builder --chown=insilo:insilo /app/.next/standalone ./
 COPY --from=builder --chown=insilo:insilo /app/.next/static ./.next/static
 COPY --from=builder --chown=insilo:insilo /app/public ./public
+COPY --from=builder --chown=insilo:insilo /app/server-zeitlimit.cjs ./server-zeitlimit.cjs
 
 USER insilo
 
@@ -59,4 +60,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD wget --quiet --spider http://localhost:3000/ || exit 1
 
-CMD ["node", "server.js"]
+# Nodes Zeitlimit für eine Anfrage (300 s) brach lange Uploads ab — siehe
+# server-zeitlimit.cjs.
+CMD ["node", "--require", "./server-zeitlimit.cjs", "server.js"]

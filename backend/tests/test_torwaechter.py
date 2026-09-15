@@ -175,9 +175,15 @@ def test_beide_wege_ans_backend_setzen_dieselben_kopfzeilen() -> None:
     auseinandergelaufen. Ob der Handler sie wirklich setzt, misst
     `frontend/tests/weiterleitung.test.ts`.
     """
-    for datei in ("frontend/middleware.ts", "frontend/app/api/v1/recordings/route.ts"):
-        quelle = (WURZEL / datei).read_text(encoding="utf-8")
-        assert "weiterleitungsKopfzeilen(request.headers)" in quelle, datei
+    middleware = (WURZEL / "frontend/middleware.ts").read_text(encoding="utf-8")
+    assert "weiterleitungsKopfzeilen(request.headers)" in middleware
+    # Seit 0.1.98 geht der Upload über `http.request` statt `fetch` und
+    # braucht die Kopfzeilen als Objekt — über eine Hülle um dieselbe Funktion.
+    upload = (WURZEL / "frontend/app/api/v1/recordings/route.ts").read_text(encoding="utf-8")
+    assert "kopfzeilenFuersBackend(request.headers)" in upload
+    weiterleitung = (WURZEL / "frontend/lib/weiterleitung.ts").read_text(encoding="utf-8")
+    huelle = weiterleitung.split("export function kopfzeilenFuersBackend", 1)[1]
+    assert "weiterleitungsKopfzeilen(eingang)" in huelle
 
 
 def test_middleware_haengt_das_geheimnis_serverseitig_an() -> None:

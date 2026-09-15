@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MAX_UPLOAD_MB, mimeFuerDatei, pruefeDatei, titelAusDateiname } from "@/lib/audiodatei";
+import {
+  aufnahmeDatumFuerDatei,
+  MAX_UPLOAD_MB,
+  mimeFuerDatei,
+  pruefeDatei,
+  titelAusDateiname,
+} from "@/lib/audiodatei";
 import { dateinameVon, type AufnahmeKopf } from "@/lib/aufnahmen";
 
 describe("mimeFuerDatei", () => {
@@ -62,5 +68,18 @@ describe("titelAusDateiname", () => {
     expect(titelAusDateiname("Jour fixe Vertrieb.m4a", "de", "Aufnahme vom")).toBe("Jour fixe Vertrieb");
     expect(titelAusDateiname("ohne-endung", "de", "Aufnahme vom")).toBe("ohne-endung");
     expect(titelAusDateiname(".m4a", "de", "Aufnahme vom")).toBe(".m4a");
+  });
+});
+
+describe("aufnahmeDatumFuerDatei", () => {
+  it("prefers the start encoded in a name Insilo gave the file", () => {
+    const beginn = new Date(2026, 8, 14, 9, 5).getTime();
+    expect(aufnahmeDatumFuerDatei("insilo-aufnahme-2026-09-14-0905.webm", beginn + 3_600_000)).toBe(beginn);
+  });
+
+  it("falls back to the file's modification date, or nothing", () => {
+    expect(aufnahmeDatumFuerDatei("Diktat.m4a", 1789369500000)).toBe(1789369500000);
+    expect(aufnahmeDatumFuerDatei("Diktat.m4a", 0)).toBeUndefined();
+    expect(aufnahmeDatumFuerDatei("Diktat.m4a", Number.NaN)).toBeUndefined();
   });
 });

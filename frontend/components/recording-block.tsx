@@ -17,6 +17,7 @@ import { listTemplates, type TemplateDto } from "@/lib/api/templates";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
 import {
   ANNEHMBAR,
+  aufnahmeDatumFuerDatei,
   dauerAusMetadaten,
   MAX_UPLOAD_MB,
   mimeFuerDatei,
@@ -47,7 +48,7 @@ type Phase =
  * keine Sicherung und kein Eintrag in der Liste über den Ansichten, nur ein
  * Hinweis hier mit „Erneut versuchen" und „Andere Datei wählen".
  */
-type DateiFehler = { datei: File | null; fehler: string };
+type DateiFehler = { datei: File | null; kennung: string; fehler: string };
 
 type Variant = "full" | "compact";
 
@@ -269,7 +270,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
    * Braucht kein Mikrofon und steht deshalb auch bei verweigertem oder
    * fehlendem Mikrofonzugang bereit.
    */
-  async function dateiHochladen(datei: File) {
+  async function dateiHochladen(datei: File, kennung: string = crypto.randomUUID()) {
     const zurueck: Phase =
       phase === "denied" || phase === "unsupported" ? phase : "idle";
     setError(null);
@@ -280,6 +281,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
     if (pruefung !== "ok") {
       setDateiFehler({
         datei: null,
+        kennung,
         fehler:
           pruefung === "zuGross"
             ? t("dateiZuGross", { max: MAX_UPLOAD_MB })
@@ -297,7 +299,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
       try {
         await datei.slice(0, 1).arrayBuffer();
       } catch {
-        setDateiFehler({ datei: null, fehler: t("dateiUnlesbar") });
+        setDateiFehler({ datei: null, kennung, fehler: t("dateiUnlesbar") });
         setPhase(zurueck);
         return;
       }
@@ -310,6 +312,10 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         audioLanguage,
         dateiname: datei.name,
         beiFortschritt: setFortschritt,
+        // Dieselbe Kennung bei „Erneut versuchen" — kam der erste Versuch an,
+        // gibt die Box die Besprechung zurück, statt eine zweite anzulegen.
+        clientId: kennung,
+        aufnahmeBeginn: aufnahmeDatumFuerDatei(datei.name, datei.lastModified),
       });
       if (aktivRef.current) router.push(`/m/${meeting.id}`);
     } catch (err) {
@@ -323,7 +329,11 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
       }
       // Zu groß bleibt zu groß — dann kein „Erneut versuchen".
       const wiederholbar = !(err instanceof ApiError && err.status === 413);
-      setDateiFehler({ datei: wiederholbar ? datei : null, fehler: sendefehler(err) });
+      setDateiFehler({
+        datei: wiederholbar ? datei : null,
+        kennung,
+        fehler: sendefehler(err),
+      });
       setPhase(zurueck);
     } finally {
       setFortschritt(null);
@@ -510,8 +520,8 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
                       type="button"
                       className="btn btn-sekundaer"
                       onClick={() => {
-                        const datei = dateiFehler.datei;
-                        if (datei) void dateiHochladen(datei);
+                        const { datei, kennung } = dateiFehler;
+                        if (datei) void dateiHochladen(datei, kennung);
                       }}
                     >
                       {t("dateiErneut")}

@@ -73,6 +73,25 @@ export function pruefeDatei(groesse: number, mime: string): Pruefung {
 
 const EIGENER_NAME = /^insilo-aufnahme-(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})\./i;
 
+function zeitAusEigenemNamen(name: string): number | null {
+  const m = EIGENER_NAME.exec(name);
+  if (!m) return null;
+  const [, j, mo, t, h, mi] = m.map(Number);
+  return new Date(j, mo - 1, t, h, mi).getTime();
+}
+
+/**
+ * Wann eine Datei aufgenommen wurde, so gut der Browser es weiß: bei einer
+ * von Insilo gespeicherten Aufnahme der Beginn aus dem Namen, sonst das
+ * Änderungsdatum der Datei (bei Diktier-Apps meist das Ende der Aufnahme).
+ * `undefined`, wenn beides fehlt — dann gilt der Upload.
+ */
+export function aufnahmeDatumFuerDatei(name: string, geaendert: number): number | undefined {
+  const ausName = zeitAusEigenemNamen(name);
+  if (ausName !== null) return ausName;
+  return Number.isFinite(geaendert) && geaendert > 0 ? geaendert : undefined;
+}
+
 /**
  * Titel aus dem Dateinamen. Eine von Insilo gespeicherte Aufnahme bekommt
  * ihren ursprünglichen Standardtitel zurück; sonst der Name ohne Endung.
@@ -82,11 +101,8 @@ export function titelAusDateiname(
   locale: string,
   praefix: string,
 ): string {
-  const m = EIGENER_NAME.exec(name);
-  if (m) {
-    const [, j, mo, t, h, mi] = m.map(Number);
-    return defaultMeetingTitle(new Date(j, mo - 1, t, h, mi).getTime(), locale, praefix);
-  }
+  const zeit = zeitAusEigenemNamen(name);
+  if (zeit !== null) return defaultMeetingTitle(zeit, locale, praefix);
   const i = name.lastIndexOf(".");
   const ohneEndung = (i > 0 ? name.slice(0, i) : name).trim();
   return ohneEndung || name;

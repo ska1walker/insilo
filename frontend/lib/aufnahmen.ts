@@ -440,6 +440,10 @@ export async function senden(
     audioLanguage: kopf.audioLanguage,
     quickMode: kopf.quickMode,
     beiFortschritt,
+    // Dieselbe Kennung bei jedem Versuch: kam der erste an, legt die Box
+    // nichts doppelt an (Migration 0019).
+    clientId: kopf.id,
+    aufnahmeBeginn: kopf.begonnen,
   });
   try {
     await verwerfen(kopf.id);

@@ -110,6 +110,14 @@ export async function createMeeting(args: {
    */
   dateiname?: string;
   beiFortschritt?: (f: Fortschritt) => void;
+  /**
+   * Kennung dieser Aufnahme. Kommt sie ein zweites Mal (die Antwort auf
+   * den ersten Versuch ging verloren), gibt die Box die schon angelegte
+   * Besprechung zurück, statt eine zweite anzulegen.
+   */
+  clientId?: string;
+  /** Wann aufgenommen wurde, ms seit 1970 — sonst gilt der Upload. */
+  aufnahmeBeginn?: number;
 }): Promise<MeetingDto> {
   const form = new FormData();
   form.append("audio", args.blob, args.dateiname ?? "recording");
@@ -119,6 +127,10 @@ export async function createMeeting(args: {
   if (args.templateId) form.append("template_id", args.templateId);
   if (args.audioLanguage) form.append("language", args.audioLanguage);
   if (args.quickMode) form.append("quick_mode", "true");
+  if (args.clientId) form.append("client_id", args.clientId);
+  if (args.aufnahmeBeginn && Number.isFinite(args.aufnahmeBeginn)) {
+    form.append("recorded_at", new Date(args.aufnahmeBeginn).toISOString());
+  }
   return hochladen<MeetingDto>("/api/v1/recordings", form, {
     beiFortschritt: args.beiFortschritt,
   });

@@ -97,7 +97,37 @@
 > (Stub) während der Aufnahme genau einmal angefordert, nach dem Senden
 > freigegeben; ohne Wake Lock erscheint der Hinweis.
 >
+> **Ausgerollt auf Kais Box: v0.1.97** (Helm-Rev 19, fünf Pods auf 0.1.97,
+> sechs von sechs Health-Checks; Abzug vorher unter
+> `~/insilo-sicherung/vor-0.1.97.sql`, Probelauf gegen die API
+> fehlerfrei). Nachgemessen durch das Frontend der Box (Port-Forward auf
+> `svc/insilo`), ohne eine Besprechung anzulegen:
+>
+> | Anfrage | Antwort | Ablage (Dateien) |
+> |---|---|---|
+> | 21 MB mp3, gültige UUID einer fremden Vorlage | 400 „Vorlage ist nicht verfügbar", 0,4 s | 33 → 33 |
+> | 21 MB mp3, `template_id=keine-uuid` (0.1.96: 500 + verwaiste Datei) | 400, 0,3 s | 33 → 33 |
+> | 600 MB | 413 „Die Datei ist zu groß. Insilo nimmt Aufnahmen bis 500 MB an.", 7,3 s | 33 → 33 |
+>
+> Vorhandene Aufnahme weiter als `audio/webm` mit Range (206)
+> ausgeliefert; `/aufnahme` liefert „Audiodatei hochladen"; keine
+> Neustarts, `/tmp` im Backend danach 4 KB.
+>
+> **Speicherspitze im Frontend-Pod:** direkt nach dem 600-MB-Upload
+> `next-server` bei 798 MB RSS, eine Minute später 81 MB (cgroup 43 MB) —
+> freigegeben, kein Leck, dasselbe Muster wie lokal bei 0.1.96. Die Spitze
+> wächst aber mit der Uploadgröße, und das Limit ist 1 GiB: zwei
+> gleichzeitige Uploads nahe 500 MB können den Pod reißen (die Aufnahmen
+> selbst blieben im Browser gesichert). Kandidaten: Frontend-Limit
+> anheben oder den Upload-Handler mit kleinerem Puffer auf
+> `node:http` umstellen.
+>
+> **Im AImighty-Markt live** (PR #66, gemergt, Deploy grün): 20 Apps,
+> Insilo 0.1.97, Chart byte-gleich, Hash identisch mit dem lokal
+> geprüften Branch.
+>
 > **Offen:**
+> - Speicherspitze bei parallelen großen Uploads (siehe oben).
 > - Wie groß die Olares-Eingangsschicht (Envoy/Authelia) einen Rumpf
 >   durchlässt, ist nicht gemessen — die Messungen laufen über einen
 >   Port-Forward am Envoy vorbei. Der Vorfall zeigt nur: mindestens 10 MB

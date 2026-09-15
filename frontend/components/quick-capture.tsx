@@ -12,7 +12,8 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { AufnahmeWelle } from "@/components/aufnahme-welle";
-import { useSendefehler } from "@/components/offene-aufnahmen";
+import { useFortschrittText, useSendefehler } from "@/components/offene-aufnahmen";
+import type { Fortschritt } from "@/lib/api/hochladen";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
 import {
   alsDateiSpeichern,
@@ -23,6 +24,7 @@ import {
   type Gescheitert,
 } from "@/lib/aufnahmen";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
+import { useWachhalten } from "@/lib/wachhalten";
 
 const PREFERRED_MIME_TYPES = [
   "audio/webm;codecs=opus",
@@ -108,7 +110,6 @@ export function QuickCapture() {
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef<number>(0);
   const tickRef = useRef<number | null>(null);
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const savedResetRef = useRef<number | null>(null);
   const sicherungRef = useRef<Sicherung | null>(null);
   const aktivRef = useRef(true);
@@ -119,6 +120,13 @@ export function QuickCapture() {
   // verlässt die Ansicht, bleibt sie dort und erscheint über den Ansichten.
   const [gescheitert, setGescheitert] = useState<Gescheitert | null>(null);
   const [sendetErneut, setSendetErneut] = useState(false);
+  const [fortschritt, setFortschritt] = useState<Fortschritt | null>(null);
+  const fortschrittText = useFortschrittText();
+
+  // Wach bleiben, solange aufgenommen oder gesendet wird. Bis 0.1.96 gab die
+  // Notiz die Sperre vor dem Senden frei — und holte sie nach einem kurzen
+  // Verdecken des Tabs nie zurück (siehe `lib/wachhalten.ts`).
+  useWachhalten(phase === "recording" || phase === "saving" || sendetErneut);
 
   // Dark-Mode-Transition: body-class steuert globalen Fade. globals.css
   // versteckt zusätzlich den normalen Insilo-Header während aktiv.
@@ -133,7 +141,6 @@ export function QuickCapture() {
     return () => {
       aktivRef.current = false;
       stopTracksAndTick();
-      releaseWakeLock();
       if (savedResetRef.current !== null) {
         window.clearTimeout(savedResetRef.current);
       }
@@ -162,33 +169,6 @@ export function QuickCapture() {
       streamRef.current.getTracks().forEach((tr) => tr.stop());
       streamRef.current = null;
       setLiveStream(null);
-    }
-  }
-
-  async function requestWakeLock() {
-    if (!("wakeLock" in navigator)) return;
-    try {
-      // Cast: WakeLockSentinel typing is still gated on lib.dom updates
-      // in older TS targets; the runtime API is widely shipped (iOS 16.4+,
-      // Chrome 84+).
-      wakeLockRef.current = await (
-        navigator as unknown as {
-          wakeLock: { request(t: "screen"): Promise<WakeLockSentinel> };
-        }
-      ).wakeLock.request("screen");
-    } catch {
-      /* user-rejected or unsupported; aufnahme läuft trotzdem */
-    }
-  }
-
-  async function releaseWakeLock() {
-    if (wakeLockRef.current) {
-      try {
-        await wakeLockRef.current.release();
-      } catch {
-        /* ignore */
-      }
-      wakeLockRef.current = null;
     }
   }
 
@@ -246,13 +226,11 @@ export function QuickCapture() {
       setElapsed(0);
       setPhase("recording");
       vibrate(50);
-      requestWakeLock();
       tickRef.current = window.setInterval(() => {
         setElapsed(Date.now() - startedAtRef.current);
       }, 250);
     } catch (err) {
       stopTracksAndTick();
-      releaseWakeLock();
       void sicherungRef.current?.absagen();
       sicherungRef.current = null;
       const name = (err as DOMException)?.name;
@@ -282,7 +260,6 @@ export function QuickCapture() {
     });
 
     stopTracksAndTick();
-    releaseWakeLock();
 
     const sicherung = sicherungRef.current;
     sicherungRef.current = null;
@@ -293,7 +270,7 @@ export function QuickCapture() {
     await sicherung.abschliessen(durationMs, mimeType);
 
     try {
-      await senden(sicherung.kopf, ton);
+      await senden(sicherung.kopf, ton, setFortschritt);
       sicherung.loslassen();
       if (aktivRef.current) gesendet();
     } catch (err) {
@@ -304,6 +281,8 @@ export function QuickCapture() {
       setPhase("error");
       setError(eintrag.fehler);
       setGescheitert(eintrag);
+    } finally {
+      setFortschritt(null);
     }
   }
 
@@ -321,7 +300,7 @@ export function QuickCapture() {
     setSendetErneut(true);
     setError(null);
     try {
-      await senden(gescheitert.sicherung.kopf, gescheitert.ton);
+      await senden(gescheitert.sicherung.kopf, gescheitert.ton, setFortschritt);
       gescheitertErledigt(gescheitert.sicherung.kopf.id);
       if (!aktivRef.current) return;
       setGescheitert(null);
@@ -331,6 +310,7 @@ export function QuickCapture() {
       setError(sendefehler(err));
     } finally {
       setSendetErneut(false);
+      setFortschritt(null);
     }
   }
 
@@ -378,7 +358,12 @@ export function QuickCapture() {
 
       {/* Main — single huge button, dead center */}
       <main className="flex flex-1 flex-col items-center justify-center px-6 sm:px-12">
-        <StatusLine phase={phase} elapsed={elapsed} t={t} />
+        <StatusLine
+          phase={phase}
+          elapsed={elapsed}
+          t={t}
+          fortschritt={fortschrittText(fortschritt)}
+        />
 
         {phase === "idle" || phase === "error" ? (
           <MicButton
@@ -463,7 +448,9 @@ export function QuickCapture() {
                 {sendetErneut && (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 )}
-                {sendetErneut ? tAufnahme("sendet") : tAufnahme("erneutSenden")}
+                {sendetErneut
+                  ? (fortschrittText(fortschritt) ?? tAufnahme("sendet"))
+                  : tAufnahme("erneutSenden")}
               </button>
               <button
                 type="button"
@@ -587,10 +574,12 @@ function StatusLine({
   phase,
   elapsed,
   t,
+  fortschritt,
 }: {
   phase: Phase;
   elapsed: number;
   t: ReturnType<typeof useTranslations>;
+  fortschritt: string | null;
 }) {
   if (phase === "recording") {
     return (
@@ -613,12 +602,20 @@ function StatusLine({
   }
   if (phase === "saving") {
     return (
-      <p
-        className="text-center text-lg"
-        style={{ color: "rgba(255,255,255,0.75)" }}
-      >
-        {t("statusSaving")}
-      </p>
+      <div className="text-center">
+        <p className="text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
+          {t("statusSaving")}
+        </p>
+        {fortschritt && (
+          <p
+            className="mono mt-2 text-sm tabular-nums"
+            aria-live="polite"
+            style={{ color: COLORS.goldLight, opacity: 0.8 }}
+          >
+            {fortschritt}
+          </p>
+        )}
+      </div>
     );
   }
   if (phase === "saved") {

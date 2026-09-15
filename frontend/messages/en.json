@@ -75,7 +75,15 @@
     "trustEigeneBoxText": "Audio, transcript and search index stay here. The language model also runs on this box, reached via its own address.",
     "llmFehltKurz": "Summaries are off until the language model is set up.",
     "trustSttTitel": "Recordings go to {host}",
-    "trustSttText": "Speech recognition runs on a third-party service. The recording itself leaves this box — not just the transcript."
+    "trustSttText": "Speech recognition runs on a third-party service. The recording itself leaves this box — not just the transcript.",
+    "dateiHochladen": "Upload audio file",
+    "dateiZuGross": "The file is too large. Insilo accepts recordings up to {max} MB.",
+    "dateiKeinAudio": "This is not an audio file. Insilo accepts, for example, m4a, mp3, wav, ogg, webm and flac.",
+    "dateiUnlesbar": "The file could not be read. If it is in a cloud folder, download it to the device first.",
+    "dateiErneut": "Try again",
+    "dateiAndere": "Choose another file",
+    "phaseUploading": "Sending file",
+    "bildschirmWach": "Please do not lock the screen while recording — otherwise the browser may pause the recording."
   },
   "meeting": {
     "listTitle": "Meetings",
@@ -804,6 +812,8 @@
     "andererTab": "This recording is being sent from another tab right now.",
     "speichernFehler": "The file could not be saved.",
     "gesendet": "Recording sent.",
-    "teilweise": "Only the beginning up to this length is saved — the device's storage was full. Send or save what is there."
+    "teilweise": "Only the beginning up to this length is saved — the device's storage was full. Send or save what is there.",
+    "fortschritt": "{prozent} % · {geladen} of {gesamt}",
+    "verarbeitet": "Sent — the box is processing the recording …"
   }
 }

@@ -1,18 +1,31 @@
 "use client";
 
-import { Loader2, Mic, ShieldAlert, ShieldCheck, Square } from "lucide-react";
+import { Loader2, Mic, ShieldAlert, ShieldCheck, Square, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { AufnahmeWelle } from "@/components/aufnahme-welle";
-import { useSendefehler } from "@/components/offene-aufnahmen";
+import { useFortschrittText, useSendefehler } from "@/components/offene-aufnahmen";
 import { RecordingIndicator } from "@/components/recording-indicator";
+import { useToast } from "@/components/toast";
+import { ApiError } from "@/lib/api/client";
 import { useEgress } from "@/lib/api/egress";
+import type { Fortschritt } from "@/lib/api/hochladen";
+import { createMeeting } from "@/lib/api/meetings";
 import { listTemplates, type TemplateDto } from "@/lib/api/templates";
 import { ASR_AUDIO_CONSTRAINTS, ASR_RECORDER_OPTIONS } from "@/lib/audio";
+import {
+  ANNEHMBAR,
+  dauerAusMetadaten,
+  MAX_UPLOAD_MB,
+  mimeFuerDatei,
+  pruefeDatei,
+  titelAusDateiname,
+} from "@/lib/audiodatei";
 import { alsGescheitertAblegen, senden, Sicherung } from "@/lib/aufnahmen";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
+import { useWachhalten } from "@/lib/wachhalten";
 
 const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -24,8 +37,17 @@ type Phase =
   | "requesting"
   | "recording"
   | "saving"
+  | "uploading"
   | "denied"
   | "unsupported";
+
+/**
+ * Eine hochgeladene Datei, deren Senden scheiterte. Anders als eine Aufnahme
+ * geht dabei nichts verloren — die Datei liegt ja noch auf dem Gerät. Darum
+ * keine Sicherung und kein Eintrag in der Liste über den Ansichten, nur ein
+ * Hinweis hier mit „Erneut versuchen" und „Andere Datei wählen".
+ */
+type DateiFehler = { datei: File | null; fehler: string };
 
 type Variant = "full" | "compact";
 
@@ -72,6 +94,18 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   const sicherungRef = useRef<Sicherung | null>(null);
   const aktivRef = useRef(true);
   const sendefehler = useSendefehler();
+  const fortschrittText = useFortschrittText();
+  const toast = useToast();
+  const [fortschritt, setFortschritt] = useState<Fortschritt | null>(null);
+  const dateiRef = useRef<HTMLInputElement | null>(null);
+  const [dateiFehler, setDateiFehler] = useState<DateiFehler | null>(null);
+  const [dateiName, setDateiName] = useState<string | null>(null);
+
+  // Sperrt sich das Telefon, halten mobile Browser den Tab an — der
+  // Recorder pausiert, ein Upload bricht ab. Auch beim Senden wach bleiben.
+  const wach = useWachhalten(
+    phase === "recording" || phase === "saving" || phase === "uploading",
+  );
 
   const [templates, setTemplates] = useState<TemplateDto[] | null>(null);
   const [selectedTemplate, setSelectedTemplate] =
@@ -97,8 +131,11 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   }, []);
 
   // Solange eine Aufnahme läuft oder gesendet wird, fragt der Browser vor
-  // dem Schließen nach. Gescheiterte bewacht die Liste in der Hülle.
-  const ungesichert = phase === "recording" || phase === "saving";
+  // dem Schließen nach. Gescheiterte bewacht die Liste in der Hülle. Beim
+  // Hochladen einer Datei geht zwar nichts verloren, aber ein halb
+  // gesendeter Upload von 500 MB soll nicht still abbrechen.
+  const ungesichert =
+    phase === "recording" || phase === "saving" || phase === "uploading";
   useEffect(() => {
     if (!ungesichert) return;
     const warnen = (e: BeforeUnloadEvent) => {
@@ -123,6 +160,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
   async function startRecording() {
     setError(null);
+    setDateiFehler(null);
     const mime = pickMimeType();
     if (!mime) {
       setPhase("unsupported");
@@ -204,7 +242,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
     await sicherung.abschliessen(durationMs, mimeType);
 
     try {
-      const meeting = await senden(sicherung.kopf, ton);
+      const meeting = await senden(sicherung.kopf, ton, setFortschritt);
       sicherung.loslassen();
       // Wer die Ansicht während des Sendens verlassen hat, bleibt, wo er ist.
       if (aktivRef.current) router.push(`/m/${meeting.id}`);
@@ -221,8 +259,85 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
         setPhase("idle");
         setElapsed(0);
       }
+    } finally {
+      setFortschritt(null);
     }
   }
+
+  /**
+   * Eine vorhandene Datei hochladen — mit der gewählten Vorlage und Sprache.
+   * Braucht kein Mikrofon und steht deshalb auch bei verweigertem oder
+   * fehlendem Mikrofonzugang bereit.
+   */
+  async function dateiHochladen(datei: File) {
+    const zurueck: Phase =
+      phase === "denied" || phase === "unsupported" ? phase : "idle";
+    setError(null);
+    setDateiFehler(null);
+
+    const mime = mimeFuerDatei(datei.name, datei.type);
+    const pruefung = pruefeDatei(datei.size, mime);
+    if (pruefung !== "ok") {
+      setDateiFehler({
+        datei: null,
+        fehler:
+          pruefung === "zuGross"
+            ? t("dateiZuGross", { max: MAX_UPLOAD_MB })
+            : t("dateiKeinAudio"),
+      });
+      return;
+    }
+
+    setPhase("uploading");
+    setDateiName(datei.name);
+    setFortschritt(null);
+    try {
+      // Eine Datei aus einem Cloud-Ordner kann unlesbar geworden sein. Ohne
+      // diese Probe meldete der Upload „Box nicht erreichbar".
+      try {
+        await datei.slice(0, 1).arrayBuffer();
+      } catch {
+        setDateiFehler({ datei: null, fehler: t("dateiUnlesbar") });
+        setPhase(zurueck);
+        return;
+      }
+      const meeting = await createMeeting({
+        blob: datei,
+        title: titelAusDateiname(datei.name, locale, t("defaultTitlePrefix")),
+        durationMs: await dauerAusMetadaten(datei),
+        mimeType: mime,
+        templateId: selectedTemplate,
+        audioLanguage,
+        dateiname: datei.name,
+        beiFortschritt: setFortschritt,
+      });
+      if (aktivRef.current) router.push(`/m/${meeting.id}`);
+    } catch (err) {
+      console.error("file upload failed", err);
+      if (!aktivRef.current) {
+        // Schon woanders: ohne Meldung hielte man die Datei für angekommen
+        // und löschte sie vielleicht. Die Kurzmeldung steht, bis jemand sie
+        // schließt.
+        toast.show({ message: `${datei.name}: ${sendefehler(err)}`, variant: "error" });
+        return;
+      }
+      // Zu groß bleibt zu groß — dann kein „Erneut versuchen".
+      const wiederholbar = !(err instanceof ApiError && err.status === 413);
+      setDateiFehler({ datei: wiederholbar ? datei : null, fehler: sendefehler(err) });
+      setPhase(zurueck);
+    } finally {
+      setFortschritt(null);
+    }
+  }
+
+  const dateiWaehlen = () => dateiRef.current?.click();
+
+  const dateiKnopf = (
+    <button type="button" className="btn btn-still" onClick={dateiWaehlen}>
+      <Upload className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+      {t("dateiHochladen")}
+    </button>
+  );
 
   function cancel() {
     const recorder = recorderRef.current;
@@ -257,6 +372,21 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
       {phase === "recording" && <RecordingIndicator />}
 
       <div className="w-full text-center">
+        <input
+          ref={dateiRef}
+          type="file"
+          accept={ANNEHMBAR}
+          className="hidden"
+          aria-hidden
+          tabIndex={-1}
+          onChange={(e) => {
+            const datei = e.target.files?.[0];
+            // Zurücksetzen, damit dieselbe Datei ein zweites Mal wählbar ist.
+            e.target.value = "";
+            if (datei) void dateiHochladen(datei);
+          }}
+        />
+
         <StatusEyebrow phase={phase} />
 
         {(phase === "recording" || phase === "saving") && (
@@ -276,7 +406,19 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
           </div>
         )}
 
+        {phase === "recording" && !wach && (
+          <p className="-mt-6 mb-8 text-sm text-text-gedaempft" role="note">
+            {t("bildschirmWach")}
+          </p>
+        )}
+
         {phase === "saving" && <div className="mb-10" />}
+
+        {phase === "uploading" && (
+          <p className="mt-3 mb-10 truncate text-sm text-text-sekundaer">
+            {dateiName}
+          </p>
+        )}
 
         {phase === "idle" && (
           <p
@@ -328,23 +470,62 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
           </button>
         )}
 
-        {phase === "saving" && (
-          <button
-            type="button"
-            className="btn-record recording"
-            disabled
-            aria-label={t("saving")}
-          >
-            <Loader2
-              className="btn-record-icon animate-spin"
-              strokeWidth={1.5}
-            />
-          </button>
+        {(phase === "saving" || phase === "uploading") && (
+          <>
+            <button
+              type="button"
+              className={`btn-record${phase === "saving" ? " recording" : ""}`}
+              disabled
+              aria-label={t("saving")}
+            >
+              <Loader2
+                className="btn-record-icon animate-spin"
+                strokeWidth={1.5}
+              />
+            </button>
+            <p
+              className="mono mt-5 text-sm tabular-nums text-text-sekundaer"
+              aria-live="polite"
+            >
+              {fortschrittText(fortschritt) ?? t("saving")}
+            </p>
+          </>
         )}
 
         {phase === "idle" && (
           <p className="mt-5 text-sm text-text-gedaempft">{t("phaseIdle")}</p>
         )}
+
+        {dateiFehler &&
+          (phase === "idle" || phase === "denied" || phase === "unsupported") && (
+            <div className="streifen streifen-achtung mt-6 text-left" role="alert">
+              <span className="zeichen" aria-hidden>
+                !
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm">{dateiFehler.fehler}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {dateiFehler.datei && (
+                    <button
+                      type="button"
+                      className="btn btn-sekundaer"
+                      onClick={() => {
+                        const datei = dateiFehler.datei;
+                        if (datei) void dateiHochladen(datei);
+                      }}
+                    >
+                      {t("dateiErneut")}
+                    </button>
+                  )}
+                  <button type="button" className="btn btn-still" onClick={dateiWaehlen}>
+                    {t("dateiAndere")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        {phase === "idle" && !dateiFehler && <div className="mt-4">{dateiKnopf}</div>}
 
         {(phase === "idle" || phase === "recording") && cancelGoesHome && (
           <div className="mt-10">
@@ -438,6 +619,10 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
           />
         )}
 
+        {(phase === "denied" || phase === "unsupported") && !dateiFehler && (
+          <div className="mt-4">{dateiKnopf}</div>
+        )}
+
         {error && (
           <p className="mt-8 text-sm text-fehler" role="alert">
             {error}
@@ -461,7 +646,9 @@ function StatusEyebrow({ phase }: { phase: Phase }) {
           ? t("phaseRecording")
           : phase === "saving"
             ? t("phaseSaving")
-            : phase === "denied"
+            : phase === "uploading"
+              ? t("phaseUploading")
+              : phase === "denied"
               ? t("phaseDenied")
               : t("phaseUnsupported");
 
@@ -472,14 +659,17 @@ function StatusEyebrow({ phase }: { phase: Phase }) {
   const dotColor =
     phase === "recording"
       ? "var(--am-gold-500)"
-      : phase === "saving"
+      : phase === "saving" || phase === "uploading"
         ? "var(--am-text-gedaempft)"
         : phase === "denied" || phase === "unsupported"
           ? "var(--am-fehler)"
           : "var(--am-text-deaktiviert)";
 
   const pulsing =
-    phase === "recording" || phase === "requesting" || phase === "saving";
+    phase === "recording" ||
+    phase === "requesting" ||
+    phase === "saving" ||
+    phase === "uploading";
 
   return (
     <p className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft">

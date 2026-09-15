@@ -75,7 +75,15 @@
     "trustEigeneBoxText": "El audio, la transcripción y el índice permanecen aquí. El modelo de lenguaje también se ejecuta en esta caja, mediante su propia dirección.",
     "llmFehltKurz": "Los resúmenes están desactivados hasta configurar el modelo.",
     "trustSttTitel": "Las grabaciones van a {host}",
-    "trustSttText": "El reconocimiento de voz usa un servicio ajeno. La grabación misma sale de esta caja, no solo la transcripción."
+    "trustSttText": "El reconocimiento de voz usa un servicio ajeno. La grabación misma sale de esta caja, no solo la transcripción.",
+    "dateiHochladen": "Subir archivo de audio",
+    "dateiZuGross": "El archivo es demasiado grande. Insilo acepta grabaciones de hasta {max} MB.",
+    "dateiKeinAudio": "No es un archivo de audio. Insilo acepta, por ejemplo, m4a, mp3, wav, ogg, webm y flac.",
+    "dateiUnlesbar": "No se pudo leer el archivo. Si está en una carpeta en la nube, descárguelo primero en el dispositivo.",
+    "dateiErneut": "Intentar de nuevo",
+    "dateiAndere": "Elegir otro archivo",
+    "phaseUploading": "Enviando archivo",
+    "bildschirmWach": "No bloquee la pantalla mientras graba; de lo contrario, el navegador puede detener la grabación."
   },
   "meeting": {
     "listTitle": "Reuniones",
@@ -804,6 +812,8 @@
     "andererTab": "Esta grabación se está enviando ahora desde otra pestaña.",
     "speichernFehler": "No se pudo guardar el archivo.",
     "gesendet": "Grabación enviada.",
-    "teilweise": "Solo se guardó el comienzo hasta esta duración: el almacenamiento del dispositivo estaba lleno. Envíe o guarde lo que hay."
+    "teilweise": "Solo se guardó el comienzo hasta esta duración: el almacenamiento del dispositivo estaba lleno. Envíe o guarde lo que hay.",
+    "fortschritt": "{prozent} % · {geladen} de {gesamt}",
+    "verarbeitet": "Enviado: la box está procesando la grabación …"
   }
 }

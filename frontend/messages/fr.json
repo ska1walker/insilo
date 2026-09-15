@@ -75,7 +75,15 @@
     "trustEigeneBoxText": "L'audio, la transcription et l'index restent ici. Le modèle de langage tourne également sur ce boîtier, via sa propre adresse.",
     "llmFehltKurz": "Les résumés sont désactivés tant que le modèle n'est pas configuré.",
     "trustSttTitel": "Les enregistrements partent vers {host}",
-    "trustSttText": "La reconnaissance vocale passe par un service tiers. L'enregistrement lui-même quitte cette boîte, pas seulement la transcription."
+    "trustSttText": "La reconnaissance vocale passe par un service tiers. L'enregistrement lui-même quitte cette boîte, pas seulement la transcription.",
+    "dateiHochladen": "Importer un fichier audio",
+    "dateiZuGross": "Le fichier est trop volumineux. Insilo accepte les enregistrements jusqu'à {max} Mo.",
+    "dateiKeinAudio": "Ce n'est pas un fichier audio. Insilo accepte par exemple m4a, mp3, wav, ogg, webm et flac.",
+    "dateiUnlesbar": "Le fichier n'a pas pu être lu. S'il se trouve dans un dossier cloud, téléchargez-le d'abord sur l'appareil.",
+    "dateiErneut": "Réessayer",
+    "dateiAndere": "Choisir un autre fichier",
+    "phaseUploading": "Envoi du fichier",
+    "bildschirmWach": "Veuillez ne pas verrouiller l'écran pendant l'enregistrement — sinon le navigateur peut l'interrompre."
   },
   "meeting": {
     "listTitle": "Réunions",
@@ -804,6 +812,8 @@
     "andererTab": "Cet enregistrement est en cours d'envoi dans un autre onglet.",
     "speichernFehler": "Le fichier n'a pas pu être enregistré.",
     "gesendet": "Enregistrement envoyé.",
-    "teilweise": "Seul le début jusqu'à cette durée est sauvegardé — le stockage de l'appareil était plein. Envoyez ou enregistrez ce qui est disponible."
+    "teilweise": "Seul le début jusqu'à cette durée est sauvegardé — le stockage de l'appareil était plein. Envoyez ou enregistrez ce qui est disponible.",
+    "fortschritt": "{prozent} % · {geladen} sur {gesamt}",
+    "verarbeitet": "Envoyé — la box traite l'enregistrement …"
   }
 }

@@ -75,7 +75,15 @@
     "trustEigeneBoxText": "Audio, trascrizione e indice restano qui. Anche il modello linguistico gira su questo box, tramite il suo indirizzo.",
     "llmFehltKurz": "I riepiloghi sono disattivati finché il modello non è configurato.",
     "trustSttTitel": "Le registrazioni vanno a {host}",
-    "trustSttText": "Il riconoscimento vocale passa da un servizio esterno. La registrazione stessa lascia questo box, non solo la trascrizione."
+    "trustSttText": "Il riconoscimento vocale passa da un servizio esterno. La registrazione stessa lascia questo box, non solo la trascrizione.",
+    "dateiHochladen": "Carica file audio",
+    "dateiZuGross": "Il file è troppo grande. Insilo accetta registrazioni fino a {max} MB.",
+    "dateiKeinAudio": "Non è un file audio. Insilo accetta ad esempio m4a, mp3, wav, ogg, webm e flac.",
+    "dateiUnlesbar": "Non è stato possibile leggere il file. Se si trova in una cartella cloud, lo scarichi prima sul dispositivo.",
+    "dateiErneut": "Riprova",
+    "dateiAndere": "Scegli un altro file",
+    "phaseUploading": "Invio del file",
+    "bildschirmWach": "Non blocchi lo schermo durante la registrazione, altrimenti il browser potrebbe interromperla."
   },
   "meeting": {
     "listTitle": "Riunioni",
@@ -804,6 +812,8 @@
     "andererTab": "Questa registrazione è in corso di invio da un'altra scheda.",
     "speichernFehler": "Non è stato possibile salvare il file.",
     "gesendet": "Registrazione inviata.",
-    "teilweise": "È salvato solo l'inizio fino a questa durata: la memoria del dispositivo era piena. Invii o salvi ciò che c'è."
+    "teilweise": "È salvato solo l'inizio fino a questa durata: la memoria del dispositivo era piena. Invii o salvi ciò che c'è.",
+    "fortschritt": "{prozent} % · {geladen} di {gesamt}",
+    "verarbeitet": "Inviato — la box sta elaborando la registrazione …"
   }
 }

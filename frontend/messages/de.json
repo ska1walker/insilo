@@ -75,7 +75,15 @@
     "trustEigeneBoxText": "Audio, Transkript und Suchindex bleiben hier. Das Sprachmodell läuft ebenfalls auf dieser Box, erreichbar über ihre eigene Adresse.",
     "llmFehltKurz": "Zusammenfassungen sind aus, bis das Sprachmodell eingerichtet ist.",
     "trustSttTitel": "Tonaufnahmen gehen an {host}",
-    "trustSttText": "Die Spracherkennung läuft über einen fremden Dienst. Damit verlässt die Aufnahme selbst diese Box — nicht nur das Transkript."
+    "trustSttText": "Die Spracherkennung läuft über einen fremden Dienst. Damit verlässt die Aufnahme selbst diese Box — nicht nur das Transkript.",
+    "dateiHochladen": "Audiodatei hochladen",
+    "dateiZuGross": "Die Datei ist zu groß. Insilo nimmt Aufnahmen bis {max} MB an.",
+    "dateiKeinAudio": "Das ist keine Tondatei. Insilo nimmt zum Beispiel m4a, mp3, wav, ogg, webm und flac an.",
+    "dateiUnlesbar": "Die Datei ließ sich nicht lesen. Liegt sie in einem Cloud-Ordner, laden Sie sie zuerst auf das Gerät.",
+    "dateiErneut": "Erneut versuchen",
+    "dateiAndere": "Andere Datei wählen",
+    "phaseUploading": "Datei wird gesendet",
+    "bildschirmWach": "Bitte sperren Sie den Bildschirm nicht, solange aufgenommen wird — der Browser kann die Aufnahme sonst anhalten."
   },
   "meeting": {
     "listTitle": "Besprechungen",
@@ -804,6 +812,8 @@
     "andererTab": "Diese Aufnahme wird gerade in einem anderen Tab gesendet.",
     "speichernFehler": "Die Datei konnte nicht gespeichert werden.",
     "gesendet": "Aufnahme gesendet.",
-    "teilweise": "Gesichert ist nur der Anfang bis zu dieser Länge — der Speicher des Geräts war voll. Senden oder speichern Sie, was da ist."
+    "teilweise": "Gesichert ist nur der Anfang bis zu dieser Länge — der Speicher des Geräts war voll. Senden oder speichern Sie, was da ist.",
+    "fortschritt": "{prozent} % · {geladen} von {gesamt}",
+    "verarbeitet": "Gesendet — die Box verarbeitet die Aufnahme …"
   }
 }

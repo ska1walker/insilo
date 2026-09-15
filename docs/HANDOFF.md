@@ -17,6 +17,95 @@
 >
 > ---
 >
+> ## 0.1.98: Upload ohne Speicherspitze, keine Doppelten, Aufnahmedatum (15. September 2026)
+>
+> **Speicherspitze.** Auf Kais Box stand `next-server` nach einem
+> 600-MB-Upload bei 798 MB (Limit 1 GiB). Ursache gesucht, nicht geraten:
+> der Klon-Puffer der Middleware ist es nicht (der Pfad ist ausgenommen,
+> `cloneBodyStream` wird nicht gerufen). Gemessen ohne Next, 500 MB gegen
+> eine schnelle Senke, Zuwachs des Prozesses:
+>
+> | Weg | Zuwachs |
+> |---|---|
+> | Web-Datenstrom → `fetch` (0.1.96/0.1.97) | 457–526 MB |
+> | Web-Datenstrom → `Readable.fromWeb` → `pipeline` → `http.request` | 80 MB |
+> | Node-Datenstrom → `pipeline` → `http.request` | 57–85 MB |
+>
+> Es liegt an `fetch` (undici) auf der ausgehenden Seite, nicht am
+> Web-Datenstrom, den Next dem Handler gibt. Ein erster Umbau auf eine
+> Pages-API-Route (roher Node-Datenstrom) wurde verworfen: ein
+> `pages/`-Verzeichnis ändert App-weit die Typen (`useParams`,
+> `usePathname` werden nullbar) und brach den Build in fremden Dateien.
+> `app/api/v1/recordings/route.ts` leitet jetzt per `pipeline` an
+> `http.request` weiter. Im echten Standalone-Server gemessen (wie im Pod):
+> 500 MB einzeln +67 MB, **zwei × 500 MB gleichzeitig +70 MB**, langsames
+> Backend +84 MB (Browser auf 27 s gebremst), alle Bytes angekommen.
+> Nicht übernommen aus dem Entwurf: eine „frühe Antwort des Backends"
+> durchzureichen. Node verwirft sie nach EPIPE, und das Backend antwortet
+> ohnehin erst nach dem ganzen Formular (auch 413, auf der Box gemessen).
+>
+> **Keine Doppelten.** Der Browser schickt `client_id` (die Kennung der
+> Sicherung, bei Dateien eine pro Auswahl, gleich bei „Erneut
+> versuchen"). `create_recording` sucht vor dem Schreiben nach
+> `metadata->>'client_id'` und gibt eine vorhandene Besprechung mit 200
+> zurück — ohne Datei, Transkription oder Webhook; im Protokoll mit
+> `wiederholung: true`. Gegen gleichzeitige Wiederholungen ein eindeutiger
+> Teilindex (Migration 0019); bei dessen Konflikt wird die doppelte Datei
+> gelöscht und die andere Besprechung zurückgegeben. Eine unbrauchbare
+> Kennung lässt den Upload nicht scheitern. Eine Besprechung im Papierkorb
+> wird bei einer Wiederholung ebenfalls zurückgegeben (nicht neu angelegt).
+>
+> **Aufnahmedatum.** Optionales `recorded_at` (ISO 8601 mit Zeitzone oder
+> ms seit 1970; vor 2000 oder mehr als einen Tag in der Zukunft ⇒ „jetzt").
+> Aufnahmen schicken ihren Beginn, auch beim späteren Senden aus der
+> Sicherung; Dateien das Datum aus dem Insilo-Dateinamen, sonst
+> `File.lastModified`.
+>
+> **Unabhängige Prüfung vor dem Release — Befunde und was daraus wurde:**
+> - *Kritisch:* Der Aufräumlauf löscht Ton nach `recorded_at` + Frist. Mit
+>   einem Aufnahmedatum aus dem Browser hätte eine alte Diktatdatei ihren
+>   Ton in der Nacht nach dem Hochladen verloren. Jetzt
+>   `greatest(recorded_at, created_at)`.
+> - **Uploads über fünf Minuten brachen ab — seit 0.1.96.** Node beendet
+>   jede Anfrage nach `server.requestTimeout` (300 s), Next setzt keinen
+>   eigenen Wert. Nachgemessen: Next-Standalone, 10 MB mit 30 kB/s ⇒
+>   **HTTP 408 nach 329 s**. Eine 90-Minuten-Aufnahme über 2 Mbit/s braucht
+>   rund sechs Minuten und wäre bei jedem Versuch gescheitert.
+>   `frontend/server-zeitlimit.cjs` setzt beim Start zwei Stunden
+>   (`node --require` im Dockerfile, `INSILO_REQUEST_TIMEOUT_MS`).
+>   Gegenprobe mit Hülle, derselbe Upload: **201 nach 342 s**, alle
+>   10 486 284 Bytes angekommen. Ungeklärt: ein Limit von 5 s brach einen
+>   51-s-Upload durch Next nicht ab, der nackte Node-Server schon (408 nach
+>   30 s) — geprüft ist deshalb der Fall, auf den es ankommt.
+> - Der Upload-Handler hatte ohne `fetch` kein Zeitlimit mehr zum Backend:
+>   jetzt 10 Minuten Ruhe ⇒ 502.
+> - Scheiterte das Einreihen der Transkription nach dem Anlegen, kam 500 —
+>   und eine Wiederholung hätte die ewig wartende Besprechung
+>   zurückbekommen. Jetzt steht sie als „fehlgeschlagen" da, „Neu
+>   verarbeiten" reiht sie wieder ein. (Ein automatisches erneutes
+>   Einreihen wurde verworfen: die Transkription schützt sich nicht gegen
+>   Doppelläufe, und `re-diarize` reiht bewusst auch fertige ein.)
+> - Eine Wiederholung zu einer Besprechung im Papierkorb gab deren Kennung
+>   zurück; der Browser löschte seine Sicherung und landete auf 404. Jetzt
+>   409 mit Hinweis auf den Papierkorb, die Sicherung bleibt.
+> - Die Suche nach der Kennung benutzte den Index nicht (auf PG16 mit
+>   200 000 Zeilen: sequenzieller Scan) — `metadata ? 'client_id'` ergänzt.
+> - Nicht geändert: eine Antwort des Backends *vor* dem vollständigen
+>   Rumpf kommt als 502 an (Node verwirft sie nach EPIPE). Betrifft nur den
+>   Torwächter bei falschem Geheimnis, also eine Fehleinrichtung.
+>
+> **Belegt:** pytest 355 (Wiederholung ohne Schreiben, gleichzeitige
+> Wiederholung, Kennung gespeichert, unbrauchbare Kennung, Konflikt ohne
+> Kennung bleibt Fehler, Papierkorb ⇒ 409, gescheitertes Einreihen ⇒
+> fehlgeschlagen statt 500, Aufnahmezeit-Tabelle), vitest 38
+> (Upload-Handler gegen echte Senke: 32 MB, Kopfzeilen, 413 nach vollem
+> Rumpf, hängendes Backend ⇒ 502, Backend weg ⇒ 502; Aufnahmedatum für
+> Dateien). Headless-Chrome: beide Suiten grün, dazu
+> gleiche Kennung und gleicher Beginn bei Aufnahme und Datei über zwei
+> Versuche, Datum aus Dateiname und Änderungsdatum.
+>
+> ---
+>
 > ## 0.1.97: Audiodatei hochladen, Bildschirm wach, Sendefortschritt (15. September 2026)
 >
 > Die drei Lücken, die nach dem Vorfall vom 14.9. offen blieben, dazu

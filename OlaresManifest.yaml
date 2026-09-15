@@ -153,6 +153,20 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
+    v0.1.98 — Lange Uploads kommen an, nichts wird doppelt angelegt.
+
+    - Ein Upload, der länger als fünf Minuten dauerte, brach ab — etwa eine
+      lange Besprechung über ein schwaches Mobilnetz. Jetzt haben Uploads
+      bis zu zwei Stunden Zeit.
+    - Der Upload geht mit festem, kleinem Puffer durch das Frontend. Bisher
+      belegte eine Datei von 500 MB kurzzeitig ebenso viel Speicher; zwei
+      gleichzeitig konnten das Frontend für alle abstürzen lassen.
+    - „Erneut senden" legt keine zweite Besprechung an, wenn der erste
+      Versuch doch angekommen war.
+    - Das Datum einer Besprechung ist der Beginn der Aufnahme — auch wenn
+      sie später gesendet wird. Eine hochgeladene Datei trägt das Datum aus
+      ihrem Namen oder ihr Änderungsdatum.
+
     v0.1.97 — Vorhandene Aufnahmen hochladen, Fortschritt beim Senden.
 
     - Audiodatei hochladen: m4a, mp3, wav, ogg, webm, flac und aac bis

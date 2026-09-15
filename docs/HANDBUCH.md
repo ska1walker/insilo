@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 15. September 2026, Fassung 0.1.97.
+Stand: 15. September 2026, Fassung 0.1.98.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.
@@ -192,7 +192,8 @@ des Browsers ab.
 Transkription → Sprechertrennung → Zusammenfassung. Die Ansicht
 aktualisiert sich selbst, Sie müssen nicht warten. Beim Senden zeigt
 Insilo, wie weit es ist („42 % · 38 MB von 90 MB"); bei einer langen
-Aufnahme über das Mobilnetz kann das einige Minuten dauern.
+Aufnahme über das Mobilnetz kann das einige Minuten dauern — bis zu zwei
+Stunden darf ein Upload brauchen.
 
 Solange aufgenommen oder gesendet wird, hält Insilo den Bildschirm wach —
 ein gesperrtes Telefon hält den Browser sonst an. Kann der Browser das
@@ -206,7 +207,10 @@ Kommt sie nicht an — Funkloch, Box nicht erreichbar, Tab geschlossen,
 Akku leer —, steht beim nächsten Öffnen oben **„Aufnahme nicht
 gesendet"** mit drei Möglichkeiten: **Erneut senden**, **Als Datei
 speichern** oder **Verwerfen**. Verwerfen fragt nach; von selbst
-verschwindet eine Aufnahme nicht.
+verschwindet eine Aufnahme nicht. Kam der erste Versuch doch an und nur
+die Bestätigung nicht, legt „Erneut senden" keine zweite Besprechung an —
+die Box erkennt die Aufnahme wieder. Als Datum gilt der Beginn der
+Aufnahme, nicht der Zeitpunkt des Sendens.
 
 Senden Sie eine solche Aufnahme bald. Safari löscht die Daten einer
 Website, die sieben Tage nicht geöffnet wurde — außer Insilo liegt als
@@ -224,7 +228,9 @@ Vorlage und Aufnahmesprache. Das geht auch ohne Mikrofon-Freigabe.
 
 - Der Titel ist der Dateiname. Eine Datei, die Insilo selbst über „Als
   Datei speichern" abgelegt hat, bekommt ihren ursprünglichen Titel zurück.
-- Als Datum der Besprechung gilt der Tag des Hochladens.
+- Als Datum der Besprechung gilt der Beginn der Aufnahme, wenn Insilo sie
+  selbst gespeichert hat, sonst das Änderungsdatum der Datei. Bei den
+  meisten Diktier-Apps ist das das Ende der Aufnahme.
 - Die Länge steht spätestens nach der Transkription richtig da, auch wenn
   der Browser sie vorher nicht auslesen konnte.
 - Sehr lange Dateien (mehrere Stunden) können an der Zeitgrenze der

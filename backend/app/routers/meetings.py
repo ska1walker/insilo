@@ -1,38 +1,49 @@
 """Meeting CRUD + audio upload."""
 
 import json
+import logging
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, BinaryIO
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from app import ablage, audit, relay_drop
+from app.audioformat import MEDIENTYP, audio_endung
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
 from app.db import acquire_as
 from app.errors import http_error
 from app.exports.markdown import sortieren
-from app.storage import delete_object, get_presigned_url, upload_bytes
+from app.storage import delete_object, get_presigned_url, upload_file
 from app.tasks.notify import enqueue as enqueue_webhook
 from app.tasks.transcribe import transcribe_meeting
+
+log = logging.getLogger(__name__)
 
 _SPEAKER_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,32}$")
 
 router = APIRouter(prefix="/api/v1", tags=["meetings"])
 
 
-def _audio_key(org_id: UUID, meeting_id: UUID, mime_type: str) -> str:
-    ext = "webm"
-    if "mp4" in mime_type:
-        ext = "m4a"
-    elif "ogg" in mime_type:
-        ext = "ogg"
-    elif "wav" in mime_type:
-        ext = "wav"
-    return f"{org_id}/{meeting_id}.{ext}"
+def _audio_key(org_id: UUID, meeting_id: UUID, endung: str) -> str:
+    return f"{org_id}/{meeting_id}.{endung}"
+
+
+def _groesse(datei: BinaryIO) -> int:
+    """Größe einer hochgeladenen Datei in Bytes.
+
+    Starlette hat den Rumpf schon in eine Temporärdatei geschrieben;
+    `UploadFile.size` ist nicht in jeder Fassung gesetzt, Ans-Ende-Springen
+    schon.
+    """
+    datei.seek(0, 2)
+    groesse = datei.tell()
+    datei.seek(0)
+    return groesse
 
 
 def _meeting_row_to_dto(row, audio_url: str | None = None) -> dict:
@@ -326,12 +337,20 @@ async def create_recording(
     else:
         raise http_error(400, "meeting.invalid_language", lang=raw_lang)
 
-    blob = await audio.read()
-    meeting_id = uuid4()
-    key = _audio_key(user.org_id, meeting_id, mime_type)
+    # Erst alles prüfen, dann schreiben. Bis 0.1.96 lag die Datei schon in
+    # der Ablage, bevor die Vorlage geprüft war — eine 400 ließ sie verwaist
+    # zurück, und `audio.read()` hielt sie dafür ganz im Speicher.
+    groesse = _groesse(audio.file)
+    if groesse > settings.max_upload_mb * 1024 * 1024:
+        raise http_error(413, "meeting.audio_too_large", max_mb=settings.max_upload_mb)
 
-    # Upload to MinIO first; only commit DB row on success.
-    upload_bytes(key, blob, mime_type)
+    endung = audio_endung(mime_type, audio.filename)
+    # Ohne verwertbaren Typ (manche Dateiauswahl liefert keinen) gilt der,
+    # der zur Endung passt — sonst spielt ihn der Browser später nicht ab.
+    if not mime_type.strip() or mime_type.strip() == "application/octet-stream":
+        mime_type = MEDIENTYP[endung]
+    meeting_id = uuid4()
+    key = _audio_key(user.org_id, meeting_id, endung)
 
     duration_sec = max(1, duration_ms // 1000)
 
@@ -342,17 +361,22 @@ async def create_recording(
     tpl_uuid: UUID | None
     if quick_mode:
         tpl_uuid = _QUICK_NOTE_TEMPLATE_ID
+    elif template_id:
+        try:
+            tpl_uuid = UUID(template_id)
+        except ValueError:
+            raise http_error(400, "template.not_available") from None
     else:
-        tpl_uuid = UUID(template_id) if template_id else None
+        tpl_uuid = None
 
     metadata: dict[str, Any] = {"mime_type": mime_type}
     if quick_mode:
         metadata["quick_mode"] = True
 
-    async with acquire_as(user.user_id) as conn:
-        # Validate template visibility if one was passed (otherwise the
-        # summarize task falls back to the system default).
-        if tpl_uuid is not None:
+    # Validate template visibility if one was passed (otherwise the
+    # summarize task falls back to the system default).
+    if tpl_uuid is not None:
+        async with acquire_as(user.user_id) as conn:
             allowed = await conn.fetchval(
                 """
                 select 1 from public.templates
@@ -363,36 +387,51 @@ async def create_recording(
                 tpl_uuid,
                 user.org_id,
             )
-            if not allowed:
-                raise http_error(400, "template.not_available")
+        if not allowed:
+            raise http_error(400, "template.not_available")
 
-        row = await conn.fetchrow(
-            """
-            insert into public.meetings (
-                id, org_id, created_by, title, status,
-                duration_sec, audio_path, audio_size_bytes,
-                language, template_id, metadata
+    try:
+        await run_in_threadpool(upload_file, key, audio.file, mime_type)
+        async with acquire_as(user.user_id) as conn:
+            row = await conn.fetchrow(
+                """
+                insert into public.meetings (
+                    id, org_id, created_by, title, status,
+                    duration_sec, audio_path, audio_size_bytes,
+                    language, template_id, metadata
+                )
+                values (
+                    $1, $2, $3, $4, 'queued',
+                    $5, $6, $7,
+                    $8, $9, $10::jsonb
+                )
+                returning id, title, recorded_at, duration_sec, audio_size_bytes,
+                         audio_path, status, template_id,
+                         metadata->>'mime_type' as audio_mime
+                """,
+                meeting_id,
+                user.org_id,
+                user.user_id,
+                title,
+                duration_sec,
+                key,
+                groesse,
+                db_language,
+                tpl_uuid,
+                json.dumps(metadata),
             )
-            values (
-                $1, $2, $3, $4, 'queued',
-                $5, $6, $7,
-                $8, $9, $10::jsonb
-            )
-            returning id, title, recorded_at, duration_sec, audio_size_bytes,
-                     audio_path, status, template_id,
-                     metadata->>'mime_type' as audio_mime
-            """,
-            meeting_id,
-            user.org_id,
-            user.user_id,
-            title,
-            duration_sec,
-            key,
-            len(blob),
-            db_language,
-            tpl_uuid,
-            json.dumps(metadata),
-        )
+    except Exception:
+        # Ohne Zeile gehört die Datei niemandem; der Aufräumlauf fände sie
+        # nie, weil er von den Zeilen aus sucht. Das gilt auch für eine
+        # halb geschriebene Datei (Platte voll). Nur `Exception`: bricht die
+        # Anfrage während des COMMIT ab, kann die Zeile schon stehen — dann
+        # ist eine übrig gebliebene Datei das kleinere Übel als eine
+        # Besprechung ohne Ton.
+        try:
+            delete_object(key)
+        except Exception:
+            log.exception("could not remove audio %s after failed insert", key)
+        raise
 
     # Hand off transcription to the Celery worker. The HTTP response returns
     # immediately; the frontend polls status until it flips to "ready".

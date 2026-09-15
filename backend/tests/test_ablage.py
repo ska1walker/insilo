@@ -129,7 +129,7 @@ def test_dateien_liegen_beim_ton_und_teilen_den_stamm() -> None:
     """Der Punkt der Übung: in einer Auflistung stehen die drei beieinander."""
     from app.routers.meetings import _audio_key
 
-    ton = _audio_key(ORG, BESPRECHUNG, "audio/webm")
+    ton = _audio_key(ORG, BESPRECHUNG, "webm")
     t = ablage.schluessel(ORG, BESPRECHUNG, ablage.SUFFIX_TRANSKRIPT)
     z = ablage.schluessel(ORG, BESPRECHUNG, ablage.SUFFIX_ZUSAMMENFASSUNG)
 

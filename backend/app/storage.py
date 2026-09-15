@@ -8,9 +8,10 @@ cross-namespace access to the system MinIO; on Olares we run "local".
 
 from __future__ import annotations
 
+import shutil
 from datetime import timedelta
 from pathlib import Path
-from typing import Protocol
+from typing import BinaryIO, Protocol
 from urllib.parse import quote, urlparse
 
 import boto3
@@ -21,6 +22,7 @@ from app.config import settings
 
 class _Backend(Protocol):
     def upload_bytes(self, key: str, data: bytes, content_type: str) -> None: ...
+    def upload_file(self, key: str, datei: BinaryIO, content_type: str) -> None: ...
     def get_bytes(self, key: str) -> bytes: ...
     def delete_object(self, key: str) -> None: ...
     def exists(self, key: str) -> bool: ...
@@ -46,6 +48,14 @@ class _S3Backend:
             Key=key,
             Body=data,
             ContentType=content_type,
+        )
+
+    def upload_file(self, key: str, datei: BinaryIO, content_type: str) -> None:
+        self._client().upload_fileobj(
+            datei,
+            settings.minio_bucket,
+            key,
+            ExtraArgs={"ContentType": content_type},
         )
 
     def get_bytes(self, key: str) -> bytes:
@@ -92,6 +102,12 @@ class _LocalBackend:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
 
+    def upload_file(self, key: str, datei: BinaryIO, content_type: str) -> None:  # noqa: ARG002
+        path = self._path(key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("wb") as ziel:
+            shutil.copyfileobj(datei, ziel, length=1 << 20)
+
     def get_bytes(self, key: str) -> bytes:
         return self._path(key).read_bytes()
 
@@ -122,6 +138,17 @@ backend: _Backend = _make_backend()
 
 def upload_bytes(key: str, data: bytes, content_type: str) -> None:
     backend.upload_bytes(key, data, content_type)
+
+
+def upload_file(key: str, datei: BinaryIO, content_type: str) -> None:
+    """Schreibt eine Datei stückweise, ohne sie ganz in den Speicher zu laden.
+
+    Für Tonaufnahmen bis `max_upload_mb`: `upload_bytes(audio.read())` hielt
+    sie ganz im Speicher und schrieb synchron — bei 500 MB stand der
+    Event-Loop für alle anderen still. Aufrufer aus `async def` gehen über
+    `run_in_threadpool`.
+    """
+    backend.upload_file(key, datei, content_type)
 
 
 def get_bytes(key: str) -> bytes:

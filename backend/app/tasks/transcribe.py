@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
@@ -15,6 +16,7 @@ import httpx
 from celery import shared_task
 
 from app import ablage
+from app.audioformat import audio_endung
 from app.config import settings
 from app.db import dienst_kontext
 from app.speaker_matcher import (
@@ -94,14 +96,25 @@ def _dateiname(mime: str) -> str:
     Einige STT-Server erkennen das Format an der Endung, nicht am
     MIME-Typ — mit "recording.bin" laufen sie ins Leere.
     """
-    endung = {
-        "webm": "webm", "mp4": "m4a", "ogg": "ogg",
-        "wav": "wav", "mpeg": "mp3", "flac": "flac",
-    }
-    for kennung, e in endung.items():
-        if kennung in mime:
-            return f"recording.{e}"
-    return "recording.webm"
+    return f"recording.{audio_endung(mime)}"
+
+
+def _dauer_sekunden(
+    dauer: float | None, segmente: list[dict[str, Any]] | None = None,
+) -> int | None:
+    """Die gemessene Dauer als ganze Sekunden, oder `None`, wenn es keine gibt.
+
+    Die Spracherkennung kennt die echte Länge. Gespeichert war bisher nur,
+    was der Browser behauptete — bei einer hochgeladenen Datei, deren Länge
+    der Browser nicht auslesen kann, eine Sekunde. Nennt ein fremder Dienst
+    keine Dauer, ist das Ende des letzten Segments die beste Schätzung.
+    """
+    if dauer is None or not math.isfinite(dauer) or dauer <= 0:
+        enden = [float(s.get("end") or 0.0) for s in (segmente or [])]
+        dauer = max(enden, default=0.0)
+    if not math.isfinite(dauer) or dauer <= 0:
+        return None
+    return max(1, round(dauer))
 
 
 async def _transkribieren_lokal(
@@ -395,6 +408,14 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
                     match.org_speaker_id if match else None,
                     match.score if match else None,
                     "auto" if (match and match.org_speaker_id) else "pending",
+                )
+
+            sekunden = _dauer_sekunden(tr.duration, segments)
+            if sekunden is not None:
+                await conn.execute(
+                    "update public.meetings set duration_sec = $2 where id = $1",
+                    meeting_id,
+                    sekunden,
                 )
 
             await _set_status(conn, meeting_id, "transcribed")

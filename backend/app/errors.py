@@ -114,6 +114,13 @@ ERRORS: dict[str, dict[str, str]] = {
         "es": "El segmento {idx} hace referencia a un hablante desconocido {sid}.",
         "it": "Il segmento {idx} fa riferimento al parlante sconosciuto {sid}.",
     },
+    "meeting.audio_too_large": {
+        "de": "Die Datei ist zu groß. Insilo nimmt Aufnahmen bis {max_mb} MB an.",
+        "en": "The file is too large. Insilo accepts recordings up to {max_mb} MB.",
+        "fr": "Le fichier est trop volumineux. Insilo accepte les enregistrements jusqu'à {max_mb} Mo.",
+        "es": "El archivo es demasiado grande. Insilo acepta grabaciones de hasta {max_mb} MB.",
+        "it": "Il file è troppo grande. Insilo accetta registrazioni fino a {max_mb} MB.",
+    },
     "meeting.invalid_language": {
         "de": "Ungültige Aufnahmesprache: {lang} (erwartet wird auto, de, en, fr, es oder it).",
         "en": "Invalid recording language: {lang} (expected auto, de, en, fr, es or it).",

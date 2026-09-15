@@ -12,6 +12,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
+from app.audioformat import MEDIENTYP
 from app.auth import CurrentUser, get_current_user
 from app.config import settings
 from app.storage import _LocalBackend, backend
@@ -19,12 +20,8 @@ from app.storage import _LocalBackend, backend
 router = APIRouter(prefix="/api/v1", tags=["audio"])
 
 
-_AUDIO_MIME = {
-    "webm": "audio/webm",
-    "m4a": "audio/mp4",
-    "ogg": "audio/ogg",
-    "wav": "audio/wav",
-}
+# Eine Liste für alle Stellen, siehe `app/audioformat.py`.
+_AUDIO_MIME = MEDIENTYP
 
 
 @router.get("/audio/{org_id}/{filename}")

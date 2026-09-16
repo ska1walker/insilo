@@ -16,6 +16,7 @@ from app import ablage, relay_drop
 from app.config import settings
 from app.db import dienst_kontext
 from app.llm_config import load_llm_config
+from app.verarbeitungszeit import hartes_limit, weiches_limit
 from app.worker import celery_app  # noqa: F401 -- side-effect: registers worker
 
 log = logging.getLogger(__name__)
@@ -653,6 +654,12 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     bind=True,
     max_retries=1,
     default_retry_delay=15,
+    # Wie bei der Erkennung: die globalen Limits aus `app.worker` sind für
+    # kleine Aufgaben bemessen. Ein Sprachmodell auf der Box, das ein
+    # langes Transkript verarbeitet, braucht mehr — und es soll eher
+    # fertig werden als abbrechen.
+    time_limit=hartes_limit(),
+    soft_time_limit=weiches_limit(),
 )
 def summarize_meeting(self, meeting_id: str) -> dict[str, Any]:  # noqa: ARG001
     mid = UUID(meeting_id)

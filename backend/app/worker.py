@@ -25,6 +25,7 @@ celery_app = Celery(
         "app.tasks.embed",
         "app.tasks.notify",
         "app.tasks.aufraeumen",
+        "app.tasks.waechter",
     ],
 )
 
@@ -35,8 +36,12 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     timezone=settings.app_timezone,
     enable_utc=True,
-    # Hard time limit for transcription tasks. Long meetings on tiny model
-    # take a few minutes; large-v3 on GPU is much faster.
+    # Vorgabe für die kleinen Aufgaben — Webhooks, Einbettungen,
+    # Aufräumen. Erkennung und Zusammenfassung bringen seit 0.1.99 ihre
+    # eigenen, viel großzügigeren Limits am `@shared_task` mit: diese
+    # dreißig Minuten waren jahrelang für sie gedacht und haben ab
+    # ungefähr zwanzig Minuten Aufnahme jede Verarbeitung abgeschnitten
+    # (die Messung steht in `app/verarbeitungszeit.py`).
     task_time_limit=60 * 30,        # 30 min hard kill
     task_soft_time_limit=60 * 25,   # 25 min warn
     # Die beiden Aufbewahrungsfristen durchsetzen. Einmal am Tag reicht:
@@ -53,6 +58,15 @@ celery_app.conf.update(
             # 03:30 Ortszeit — außerhalb der Bürozeiten, in denen
             # aufgenommen wird.
             "schedule": crontab(hour=3, minute=30),
+        },
+        # Alle fünf Minuten nach Besprechungen sehen, die in einem
+        # Zwischenzustand hängen geblieben sind. Täglich reicht hier
+        # nicht: eine Besprechung, die auf „wird transkribiert" steht,
+        # blockiert für den Nutzer die ganze Nachbearbeitung, und bis
+        # 0.1.98 stand sie dort für immer.
+        "waechter": {
+            "task": "waechter",
+            "schedule": 300.0,
         },
     },
 )

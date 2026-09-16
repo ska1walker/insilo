@@ -77,6 +77,28 @@ class Settings(BaseSettings):
     stt_api_key: str = ""
     stt_model: str = ""
 
+    # ---- Wie lange die Verarbeitung dauern darf ----------------------
+    # Bis 0.1.98 standen hier feste 25 Minuten für den Erkennungsaufruf
+    # und 30 für die ganze Aufgabe. Gemessen am 16.9.2026 auf einer Box
+    # ohne GPU (large-v3, int8, 6 Kerne, beam 5, Sprechertrennung im
+    # selben Aufruf): 795 s für 626 s Audio, also Faktor 1,3. Damit riss
+    # der 25-Minuten-Riegel ab ungefähr 20 Minuten Aufnahme — genau der
+    # Punkt, an dem Aufnahmen reihenweise als „fehlgeschlagen" endeten.
+    # Ein externer GPU-Endpunkt liegt bei Faktor 0,06 (38 s für dasselbe
+    # Audio); die Spanne zwischen beiden Wegen ist der Grund, warum hier
+    # kein fester Wert mehr steht, sondern einer je Sekunde Audio.
+    #
+    # Der Riegel erkennt einen *hängenden* Dienst, er bewertet keine
+    # Geschwindigkeit. Er darf deshalb nie bei einer Aufgabe zuschlagen,
+    # die noch fertig geworden wäre — der Vorgabewert lässt gegenüber der
+    # Messung das Doppelte an Luft.
+    stt_zeitfaktor: float = 3.0
+    stt_zeitlimit_min_sec: int = 600
+    # Obergrenze für den einzelnen Aufruf und zugleich das harte Limit
+    # der ganzen Aufgabe. Darüber hinaus wartet niemand mehr sinnvoll;
+    # was so lange braucht, braucht ein anderes Modell oder eine GPU.
+    verarbeitung_zeitlimit_sec: int = 4 * 60 * 60
+
     # The system template used when the user doesn't pick one explicitly.
     default_template_id: str = "00000000-0000-0000-0000-000000000001"
 

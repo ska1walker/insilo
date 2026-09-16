@@ -14,6 +14,7 @@ from uuid import UUID
 import asyncpg
 import httpx
 from celery import shared_task
+from celery.exceptions import SoftTimeLimitExceeded
 
 from app import ablage
 from app.audioformat import audio_endung
@@ -27,6 +28,7 @@ from app.speaker_matcher import (
 )
 from app.storage import get_bytes as _storage_get_bytes
 from app.stt_config import STTConfig, load_stt_config
+from app.verarbeitungszeit import hartes_limit, stt_zeitlimit, weiches_limit
 from app.worker import celery_app  # noqa: F401  -- import side-effect: registers
 
 log = logging.getLogger(__name__)
@@ -118,17 +120,21 @@ def _dauer_sekunden(
 
 
 async def _transkribieren_lokal(
-    audio_bytes: bytes, mime: str, language: str | None,
+    audio_bytes: bytes, mime: str, language: str | None, zeitlimit: float,
 ) -> Transkript:
     """Der mitgelieferte Whisper-Dienst. Text und Sprecher in einem Aufruf.
 
     `language` wird weggelassen statt auf None gesetzt, damit
     faster-whisper selbst erkennt (sein Vorgabewert).
+
+    `zeitlimit` hängt an der Länge der Aufnahme — warum, steht in
+    `app/verarbeitungszeit.py`. Dieser Weg ist der langsame: ohne GPU
+    braucht er mehr Rechenzeit, als die Aufnahme lang ist.
     """
     form_data: dict[str, str] = {}
     if language:
         form_data["language"] = language
-    async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 25)) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(zeitlimit)) as client:
         resp = await client.post(
             f"{settings.whisper_url}/transcribe",
             files={"audio": ("recording.bin", audio_bytes, mime)},
@@ -149,6 +155,7 @@ async def _transkribieren_lokal(
 
 async def _transkribieren_extern(
     audio_bytes: bytes, mime: str, language: str | None, stt: STTConfig,
+    zeitlimit: float,
 ) -> Transkript:
     """Externer OpenAI-kompatibler STT-Server, Sprecher weiterhin lokal.
 
@@ -178,7 +185,7 @@ async def _transkribieren_extern(
     if language:
         daten["language"] = language
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 25)) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(zeitlimit)) as client:
         resp = await client.post(
             f"{stt.base_url}/audio/transcriptions",
             # Dateiname mit echter Endung: manche Server leiten das Format
@@ -218,7 +225,7 @@ async def _transkribieren_extern(
     if not volltext:
         volltext = " ".join(s["text"] for s in segmente).strip()
 
-    centroids = await _sprecher_ergaenzen(audio_bytes, mime, segmente)
+    centroids = await _sprecher_ergaenzen(audio_bytes, mime, segmente, zeitlimit)
     return Transkript(
         segments=segmente,
         full_text=volltext,
@@ -232,18 +239,22 @@ async def _transkribieren_extern(
 
 async def _sprecher_ergaenzen(
     audio_bytes: bytes, mime: str, segmente: list[dict[str, Any]],
+    zeitlimit: float,
 ) -> list[list[float]]:
     """Sprecher zu fremd erzeugten Segmenten, über den lokalen Dienst.
 
     Schlägt das fehl, bleibt es beim Transkript ohne Sprechernamen — das
     ist ein Verlust an Komfort, kein Grund, die Besprechung scheitern zu
-    lassen.
+    lassen. Genau deshalb hing hier ein fester Riegel von zehn Minuten:
+    er fiel bei langen Aufnahmen still, und niemand sah, warum die
+    Sprechernamen fehlten. Er hängt jetzt an derselben Rechnung wie die
+    Erkennung.
     """
     if not segmente:
         return []
     grenzen = json.dumps([[s["start"], s["end"]] for s in segmente])
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(60 * 10)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(zeitlimit)) as client:
             resp = await client.post(
                 f"{settings.whisper_url}/diarize",
                 files={"audio": ("recording.bin", audio_bytes, mime)},
@@ -264,13 +275,36 @@ async def _sprecher_ergaenzen(
     return d.get("cluster_centroids") or []
 
 
+def _fehlertext(exc: BaseException) -> str:
+    """Der Satz, der in der Oberfläche unter der Besprechung steht.
+
+    Für die meisten Fehler ist die Ausnahme selbst schon aussagekräftig
+    (die Meldungen in diesem Modul sind dafür geschrieben). Für die zwei
+    Zeitriegel ist sie es nicht: `SoftTimeLimitExceeded(14100,)` sagt
+    niemandem, was zu tun ist — dabei ist gerade hier klar, was hilft.
+    """
+    if isinstance(exc, SoftTimeLimitExceeded | httpx.TimeoutException):
+        minuten = round(hartes_limit() / 60)
+        return (
+            "Die Verarbeitung hat länger gedauert als erlaubt "
+            f"({minuten} Minuten) und wurde abgebrochen. Die Aufnahme "
+            "selbst liegt unversehrt auf der Box. Bei langen Aufnahmen "
+            "liegt das fast immer am Erkennungsmodell: ohne Grafikkarte "
+            "braucht der mitgelieferte Dienst mehr Rechenzeit, als die "
+            "Aufnahme lang ist. Unter Einstellungen › Spracherkennung "
+            "lässt sich ein schnellerer Endpunkt eintragen; danach die "
+            "Verarbeitung erneut anstoßen."
+        )
+    return str(exc)
+
+
 async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     """The real work — split out so we can run it inside asyncio.run()."""
     conn = await _connect()
     try:
         row = await conn.fetchrow(
             """
-            select audio_path, org_id, language,
+            select audio_path, org_id, language, duration_sec,
                    metadata->>'mime_type' as mime
             from public.meetings
             where id = $1
@@ -291,9 +325,11 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     audio_bytes = _storage_get_bytes(row["audio_path"])
     mime = row["mime"] or "audio/webm"
     requested_language = row["language"]  # NULL = auto-detect (caller's choice)
+    zeitlimit = stt_zeitlimit(row["duration_sec"], len(audio_bytes))
     log.info(
-        "transcribing meeting %s (%d bytes, %s, language=%s)",
+        "transcribing meeting %s (%d bytes, %s, language=%s, limit=%ds)",
         meeting_id, len(audio_bytes), mime, requested_language or "auto",
+        round(zeitlimit),
     )
 
     # Zwei Wege, je nach Einrichtung: der mitgelieferte Dienst im eigenen
@@ -309,9 +345,13 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
 
     if stt.eingerichtet:
         log.info("transcribing via external endpoint %s", stt.base_url)
-        tr = await _transkribieren_extern(audio_bytes, mime, requested_language, stt)
+        tr = await _transkribieren_extern(
+            audio_bytes, mime, requested_language, stt, zeitlimit
+        )
     else:
-        tr = await _transkribieren_lokal(audio_bytes, mime, requested_language)
+        tr = await _transkribieren_lokal(
+            audio_bytes, mime, requested_language, zeitlimit
+        )
 
     segments = tr.segments
     full_text = tr.full_text
@@ -467,6 +507,12 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     bind=True,
     max_retries=2,
     default_retry_delay=10,
+    # Eigene Limits statt der globalen aus `app.worker`. Die gelten für
+    # jede Aufgabe gleich und sind für einen Webhook richtig bemessen —
+    # für eine Stunde Audio auf der CPU nicht. Warum sie an der Länge der
+    # Aufnahme hängen, steht in `app/verarbeitungszeit.py`.
+    time_limit=hartes_limit(),
+    soft_time_limit=weiches_limit(),
 )
 def transcribe_meeting(self, meeting_id: str) -> dict[str, Any]:  # noqa: ARG001 (bind=True)
     """Sync Celery wrapper. Drives the async pipeline via asyncio.run."""
@@ -476,7 +522,7 @@ def transcribe_meeting(self, meeting_id: str) -> dict[str, Any]:  # noqa: ARG001
     except Exception as exc:
         log.exception("transcribe_meeting failed for %s", meeting_id)
         # Best-effort: mark the meeting as failed so the UI can show it.
-        err_msg = str(exc)
+        err_msg = _fehlertext(exc)
         try:
             async def _mark_failed() -> None:
                 conn = await _connect()

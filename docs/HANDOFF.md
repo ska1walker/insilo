@@ -92,10 +92,25 @@
 > | Segmente | 216 — genau so viele Sätze wie hineingingen, nichts an den Grenzen verloren |
 > | Zeiten | 0 s → 1356,7 s, lückenlos aufsteigend |
 >
-> **Ein Olares-Punkt.** Die Abschnitte gehen nach `/app/cache`, nicht nach
-> `/tmp`: im Container-Layer wäre das der flüchtige Speicher des Knotens,
-> und eine große Aufnahme dort kann den Pod verdrängen lassen (Constraint
-> 5). `ffmpeg` kostet rund 70 MB im Backend-Abbild.
+> **Ein Olares-Punkt — und eine Falle darin.** Die Abschnitte gehen nach
+> `/app/cache`, nicht nach `/tmp`: im Container-Layer wäre das der
+> flüchtige Speicher des Knotens, und eine große Aufnahme dort kann den
+> Pod verdrängen lassen (Constraint 5). `ffmpeg` kostet rund 70 MB im
+> Backend-Abbild.
+>
+> Die Einstellung dafür hieß zuerst `app_cache_dir` — und griff auf der
+> Box nicht. Das Deployment setzt `APP_CACHE_DIR` auf den **Host**-Pfad
+> des Volumes (`/olares/userdata/Cache/pvc-…/insilo`); im Container gibt
+> es den nicht, dort ist es der Einhängepunkt `/app/cache`. Pydantic las
+> also den Host-Pfad, fand ihn nicht, und alles landete stillschweigend
+> wieder in `/tmp`. Im Worker-Container nachgemessen, nicht angenommen.
+> Das Feld heißt jetzt `stueck_cache_dir`, und `/app/cache` ist zusätzlich
+> fester Rückfall. **Dieselbe Falle wie beim Whisper-Modell in v0.1.52:**
+> eine Umgebungsvariable, deren Name etwas anderes verspricht, als sie
+> enthält. Wer ein Feld anlegt, dessen Großbuchstabenform im Deployment
+> schon vorkommt, erbt deren Bedeutung — ohne Fehlermeldung.
+>
+> **In 0.1.100 behoben**, nachdem 0.1.99 damit schon auf der Box lief.
 >
 > **Offen.** Der eigentliche Engpass bleibt das Modell: `large-v3` auf der
 > CPU rechnet langsamer als Echtzeit. Jetzt bricht nichts mehr ab, aber

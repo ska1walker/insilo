@@ -99,14 +99,21 @@ def arbeitsordner() -> str | None:
     Systemordner": so läuft es in der lokalen Entwicklung, wo es
     `/app/cache` nicht gibt.
     """
-    pfad = Path(settings.app_cache_dir or "")
-    try:
-        if pfad.is_dir():
+    # Der eingestellte Pfad zuerst, `/app/cache` als Rückfall: so landet es
+    # auch dann richtig, wenn jemand die Einstellung verstellt oder eine
+    # Umgebungsvariable etwas anderes bedeutet, als ihr Name vermuten lässt.
+    for kandidat in (settings.stueck_cache_dir, "/app/cache"):
+        if not kandidat:
+            continue
+        try:
+            pfad = Path(kandidat)
+            if not pfad.is_dir():
+                continue
             unterordner = pfad / "abschnitte"
             unterordner.mkdir(exist_ok=True)
             return str(unterordner)
-    except OSError as exc:
-        log.warning("Zwischenspeicher %s nicht nutzbar: %s", pfad, exc)
+        except OSError as exc:
+            log.warning("Zwischenspeicher %s nicht nutzbar: %s", kandidat, exc)
     return None
 
 

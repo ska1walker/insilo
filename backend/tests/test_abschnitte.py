@@ -525,7 +525,7 @@ def test_zwischenspeicher_liegt_in_app_cache(
     """
     from app.config import settings
 
-    monkeypatch.setattr(settings, "app_cache_dir", str(tmp_path))
+    monkeypatch.setattr(settings, "stueck_cache_dir", str(tmp_path))
     ordner = audiostuecke.arbeitsordner()
 
     assert ordner is not None
@@ -539,8 +539,41 @@ def test_ohne_app_cache_nimmt_der_code_den_systemordner(
     """In der lokalen Entwicklung gibt es `/app/cache` nicht."""
     from app.config import settings
 
-    monkeypatch.setattr(settings, "app_cache_dir", "/gibt/es/nicht")
+    monkeypatch.setattr(settings, "stueck_cache_dir", "/gibt/es/nicht")
     assert audiostuecke.arbeitsordner() is None
+
+
+def test_die_einstellung_heisst_nicht_app_cache_dir() -> None:
+    """Auf der Box gemessen: `APP_CACHE_DIR` bedeutet etwas anderes.
+
+    Das Deployment setzt sie auf den **Host**-Pfad des Volumes
+    (`/olares/userdata/Cache/pvc-…/insilo`). Im Container gibt es den
+    nicht — dort ist es der Einhängepunkt `/app/cache`. Ein Feld namens
+    `app_cache_dir` hätte den Host-Pfad gelesen, ihn nicht gefunden und
+    alles stillschweigend wieder in `/tmp` abgelegt. Dieselbe Falle wie
+    beim Whisper-Modell in v0.1.52.
+    """
+    from app.config import Settings
+
+    assert "app_cache_dir" not in Settings.model_fields
+    assert "stueck_cache_dir" in Settings.model_fields
+
+
+def test_app_cache_ist_der_rueckfall(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    """Auch bei verstellter Einstellung soll es auf der Box richtig landen."""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "stueck_cache_dir", "/gibt/es/nicht")
+    echt = Path.is_dir
+
+    def _ist_ordner(self):
+        return str(self) == "/app/cache" or echt(self)
+
+    angelegt: list[str] = []
+    monkeypatch.setattr(Path, "is_dir", _ist_ordner)
+    monkeypatch.setattr(Path, "mkdir", lambda self, **k: angelegt.append(str(self)))
+
+    assert audiostuecke.arbeitsordner() == "/app/cache/abschnitte"
 
 
 def test_der_schnitt_landet_nicht_in_tmp() -> None:

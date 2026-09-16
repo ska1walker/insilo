@@ -107,9 +107,17 @@ class Settings(BaseSettings):
     # `/app/cache` ist der richtige: ephemer, aber ein eigenes Verzeichnis
     # auf der Platte. Im Container-Layer unter `/tmp` zählte dasselbe als
     # flüchtiger Speicher des Knotens — bei einer großen Aufnahme genug,
-    # um den Pod verdrängen zu lassen. Existiert der Pfad nicht (lokale
-    # Entwicklung), nimmt der Code den Systemordner.
-    app_cache_dir: str = "/app/cache"
+    # um den Pod verdrängen zu lassen.
+    #
+    # **Nicht `app_cache_dir` nennen.** Das Deployment setzt `APP_CACHE_DIR`
+    # auf den *Host*-Pfad des Volumes
+    # (`/olares/userdata/Cache/pvc-…/insilo`); im Container gibt es den
+    # nicht, dort ist es der Einhängepunkt `/app/cache`. Ein Feld mit dem
+    # Namen hätte den Host-Pfad gelesen, der Pfad wäre nicht gefunden
+    # worden, und alles landete stillschweigend wieder in `/tmp`. Auf der
+    # Box gemessen am 16.9.2026 — dieselbe Falle wie beim Whisper-Modell
+    # in v0.1.52 (HANDOFF, `env_prefix`).
+    stueck_cache_dir: str = "/app/cache"
     # Ab wie vielen Zeichen ein Transkript vor der Zusammenfassung
     # verdichtet wird (`app/verdichten.py`). 24 000 Zeichen sind grob
     # 7 000 Token — das passt auch bei einem Modell mit kleinem

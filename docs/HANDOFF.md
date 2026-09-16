@@ -112,6 +112,48 @@
 >
 > **In 0.1.100 behoben**, nachdem 0.1.99 damit schon auf der Box lief.
 >
+> **Ein zweiter Fund beim Nachmessen: kurze Aufnahmen verloren ihre
+> Sprechernamen.** Eine Aufnahme mit vier Segmenten kam transkribiert
+> zurück, aber ohne jede Zuordnung. Im Protokoll des Erkennungsdienstes:
+>
+> ```
+> diarization failed: Number of labels is 4.
+> Valid values are 2 to n_samples - 1 (inclusive)
+> ```
+>
+> `_estimate_speakers` probierte so viele Cluster wie Segmente; beim
+> letzten Durchgang bekam jedes Segment seinen eigenen, `silhouette_score`
+> lehnte das ab, und die Ausnahme riss die ganze Sprechertrennung mit —
+> gefangen eine Ebene höher, mit einer Protokollzeile und ohne Spur in der
+> Oberfläche. Betroffen war **jede Aufnahme mit höchstens `MAX_SPEAKERS`
+> (6) verwertbaren Segmenten**, also jede kurze. Die Regel steht seit
+> 0.1.101 in `services/whisper/app/clustergroesse.py` — ein Modul ohne
+> Abhängigkeiten, damit sie sich aus der Backend-Suite prüfen lässt;
+> `diarize.py` zieht torch, speechbrain und scikit-learn mit sich.
+>
+> ---
+>
+> ### Stand nach 0.1.101
+>
+> **Auf Kais Box** (Helm-Rev 23, fünf Pods auf 0.1.101, sechs von sechs
+> Gesundheitsproben, keine Neustarts; Abzug vorher
+> `~/insilo-sicherung/vor-0.1.101.sql`). Beide Funde im laufenden
+> Container nachgemessen:
+>
+> | | 0.1.99 | 0.1.101 |
+> |---|---|---|
+> | Zwischenspeicher der Abschnitte | `None` → `/tmp` | `/app/cache/abschnitte` |
+> | Sprechertrennung bei 4 Segmenten | 0 Cluster, `speaker: None` | 2 Cluster, `SPEAKER_00` |
+>
+> **Im Markt** live auf `aimighty-market.pages.dev`, Version 0.1.101, das
+> ausgelieferte Chart byte-gleich mit `dist/insilo-0.1.101.tgz` und mit
+> dem, was auf der Box läuft.
+>
+> **Drei Fassungen an einem Tag** (0.1.99 → 0.1.100 → 0.1.101), weil das
+> Nachmessen im echten Container zweimal etwas fand, das lokal nicht
+> auffallen konnte. Das ist kein Versehen, sondern der Grund, warum
+> nachgemessen wird.
+>
 > **Offen.** Der eigentliche Engpass bleibt das Modell: `large-v3` auf der
 > CPU rechnet langsamer als Echtzeit. Jetzt bricht nichts mehr ab, aber
 > eine Besprechung von 30 Minuten belegt den einen Worker rund 40 Minuten.

@@ -35,7 +35,7 @@ select set_config('app.dienst', '1', false);
 insert into public.templates (
   id, org_id, name, description, category,
   system_prompts, output_schema, few_shot_input, few_shot_output,
-  is_system, is_active, version
+  is_system, is_active, version, an_crm
 )
 values
 -- ============================================================
@@ -193,7 +193,9 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   }$few$::jsonb,
   true,
   true,
-  3
+  3,
+  -- an_crm: interne und externe Runden, kein Kundengespräch
+  false
 ),
 
 -- ============================================================
@@ -353,7 +355,9 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   }$few$::jsonb,
   true,
   true,
-  3
+  3,
+  -- an_crm: Mandantengespräch ist Kundenkontakt
+  true
 ),
 
 -- ============================================================
@@ -517,7 +521,9 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   }$few$::jsonb,
   true,
   true,
-  3
+  3,
+  -- an_crm: Vertriebsgespräch ist Kundenkontakt
+  true
 ),
 
 -- ============================================================
@@ -678,7 +684,9 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema definito. Manten
   }$few$::jsonb,
   true,
   true,
-  3
+  3,
+  -- an_crm: Jahresgespräch mit Kunden, für die Kundenakte
+  true
 ),
 
 -- ============================================================
@@ -811,7 +819,9 @@ Restituisca esclusivamente un oggetto JSON conforme allo schema. Mantenga i nomi
   }$few$::jsonb,
   true,
   true,
-  1
+  1,
+  -- an_crm: spontane Sprachnotiz, kein Gespräch
+  false
 )
 on conflict (id) do update set
   name             = excluded.name,
@@ -824,4 +834,8 @@ on conflict (id) do update set
   is_system        = excluded.is_system,
   is_active        = excluded.is_active,
   version          = excluded.version,
+  -- Die Voreinstellung gehört dem Saatgut und wird bei jedem Start
+  -- nachgezogen. Was eine Organisation abweichend festlegt, steht in
+  -- template_weitergabe und bleibt davon unberührt (Migration 0021).
+  an_crm           = excluded.an_crm,
   updated_at       = now();

@@ -285,7 +285,9 @@ def test_der_seed_zaehlt_die_vorlagen_hoch() -> None:
     mit_kurzfassung = [b for b in fuer_vorlagen if "kurzfassung" in b]
     assert len(mit_kurzfassung) == 4, f"{len(mit_kurzfassung)} Vorlagen mit Kurzfassung"
     for b in mit_kurzfassung:
-        assert re.search(r"\n  3\n\)", b), (
+        # Seit 0.1.102 folgt auf die Version die CRM-Voreinstellung
+        # (Migration 0021), mit einer Zeile Begründung davor.
+        assert re.search(r"\n  3,\n(  --[^\n]*\n)?  (true|false)\n\)", b), (
             "eine Vorlage mit Kurzfassung steht noch auf der alten Version"
         )
 

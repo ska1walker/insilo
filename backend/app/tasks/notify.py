@@ -39,6 +39,7 @@ import asyncpg
 import httpx
 from celery import shared_task
 
+from app import weitergabe
 from app.config import settings
 from app.db import dienst_kontext
 from app.exports.markdown import render_meeting_markdown
@@ -105,11 +106,12 @@ async def _load_meeting_payload(
     the `meeting.deleted` event needs them.
     """
     meeting_row = await conn.fetchrow(
-        """
+        f"""
         select m.id, m.org_id, m.title, m.recorded_at, m.duration_sec,
                m.status, m.language, m.template_id, m.audio_size_bytes,
                m.error_message, m.deleted_at,
-               t.name as template_name
+               t.name as template_name,
+               {weitergabe.SPALTE}
         from public.meetings m
         left join public.templates t on t.id = m.template_id
         where m.id = $1
@@ -208,6 +210,11 @@ async def _load_meeting_payload(
             "language": meeting["language"],
             "template_id": (str(meeting["template_id"]) if meeting["template_id"] else None),
             "template_name": template_name,
+            # Gehört die Besprechung in ein CRM? An der Vorlage festgelegt,
+            # nicht am Namen (`app/weitergabe.py`). Ein CRM, das den
+            # Schlüssel nicht kennt, überliest ihn; eines, das ihn kennt,
+            # übernimmt nur `true`.
+            "crm": bool(meeting["an_crm"]),
             "error_message": meeting["error_message"],
             "deleted_at": _iso_or_none(meeting["deleted_at"]),
             "tags": [t["name"] for t in tags],

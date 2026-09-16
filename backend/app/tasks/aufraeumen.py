@@ -29,11 +29,12 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any
+from uuid import UUID
 
 import asyncpg
 from celery import shared_task
 
-from app import ablage, relay_drop
+from app import ablage, relay_drop, weitergabe
 from app.config import settings
 from app.db import dienst_kontext
 from app.storage import delete_object, exists
@@ -181,8 +182,8 @@ async def _markdown_nachziehen(conn: asyncpg.Connection) -> dict[str, int]:
     entfernt, und der nächste Lauf schreibt sie neu.
     """
     faellig = await conn.fetch(
-        """
-        select m.id, m.org_id
+        f"""
+        select m.id, m.org_id, {weitergabe.SPALTE}
         from public.meetings m
         where m.deleted_at is null
           and exists (select 1 from public.transcripts t where t.meeting_id = m.id)
@@ -196,9 +197,16 @@ async def _markdown_nachziehen(conn: asyncpg.Connection) -> dict[str, int]:
         # von der Ablage-Datei prüfen und nachziehen. Eigener Zähler: das
         # Protokoll des Laufs soll sagen, *was* nachgezogen wurde, und eine
         # Besprechung, die beides bekommt, zählte sonst doppelt.
-        if relay_drop.fehlt(zeile["id"]) and await relay_drop.schreiben(
-            conn, zeile["id"]
-        ):
+        #
+        # Seit 0.1.102 auch dann, wenn die Datei zwar liegt, aber ihre
+        # CRM-Markierung nicht mehr stimmt: geschrieben vor dem Schlüssel,
+        # oder die Vorlage wurde umgestellt und das sofortige Nachziehen
+        # (`weitergabe_nachziehen`) kam nicht durch. Ohne diesen Abgleich
+        # übernähme Beacon Dateien älterer Fassung weiter ungefiltert.
+        if (
+            relay_drop.fehlt(zeile["id"])
+            or relay_drop.veraltet(zeile["id"], bool(zeile["an_crm"]))
+        ) and await relay_drop.schreiben(conn, zeile["id"]):
             freigegeben += 1
 
         schluessel = ablage.schluessel(
@@ -251,3 +259,42 @@ def aufraeumen() -> dict[str, Any]:
     der nächste Lauf mit.
     """
     return asyncio.run(_durchlauf())
+
+
+async def _weitergabe_nachziehen(org_id: UUID, template_id: UUID) -> dict[str, Any]:
+    """Die Dateien aller Besprechungen mit dieser Vorlage neu schreiben."""
+    conn = await _connect()
+    try:
+        besprechungen = await conn.fetch(
+            """
+            select m.id from public.meetings m
+            where m.org_id = $1 and m.template_id = $2 and m.deleted_at is null
+              and exists (select 1 from public.summaries s
+                          where s.meeting_id = m.id and s.is_current = true)
+            """,
+            org_id,
+            template_id,
+        )
+        geschrieben = 0
+        for zeile in besprechungen:
+            if await relay_drop.schreiben(conn, zeile["id"]):
+                geschrieben += 1
+    finally:
+        await conn.close()
+    log.info(
+        "Weitergabe nachgezogen: Vorlage %s, %d von %d Dateien neu geschrieben",
+        template_id, geschrieben, len(besprechungen),
+    )
+    return {"geschrieben": geschrieben, "besprechungen": len(besprechungen)}
+
+
+@shared_task(name="weitergabe_nachziehen")
+def weitergabe_nachziehen(org_id: str, template_id: str) -> dict[str, Any]:
+    """Nach dem Umschalten an einer Vorlage (`PUT /templates/{id}/weitergabe`).
+
+    Beacon liest den Ordner alle zwei Minuten und richtet sich nach dem
+    Schlüssel `crm:` in jeder Datei. Ohne dieses Nachziehen sähe es die
+    Änderung erst nach dem nächtlichen Abgleich — und bis dahin landeten
+    Gespräche im CRM, die gerade abbestellt wurden.
+    """
+    return asyncio.run(_weitergabe_nachziehen(UUID(org_id), UUID(template_id)))

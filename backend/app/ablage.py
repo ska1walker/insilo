@@ -39,6 +39,7 @@ from uuid import UUID
 
 import asyncpg
 
+from app import weitergabe
 from app.exports.markdown import render_meeting_markdown
 from app.storage import delete_object, upload_bytes
 
@@ -92,9 +93,10 @@ async def _einsammeln(
 ) -> tuple[dict[str, Any], dict[str, Any] | None, dict[str, Any] | None, list[dict[str, Any]]] | None:
     """Alles, was in die beiden Dateien gehört. `None`, wenn es die Zeile nicht gibt."""
     besprechung = await conn.fetchrow(
-        """
+        f"""
         select m.id, m.org_id, m.title, m.recorded_at, m.duration_sec,
-               m.language, t.name as template_name
+               m.language, t.name as template_name,
+               {weitergabe.SPALTE}
         from public.meetings m
         left join public.templates t on t.id = m.template_id
         where m.id = $1

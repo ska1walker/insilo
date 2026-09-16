@@ -178,6 +178,13 @@ ERRORS: dict[str, dict[str, str]] = {
         "es": "Las plantillas del sistema no se pueden eliminar.",
         "it": "I modelli di sistema non possono essere eliminati.",
     },
+    "template.weitergabe_forbidden": {
+        "de": "Welche Gespräche an das CRM gehen, legen nur Inhaberinnen und Verwaltende fest.",
+        "en": "Only owners and administrators decide which conversations go to the CRM.",
+        "fr": "Seuls les propriétaires et les administrateurs décident quelles conversations sont transmises au CRM.",
+        "es": "Solo los propietarios y administradores deciden qué conversaciones se envían al CRM.",
+        "it": "Solo i titolari e gli amministratori decidono quali conversazioni vengono inviate al CRM.",
+    },
     # ── auth / api keys ───────────────────────────────────────────
     "auth.invalid_key": {
         "de": "Ungültiger API-Schlüssel.",

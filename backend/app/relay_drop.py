@@ -25,6 +25,14 @@ eine `key: value`-Zeile pro Schlüssel, keine mehrzeiligen Werte,
 Listen als JSON-Arrays. Relay liest das Verzeichnis read-only; wer
 hier schreibt, ist Insilo.
 
+**`crm: true|false`** (seit 0.1.102, weiterhin schema 1 — ein
+zusätzlicher Schlüssel, den ein älterer Leser überliest): gehört die
+Besprechung in ein CRM? Festgelegt an der Vorlage (`app/weitergabe.py`),
+nicht am Namen, den eine Organisation umbenennen kann. Beacon übernimmt
+nur `crm: true`; fehlt der Schlüssel, stammt die Datei von einem älteren
+Insilo, und Beacon verhält sich wie bisher. Relay beachtet ihn nicht —
+was Relay zeigt, ist eine eigene, noch offene Entscheidung.
+
 **Abgeleitet, nicht Quelle.** Wie die Ablage: die Datenbank bleibt die
 Wahrheit, die Datei wird neu geschrieben, wenn sich der Inhalt ändert,
 und sie darf jederzeit fehlen, ohne dass etwas kaputtgeht. Ein
@@ -106,6 +114,7 @@ def _frontmatter(
             f"participants: {_liste(namen)}",
             f"tags: {_liste([t.get('name') for t in etiketten])}",
             f"template: {_zitat(besprechung.get('template_name') or '')}",
+            f"crm: {'true' if besprechung.get('an_crm') else 'false'}",
             "source_url: ''",
             f"schema: {SCHEMA}",
             "---",
@@ -220,6 +229,56 @@ def _dateien_von(verzeichnis: Path, meeting_id: UUID | str) -> list[Path]:
     return [d for d in verzeichnis.glob(f"*--{vorlauf}.md") if _gehoert_zu(d, meeting_id)]
 
 
+def crm_markierung(meeting_id: UUID | str) -> bool | None:
+    """Was in der liegenden Datei unter `crm:` steht.
+
+    `None`, wenn es keine Datei gibt, der Export aus ist oder die Datei
+    den Schlüssel nicht trägt (geschrieben vor 0.1.102). Gelesen wird nur
+    der Kopf.
+    """
+    verzeichnis = _verzeichnis()
+    if verzeichnis is None:
+        return None
+    try:
+        dateien = _dateien_von(verzeichnis, meeting_id)
+    except Exception:  # noqa: BLE001
+        return None
+    for datei in dateien:
+        try:
+            with open(datei, encoding="utf-8") as f:
+                for nr in range(20):
+                    zeile = f.readline()
+                    # Das zweite `---` beendet den Kopf; dahinter beginnt
+                    # Insilos Markdown mit einem eigenen Kopf.
+                    if not zeile or (nr > 0 and zeile.strip() == "---"):
+                        break
+                    schluessel, _trenner, wert = zeile.partition(":")
+                    if schluessel.strip() == "crm":
+                        return wert.strip() == "true"
+        except OSError:
+            continue
+    return None
+
+
+def veraltet(meeting_id: UUID | str, an_crm: bool) -> bool:
+    """Liegt eine Datei, deren Markierung nicht mehr stimmt?
+
+    Für den nächtlichen Abgleich: eine Datei ohne den Schlüssel (älteres
+    Insilo) gilt als veraltet, ebenso eine, deren Vorlage inzwischen
+    anders eingestellt ist. Keine Datei heißt nicht veraltet, sondern
+    fehlend — dafür gibt es `fehlt`.
+    """
+    verzeichnis = _verzeichnis()
+    if verzeichnis is None:
+        return False
+    try:
+        if not _dateien_von(verzeichnis, meeting_id):
+            return False
+    except Exception:  # noqa: BLE001
+        return False
+    return crm_markierung(meeting_id) is not an_crm
+
+
 def fehlt(meeting_id: UUID | str) -> bool:
     """`True`, wenn der Export an ist und die Datei nicht liegt.
 
@@ -275,9 +334,11 @@ def verzeichnis_und_anzahl() -> tuple[str, int] | None:
 
 __all__ = [
     "SCHEMA",
+    "crm_markierung",
     "dateiname",
     "entfernen",
     "fehlt",
     "schreiben",
+    "veraltet",
     "verzeichnis_und_anzahl",
 ]

@@ -139,6 +139,10 @@ _REGELN: list[tuple[frozenset[str], re.Pattern[str], str, str | None]] = [
      "template.prompt_update", "template"),
     (frozenset({"DELETE"}), re.compile(rf"^/api/v1/templates/(?P<id>{_UUID})/prompt$"),
      "template.prompt_reset", "template"),
+    # Welche Gespräche ein angeschlossenes CRM zu sehen bekommt — eine
+    # Entscheidung über Datenwege, deshalb im Protokoll (Migration 0021).
+    (frozenset({"PUT"}), re.compile(rf"^/api/v1/templates/(?P<id>{_UUID})/weitergabe$"),
+     "template.weitergabe", "template"),
     (frozenset({"POST"}), re.compile(r"^/api/v1/templates$"), "template.create", "template"),
     (frozenset({"PUT"}), re.compile(rf"^/api/v1/templates/(?P<id>{_UUID})$"),
      "template.update", "template"),

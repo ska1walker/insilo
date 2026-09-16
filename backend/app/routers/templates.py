@@ -14,18 +14,20 @@ knowledge.
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from app import audit
+from app import audit, weitergabe
 from app.auth import CurrentUser, get_current_user
 from app.db import acquire_as
 from app.errors import http_error
 
 router = APIRouter(prefix="/api/v1", tags=["templates"])
+log = logging.getLogger(__name__)
 
 
 # Sensible default schema for user-created templates. Flexible enough to
@@ -105,6 +107,13 @@ def _base_dto(row) -> dict:
         "few_shot_input": few_shot_input,
         "few_shot_output": few_shot_output,
         "custom_fields": custom_fields,
+        # Geht eine Besprechung mit dieser Vorlage an ein angeschlossenes
+        # CRM? Wirksamer Wert und Voreinstellung — die Oberfläche zeigt,
+        # wenn die Organisation abweicht (`app/weitergabe.py`).
+        "an_crm": bool(row["an_crm"]) if "an_crm" in row.keys() else False,
+        "an_crm_standard": (
+            bool(row["an_crm_standard"]) if "an_crm_standard" in row.keys() else False
+        ),
     }
 
 
@@ -122,10 +131,14 @@ async def list_templates(user: CurrentUser = Depends(get_current_user)) -> list[
                    t.version, t.output_schema,
                    t.few_shot_input, t.few_shot_output,
                    c.display_name, c.display_description, c.custom_fields,
-                   (c.template_id is not null) as is_customized
+                   (c.template_id is not null) as is_customized,
+                   coalesce(w.an_crm, t.an_crm) as an_crm,
+                   t.an_crm as an_crm_standard
             from public.templates t
             left join public.template_customizations c
                 on c.template_id = t.id and c.org_id = $1
+            left join public.template_weitergabe w
+                on w.template_id = t.id and w.org_id = $1
             where t.is_active = true
               and (t.is_system = true or t.org_id = $1)
             order by t.is_system desc, t.name asc
@@ -154,10 +167,14 @@ async def get_template(
                    t.few_shot_input, t.few_shot_output,
                    c.system_prompts as custom_prompts,
                    c.display_name, c.display_description, c.custom_fields,
-                   c.updated_at as custom_updated_at
+                   c.updated_at as custom_updated_at,
+                   coalesce(w.an_crm, t.an_crm) as an_crm,
+                   t.an_crm as an_crm_standard
             from public.templates t
             left join public.template_customizations c
                 on c.template_id = t.id and c.org_id = $2
+            left join public.template_weitergabe w
+                on w.template_id = t.id and w.org_id = $2
             where t.id = $1
               and t.is_active = true
               and (t.is_system = true or t.org_id = $2)
@@ -400,6 +417,100 @@ class TemplateUpdate(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
     description: str = Field(default="", max_length=500)
     system_prompts: dict[str, str] | None = None
+
+
+class WeitergabeUpdate(BaseModel):
+    an_crm: bool
+
+
+@router.put("/templates/{template_id}/weitergabe")
+async def set_template_weitergabe(
+    template_id: UUID,
+    payload: WeitergabeUpdate,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """Festlegen, ob Besprechungen mit dieser Vorlage ins CRM gehen.
+
+    Getrennt von `/prompt`: dort geht es darum, *wie* zusammengefasst
+    wird, hier darum, *wohin* das Ergebnis geht. Eine Anpassung am Prompt
+    zurückzusetzen soll nicht nebenbei ändern, was Beacon zu sehen bekommt.
+
+    Entspricht der Wert der Voreinstellung, wird die Abweichung gelöscht
+    statt gespeichert — sonst stünde eine Organisation, die einmal hin und
+    zurück geschaltet hat, dauerhaft neben der Voreinstellung und bekäme
+    eine spätere Änderung am Saatgut nicht mehr mit.
+
+    Danach werden die Dateien im gemeinsamen Ordner für alle Besprechungen
+    mit dieser Vorlage neu geschrieben, damit das CRM die Änderung beim
+    nächsten Lesen sieht und nicht erst nach dem nächtlichen Aufräumen.
+    """
+    async with acquire_as(user.user_id) as conn:
+        # Nur Inhaber und Verwaltende: das entscheidet, welche Gespräche
+        # eine andere App zu sehen bekommt. Die Datenbank prüft dasselbe
+        # (Migration 0021); hier wird daraus eine lesbare 403 statt einer
+        # verweigerten Zeile.
+        rolle = await conn.fetchval(
+            "select role from public.user_org_roles where user_id = $1 and org_id = $2",
+            user.user_id,
+            user.org_id,
+        )
+        if rolle not in ("owner", "admin"):
+            raise http_error(403, "template.weitergabe_forbidden")
+
+        vorhanden = await conn.fetchval(
+            """
+            select 1 from public.templates
+            where id = $1 and is_active = true
+              and (is_system = true or org_id = $2)
+            """,
+            template_id,
+            user.org_id,
+        )
+        if not vorhanden:
+            raise http_error(404, "template.not_found")
+
+        _wirksam, voreinstellung, _weicht_ab = await weitergabe.fuer_vorlage(
+            conn, user.org_id, template_id
+        )
+        if payload.an_crm == voreinstellung:
+            await conn.execute(
+                "delete from public.template_weitergabe where org_id = $1 and template_id = $2",
+                user.org_id,
+                template_id,
+            )
+        else:
+            await conn.execute(
+                """
+                insert into public.template_weitergabe
+                    (org_id, template_id, an_crm, updated_by)
+                values ($1, $2, $3, $4)
+                on conflict (org_id, template_id) do update set
+                    an_crm = excluded.an_crm,
+                    updated_by = excluded.updated_by,
+                    updated_at = now()
+                """,
+                user.org_id,
+                template_id,
+                payload.an_crm,
+                user.user_id,
+            )
+
+    try:
+        from app.worker import celery_app
+
+        celery_app.send_task(
+            "weitergabe_nachziehen", args=[str(user.org_id), str(template_id)]
+        )
+    except Exception:  # noqa: BLE001
+        # Die Einstellung steht. Das nächtliche Aufräumen gleicht die
+        # Dateien ohnehin ab — es dauert dann nur bis morgen früh.
+        log.exception("could not queue weitergabe_nachziehen for %s", template_id)
+
+    return {
+        "template_id": str(template_id),
+        "an_crm": payload.an_crm,
+        "an_crm_standard": voreinstellung,
+    }
 
 
 @router.post("/templates", status_code=201)

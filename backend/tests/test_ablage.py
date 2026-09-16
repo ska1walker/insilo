@@ -467,9 +467,10 @@ async def test_nachzug_schreibt_nur_was_fehlt(monkeypatch, speicher) -> None:
     class Lauf(Verbindung):
         async def fetch(self, sql: str, *args):
             if "from public.meetings m" in sql and "transcripts" in sql:
+                # Die Abfrage liefert seit 0.1.102 auch die CRM-Markierung.
                 return [
-                    {"id": BESPRECHUNG, "org_id": ORG},
-                    {"id": andere, "org_id": ORG},
+                    {"id": BESPRECHUNG, "org_id": ORG, "an_crm": True},
+                    {"id": andere, "org_id": ORG, "an_crm": False},
                 ]
             return await super().fetch(sql, *args)
 

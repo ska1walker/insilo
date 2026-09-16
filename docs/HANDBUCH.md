@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 15. September 2026, Fassung 0.1.98.
+Stand: 16. September 2026, Fassung 0.1.99.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.
@@ -190,7 +190,15 @@ des Browsers ab.
 
 „Stopp & speichern" beendet die Aufnahme. Danach läuft im Hintergrund:
 Transkription → Sprechertrennung → Zusammenfassung. Die Ansicht
-aktualisiert sich selbst, Sie müssen nicht warten. Beim Senden zeigt
+aktualisiert sich selbst, Sie müssen nicht warten.
+
+Bei einer Aufnahme über einer Viertelstunde zerlegt Insilo sie in
+Abschnitte und arbeitet sie nacheinander ab — geschnitten wird in
+Sprechpausen, nicht mitten im Wort. In der Besprechungsansicht steht
+dann, wie weit es ist („Abschnitt 3 von 8 erkannt"). Wie lange das
+dauert, hängt ganz an der Spracherkennung: mit Grafikkarte oder einem
+schnellen Endpunkt sind es Minuten, mit dem mitgelieferten Modell auf
+der reinen CPU kann es länger dauern als die Besprechung selbst. Beim Senden zeigt
 Insilo, wie weit es ist („42 % · 38 MB von 90 MB"); bei einer langen
 Aufnahme über das Mobilnetz kann das einige Minuten dauern — bis zu zwei
 Stunden darf ein Upload brauchen.
@@ -592,6 +600,22 @@ Meldung eine HTTP-Nummer, hat die Box geantwortet und abgelehnt — dann
 an den Support. Die gespeicherte Datei ist die vollständige Aufnahme
 (WebM, auf dem iPhone M4A); über **Audiodatei hochladen** lässt sie sich
 später wieder einspielen.
+
+**„Verarbeitung fehlgeschlagen" bei einer langen Aufnahme.** Die
+Aufnahme selbst ist unversehrt — sie liegt auf der Box und lässt sich
+anhören. Unter der Fehlermeldung steht **Erneut verarbeiten**; das
+schickt sie noch einmal durch Transkription, Sprechertrennung und
+Zusammenfassung. Wiederholt es sich, ist fast immer die Spracherkennung
+zu langsam: der mitgelieferte Dienst braucht ohne Grafikkarte mehr
+Rechenzeit, als die Aufnahme lang ist. Unter Einstellungen ›
+Spracherkennung lässt sich ein schnellerer Endpunkt eintragen — steht er
+auf derselben Box, verlässt dabei nichts das Haus. Danach „Erneut
+verarbeiten".
+
+**Eine Besprechung steht ewig auf „wird transkribiert".** Das kann seit
+Fassung 0.1.99 nicht mehr dauerhaft vorkommen: eine Verarbeitung, die
+unterbrochen wurde, wird spätestens nach einer Viertelstunde erkannt und
+als fehlgeschlagen ausgewiesen — mit „Erneut verarbeiten" darunter.
 
 **„Mikrofonzugriff verweigert".** Eine Einstellung des Browsers, nicht
 von Insilo. Im Schloss-Symbol der Adresszeile die Freigabe für die

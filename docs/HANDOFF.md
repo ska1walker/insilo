@@ -1,4 +1,4 @@
-# Handoff — Stand & Learnings (Mai–September 2026, **letzte Aktualisierung: 14. September**)
+# Handoff — Stand & Learnings (Mai–September 2026, **letzte Aktualisierung: 16. September**)
 
 > Dieses Dokument bringt eine neue Claude-Session (oder einen frischen Mitarbeiter)
 > in **<2 Minuten** auf den Stand. Kein Marketing, nur Substanz.
@@ -14,6 +14,95 @@
 > Korrekturen, Wappen und Icon-Satz, Herkunftsvermerk, genauerer
 > Datenschutz-Nachweis, überarbeitetes Zeichen aus Figma, ehrliche
 > Erst-Einrichtung des Sprachmodells.
+>
+> ---
+>
+> ## 0.1.99: Lange Besprechungen laufen durch (16. September 2026)
+>
+> **Der Befund.** Aufnahmen über etwa zwanzig Minuten wurden gespeichert,
+> aber die Verarbeitung brach ab. Kein Fehler im Ablauf — ein
+> Missverhältnis zwischen Rechenzeit und festen Grenzen. Gemessen auf
+> Kais Box mit einer Datei von 626 s:
+>
+> | Weg | Zeit | Verhältnis |
+> |---|---|---|
+> | Speaches extern (`faster-whisper-small`) | 38,5 s | 16× schneller als Echtzeit |
+> | Mitgelieferter Dienst (`large-v3`, int8, **CPU**, beam 5, mit Sprechertrennung) | 795,5 s | **1,3× langsamer als Echtzeit** |
+>
+> Im Code standen `httpx.Timeout(60 * 25)` je Erkennungsaufruf und
+> `task_time_limit=60 * 30` in Celery. Mit Faktor 1,3 fällt der
+> 25-Minuten-Riegel bei ungefähr **20 Minuten Aufnahme** — genau der
+> berichtete Schwellwert. Kais Box hat keine GPU am Erkennungsdienst
+> (`WHISPER_DEVICE=cpu`, 6 Kerne, 8 GiB).
+>
+> **Was das harte Limit anrichtete.** Es tötet den Prozess, also läuft der
+> `except`-Zweig in `transcribe_meeting` nicht mehr: die Besprechung stand
+> für immer auf `transcribing`. Einen Wächter gab es nicht, und ein
+> „Neu verarbeiten" gab es nur für die Zusammenfassung — die Aufnahme lag
+> also da, ohne dass jemand sie noch einmal anstoßen konnte.
+>
+> **Vier Änderungen.**
+>
+> 1. **Zeitriegel nach Länge** (`app/verarbeitungszeit.py`). Geschätzte
+>    Dauer (aus `duration_sec` *oder* der Dateigröße, je nachdem was
+>    größer ist) × 3, mindestens 10 Minuten, höchstens 4 Stunden.
+>    Erkennung und Zusammenfassung tragen eigene Celery-Limits am
+>    `@shared_task`; die globalen 30 Minuten in `app/worker.py` bleiben für
+>    Webhooks und Aufräumen. Das weiche Limit liegt fünf Minuten vor dem
+>    harten — daran hängt, ob eine Besprechung sauber scheitert oder hängt.
+> 2. **Wächter** (`app/tasks/waechter.py`, Beat alle 5 Minuten). Was länger
+>    als hartes Limit + 15 Minuten nichts geschrieben hat, wird auf
+>    `failed` gesetzt. Er stößt bewusst nichts neu an: derselbe Lauf liefe
+>    ins selbe Limit und belegte den einen Worker für Stunden.
+> 3. **Abschnittsweise Erkennung** (`app/audiostuecke.py`, Migration 0020).
+>    Ab 15 Minuten wird in 10-Minuten-Abschnitte zerlegt, geschnitten in
+>    Sprechpausen. Jeder fertige Abschnitt liegt in
+>    `transcription_chunks`, ein zweiter Versuch fängt dort an, wo der
+>    erste aufhörte. Die Sprechertrennung läuft **einmal am Ende über die
+>    ganze Datei**.
+> 4. **Verdichten** (`app/verdichten.py`). Ein Transkript über 24 000
+>    Zeichen wird abschnittsweise zu Prosa gefaltet, bevor es in die
+>    Zusammenfassung geht. Vorher konnte der Endpunkt den Anfang
+>    stillschweigend abschneiden.
+>
+> **Zwei Befunde aus dem echten Durchlauf**, die keine Attrappe gezeigt
+> hätte:
+>
+> - Der **feste Stille-Schwellwert von −30 dBFS war falsch.** Eine übliche
+>   Aufnahme liegt im Mittel bei −21 dB, eine leise bei −55 dB mit Spitzen
+>   von −32,5 dB — bei festen −30 dB galt die *ganze* Datei als Pause, und
+>   geschnitten worden wäre irgendwo. Der Schwellwert richtet sich jetzt
+>   nach dem gemessenen Pegel der Datei (Mittel − 10 dB, gedeckelt auf
+>   höchstens −25 dB).
+> - Bei einem **externen Endpunkt lief die Sprechertrennung je Abschnitt**
+>   *und* am Ende — fünfmal statt einmal. Das Flag `diarisieren=False`
+>   erreichte nur den mitgelieferten Dienst. Der Test, der das hätte
+>   fangen sollen, prüfte nur den lokalen Zweig.
+>
+> **Ende-zu-Ende gemessen** (deutsche Sprache über die Sprachausgabe der
+> Box erzeugt, 24 Sätze × 9 Wiederholungen, echte Pausen dazwischen):
+>
+> | | |
+> |---|---|
+> | Aufnahme | 22,7 min |
+> | Einstellungen | wie ausgeliefert (ab 15 min teilen, 10-min-Abschnitte) |
+> | Abschnitte | 3 |
+> | Gesamtzeit über Speaches | 77,9 s |
+> | Sprechertrennung | **einmal**, mit allen 216 Segmenten |
+> | Segmente | 216 — genau so viele Sätze wie hineingingen, nichts an den Grenzen verloren |
+> | Zeiten | 0 s → 1356,7 s, lückenlos aufsteigend |
+>
+> **Ein Olares-Punkt.** Die Abschnitte gehen nach `/app/cache`, nicht nach
+> `/tmp`: im Container-Layer wäre das der flüchtige Speicher des Knotens,
+> und eine große Aufnahme dort kann den Pod verdrängen lassen (Constraint
+> 5). `ffmpeg` kostet rund 70 MB im Backend-Abbild.
+>
+> **Offen.** Der eigentliche Engpass bleibt das Modell: `large-v3` auf der
+> CPU rechnet langsamer als Echtzeit. Jetzt bricht nichts mehr ab, aber
+> eine Besprechung von 30 Minuten belegt den einen Worker rund 40 Minuten.
+> Abhilfe wäre eine GPU (`WHISPER_DEVICE=cuda`, Faktor 20–50), ein
+> kleineres Modell mit `beam_size=1`, oder ein STT-Endpunkt auf derselben
+> Box. Alle drei bleiben auf der Box.
 >
 > ---
 >

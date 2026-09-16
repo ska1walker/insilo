@@ -153,6 +153,28 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
+    v0.1.99 — Lange Besprechungen laufen durch.
+
+    - Aufnahmen über etwa zwanzig Minuten wurden gespeichert, aber die
+      Verarbeitung brach ab. Grund war ein festes Zeitlimit von 25 Minuten:
+      ohne Grafikkarte braucht die Spracherkennung mehr Rechenzeit, als die
+      Aufnahme lang ist. Das Limit richtet sich jetzt nach der Länge der
+      Aufnahme.
+    - Lange Aufnahmen werden in Abschnitte zerlegt und Abschnitt für
+      Abschnitt erkannt — geschnitten wird in Sprechpausen, nicht mitten im
+      Wort. In der Besprechungsansicht steht, wie weit es ist.
+    - Bricht die Verarbeitung ab, fängt der nächste Versuch nicht wieder
+      bei null an, sondern bei dem Abschnitt, der fehlte.
+    - Neuer Knopf „Erneut verarbeiten": eine gescheiterte Besprechung lässt
+      sich noch einmal durch die Verarbeitung schicken, etwa nachdem unter
+      Einstellungen eine schnellere Spracherkennung eingetragen wurde.
+    - Besprechungen, deren Verarbeitung unterbrochen wurde, blieben bisher
+      für immer auf „wird transkribiert" stehen. Sie werden jetzt erkannt
+      und als fehlgeschlagen ausgewiesen.
+    - Sehr lange Transkripte werden vor der Zusammenfassung verdichtet.
+      Vorher konnte das Sprachmodell den Anfang stillschweigend abschneiden,
+      und in der Zusammenfassung fehlte die erste Stunde.
+
     v0.1.98 — Lange Uploads kommen an, nichts wird doppelt angelegt.
 
     - Ein Upload, der länger als fünf Minuten dauerte, brach ab — etwa eine

@@ -4,6 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
+import { ApiError } from "@/lib/api/client";
 import {
   createTemplate,
   deleteTemplate,
@@ -11,6 +12,7 @@ import {
   listTemplates,
   LOCALES,
   resetTemplatePrompt,
+  setzeWeitergabe,
   updateTemplate,
   updateTemplatePrompt,
   type CustomField,
@@ -353,6 +355,88 @@ function CreateTemplateForm({
   );
 }
 
+// ─── An das CRM weitergeben ───────────────────────────────────────────
+
+/**
+ * Ob Besprechungen mit dieser Vorlage ins CRM gehen.
+ *
+ * Eigener Block und sofort gespeichert, nicht über „Speichern" unten: das
+ * ist keine Änderung an der Zusammenfassung, sondern eine Entscheidung, wer
+ * sie zu sehen bekommt (`backend/app/weitergabe.py`). Beides zusammen zu
+ * speichern hieße, dass ein ungespeicherter Prompt-Entwurf die Weitergabe
+ * aufhält — oder umgekehrt.
+ */
+function CrmWeitergabe({
+  template,
+  onChanged,
+}: {
+  template: TemplateDto;
+  onChanged: () => void;
+}) {
+  const t = useTranslations("templatePrompts");
+  const toast = useToast();
+  const [wert, setWert] = useState<boolean>(template.an_crm ?? false);
+  const [speichert, setSpeichert] = useState(false);
+
+  useEffect(() => {
+    setWert(template.an_crm ?? false);
+  }, [template.an_crm]);
+
+  async function umschalten(neu: boolean) {
+    setWert(neu);
+    setSpeichert(true);
+    try {
+      await setzeWeitergabe(template.id, neu);
+      toast.show({
+        message: t(neu ? "crmGespeichert" : "crmEntfernt", { name: template.name }),
+        variant: "success",
+      });
+      onChanged();
+    } catch (err) {
+      setWert(!neu);
+      const detail =
+        err instanceof ApiError
+          ? (err.body as { detail?: unknown } | null)?.detail
+          : null;
+      toast.show({
+        message: typeof detail === "string" ? detail : t("crmFehler"),
+        variant: "error",
+      });
+    } finally {
+      setSpeichert(false);
+    }
+  }
+
+  const standard = template.an_crm_standard ?? false;
+
+  return (
+    <div className="mb-5 rounded-md border border-trennlinie px-4 py-3">
+      <label className="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4 shrink-0"
+          checked={wert}
+          disabled={speichert}
+          onChange={(e) => umschalten(e.target.checked)}
+        />
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-text-primaer">
+            {t("crmLabel")}
+          </span>
+          <span className="mt-1 block text-xs text-text-sekundaer">
+            {t("crmHint")}
+          </span>
+          <span className="mt-1 block text-xs text-text-gedaempft">
+            {t("crmStandard", { wert: t(standard ? "crmJa" : "crmNein") })}
+            {" · "}
+            {t("crmNurVerwaltung")}
+          </span>
+        </span>
+      </label>
+    </div>
+  );
+}
+
 // ─── Template row ─────────────────────────────────────────────────────
 
 function TemplateRow({
@@ -589,6 +673,11 @@ function TemplateRow({
                 {t("tagCustomized")}
               </span>
             )}
+            {template.an_crm && (
+              <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-sekundaer">
+                {t("tagCrm")}
+              </span>
+            )}
           </div>
           {template.description && (
             <p className="mt-1 text-sm text-text-sekundaer">{template.description}</p>
@@ -610,6 +699,7 @@ function TemplateRow({
 
           {state.kind !== "loading" && detail && (
             <>
+              <CrmWeitergabe template={template} onChanged={onSaved} />
               <div className="space-y-4">
                 <label className="block">
                   <span className="block text-sm font-medium text-text-primaer">

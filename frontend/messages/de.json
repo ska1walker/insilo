@@ -322,7 +322,17 @@
     },
     "localeHint": "Pflegen Sie pro Sprache einen eigenen Prompt. Deutsch ist Pflicht — fehlt eine andere Sprache, nutzt Insilo automatisch den deutschen Prompt.",
     "placeholderFallback": "Leer lassen, um den deutschen Prompt als Fallback zu verwenden.",
-    "revertDrafts": "Auf Standard zurücksetzen"
+    "revertDrafts": "Auf Standard zurücksetzen",
+    "crmLabel": "Kundengespräch — an das CRM weitergeben",
+    "crmHint": "Ein angeschlossenes CRM wie Beacon übernimmt nur Besprechungen, deren Vorlage so markiert ist. Interne Runden und Notizen bleiben dort draußen.",
+    "crmStandard": "Voreinstellung: {wert}",
+    "crmJa": "weitergeben",
+    "crmNein": "nicht weitergeben",
+    "crmNurVerwaltung": "Das legen Inhaberinnen und Verwaltende fest.",
+    "crmGespeichert": "„{name}“ wird ab jetzt an das CRM weitergegeben.",
+    "crmEntfernt": "„{name}“ wird ab jetzt nicht mehr an das CRM weitergegeben.",
+    "crmFehler": "Die Einstellung ließ sich nicht speichern.",
+    "tagCrm": "· CRM"
   },
   "webhookManager": {
     "addNew": "Neuen Webhook hinzufügen",
@@ -775,7 +785,8 @@
       "speaker_update": "Sprecher geändert",
       "speaker_delete": "Sprecher gelöscht",
       "speaker_enroll": "Stimmprobe hinterlegt",
-      "org_ersteinrichtung": "Erste Einrichtung — Inhaber angelegt"
+      "org_ersteinrichtung": "Erste Einrichtung — Inhaber angelegt",
+      "template_weitergabe": "An CRM weitergeben geändert"
     }
   },
   "papierkorb": {

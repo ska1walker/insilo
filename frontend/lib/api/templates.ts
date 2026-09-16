@@ -37,6 +37,13 @@ export type TemplateDto = {
   few_shot_output?: Record<string, unknown> | null;
   /** Org-specific extra fields appended to the schema (since v0.1.41). */
   custom_fields?: CustomField[];
+  /**
+   * Geht eine Besprechung mit dieser Vorlage an ein angeschlossenes CRM?
+   * Wirksamer Wert für die eigene Organisation (seit 0.1.102).
+   */
+  an_crm?: boolean;
+  /** Die Voreinstellung — weicht `an_crm` davon ab, hat die Organisation umgestellt. */
+  an_crm_standard?: boolean;
 };
 
 export type TemplateDetail = TemplateDto & {
@@ -112,4 +119,18 @@ export async function updateTemplate(
 
 export async function deleteTemplate(id: string): Promise<void> {
   await apiDelete(`/api/v1/templates/${id}`);
+}
+
+/**
+ * Festlegen, ob Besprechungen mit dieser Vorlage ins CRM gehen.
+ *
+ * Getrennt vom Prompt: *wie* zusammengefasst wird und *wohin* das Ergebnis
+ * geht, sind zwei Fragen. Nur Inhaberinnen und Verwaltende — sonst 403 mit
+ * einem Satz, der das sagt.
+ */
+export async function setzeWeitergabe(
+  id: string,
+  anCrm: boolean,
+): Promise<{ template_id: string; an_crm: boolean; an_crm_standard: boolean }> {
+  return apiPut(`/api/v1/templates/${id}/weitergabe`, { an_crm: anCrm });
 }

@@ -322,7 +322,17 @@
     },
     "localeHint": "Maintain a separate prompt per language. German is required — if another language is empty, Insilo automatically falls back to the German prompt.",
     "placeholderFallback": "Leave empty to fall back to the German prompt.",
-    "revertDrafts": "Revert to default"
+    "revertDrafts": "Revert to default",
+    "crmLabel": "Customer conversation — pass on to the CRM",
+    "crmHint": "A connected CRM such as Beacon only takes meetings whose template is marked like this. Internal meetings and notes stay out of it.",
+    "crmStandard": "Default: {wert}",
+    "crmJa": "pass on",
+    "crmNein": "do not pass on",
+    "crmNurVerwaltung": "Owners and administrators decide this.",
+    "crmGespeichert": "“{name}” will now be passed on to the CRM.",
+    "crmEntfernt": "“{name}” will no longer be passed on to the CRM.",
+    "crmFehler": "The setting could not be saved.",
+    "tagCrm": "· CRM"
   },
   "webhookManager": {
     "addNew": "Add new webhook",
@@ -775,7 +785,8 @@
       "speaker_update": "Speaker changed",
       "speaker_delete": "Speaker deleted",
       "speaker_enroll": "Voice sample stored",
-      "org_ersteinrichtung": "Initial setup — owner created"
+      "org_ersteinrichtung": "Initial setup — owner created",
+      "template_weitergabe": "Pass-on to CRM changed"
     }
   },
   "papierkorb": {

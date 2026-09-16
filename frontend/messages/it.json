@@ -322,7 +322,17 @@
     },
     "localeHint": "Mantenga un prompt distinto per ciascuna lingua. Il tedesco è obbligatorio — se un'altra lingua resta vuota, Insilo utilizza automaticamente il prompt tedesco.",
     "placeholderFallback": "Lasciare vuoto per utilizzare il prompt tedesco come fallback.",
-    "revertDrafts": "Ripristina i valori predefiniti"
+    "revertDrafts": "Ripristina i valori predefiniti",
+    "crmLabel": "Colloquio con il cliente — inoltrare al CRM",
+    "crmHint": "Un CRM collegato come Beacon riprende solo le riunioni il cui modello è contrassegnato così. Le riunioni interne e le note restano escluse.",
+    "crmStandard": "Predefinito: {wert}",
+    "crmJa": "inoltrare",
+    "crmNein": "non inoltrare",
+    "crmNurVerwaltung": "Lo decidono i titolari e gli amministratori.",
+    "crmGespeichert": "«{name}» verrà d'ora in poi inoltrato al CRM.",
+    "crmEntfernt": "«{name}» non verrà più inoltrato al CRM.",
+    "crmFehler": "Non è stato possibile salvare l'impostazione.",
+    "tagCrm": "· CRM"
   },
   "webhookManager": {
     "addNew": "Aggiungi nuovo webhook",
@@ -775,7 +785,8 @@
       "speaker_update": "Parlante modificato",
       "speaker_delete": "Parlante eliminato",
       "speaker_enroll": "Campione vocale registrato",
-      "org_ersteinrichtung": "Prima configurazione — titolare creato"
+      "org_ersteinrichtung": "Prima configurazione — titolare creato",
+      "template_weitergabe": "Inoltro al CRM modificato"
     }
   },
   "papierkorb": {

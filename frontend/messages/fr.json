@@ -322,7 +322,17 @@
     },
     "localeHint": "Tenez à jour un prompt distinct par langue. L'allemand est obligatoire — si une autre langue est vide, Insilo utilise automatiquement le prompt allemand.",
     "placeholderFallback": "Laissez vide pour utiliser le prompt allemand comme repli.",
-    "revertDrafts": "Réinitialiser aux valeurs par défaut"
+    "revertDrafts": "Réinitialiser aux valeurs par défaut",
+    "crmLabel": "Entretien client — transmettre au CRM",
+    "crmHint": "Un CRM connecté comme Beacon ne reprend que les réunions dont le modèle est ainsi marqué. Les réunions internes et les notes n'y figurent pas.",
+    "crmStandard": "Par défaut : {wert}",
+    "crmJa": "transmettre",
+    "crmNein": "ne pas transmettre",
+    "crmNurVerwaltung": "Ce sont les propriétaires et les administrateurs qui en décident.",
+    "crmGespeichert": "« {name} » est désormais transmis au CRM.",
+    "crmEntfernt": "« {name} » n'est désormais plus transmis au CRM.",
+    "crmFehler": "Le paramètre n'a pas pu être enregistré.",
+    "tagCrm": "· CRM"
   },
   "webhookManager": {
     "addNew": "Ajouter un webhook",
@@ -775,7 +785,8 @@
       "speaker_update": "Locuteur modifié",
       "speaker_delete": "Locuteur supprimé",
       "speaker_enroll": "Échantillon vocal enregistré",
-      "org_ersteinrichtung": "Première configuration — propriétaire créé"
+      "org_ersteinrichtung": "Première configuration — propriétaire créé",
+      "template_weitergabe": "Transmission au CRM modifiée"
     }
   },
   "papierkorb": {

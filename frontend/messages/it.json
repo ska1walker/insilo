@@ -110,7 +110,10 @@
     "recentTitle": "Registrate di recente",
     "viewAll": "Visualizza tutte",
     "listEmptyHome": "Ancora nessuna registrazione — la prima parte qui sopra.",
-    "backendUnreachableHttp": "Backend non raggiungibile (HTTP {status})."
+    "backendUnreachableHttp": "Backend non raggiungibile (HTTP {status}).",
+    "retryTranscription": "Elabora di nuovo",
+    "retryTranscriptionHint": "La registrazione si trova ancora sul dispositivo. Può riavviare l'elaborazione dall'inizio, ad esempio dopo aver impostato un riconoscimento vocale più veloce in <link>Impostazioni</link>. Una trascrizione esistente verrà sovrascritta.",
+    "retryTranscriptionFailed": "Non è stato possibile avviare l'elaborazione. Riprovi più tardi."
   },
   "tags": {
     "sectionTitle": "Tag",

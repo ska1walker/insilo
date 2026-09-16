@@ -110,7 +110,10 @@
     "recentTitle": "Zuletzt aufgenommen",
     "viewAll": "Alle anzeigen",
     "listEmptyHome": "Noch keine Aufnahmen — Ihre erste startet hier oben.",
-    "backendUnreachableHttp": "Backend nicht erreichbar (HTTP {status})."
+    "backendUnreachableHttp": "Backend nicht erreichbar (HTTP {status}).",
+    "retryTranscription": "Erneut verarbeiten",
+    "retryTranscriptionHint": "Die Aufnahme liegt weiterhin auf der Box. Sie können die Verarbeitung von vorn anstoßen — etwa nachdem Sie unter <link>Einstellungen</link> eine schnellere Spracherkennung eingetragen haben. Ein vorhandenes Transkript wird dabei überschrieben.",
+    "retryTranscriptionFailed": "Verarbeitung ließ sich nicht anstoßen. Bitte später erneut versuchen."
   },
   "tags": {
     "sectionTitle": "Tags",

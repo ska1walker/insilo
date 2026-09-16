@@ -82,6 +82,8 @@ _REGELN: list[tuple[frozenset[str], re.Pattern[str], str, str | None]] = [
      "meeting.purge", "meeting"),
     (frozenset({"POST"}), re.compile(rf"^/api/v1/meetings/(?P<id>{_UUID})/retry-summary$"),
      "meeting.resummarize", "meeting"),
+    (frozenset({"POST"}), re.compile(rf"^/api/v1/meetings/(?P<id>{_UUID})/retry-transcription$"),
+     "meeting.retranscribe", "meeting"),
     (frozenset({"POST"}), re.compile(rf"^/api/v1/meetings/(?P<id>{_UUID})/re-diarize$"),
      "meeting.rediarize", "meeting"),
     (frozenset({"PUT"}), re.compile(rf"^/api/v1/meetings/(?P<id>{_UUID})/transcript/speakers$"),

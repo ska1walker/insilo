@@ -110,7 +110,10 @@
     "recentTitle": "Enregistrés récemment",
     "viewAll": "Tout afficher",
     "listEmptyHome": "Aucun enregistrement — le premier démarre ci-dessus.",
-    "backendUnreachableHttp": "Backend inaccessible (HTTP {status})."
+    "backendUnreachableHttp": "Backend inaccessible (HTTP {status}).",
+    "retryTranscription": "Retraiter",
+    "retryTranscriptionHint": "L'enregistrement se trouve toujours sur le boîtier. Vous pouvez relancer le traitement depuis le début — par exemple après avoir configuré une reconnaissance vocale plus rapide dans les <link>Paramètres</link>. Une transcription existante sera écrasée.",
+    "retryTranscriptionFailed": "Le traitement n'a pas pu être lancé. Veuillez réessayer plus tard."
   },
   "tags": {
     "sectionTitle": "Étiquettes",

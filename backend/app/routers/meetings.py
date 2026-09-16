@@ -714,6 +714,78 @@ async def retry_summary(
     return {"status": "queued", "meeting_id": str(meeting_id)}
 
 
+@router.post("/meetings/{meeting_id}/retry-transcription", status_code=202)
+async def retry_transcription(
+    meeting_id: UUID, user: CurrentUser = Depends(get_current_user)
+) -> dict:
+    """Die Verarbeitung einer Besprechung von vorn anstoßen.
+
+    Für `retry-summary` gab es das seit jeher, für die Erkennung nicht —
+    dabei ist das der Schritt, der bei langen Aufnahmen scheiterte. Wer
+    daraufhin unter Einstellungen einen schnelleren Endpunkt einträgt,
+    stand vor einer Besprechung, die „fehlgeschlagen" sagte, und hatte
+    keinen Weg zurück: die Aufnahme lag da, aber niemand konnte sie noch
+    einmal durch die Verarbeitung schicken.
+
+    Der Lauf beginnt von vorn, einschließlich Sprechertrennung und
+    Zusammenfassung. Das vorhandene Transkript wird dabei überschrieben —
+    das ist der Sinn der Sache, und mit einem anderen Erkennungsmodell ist
+    das neue in aller Regel das bessere.
+    """
+    async with acquire_as(user.user_id) as conn:
+        row = await conn.fetchrow(
+            """
+            select id, status, audio_path
+            from public.meetings
+            where id = $1 and org_id = $2 and deleted_at is null
+            """,
+            meeting_id,
+            user.org_id,
+        )
+        if row is None:
+            raise http_error(404, "meeting.not_found")
+        if not row["audio_path"]:
+            # Kein Ton mehr: nie einer da gewesen, oder die
+            # Aufbewahrungsfrist hat ihn geholt (`audio_deleted_at`).
+            raise http_error(409, "meeting.no_audio")
+        if row["status"] in ("transcribing", "summarizing", "embedding"):
+            # Ein zweiter Lauf neben dem ersten brächte zwei Schreiber auf
+            # dasselbe Transkript. Hängt der erste in Wahrheit fest, setzt
+            # ihn der Wächter binnen einer Viertelstunde auf
+            # „fehlgeschlagen" — danach geht es hier weiter.
+            raise http_error(409, "meeting.already_running")
+        await conn.execute(
+            """
+            update public.meetings
+            set status = 'queued', error_message = null, updated_at = now()
+            where id = $1
+            """,
+            meeting_id,
+        )
+
+    try:
+        transcribe_meeting.delay(str(meeting_id))
+    except Exception:
+        # Wie beim Hochladen: die Zeile steht schon auf „in Warteschlange",
+        # aber es wartet niemand. Ohne diese Stelle stünde sie dort, bis
+        # der Wächter sie einsammelt — eine Viertelstunde für einen
+        # Fehler, der sofort feststeht.
+        log.exception("could not queue transcription for %s", meeting_id)
+        async with acquire_as(user.user_id) as conn:
+            await conn.execute(
+                """
+                update public.meetings
+                set status = 'failed', error_message = $2, updated_at = now()
+                where id = $1
+                """,
+                meeting_id,
+                "Die Verarbeitung ließ sich nicht starten (Warteschlange nicht erreichbar).",
+            )
+        raise http_error(503, "meeting.queue_unavailable") from None
+
+    return {"status": "queued", "meeting_id": str(meeting_id)}
+
+
 @router.post("/meetings/export-backfill", status_code=200)
 async def export_backfill(user: CurrentUser = Depends(get_current_user)) -> dict:
     """Alle fertigen Zusammenfassungen in das Relay-Verzeichnis schreiben.

@@ -128,6 +128,27 @@ ERRORS: dict[str, dict[str, str]] = {
         "es": "El archivo es demasiado grande. Insilo acepta grabaciones de hasta {max_mb} MB.",
         "it": "Il file è troppo grande. Insilo accetta registrazioni fino a {max_mb} MB.",
     },
+    "meeting.no_audio": {
+        "de": "Zu dieser Besprechung liegt keine Aufnahme mehr vor — sie lässt sich deshalb nicht erneut verarbeiten. Transkript und Zusammenfassung bleiben erhalten.",
+        "en": "There is no recording left for this meeting, so it cannot be processed again. The transcript and summary remain available.",
+        "fr": "Il n'y a plus d'enregistrement pour cette réunion ; elle ne peut donc pas être retraitée. La transcription et le résumé restent disponibles.",
+        "es": "Ya no existe una grabación de esta reunión, por lo que no se puede volver a procesar. La transcripción y el resumen se conservan.",
+        "it": "Per questa riunione non è più disponibile una registrazione, quindi non può essere rielaborata. Trascrizione e riepilogo restano disponibili.",
+    },
+    "meeting.queue_unavailable": {
+        "de": "Die Verarbeitung ließ sich nicht starten — der Hintergrunddienst ist gerade nicht erreichbar. Versuchen Sie es in einigen Minuten erneut.",
+        "en": "Processing could not be started — the background service is currently unreachable. Please try again in a few minutes.",
+        "fr": "Le traitement n'a pas pu démarrer : le service d'arrière-plan est momentanément injoignable. Réessayez dans quelques minutes.",
+        "es": "No se pudo iniciar el procesamiento: el servicio en segundo plano no está disponible. Vuelva a intentarlo en unos minutos.",
+        "it": "Non è stato possibile avviare l'elaborazione: il servizio in background non è raggiungibile. Riprovi tra qualche minuto.",
+    },
+    "meeting.already_running": {
+        "de": "Diese Besprechung wird gerade verarbeitet. Warten Sie, bis der Lauf zu Ende ist.",
+        "en": "This meeting is being processed right now. Please wait for the run to finish.",
+        "fr": "Cette réunion est en cours de traitement. Veuillez attendre la fin de l'exécution.",
+        "es": "Esta reunión se está procesando ahora mismo. Espere a que termine.",
+        "it": "Questa riunione è in elaborazione. Attenda il termine dell'esecuzione.",
+    },
     "meeting.invalid_language": {
         "de": "Ungültige Aufnahmesprache: {lang} (erwartet wird auto, de, en, fr, es oder it).",
         "en": "Invalid recording language: {lang} (expected auto, de, en, fr, es or it).",

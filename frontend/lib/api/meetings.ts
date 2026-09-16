@@ -180,6 +180,18 @@ export async function retrySummary(id: string): Promise<void> {
   await apiPost<{ status: string }>(`/api/v1/meetings/${id}/retry-summary`);
 }
 
+/**
+ * Die ganze Verarbeitung von vorn — Erkennung, Sprecher, Zusammenfassung.
+ *
+ * Für den Fall, dass sie an einem Zeitlimit gescheitert ist und der
+ * Nutzer danach eine schnellere Spracherkennung eingetragen hat. Die
+ * Aufnahme liegt ja noch auf der Box; ohne diesen Weg wäre sie nur noch
+ * zum Anhören da.
+ */
+export async function retryTranscription(id: string): Promise<void> {
+  await apiPost<{ status: string }>(`/api/v1/meetings/${id}/retry-transcription`);
+}
+
 export type SpeakerAssignment = {
   speakers: Speaker[];
   /** Map of segment-index (as string, JSON-friendly) → speaker id or null. */

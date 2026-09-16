@@ -12,13 +12,16 @@ import { useToast } from "@/components/toast";
 import { TranscriptView } from "@/components/transcript-view";
 import { Send } from "lucide-react";
 import { ApiError } from "@/lib/api/client";
+import { useTranslations } from "next-intl";
 import {
   deleteMeeting,
   getMeeting,
   retrySummary,
+  retryTranscription,
   type MeetingDto,
 } from "@/lib/api/meetings";
 import { formatBytes, formatDuration, formatMeetingDate } from "@/lib/format";
+import { pollAbstandMs } from "@/lib/verarbeitung";
 
 type Loaded =
   | { kind: "loading" }
@@ -38,11 +41,20 @@ export default function MeetingDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const toast = useToast();
+  // Diese Seite ist noch nicht durchgehend übersetzt — die Schlüssel im
+  // Namensraum `meeting` gibt es seit der i18n-Umstellung, angeschlossen
+  // wurde sie nie. Der Fehlerblock unten nutzt sie jetzt; der Rest der
+  // Seite steht weiter fest auf Deutsch und gehört bei Gelegenheit nach.
+  const t = useTranslations("meeting");
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+
+    // Seit wann wir warten — der Abstand zwischen den Abfragen wächst
+    // damit, siehe lib/verarbeitung.ts.
+    const beginn = Date.now();
 
     async function tick() {
       try {
@@ -50,7 +62,7 @@ export default function MeetingDetail() {
         if (cancelled) return;
         setState({ kind: "ok", meeting: m });
         if (POLLING_STATUS.has(m.status) && !cancelled) {
-          timerRef.current = setTimeout(tick, 2000);
+          timerRef.current = setTimeout(tick, pollAbstandMs(Date.now() - beginn));
         }
       } catch (err) {
         if (cancelled) return;
@@ -72,7 +84,46 @@ export default function MeetingDetail() {
   }, [params.id]);
 
   const [retrying, setRetrying] = useState(false);
+  const [retryingTranscription, setRetryingTranscription] = useState(false);
   const [showDispatch, setShowDispatch] = useState(false);
+
+  /** Nach dem Anstoßen einmal kurz nachfassen, damit der Poll anspringt. */
+  function nachfassen(id: string) {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      try {
+        setState({ kind: "ok", meeting: await getMeeting(id) });
+      } catch {/* poll loop handles errors */}
+    }, 1500);
+  }
+
+  async function onRetryTranscription() {
+    if (state.kind !== "ok") return;
+    const id = state.meeting.id;
+    setRetryingTranscription(true);
+    try {
+      await retryTranscription(id);
+      // Optimistisch auf „in Warteschlange": der Fehlerblock verschwindet
+      // sofort, und der Poll übernimmt.
+      setState({
+        kind: "ok",
+        meeting: { ...state.meeting, status: "queued", error_message: null },
+      });
+      nachfassen(id);
+    } catch (err) {
+      console.error("retry-transcription failed", err);
+      const detail =
+        err instanceof ApiError
+          ? (err.body as { detail?: unknown } | null)?.detail
+          : null;
+      toast.show({
+        message: typeof detail === "string" ? detail : t("retryTranscriptionFailed"),
+        variant: "error",
+      });
+    } finally {
+      setRetryingTranscription(false);
+    }
+  }
 
   async function onRetrySummary() {
     if (state.kind !== "ok") return;
@@ -234,11 +285,37 @@ export default function MeetingDetail() {
       {meeting.status === "failed" && (
         <section className="mt-10 rounded-lg border border-trennlinie bg-seite p-6">
           <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-fehler">
-            Verarbeitung fehlgeschlagen
+            {t("failedTitle")}
           </p>
           <p className="mt-2 text-sm text-text-sekundaer">
             {meeting.error_message ?? "Unbekannter Fehler."}
           </p>
+          {/* Der Ton liegt noch da: dann geht die ganze Verarbeitung von
+              vorn. Das ist der Weg für eine Aufnahme, die an einem
+              Zeitlimit gescheitert ist — siehe backend/app/verarbeitungszeit.py.
+              Ist er dagegen weg (Aufbewahrungsfrist), bleibt nur die
+              Zusammenfassung, für die es das Transkript noch gibt. */}
+          {meeting.audio_url && (
+            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-trennlinie pt-4">
+              <p className="min-w-[16rem] flex-1 text-xs text-text-sekundaer">
+                {t.rich("retryTranscriptionHint", {
+                  link: (teile) => (
+                    <Link href="/einstellungen" className="underline">
+                      {teile}
+                    </Link>
+                  ),
+                })}
+              </p>
+              <button
+                type="button"
+                onClick={onRetryTranscription}
+                disabled={retryingTranscription || retrying}
+                className="btn btn-primaer"
+              >
+                {retryingTranscription ? t("retrying") : t("retryTranscription")}
+              </button>
+            </div>
+          )}
           {meeting.transcript && (
             <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-trennlinie pt-4">
               <p className="text-xs text-text-sekundaer">
@@ -252,10 +329,10 @@ export default function MeetingDetail() {
               <button
                 type="button"
                 onClick={onRetrySummary}
-                disabled={retrying}
+                disabled={retrying || retryingTranscription}
                 className="btn btn-sekundaer"
               >
-                {retrying ? "Wird angestoßen…" : "Erneut zusammenfassen"}
+                {retrying ? t("retrying") : t("retrySummary")}
               </button>
             </div>
           )}

@@ -110,7 +110,10 @@
     "recentTitle": "Recently recorded",
     "viewAll": "View all",
     "listEmptyHome": "No recordings yet — your first one starts at the top.",
-    "backendUnreachableHttp": "Backend not reachable (HTTP {status})."
+    "backendUnreachableHttp": "Backend not reachable (HTTP {status}).",
+    "retryTranscription": "Process again",
+    "retryTranscriptionHint": "The recording is still on the box. You can restart processing from the beginning — for example after setting up faster speech recognition under <link>Settings</link>. An existing transcript will be overwritten.",
+    "retryTranscriptionFailed": "Processing could not be started. Please try again later."
   },
   "tags": {
     "sectionTitle": "Tags",

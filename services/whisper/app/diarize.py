@@ -30,6 +30,7 @@ import numpy as np
 import torch
 from faster_whisper.audio import decode_audio
 from silero_vad import get_speech_timestamps, load_silero_vad
+from app.clustergroesse import k_bereich
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 from speechbrain.inference.speaker import EncoderClassifier
@@ -174,8 +175,9 @@ def _estimate_speakers(embeddings: np.ndarray) -> tuple[int, np.ndarray]:
     best_score = -1.0
     best_labels: np.ndarray | None = None
 
-    max_k = min(MAX_SPEAKERS, len(embeddings))
-    for k in range(2, max_k + 1):
+    # Warum der Bereich nicht bis zur Segmentzahl geht, steht in
+    # `clustergroesse.py` — es war einen stillen Ausfall wert.
+    for k in k_bereich(len(embeddings), MAX_SPEAKERS):
         clustering = AgglomerativeClustering(
             n_clusters=k,
             metric="cosine",

@@ -31,9 +31,16 @@ FROM python:3.11-slim AS runner
 WORKDIR /app
 
 # Runtime-Dependencies
+#
+# ffmpeg schneidet lange Aufnahmen in Abschnitte, bevor sie zur
+# Spracherkennung gehen (app/audiostuecke.py). Es kostet rund 70 MB im
+# Abbild — der Preis dafür, dass eine Besprechung von anderthalb Stunden
+# überhaupt durchläuft und nicht in einem Zeitlimit endet. `ffprobe`
+# kommt im selben Paket und liefert die echte Dauer.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root User (UID 1000 — Olares-konform)

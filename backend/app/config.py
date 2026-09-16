@@ -94,6 +94,29 @@ class Settings(BaseSettings):
     # Messung das Doppelte an Luft.
     stt_zeitfaktor: float = 3.0
     stt_zeitlimit_min_sec: int = 600
+    # Ab dieser Länge wird die Aufnahme in Abschnitte zerlegt, und so lang
+    # soll ein Abschnitt werden (`app/audiostuecke.py`). Zehn Minuten sind
+    # der Punkt, an dem auf dem langsamsten Weg rund dreizehn Minuten
+    # Rechenzeit anfallen — kurz genug, dass ein Fehlschlag wenig kostet,
+    # lang genug, dass Whisper Zusammenhang über Satzgrenzen hinweg hat.
+    # `0` schaltet das Zerlegen ab und stellt das Verhalten bis 0.1.98 her.
+    stueck_sekunden: int = 600
+    stueck_ab_sekunden: int = 900
+    # Wohin die geschnittenen Abschnitte zwischenzeitlich geschrieben
+    # werden. Olares erlaubt nur drei Pfade (CLAUDE.md, Constraint 5), und
+    # `/app/cache` ist der richtige: ephemer, aber ein eigenes Verzeichnis
+    # auf der Platte. Im Container-Layer unter `/tmp` zählte dasselbe als
+    # flüchtiger Speicher des Knotens — bei einer großen Aufnahme genug,
+    # um den Pod verdrängen zu lassen. Existiert der Pfad nicht (lokale
+    # Entwicklung), nimmt der Code den Systemordner.
+    app_cache_dir: str = "/app/cache"
+    # Ab wie vielen Zeichen ein Transkript vor der Zusammenfassung
+    # verdichtet wird (`app/verdichten.py`). 24 000 Zeichen sind grob
+    # 7 000 Token — das passt auch bei einem Modell mit kleinem
+    # Kontextfenster neben Vorlage, Schema und Beispiel. `0` schaltet das
+    # Verdichten ab; dann geht wieder der volle Wortlaut hinaus, auch wenn
+    # der Endpunkt ihn stillschweigend abschneidet.
+    zusammenfassung_max_zeichen: int = 24_000
     # Obergrenze für den einzelnen Aufruf und zugleich das harte Limit
     # der ganzen Aufgabe. Darüber hinaus wartet niemand mehr sinnvoll;
     # was so lange braucht, braucht ein anderes Modell oder eine GPU.

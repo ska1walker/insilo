@@ -179,10 +179,18 @@ def health() -> dict[str, Any]:
 async def transcribe(
     audio: UploadFile = File(...),
     language: str | None = Form(default=None),
+    diarisieren: bool = Form(default=True),
 ) -> TranscribeResponse:
     """
     Transcribe an audio file. `language` is optional — if None, faster-whisper
     auto-detects. For Insilo we usually pass "de".
+
+    `diarisieren=false` liefert nur Text und Zeiten. Das braucht der
+    Stückchen-Weg im Backend (siehe `app/audiostuecke.py`): dort wird die
+    Aufnahme in Abschnitte zerlegt und einzeln erkannt, die Sprecher aber
+    **einmal am Ende über die ganze Datei** getrennt. Pro Stück zu
+    clustern wäre falsch — derselbe Mensch bekäme in Abschnitt drei einen
+    anderen Namen als in Abschnitt eins.
     """
     if not audio.filename:
         raise HTTPException(400, "audio file required")
@@ -215,7 +223,7 @@ async def transcribe(
         # Segmente. Bei Fehler oder deaktivierter Diarization lassen wir
         # speaker=None — Frontend zeigt dann generische Labels.
         centroids: list[list[float]] = []
-        if settings.diarization_enabled and segments:
+        if settings.diarization_enabled and segments and diarisieren:
             try:
                 result = diarize(
                     tmp.name,

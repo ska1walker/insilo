@@ -39,9 +39,28 @@
 > schreibt `weitergabe_nachziehen` die Dateien der Vorlage neu, und der
 > nächtliche Abgleich erneuert Dateien ohne oder mit falscher Markierung.
 >
-> **Beacon (0.12.0).** Übernimmt nur `crm: true`. Fehlt der Schlüssel
+> **Beacon (0.12.1).** Übernimmt nur `crm: true`. Fehlt der Schlüssel
 > (älteres Insilo): wie bisher. Schon übernommen und nicht mehr markiert:
 > weich gelöscht, außer schon einem Kunden zugeordnet — das bleibt.
+>
+> **Beim Ausrollen gefunden: die Reihenfolge selbst war die Falle.** Insilo
+> 0.1.102 kam zuerst und schrieb die Dateien mit `crm:` neu; das noch
+> laufende Beacon 0.11.0 las sie Minuten später, kannte die Markierung nicht
+> und speicherte den neuen Dateistand. Beacon 0.12.0 hielt sie danach für
+> unverändert und zog nichts zurück. Behoben in Beacon 0.12.1: „unverändert"
+> heißt gleicher Stand **und** gleiche Lesefassung (`ablage_fassung`).
+> Allgemein: Wer an einem Leser Regeln ändert, die über den Dateistand
+> entscheiden, muss den Stand mit der Regel-Fassung versehen — sonst
+> verschluckt der alte Leser genau die Änderung, auf die der neue wartet.
+>
+> **Stand auf Kais Box nach dem Ausrollen:** Insilo 0.1.102 (Helm-Rev 25,
+> Abzug `~/insilo-sicherung/vor-0.1.102.sql`), Beacon 0.12.1 über den Markt
+> (Abzug `~/beacon-sicherung/vor-0.12.0.sql`). Alle 14 Dateien im Ordner
+> tragen `crm: false` — auf der Box gibt es nur „Allgemeine Besprechung" (4)
+> und Besprechungen ohne Vorlage (10). Alle 14 waren in Beacon offen, keine
+> zugeordnet, und sind zurückgezogen. Dass Beacon markierte Gespräche
+> übernimmt, ist in den Tests belegt, auf der Box mangels eines
+> Kundengesprächs noch nicht.
 >
 > **Geprüft vor dem Ausrollen:** Migration und Saatgut in
 > Wegwerf-Datenbanken auf der Box — frisch, Neustart, und Aktualisierung

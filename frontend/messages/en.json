@@ -113,7 +113,8 @@
     "backendUnreachableHttp": "Backend not reachable (HTTP {status}).",
     "retryTranscription": "Process again",
     "retryTranscriptionHint": "The recording is still on the box. You can restart processing from the beginning — for example after setting up faster speech recognition under <link>Settings</link>. An existing transcript will be overwritten.",
-    "retryTranscriptionFailed": "Processing could not be started. Please try again later."
+    "retryTranscriptionFailed": "Processing could not be started. Please try again later.",
+    "processingChunks": "Part {fertig} of {gesamt} transcribed. This view updates automatically."
   },
   "tags": {
     "sectionTitle": "Tags",

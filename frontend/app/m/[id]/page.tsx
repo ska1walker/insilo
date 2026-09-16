@@ -345,8 +345,37 @@ export default function MeetingDetail() {
             Verarbeitung
           </p>
           <p className="mt-2 text-sm text-text-sekundaer">
-            Die Aufnahme wird transkribiert. Diese Ansicht aktualisiert sich automatisch.
+            {meeting.fortschritt
+              ? t("processingChunks", {
+                  fertig: meeting.fortschritt.fertig,
+                  gesamt: meeting.fortschritt.gesamt,
+                })
+              : "Die Aufnahme wird transkribiert. Diese Ansicht aktualisiert sich automatisch."}
           </p>
+          {meeting.fortschritt && (
+            // Lange Aufnahmen laufen abschnittsweise durch. Ohne diesen
+            // Balken steht eine Stunde lang derselbe Satz da, und niemand
+            // weiß, ob noch etwas passiert.
+            <div
+              className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-flaeche-2"
+              role="progressbar"
+              aria-valuenow={meeting.fortschritt.fertig}
+              aria-valuemin={0}
+              aria-valuemax={meeting.fortschritt.gesamt}
+            >
+              <div
+                // `handlung`, nicht `auszeichnung`: Gold ist der laufenden
+                // Aufnahme vorbehalten (docs/DESIGN.md), und das hier ist
+                // Verarbeitung.
+                className="h-full rounded-full bg-handlung transition-[width] duration-500"
+                style={{
+                  width: `${Math.round(
+                    (meeting.fortschritt.fertig / meeting.fortschritt.gesamt) * 100,
+                  )}%`,
+                }}
+              />
+            </div>
+          )}
         </section>
       )}
 

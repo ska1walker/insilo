@@ -113,7 +113,8 @@
     "backendUnreachableHttp": "Backend nicht erreichbar (HTTP {status}).",
     "retryTranscription": "Erneut verarbeiten",
     "retryTranscriptionHint": "Die Aufnahme liegt weiterhin auf der Box. Sie können die Verarbeitung von vorn anstoßen — etwa nachdem Sie unter <link>Einstellungen</link> eine schnellere Spracherkennung eingetragen haben. Ein vorhandenes Transkript wird dabei überschrieben.",
-    "retryTranscriptionFailed": "Verarbeitung ließ sich nicht anstoßen. Bitte später erneut versuchen."
+    "retryTranscriptionFailed": "Verarbeitung ließ sich nicht anstoßen. Bitte später erneut versuchen.",
+    "processingChunks": "Abschnitt {fertig} von {gesamt} erkannt. Diese Ansicht aktualisiert sich automatisch."
   },
   "tags": {
     "sectionTitle": "Tags",

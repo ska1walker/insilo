@@ -113,7 +113,8 @@
     "backendUnreachableHttp": "Backend non raggiungibile (HTTP {status}).",
     "retryTranscription": "Elabora di nuovo",
     "retryTranscriptionHint": "La registrazione si trova ancora sul dispositivo. Può riavviare l'elaborazione dall'inizio, ad esempio dopo aver impostato un riconoscimento vocale più veloce in <link>Impostazioni</link>. Una trascrizione esistente verrà sovrascritta.",
-    "retryTranscriptionFailed": "Non è stato possibile avviare l'elaborazione. Riprovi più tardi."
+    "retryTranscriptionFailed": "Non è stato possibile avviare l'elaborazione. Riprovi più tardi.",
+    "processingChunks": "Parte {fertig} di {gesamt} trascritta. Questa vista si aggiorna automaticamente."
   },
   "tags": {
     "sectionTitle": "Tag",

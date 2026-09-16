@@ -113,7 +113,8 @@
     "backendUnreachableHttp": "Backend no accesible (HTTP {status}).",
     "retryTranscription": "Procesar de nuevo",
     "retryTranscriptionHint": "La grabación sigue en el equipo. Puede reiniciar el procesamiento desde el principio, por ejemplo tras configurar un reconocimiento de voz más rápido en <link>Ajustes</link>. Se sobrescribirá la transcripción existente.",
-    "retryTranscriptionFailed": "No se pudo iniciar el procesamiento. Inténtelo de nuevo más tarde."
+    "retryTranscriptionFailed": "No se pudo iniciar el procesamiento. Inténtelo de nuevo más tarde.",
+    "processingChunks": "Parte {fertig} de {gesamt} transcrita. Esta vista se actualiza automáticamente."
   },
   "tags": {
     "sectionTitle": "Etiquetas",

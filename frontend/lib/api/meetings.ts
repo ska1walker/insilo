@@ -66,6 +66,8 @@ export type MeetingDto = {
   error_message?: string | null;
   template_id?: string | null;
   template_name?: string | null;
+  /** Wie weit die stückweise Erkennung ist; nur währenddessen gesetzt. */
+  fortschritt?: { fertig: number; gesamt: number } | null;
   transcript?: Transcript | null;
   summary?: Summary | null;
   tags?: TagDto[];

@@ -48,6 +48,28 @@ def _groesse(datei: BinaryIO) -> int:
     return groesse
 
 
+def _fortschritt_dto(roh: Any) -> dict | None:
+    """`{"fertig": 7, "gesamt": 24}` — oder nichts.
+
+    asyncpg gibt jsonb je nach Codec als Text oder als dict zurück; beides
+    kommt hier an, je nachdem über welche Verbindung gelesen wurde.
+    """
+    if roh is None:
+        return None
+    if isinstance(roh, str):
+        try:
+            roh = json.loads(roh)
+        except ValueError:
+            return None
+    if not isinstance(roh, dict):
+        return None
+    try:
+        fertig, gesamt = int(roh["fertig"]), int(roh["gesamt"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    return {"fertig": fertig, "gesamt": gesamt} if gesamt > 0 else None
+
+
 def _meeting_row_to_dto(row, audio_url: str | None = None) -> dict:
     return {
         "id": str(row["id"]),
@@ -205,6 +227,7 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
             select m.id, m.title, m.recorded_at, m.duration_sec, m.audio_size_bytes,
                    m.audio_path, m.status, m.error_message, m.template_id,
                    m.metadata->>'mime_type' as audio_mime,
+                   m.metadata->'fortschritt' as fortschritt,
                    t.name as template_name
             from public.meetings m
             left join public.templates t on t.id = m.template_id
@@ -244,6 +267,10 @@ async def get_meeting(meeting_id: UUID, user: CurrentUser = Depends(get_current_
     dto["error_message"] = row["error_message"]
     dto["template_id"] = str(row["template_id"]) if row["template_id"] else None
     dto["template_name"] = row["template_name"]
+    # Wie weit die stückweise Erkennung ist — nur währenddessen gesetzt
+    # (`app/tasks/transcribe.py` räumt den Zähler am Ende weg). Ohne das
+    # steht eine Stunde lang „wird transkribiert" und sonst nichts.
+    dto["fortschritt"] = _fortschritt_dto(row["fortschritt"])
 
     # Tags zum Meeting
     async with acquire_as(user.user_id) as conn:

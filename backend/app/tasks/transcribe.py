@@ -6,7 +6,9 @@ import asyncio
 import json
 import logging
 import math
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -15,8 +17,9 @@ import asyncpg
 import httpx
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
+from starlette.concurrency import run_in_threadpool
 
-from app import ablage
+from app import ablage, audiostuecke
 from app.audioformat import audio_endung
 from app.config import settings
 from app.db import dienst_kontext
@@ -121,6 +124,7 @@ def _dauer_sekunden(
 
 async def _transkribieren_lokal(
     audio_bytes: bytes, mime: str, language: str | None, zeitlimit: float,
+    diarisieren: bool = True,
 ) -> Transkript:
     """Der mitgelieferte Whisper-Dienst. Text und Sprecher in einem Aufruf.
 
@@ -130,8 +134,12 @@ async def _transkribieren_lokal(
     `zeitlimit` hängt an der Länge der Aufnahme — warum, steht in
     `app/verarbeitungszeit.py`. Dieser Weg ist der langsame: ohne GPU
     braucht er mehr Rechenzeit, als die Aufnahme lang ist.
+
+    `diarisieren=False` für einen einzelnen Abschnitt einer langen
+    Aufnahme: die Sprecher werden dann einmal am Ende über die ganze
+    Datei getrennt, nicht je Abschnitt (siehe `app/audiostuecke.py`).
     """
-    form_data: dict[str, str] = {}
+    form_data: dict[str, str] = {"diarisieren": "true" if diarisieren else "false"}
     if language:
         form_data["language"] = language
     async with httpx.AsyncClient(timeout=httpx.Timeout(zeitlimit)) as client:
@@ -155,7 +163,7 @@ async def _transkribieren_lokal(
 
 async def _transkribieren_extern(
     audio_bytes: bytes, mime: str, language: str | None, stt: STTConfig,
-    zeitlimit: float,
+    zeitlimit: float, diarisieren: bool = True,
 ) -> Transkript:
     """Externer OpenAI-kompatibler STT-Server, Sprecher weiterhin lokal.
 
@@ -225,7 +233,16 @@ async def _transkribieren_extern(
     if not volltext:
         volltext = " ".join(s["text"] for s in segmente).strip()
 
-    centroids = await _sprecher_ergaenzen(audio_bytes, mime, segmente, zeitlimit)
+    # Bei einem einzelnen Abschnitt einer langen Aufnahme nicht: die
+    # Sprechertrennung clustert Stimmen gegeneinander und muss die ganze
+    # Datei sehen. Je Abschnitt aufgerufen wäre sie nicht nur verschwendet,
+    # sondern falsch — dieselbe Person bekäme in jedem Abschnitt eine
+    # eigene Nummer.
+    centroids = (
+        await _sprecher_ergaenzen(audio_bytes, mime, segmente, zeitlimit)
+        if diarisieren
+        else []
+    )
     return Transkript(
         segments=segmente,
         full_text=volltext,
@@ -298,6 +315,217 @@ def _fehlertext(exc: BaseException) -> str:
     return str(exc)
 
 
+async def _fortschritt(meeting_id: UUID, fertig: int, gesamt: int) -> None:
+    """Wie weit die Erkennung ist, für die Oberfläche.
+
+    `updated_at` geht mit: davon hängt ab, ob der Wächter die Besprechung
+    für abgestürzt hält (`app/tasks/waechter.py`). Eine Aufnahme, die
+    stundenlang Abschnitt für Abschnitt abarbeitet, meldet sich damit
+    regelmäßig als lebendig.
+    """
+    conn = await _connect()
+    try:
+        await conn.execute(
+            """
+            update public.meetings
+            set metadata = coalesce(metadata, '{}'::jsonb)
+                || jsonb_build_object('fortschritt',
+                     jsonb_build_object('fertig', $2::int, 'gesamt', $3::int)),
+                updated_at = now()
+            where id = $1
+            """,
+            meeting_id, fertig, gesamt,
+        )
+    finally:
+        await conn.close()
+
+
+async def _fertige_abschnitte(
+    meeting_id: UUID, teile: list[audiostuecke.Abschnitt],
+) -> dict[int, dict[str, Any]]:
+    """Was ein früherer Versuch schon erkannt hat.
+
+    Nur, was zur *jetzigen* Aufteilung passt. Ändert sich die
+    Abschnittslänge zwischen zwei Versuchen (jemand stellt
+    `INSILO_STUECK_SEKUNDEN` um), zeigt Abschnitt 3 auf eine andere Stelle
+    der Aufnahme als beim letzten Mal — und der alte Wortlaut säße dann an
+    der falschen Zeit im Transkript.
+    """
+    conn = await _connect()
+    try:
+        zeilen = await conn.fetch(
+            """
+            select idx, start_sec, end_sec, segments, text, language
+            from public.transcription_chunks
+            where meeting_id = $1
+            order by idx
+            """,
+            meeting_id,
+        )
+    finally:
+        await conn.close()
+
+    nach_index = {t.index: t for t in teile}
+    passend: dict[int, dict[str, Any]] = {}
+    for z in zeilen:
+        teil = nach_index.get(z["idx"])
+        if teil is None or abs(teil.start - z["start_sec"]) > 0.5 \
+                or abs(teil.ende - z["end_sec"]) > 0.5:
+            continue
+        rohe = z["segments"]
+        passend[z["idx"]] = {
+            "segments": json.loads(rohe) if isinstance(rohe, str) else rohe,
+            "text": z["text"],
+            "language": z["language"],
+        }
+    return passend
+
+
+async def _abschnitt_ablegen(
+    meeting_id: UUID, teil: audiostuecke.Abschnitt, ergebnis: dict[str, Any],
+) -> None:
+    conn = await _connect()
+    try:
+        await conn.execute(
+            """
+            insert into public.transcription_chunks
+                (meeting_id, idx, start_sec, end_sec, segments, text, language)
+            values ($1, $2, $3, $4, $5::jsonb, $6, $7)
+            on conflict (meeting_id, idx) do update
+            set segments = excluded.segments,
+                text = excluded.text,
+                language = excluded.language,
+                created_at = now()
+            """,
+            meeting_id, teil.index, teil.start, teil.ende,
+            json.dumps(ergebnis["segments"]), ergebnis["text"], ergebnis["language"],
+        )
+    finally:
+        await conn.close()
+
+
+async def _abschnitte_verwerfen(conn: asyncpg.Connection, meeting_id: UUID) -> None:
+    """Der Zwischenstand, sobald das fertige Transkript steht.
+
+    Zwei Quellen für denselben Wortlaut wären eine zu viel.
+    """
+    await conn.execute(
+        "delete from public.transcription_chunks where meeting_id = $1", meeting_id
+    )
+
+
+async def _erkennen(
+    inhalt: bytes, mime: str, language: str | None, stt: STTConfig, zeitlimit: float,
+) -> Transkript:
+    """Ein Stück Ton zu Text — über den Weg, der eingerichtet ist.
+
+    Ohne Sprechertrennung: die läuft einmal am Ende über die ganze Datei.
+    """
+    if stt.eingerichtet:
+        return await _transkribieren_extern(
+            inhalt, mime, language, stt, zeitlimit, diarisieren=False
+        )
+    return await _transkribieren_lokal(
+        inhalt, mime, language, zeitlimit, diarisieren=False
+    )
+
+
+async def _stueckweise(
+    meeting_id: UUID, audio_bytes: bytes, mime: str, language: str | None,
+    stt: STTConfig, zeitlimit_gesamt: float,
+) -> Transkript | None:
+    """Eine lange Aufnahme abschnittsweise erkennen, oder `None`.
+
+    `None` heißt „zu kurz, ffmpeg fehlt, oder es ließ sich nicht sinnvoll
+    teilen" — dann nimmt der Aufrufer den Weg mit einem Aufruf, also das
+    Verhalten bis 0.1.98. Das ist wichtig: ein fehlendes ffmpeg soll ein
+    Rückschritt sein, kein Ausfall.
+
+    Die Sprechertrennung kommt am Ende über die **ganze** Datei. Je
+    Abschnitt zu clustern hieße, dass derselbe Mensch in Abschnitt drei
+    anders heißt als in Abschnitt eins.
+    """
+    # Nicht in `/tmp`: das wäre auf der Box der flüchtige Speicher des
+    # Knotens, und eine große Aufnahme könnte den Pod verdrängen lassen.
+    with tempfile.TemporaryDirectory(
+        prefix="insilo-stuecke-", dir=audiostuecke.arbeitsordner()
+    ) as ordner:
+        arbeitsordner = Path(ordner)
+        quelle = arbeitsordner / f"aufnahme.{audio_endung(mime)}"
+        quelle.write_bytes(audio_bytes)
+
+        teile = await run_in_threadpool(audiostuecke.aufteilen, quelle)
+        if not teile:
+            return None
+
+        schon_da = await _fertige_abschnitte(meeting_id, teile)
+        if schon_da:
+            log.info(
+                "meeting %s: %d von %d Abschnitten lagen schon vor",
+                meeting_id, len(schon_da), len(teile),
+            )
+        await _fortschritt(meeting_id, len(schon_da), len(teile))
+
+        ergebnisse: dict[int, dict[str, Any]] = dict(schon_da)
+        for teil in teile:
+            if teil.index in ergebnisse:
+                continue
+            ziel = arbeitsordner / f"teil-{teil.index:03d}.ogg"
+            if not await run_in_threadpool(audiostuecke.schneiden, quelle, teil, ziel):
+                # Ein Abschnitt, der sich nicht schneiden lässt, ist ein
+                # Grund, den ganzen Weg zu verwerfen — ein Transkript mit
+                # einem stillschweigend fehlenden Stück wäre schlimmer als
+                # ein langsamer Durchlauf am Stück.
+                log.warning("meeting %s: Abschnitt %d misslungen, ganze Datei am Stück",
+                            meeting_id, teil.index)
+                return None
+
+            inhalt = ziel.read_bytes()
+            tr = await _erkennen(
+                inhalt, audiostuecke.MEDIENTYP_STUECK, language, stt,
+                stt_zeitlimit(round(teil.dauer), len(inhalt)),
+            )
+            ergebnisse[teil.index] = {
+                "segments": audiostuecke.versetzen(tr.segments, teil.start),
+                "text": tr.full_text,
+                "language": tr.language,
+            }
+            await _abschnitt_ablegen(meeting_id, teil, ergebnisse[teil.index])
+            await _fortschritt(meeting_id, len(ergebnisse), len(teile))
+            log.info(
+                "meeting %s: Abschnitt %d von %d erkannt (%.0f–%.0fs)",
+                meeting_id, teil.index + 1, len(teile), teil.start, teil.ende,
+            )
+
+        segmente: list[dict[str, Any]] = []
+        texte: list[str] = []
+        for teil in teile:
+            e = ergebnisse[teil.index]
+            segmente.extend(e["segments"])
+            if e["text"]:
+                texte.append(e["text"])
+
+        # Einmal über alles: nur so sind die Sprechernamen durchgehend
+        # dieselben. `_sprecher_ergaenzen` setzt `speaker`/`cluster_idx`
+        # an den Segmenten selbst.
+        centroids = await _sprecher_ergaenzen(
+            audio_bytes, mime, segmente, zeitlimit_gesamt
+        )
+
+    sprachen = [e["language"] for e in ergebnisse.values() if e["language"]]
+    return Transkript(
+        segments=segmente,
+        full_text=" ".join(texte).strip(),
+        cluster_centroids=centroids,
+        # Die erste erkannte Sprache gilt: eine Besprechung wechselt sie
+        # nicht, und ein einzelner Abschnitt kann sich verschätzen.
+        language=sprachen[0] if sprachen else language,
+        model="stückweise",
+        duration=teile[-1].ende,
+        quelle="extern" if stt.eingerichtet else "lokal",
+    )
+
+
 async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     """The real work — split out so we can run it inside asyncio.run()."""
     conn = await _connect()
@@ -343,15 +571,24 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
     finally:
         await conn.close()
 
-    if stt.eingerichtet:
-        log.info("transcribing via external endpoint %s", stt.base_url)
-        tr = await _transkribieren_extern(
-            audio_bytes, mime, requested_language, stt, zeitlimit
-        )
-    else:
-        tr = await _transkribieren_lokal(
-            audio_bytes, mime, requested_language, zeitlimit
-        )
+    # Lange Aufnahmen gehen abschnittsweise durch (`app/audiostuecke.py`):
+    # kein einzelner Aufruf läuft mehr in ein Zeitlimit, die Oberfläche
+    # kann den Fortschritt zeigen, und ein Abbruch kostet nur den einen
+    # Abschnitt. Ist die Aufnahme kurz oder fehlt ffmpeg, bleibt es beim
+    # einen Aufruf wie bisher.
+    tr = await _stueckweise(
+        meeting_id, audio_bytes, mime, requested_language, stt, zeitlimit
+    )
+    if tr is None:
+        if stt.eingerichtet:
+            log.info("transcribing via external endpoint %s", stt.base_url)
+            tr = await _transkribieren_extern(
+                audio_bytes, mime, requested_language, stt, zeitlimit
+            )
+        else:
+            tr = await _transkribieren_lokal(
+                audio_bytes, mime, requested_language, zeitlimit
+            )
 
     segments = tr.segments
     full_text = tr.full_text
@@ -458,6 +695,18 @@ async def _do_transcribe(meeting_id: UUID) -> dict[str, Any]:
                     sekunden,
                 )
 
+            # Der Wortlaut steht jetzt in `transcripts` — der Zwischenstand
+            # der Abschnitte hat seinen Zweck erfüllt und geht mit dem
+            # Fortschrittszähler zusammen weg.
+            await _abschnitte_verwerfen(conn, meeting_id)
+            await conn.execute(
+                """
+                update public.meetings
+                set metadata = coalesce(metadata, '{}'::jsonb) - 'fortschritt'
+                where id = $1
+                """,
+                meeting_id,
+            )
             await _set_status(conn, meeting_id, "transcribed")
 
         # Feed auto-matched centroids back into the speakers' voiceprint

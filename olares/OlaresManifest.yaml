@@ -34,7 +34,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.101              # = Chart.yaml.version
+  version: 0.1.102              # = Chart.yaml.version
   # Eine primäre Kategorie, wie es der AIMighty-Markt vorgibt. Die
   # frühere Dreierliste trug mit `Productivity_v112` einen Wert, den
   # dieser Markt ausdrücklich nicht mehr führt.
@@ -116,7 +116,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.101'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.102'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Markt-Bilder: 1920×1080, erzeugt aus markt/vorlagen/ (siehe markt/README.md).
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/markt/aufmacher.png

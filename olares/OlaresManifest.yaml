@@ -34,7 +34,7 @@ metadata:
   title: Insilo
   description: On-premise meeting intelligence — record, transcribe and summarize meetings without sending audio or notes to any cloud.
   icon: https://raw.githubusercontent.com/ska1walker/insilo/main/icon.png
-  version: 0.1.99              # = Chart.yaml.version
+  version: 0.1.100              # = Chart.yaml.version
   # Eine primäre Kategorie, wie es der AIMighty-Markt vorgibt. Die
   # frühere Dreierliste trug mit `Productivity_v112` einen Wert, den
   # dieser Markt ausdrücklich nicht mehr führt.
@@ -116,7 +116,7 @@ permission:
 # ---- Spec ------------------------------------------------------------------
 
 spec:
-  versionName: '0.1.99'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
+  versionName: '0.1.100'         # = Chart.yaml.appVersion (Marc's Golden Rule: identisch zu metadata.version)
 
   # Markt-Bilder: 1920×1080, erzeugt aus markt/vorlagen/ (siehe markt/README.md).
   featuredImage: https://raw.githubusercontent.com/ska1walker/insilo/main/markt/aufmacher.png
@@ -153,7 +153,7 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
-    v0.1.99 — Lange Besprechungen laufen durch.
+    v0.1.100 — Lange Besprechungen laufen durch.
 
     - Aufnahmen über etwa zwanzig Minuten wurden gespeichert, aber die
       Verarbeitung brach ab. Grund war ein festes Zeitlimit von 25 Minuten:

@@ -12,11 +12,11 @@ import asyncpg
 import httpx
 from celery import shared_task
 
-from app import ablage, relay_drop
+from app import ablage, relay_drop, verdichten
 from app.config import settings
 from app.db import dienst_kontext
 from app.llm_config import load_llm_config
-from app.verarbeitungszeit import hartes_limit, weiches_limit
+from app.verarbeitungszeit import hartes_limit, stt_zeitlimit, weiches_limit
 from app.worker import celery_app  # noqa: F401 -- side-effect: registers worker
 
 log = logging.getLogger(__name__)
@@ -440,6 +440,79 @@ def build_llm_payload(
     }
 
 
+async def _abschnitt_verdichten(
+    abschnitt: str, llm: Any, locale: str, zeitlimit: float,
+) -> str:
+    """Einen Abschnitt zu dichter Prosa — ein gewöhnlicher Modellaufruf.
+
+    Kein JSON-Modus und keine Vorlage: hier entsteht kein Ergebnis,
+    sondern nur kürzerer Text für den eigentlichen Lauf.
+    """
+    async with httpx.AsyncClient(timeout=httpx.Timeout(zeitlimit)) as client:
+        resp = await client.post(
+            f"{llm.base_url}/chat/completions",
+            json={
+                "model": llm.model,
+                "stream": False,
+                "temperature": 0.2,
+                "top_p": 0.8,
+                "max_tokens": 1024,
+                "messages": [
+                    {"role": "system", "content": verdichten.aufforderung(locale)},
+                    {"role": "user", "content": abschnitt},
+                ],
+            },
+            headers=llm.auth_header,
+        )
+        resp.raise_for_status()
+        daten = resp.json()
+    wahl = (daten.get("choices") or [{}])[0]
+    return ((wahl.get("message") or {}).get("content") or "").strip()
+
+
+async def _vorverdichten(
+    transkript: str, llm: Any, locale: str, meeting_id: UUID,
+) -> str:
+    """Solange falten, bis es ins Kontextfenster passt.
+
+    Scheitert das Verdichten, geht der ungekürzte Text weiter. Das ist
+    die richtige Richtung: vielleicht nimmt der Endpunkt ihn ja an — und
+    wenn nicht, scheitert die Zusammenfassung sichtbar, statt still eine
+    halbe Besprechung zu unterschlagen.
+    """
+    grenze = settings.zusammenfassung_max_zeichen
+    if not verdichten.zu_lang(transkript, grenze):
+        return transkript
+
+    zeitlimit = stt_zeitlimit(None, 0)  # untere Schranke: zehn Minuten
+    for runde in range(verdichten.MAX_RUNDEN):
+        abschnitte = verdichten.teilen(transkript, max(1000, grenze // 2))
+        log.info(
+            "meeting %s: Transkript mit %d Zeichen wird verdichtet "
+            "(Runde %d, %d Abschnitte)",
+            meeting_id, len(transkript), runde + 1, len(abschnitte),
+        )
+        try:
+            verdichtet = [
+                await _abschnitt_verdichten(a, llm, locale, zeitlimit)
+                for a in abschnitte
+            ]
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "meeting %s: Verdichten schlug fehl, der volle Wortlaut geht "
+                "weiter: %s", meeting_id, exc,
+            )
+            return transkript
+        if not any(v.strip() for v in verdichtet):
+            log.warning("meeting %s: Verdichten lieferte nichts", meeting_id)
+            return transkript
+
+        transkript = verdichten.zusammensetzen(verdichtet, locale)
+        if not verdichten.zu_lang(transkript, grenze):
+            break
+    return transkript
+
+
 async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
     conn = await _connect()
     try:
@@ -561,6 +634,14 @@ async def _do_summarize(meeting_id: UUID) -> dict[str, Any]:
         speakers_enriched,
         fallback=meeting["full_text"],
         locale=summary_locale,
+    )
+
+    # Zu lang fürs Kontextfenster? Dann erst abschnittsweise verdichten.
+    # Ohne das schneiden manche Endpunkte stillschweigend vorn ab, und in
+    # der Zusammenfassung fehlt die erste Stunde, ohne dass es jemand
+    # merkt. Warum und was das kostet: `app/verdichten.py`.
+    transcript_for_llm = await _vorverdichten(
+        transcript_for_llm, llm, summary_locale, meeting_id
     )
 
     payload = build_llm_payload(

@@ -153,6 +153,18 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
+    v0.1.102 — Nur Kundengespräche gehen ins CRM.
+
+    - Jede Vorlage hat jetzt die Einstellung „Kundengespräch — an das CRM
+      weitergeben". Ein angeschlossenes CRM wie Beacon übernimmt nur
+      Besprechungen, deren Vorlage so markiert ist. Bisher kamen dort auch
+      interne Runden und Sprachnotizen an.
+    - Voreinstellung: Mandanten-, Vertriebs- und Jahresgespräch ja;
+      Allgemeine Besprechung, Schnellnotiz und eigene Vorlagen nein.
+      Umstellen dürfen Inhaberinnen und Verwaltende.
+    - Die Markierung hängt an der Vorlage, nicht an ihrem Namen — eine
+      umbenannte Vorlage behält sie.
+
     v0.1.101 — Lange Besprechungen laufen durch.
 
     - Aufnahmen über etwa zwanzig Minuten wurden gespeichert, aber die

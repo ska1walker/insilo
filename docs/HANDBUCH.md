@@ -1,7 +1,7 @@
 # Insilo — Handbuch
 
 Für Nutzerinnen, Nutzer und die Person, die Insilo auf der Box betreut.
-Stand: 16. September 2026, Fassung 0.1.101.
+Stand: 16. September 2026, Fassung 0.1.102.
 
 > Die übrigen Dateien in `docs/` sind Werkstattmaterial. Dieses Handbuch
 > ist das einzige, das für den Betrieb beim Kunden geschrieben ist.
@@ -475,6 +475,23 @@ Für dieses Ereignis gibt es zwei Betriebsarten:
 
 Die Ausnahme steht in Abschnitt 4: eine **Schnellnotiz** geht immer
 automatisch hinaus, auch an Webhooks in Betriebsart „manuell".
+
+### Welche Gespräche ein CRM bekommt
+
+**Einstellungen → Vorlagen für Zusammenfassungen**, oben in jeder
+Vorlage: **„Kundengespräch — an das CRM weitergeben"**. Ein angeschlossenes
+CRM wie Beacon übernimmt nur Besprechungen, deren Vorlage so markiert ist.
+Die Markierung steht in jeder Datei im gemeinsamen Ordner der Box und in
+jedem Webhook.
+
+Voreinstellung: Mandantengespräch, Vertriebsgespräch und Jahresgespräch
+gehen weiter; Allgemeine Besprechung, Schnellnotiz und eigene Vorlagen
+nicht. Umstellen dürfen Inhaberinnen und Verwaltende. Die Änderung gilt
+sofort, auch für Besprechungen, die schon da sind — außer für solche, die
+im CRM schon einem Kunden zugeordnet wurden: die bleiben dort.
+
+Der gemeinsame Ordner selbst bekommt weiterhin jede Zusammenfassung;
+die Markierung regelt, was ein CRM übernimmt, nicht, was im Ordner liegt.
 
 ### Zugriffsschlüssel — andere Systeme holen ab
 

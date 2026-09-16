@@ -17,6 +17,39 @@
 >
 > ---
 >
+> ## 0.1.102: Nur Kundengespräche gehen ins CRM (16. September 2026)
+>
+> **Anlass.** Beacon las den gemeinsamen Ordner und übernahm alles:
+> Kundengespräche, interne Runden, Sprachnotizen. Filtern konnte Beacon nur
+> am Vorlagennamen — umbenennbar pro Organisation. Kais Idee war, Mandanten-
+> und Vertriebsgespräch zu „Kundengespräch" zusammenzulegen. Verworfen,
+> weil die beiden Vorlagen Verschiedenes erzeugen (Aktenprotokoll gegen
+> BANT) und weil es zwei Fragen vermischt: *wie* zusammengefasst wird und
+> *wohin* das Ergebnis geht. Geklärt mit Kai: „Jahresgespräch" ist im
+> Saatgut ein Kundengespräch („für die Kundenakte"), kein
+> Mitarbeitergespräch; was Relay sieht, wird später entschieden.
+>
+> **Umsetzung.** `templates.an_crm` (Voreinstellung, im **Saatgut** gesetzt —
+> die Migration läuft vor 0099_seed und träfe auf einer frischen
+> Installation keine Zeile) und `template_weitergabe` (Abweichung je
+> Organisation, eigene Tabelle, weil „Zurücksetzen" am Prompt die Zeile in
+> `template_customizations` löscht). Die wirksame Markierung steht als
+> `crm: true|false` im Kopf jeder Datei im gemeinsamen Ordner und als
+> `meeting.crm` im Webhook. Umstellen nur Inhaber/Verwaltende; danach
+> schreibt `weitergabe_nachziehen` die Dateien der Vorlage neu, und der
+> nächtliche Abgleich erneuert Dateien ohne oder mit falscher Markierung.
+>
+> **Beacon (0.12.0).** Übernimmt nur `crm: true`. Fehlt der Schlüssel
+> (älteres Insilo): wie bisher. Schon übernommen und nicht mehr markiert:
+> weich gelöscht, außer schon einem Kunden zugeordnet — das bleibt.
+>
+> **Geprüft vor dem Ausrollen:** Migration und Saatgut in
+> Wegwerf-Datenbanken auf der Box — frisch, Neustart, und Aktualisierung
+> von 0.1.101 mit eigener Vorlage und umbenannter Systemvorlage
+> („Kundentermin" behält die Markierung).
+>
+> ---
+>
 > ## 0.1.99: Lange Besprechungen laufen durch (16. September 2026)
 >
 > **Der Befund.** Aufnahmen über etwa zwanzig Minuten wurden gespeichert,

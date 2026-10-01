@@ -23,8 +23,8 @@ export default function Home() {
         <div
           className="flex h-10 w-10 items-center justify-center rounded-full"
           style={{
-            background: "var(--am-gold-200)",
-            border: "1px solid rgba(201, 169, 97, 0.4)",
+            background: "var(--am-auswahl-flaeche)",
+            border: "1px solid var(--am-gold-auszeichnung)",
           }}
         >
           <ShieldCheck

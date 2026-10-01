@@ -789,8 +789,8 @@ function Datensouveraenitaet() {
                 border: "1px solid var(--am-achtung-rand)",
               }
             : {
-                background: "var(--am-gold-200)",
-                border: "1px solid rgba(201, 169, 97, 0.4)",
+                background: "var(--am-auswahl-flaeche)",
+                border: "1px solid var(--am-gold-auszeichnung)",
               }
         }
       >

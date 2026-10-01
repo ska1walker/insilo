@@ -163,18 +163,18 @@ function ToastCard({
   return (
     <div
       role={toast.variant === "error" ? "alert" : "status"}
-      className="pointer-events-auto w-full max-w-[480px] origin-bottom transition-all duration-200 ease-out"
+      className="pointer-events-auto w-full max-w-[480px] origin-bottom transition-all duration-[var(--am-dauer-mittel)] ease-[var(--am-kurve)]"
       style={{
         opacity: leaving ? 0 : 1,
         transform: leaving ? "translateY(8px)" : "translateY(0)",
-        animation: leaving ? undefined : "toastIn 220ms ease-out",
+        animation: leaving ? undefined : "toastIn var(--am-dauer-mittel) var(--am-kurve)",
       }}
     >
       <div
         className="relative overflow-hidden rounded-lg border bg-seite"
         style={{
           borderColor: "var(--am-trennlinie)",
-          boxShadow: "0 8px 24px rgba(10, 10, 10, 0.08)",
+          boxShadow: "var(--am-schatten-1)",
         }}
       >
         {/* Left accent bar */}

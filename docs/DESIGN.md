@@ -16,7 +16,7 @@
 
 | Was | Wo |
 |---|---|
-| Alle Token (Farbe, Raum, Schrift, Radien, Zustände) | `frontend/app/globals.css`, Block ganz oben |
+| Alle Token (Farbe, Raum, Schrift, Radien, Zustände, Bewegung, Ebenen) | `frontend/app/globals.css`, Block ganz oben — **wörtlich `tokens/app.css` aus dem AImighty-CI** (Stand `ci-26.10.3`, seit Etappe 1 des CI-Anschlusses). Geändert wird er im CI, nie hier |
 | Tailwind-Anbindung | `frontend/tailwind.insilo.preset.js` — unverändert aus dem Paket |
 | Schriften | `frontend/app/fonts/`, geladen per `next/font/local` |
 | Bauteile (Knöpfe, Felder, Streifen, Tabelle) | `frontend/app/globals.css`, `@layer components` |
@@ -223,9 +223,10 @@ Rückfrage; eine zu Unrecht gezeigte Entwarnung kostet das Versprechen.
 
 ## 6. Bewegung
 
-Animationen sind funktional, nie dekorativ. Das Paket gibt zwei Dauern
-vor (`--am-dauer-kurz` 120 ms, `--am-dauer-lang` 200 ms), aber keine
-Beschleunigungskurve — dafür bleibt `--ease-out` aus dem Altbestand.
+Animationen sind funktional, nie dekorativ. Das CI gibt drei Dauern vor
+(`--am-dauer-schnell` 120 ms, `-mittel` 200 ms, `-langsam` 320 ms) und eine
+Kurve (`--am-kurve`). Der Altbestand `--ease-out`, `--duration-*` und
+`--am-dauer-kurz/-lang` ist entfallen (CI `ABGLEICH.md`, T6).
 
 Weiterhin gilt: keine Parallaxe, keine scroll-getriggerten Effekte, keine
 „AI-Sparkles", keine hüpfenden Knöpfe. `prefers-reduced-motion` wird

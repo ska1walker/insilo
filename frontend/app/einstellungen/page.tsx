@@ -339,12 +339,12 @@ export default function EinstellungenPage() {
                 ? {
                     borderColor: "var(--am-erfolg)",
                     color: "var(--am-erfolg)",
-                    background: "rgba(74,124,89,0.06)",
+                    background: "var(--am-erfolg-flaeche)",
                   }
                 : {
                     borderColor: "var(--am-fehler)",
                     color: "var(--am-fehler)",
-                    background: "rgba(163,58,47,0.06)",
+                    background: "var(--am-fehler-flaeche)",
                   }
             }
           >

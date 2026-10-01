@@ -273,7 +273,7 @@ export function VoiceEnrollmentDialog({
               className="rounded-md border p-4 text-sm"
               style={{
                 borderColor: "var(--am-erfolg)",
-                background: "rgba(74,124,89,0.06)",
+                background: "var(--am-erfolg-flaeche)",
                 color: "var(--am-erfolg)",
               }}
             >
@@ -296,7 +296,7 @@ export function VoiceEnrollmentDialog({
               className="rounded-md border p-4 text-sm"
               style={{
                 borderColor: "var(--am-fehler)",
-                background: "rgba(163,58,47,0.06)",
+                background: "var(--am-fehler-flaeche)",
                 color: "var(--am-fehler)",
               }}
             >
@@ -310,7 +310,7 @@ export function VoiceEnrollmentDialog({
               className="rounded-md border p-4 text-sm"
               style={{
                 borderColor: "var(--am-fehler)",
-                background: "rgba(163,58,47,0.06)",
+                background: "var(--am-fehler-flaeche)",
                 color: "var(--am-fehler)",
               }}
             >
@@ -326,7 +326,7 @@ export function VoiceEnrollmentDialog({
               className="rounded-md border p-4 text-sm"
               style={{
                 borderColor: "var(--am-fehler)",
-                background: "rgba(163,58,47,0.06)",
+                background: "var(--am-fehler-flaeche)",
                 color: "var(--am-fehler)",
               }}
             >

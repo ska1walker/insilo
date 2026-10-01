@@ -509,11 +509,7 @@ function SegmentPicker({
             }`}
             style={
               current === s.id
-                ? {
-                    color: "var(--am-gold-beschriftung)",
-                    background: "var(--am-gold-200)",
-                    borderColor: "var(--am-gold-800)",
-                  }
+                ? { color: "var(--am-text-primaer)", borderColor: "var(--am-gold-800)" }
                 : { color: "var(--am-gold-beschriftung)" }
             }
           >

@@ -203,7 +203,7 @@ function ClusterRow({
                 className="rounded-full px-2 py-0.5 text-[0.6875rem] uppercase tracking-[0.04em]"
                 style={
                   cluster.assignment === "auto"
-                    ? { background: "rgba(74,124,89,0.08)", color: "var(--am-erfolg)" }
+                    ? { background: "var(--am-erfolg-flaeche)", color: "var(--am-erfolg)" }
                     : { background: "var(--am-flaeche-1)", color: "var(--am-text-gedaempft)" }
                 }
               >
@@ -289,8 +289,8 @@ function ClusterPicker({
               style={
                 active
                   ? {
-                      color: "var(--am-gold-beschriftung)",
-                      background: "var(--am-gold-200)",
+                      color: "var(--am-text-primaer)",
+                      background: "var(--am-auswahl-flaeche)",
                       borderColor: "var(--am-gold-800)",
                     }
                   : {

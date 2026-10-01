@@ -236,7 +236,7 @@ function WebhookRow({
               className="rounded-full px-2 py-0.5 text-xs"
               style={
                 webhook.trigger_mode === "manual"
-                  ? { background: "rgba(201,169,97,0.12)", color: "var(--am-gold-beschriftung)" }
+                  ? { background: "var(--am-auswahl-flaeche)", color: "var(--am-text-primaer)" }
                   : { background: "var(--am-flaeche-1)", color: "var(--am-text-sekundaer)" }
               }
               title={
@@ -315,12 +315,12 @@ function WebhookRow({
               ? {
                   borderColor: "var(--am-erfolg)",
                   color: "var(--am-erfolg)",
-                  background: "rgba(74,124,89,0.06)",
+                  background: "var(--am-erfolg-flaeche)",
                 }
               : {
                   borderColor: "var(--am-fehler)",
                   color: "var(--am-fehler)",
-                  background: "rgba(163,58,47,0.06)",
+                  background: "var(--am-fehler-flaeche)",
                 }
           }
         >
@@ -683,7 +683,7 @@ function SecretReveal({
       className="rounded-lg border p-4"
       style={{
         borderColor: "var(--am-gold-500)",
-        background: "rgba(201,169,97,0.08)",
+        background: "var(--am-auswahl-flaeche)",
       }}
     >
       <h4 className="text-sm font-medium text-text-primaer">

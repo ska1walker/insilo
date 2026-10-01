@@ -279,14 +279,23 @@ html.dunkel {
 html[data-dichte="normal"] { --am-skalierung: 1; }
 html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
 
-/* ── Zahlen: tabellarisch, rechtsbündig, Geist Mono ───────────────── */
+/* ── Zahlen: tabellarisch, rechtsbündig, Geist Mono [AM-BASIS] ───────────────── */
 .am-zahl {
   font-family: var(--am-schrift-mono);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
+/* ── Grundstil [AM-BASIS] ─────────────────────────────────────────────────────────── */
+  /* Bewegung reduziert: Der Zustand stellt sich sofort ein, der Weg fällt
+     weg — derselbe Knopf, nur ohne Übergang (kern/bewegung.md im CI:
+     „ist fertig“, nicht „steht still“). Die beiden Schleifen (Schild,
+     Suchbalken) haben eigene Fassungen weiter unten. */
 @layer base {
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0s !important; }
+  }
+
   html {
     color-scheme: light;
     background: var(--am-seite);
@@ -322,17 +331,10 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   Bauteile — AImighty-Designsystem
-   1:1 aus dem Referenzblatt (InSilo_Design-Paket.html) übernommen.
-   Deutsche Klassennamen; die englischen Alt-Bauteile weiter unten bleiben
-   stehen, bis alle Seiten umgezogen sind.
-   ═══════════════════════════════════════════════════════════════════════ */
-
-@layer components {
-  /* ── Buttons ──────────────────────────────────────────────────────
+  /* ── Buttons [AM-KNOPF] ──────────────────────────────────────────────────────
      Primär genau eine Handlung je Ansicht. Sekundär und still beliebig
      oft. Höhe ist die Zielgröße, nicht Padding-Zufall. */
+@layer components {
   .btn-reihe {
     display: flex;
     flex-wrap: wrap;
@@ -450,8 +452,10 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     }
     .btn-reihe { gap: var(--am-ziel-abstand-beruehrung); }
   }
+}
 
-  /* ── Formularfelder ───────────────────────────────────────────────── */
+  /* ── Formularfelder [AM-FELD] ───────────────────────────────────────────────── */
+@layer components {
   .feld { margin-bottom: var(--am-raum-6); }
 
   .feld label {
@@ -467,7 +471,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     color: var(--am-text-gedaempft);
   }
 
-  .feld input,
+  .feld input:not([type="checkbox"]),
   .feld select,
   .feld textarea {
     width: 100%;
@@ -491,7 +495,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   .feld select:focus-visible,
   .feld textarea:focus-visible {
     outline: 2px solid var(--am-fokus-ring);
-    outline-offset: 1px;
+    outline-offset: 2px;
   }
 
   .feld.fehler input,
@@ -517,403 +521,98 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
 
   @media (pointer: coarse) {
-    .feld input,
+    .feld input:not([type="checkbox"]),
     .feld select,
     .feld textarea { min-height: var(--am-ziel-beruehrung); }
   }
+}
 
-  /* ── Zustandsstreifen ─────────────────────────────────────────────
-     Farbe ist nie das einzige Merkmal — jede Meldung trägt Zeichen und
-     Satz. Das `zeichen`-Element ist Pflicht, nicht Dekoration. */
-  .streifen {
-    display: flex;
-    gap: var(--am-raum-3);
-    align-items: flex-start;
-    padding: var(--am-raum-4);
+/* ── Eingabefeld, aus dem Paket übernommen [AM-FELD] ──────────────────────────── */
+@layer components {
+  .input {
+    padding: 0 var(--am-raum-4);
+    height: var(--am-ziel-zeiger);
+    border: 1px solid var(--am-rand);
     border-radius: var(--am-radius-mittel);
-    border: 1px solid;
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
     font-size: 0.9375rem;
+    width: 100%;
   }
 
-  .streifen .zeichen {
-    font-weight: 700;
-    flex-shrink: 0;
+  .input:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
   }
 
-  .streifen-erfolg {
-    background: var(--am-erfolg-flaeche);
-    border-color: var(--am-erfolg-rand);
-    color: var(--am-text-primaer);
-  }
-  .streifen-erfolg .zeichen { color: var(--am-erfolg); }
+  .input::placeholder { color: var(--am-text-deaktiviert); }
 
-  .streifen-hinweis {
-    background: var(--am-hinweis-flaeche);
-    border-color: var(--am-hinweis-rand);
-    color: var(--am-text-primaer);
-  }
-  .streifen-hinweis .zeichen { color: var(--am-hinweis); }
-
-  .streifen-achtung {
-    background: var(--am-achtung-flaeche);
-    border-color: var(--am-achtung-rand);
-    color: var(--am-text-primaer);
-  }
-  .streifen-achtung .zeichen { color: var(--am-achtung); }
-
-  .streifen-fehler {
-    background: var(--am-fehler-flaeche);
-    border-color: var(--am-fehler-rand);
-    color: var(--am-text-primaer);
-  }
-  .streifen-fehler .zeichen { color: var(--am-fehler); }
-
-  /* ── Deckschicht hinter Dialogen ──────────────────────────────────── */
-  .deckschicht {
-    background: var(--am-deckschicht);
+  /* Der native Pfeil sitzt je nach Browser hart am Rand und ignoriert das
+     Padding. Deshalb abschalten und ein eigenes Zeichen setzen. */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23587898' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--am-raum-4) center;
+    background-size: 1rem 1rem;
+    padding-right: calc(var(--am-raum-4) * 2 + 1rem);
   }
 
-  /* Ausgewählter Eintrag — Fläche folgt dem Modus, siehe Token oben. */
-  .flaeche-auswahl {
-    background: var(--am-auswahl-flaeche);
+  html.dunkel select {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23afc0d2' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   }
 
-  /* ── Karte ────────────────────────────────────────────────────────── */
+  select[multiple],
+  select[size]:not([size="1"]) {
+    background-image: none;
+    padding-right: var(--am-raum-4);
+  }
+}
+
+/* ── Auswahlfelder haben ein Zeichen [AM-FELD] ──────────────────────────────────
+   Irgendwo in der Grundlage steht `appearance: none` auf Formularfeldern.
+   Damit verlor **jedes** Auswahlfeld der Anwendung sein Zeichen und sah
+   aus wie ein Textfeld: Man sah der Rolle in der Mitgliederliste nicht
+   an, dass man sie ändern kann, und dem Stufenfeld im Firmendialog nicht,
+   dass es eine Liste öffnet.
+
+   Die Farbe steht fest im Bild und folgt keinem Token — ein Data-URI
+   kennt keine CSS-Variablen. `--am-blau-500` ist genau dafür gewählt:
+   „Wendepunkt — als Text in beiden Modi lesbar". Ein Zeichen je
+   Darstellung wäre zwei Dateien für einen Haken.
+
+   Ganz am Ende der Datei, weil `.feld select` spezifischer ist als
+   `select`: Das Polster muss aus einer Regel kommen, die diese Auswahl
+   ebenfalls trifft, und die spätere gewinnt. */
+select,
+.feld select,
+.werkzeugleiste select,
+.mitglied-rolle {
+  /* `background-image`, nicht die Kurzform: `.feld select` setzt
+     `background: var(--am-seite)`, und eine Kurzform löscht das Bild
+     wieder. Beim ersten Versuch stand das Zeichen in einer eigenen
+     `select`-Regel und war deshalb unsichtbar. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%23587898' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--am-raum-3) center;
+  background-size: 12px 8px;
+  padding-right: calc(var(--am-raum-3) + 1.25rem);
+}
+
+  /* ── Karte [AM-KARTE] ────────────────────────────────────────────────────────── */
+@layer components {
   .karte {
     background: var(--am-flaeche-1);
     border: 1px solid var(--am-rand);
     border-radius: var(--am-radius-mittel);
     padding: var(--am-raum-6);
   }
+}
 
-  /* ── Tabelle ──────────────────────────────────────────────────────── */
-  .tabelle-rahmen {
-    border: 1px solid var(--am-rand);
-    border-radius: var(--am-radius-mittel);
-    overflow: hidden;
-  }
-
-  table.am-tabelle {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9375rem;
-  }
-
-  table.am-tabelle th {
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.8125rem;
-    color: var(--am-text-sekundaer);
-    background: var(--am-flaeche-1);
-    padding: 0 var(--am-raum-4);
-    height: var(--am-raum-12);
-    border-bottom: 1px solid var(--am-trennlinie);
-  }
-
-  table.am-tabelle td {
-    padding: 0 var(--am-raum-4);
-    height: var(--am-zeile-tabelle);
-    border-bottom: 1px solid var(--am-trennlinie);
-    color: var(--am-text-primaer);
-  }
-
-  table.am-tabelle tr:last-child td { border-bottom: none; }
-
-  /* ── Die Hülle ────────────────────────────────────────────────────
-     Zeiger (≥1024px): Navigation links, Inhalt, Ablage rechts.
-     Berührung (<1024px): Navigation als untere Leiste, Ablage unter dem
-     Inhalt. Der mobile Fall steht nicht im Referenzblatt — Insilo ist
-     aber primär eine Smartphone-PWA, und 220px Seitenspalte gehen auf
-     375px nicht auf. */
-  .huelle {
-    display: grid;
-    /* minmax(0, …), nicht 1fr: sonst darf ein breites Kind die Spalte
-       aufdehnen und der Inhalt läuft seitlich aus dem Viewport. */
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
-    min-height: 100dvh;
-    background: var(--am-seite);
-  }
-
-  .huelle-nav {
-    grid-row: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    gap: var(--am-raum-1);
-    background: var(--am-flaeche-1);
-    border-top: 1px solid var(--am-trennlinie);
-    padding: var(--am-raum-2) var(--am-raum-2);
-    padding-bottom: max(var(--am-raum-2), env(safe-area-inset-bottom));
-    position: sticky;
-    bottom: 0;
-    z-index: 40;
-  }
-
-  /* Kopfecke und die Gruppierung tragen erst ab der Seitenspalte. */
-  .huelle-kopfecke,
-  .huelle-nav-spacer {
-    display: none;
-  }
-
-  .huelle-nav-gruppe {
-    display: contents;
-  }
-
-  .huelle-nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--am-raum-1);
-    padding: var(--am-raum-2);
-    min-width: var(--am-ziel-beruehrung);
-    min-height: var(--am-ziel-beruehrung);
-    border-radius: var(--am-radius-klein);
-    font-size: 0.6875rem;
-    color: var(--am-text-sekundaer);
-    text-align: center;
-    transition: color var(--am-dauer-schnell) var(--am-kurve);
-  }
-
-  .huelle-nav-item:hover { color: var(--am-text-primaer); }
-
-  .huelle-nav-item.aktiv {
-    color: var(--am-gold-beschriftung);
-    font-weight: 600;
-  }
-
-  /* Auf der Leiste ist Platz für fünf Ziele. „Über Insilo" ist eine
-     Infoseite und war auch in der alten Kopfzeile mobil ausgeblendet —
-     erreichbar bleibt sie über die Einstellungen. */
-  .huelle-nav-item[data-nachrangig="true"] {
-    display: none;
-  }
-
-  /* Wappen — zwei Fassungen im Markup, CSS zeigt die passende.
-     Ohne JavaScript, damit beim Laden nichts umspringt. */
-  .wappen {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .wappen svg {
-    height: 100%;
-    width: auto;
-    display: block;
-  }
-
-  .wappen .wappen-dunkel { display: none; }
-  html.dunkel .wappen .wappen-hell { display: none; }
-  html.dunkel .wappen .wappen-dunkel { display: block; }
-
-  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
-     sichtbar; Farbe und Schnitt gelten unabhängig davon. */
-  .huelle-herkunft {
-    display: none;
-  }
-
-  .huelle-herkunft-marke {
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--am-text-sekundaer);
-    border-radius: var(--am-radius-klein);
-    transition: color var(--am-dauer-schnell) var(--am-kurve);
-  }
-
-  .huelle-herkunft-marke:hover {
-    color: var(--am-text-primaer);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  .huelle-herkunft-marke:focus-visible {
-    outline: 2px solid var(--am-fokus-ring);
-    outline-offset: 2px;
-  }
-
-  .huelle-herkunft-recht {
-    font-family: var(--am-schrift-mono);
-    font-size: 0.625rem;
-    color: var(--am-text-deaktiviert);
-  }
-
-  /* ── Datenschutz-Nachweis ─────────────────────────────────────────
-     Sitzt unten in der Navigation. Auf der schmalen Leiste hat er keinen
-     Platz — dort trägt ihn die Ansicht „Was verlässt diese Box?" selbst. */
-  .huelle-schutz {
-    display: none;
-  }
-
-  .huelle-inhalt {
-    grid-row: 1;
-    min-width: 0;
-    overflow-x: hidden;
-  }
-
-  .huelle-ablage {
-    grid-row: 3;
-    background: var(--am-flaeche-1);
-    border-top: 1px solid var(--am-trennlinie);
-    padding: var(--am-raum-4);
-    font-size: 0.8125rem;
-    color: var(--am-text-sekundaer);
-  }
-
-  @media (min-width: 1024px) {
-    .huelle {
-      grid-template-columns: 220px minmax(0, 1fr);
-      grid-template-rows: 1fr;
-    }
-
-    .huelle.hat-ablage {
-      grid-template-columns: 220px minmax(0, 1fr) 280px;
-    }
-
-    .huelle-nav {
-      grid-row: 1;
-      grid-column: 1;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: flex-start;
-      gap: var(--am-raum-1);
-      background: var(--am-flaeche-1);
-      border-top: none;
-      border-right: 1px solid var(--am-trennlinie);
-      padding: var(--am-raum-4);
-      position: sticky;
-      top: 0;
-      bottom: auto;
-      height: 100dvh;
-    }
-
-    .huelle-kopfecke {
-      display: flex;
-      align-items: center;
-      gap: var(--am-raum-3);
-      padding-bottom: var(--am-raum-4);
-      margin-bottom: var(--am-raum-4);
-      border-bottom: 1px solid var(--am-trennlinie);
-    }
-
-    .huelle-wappen-link {
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .huelle-wappen {
-      height: 28px;
-    }
-
-    .huelle-nav-gruppe {
-      display: flex;
-      flex-direction: column;
-      gap: var(--am-raum-1);
-    }
-
-    .huelle-nav-spacer {
-      display: block;
-      flex: 1;
-    }
-
-    .huelle-nav-item {
-      flex-direction: row;
-      justify-content: flex-start;
-      gap: var(--am-raum-3);
-      padding: var(--am-raum-2) var(--am-raum-3);
-      min-height: var(--am-ziel-zeiger);
-      font-size: 0.875rem;
-      text-align: left;
-    }
-
-    /* In der Seitenspalte ist Platz für alle Ziele. */
-    .huelle-nav-item[data-nachrangig="true"] {
-      display: flex;
-    }
-
-    .huelle-nav-item:hover { background: var(--am-flaeche-2); }
-
-    .huelle-schutz {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--am-raum-2);
-      margin-top: var(--am-raum-3);
-      padding: var(--am-raum-2) var(--am-raum-3);
-      border-radius: var(--am-radius-klein);
-      border: 1px solid transparent;
-      font-family: var(--am-schrift-mono);
-      font-size: 0.6875rem;
-      line-height: 1.4;
-      transition: background var(--am-dauer-schnell) var(--am-kurve);
-    }
-
-    .huelle-schutz-text {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-
-    .huelle-schutz-kopf {
-      font-weight: 600;
-    }
-
-    .huelle-schutz-unter {
-      opacity: 0.85;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* Alles intern — der ruhige Normalfall. */
-    .huelle-schutz-erfolg {
-      background: var(--am-erfolg-flaeche);
-      border-color: var(--am-erfolg-rand);
-      color: var(--am-erfolg);
-    }
-
-    /* Ziele konfiguriert, aber bewusst: neutral halten, nicht warnen. */
-    .huelle-schutz-neutral {
-      background: var(--am-flaeche-2);
-      border-color: var(--am-rand);
-      color: var(--am-text-sekundaer);
-    }
-
-    /* Sprachmodell außerhalb der Box — hier gehen ganze Transkripte
-       hinaus. Das ist der Fall, der auffallen muss. */
-    .huelle-schutz-achtung {
-      background: var(--am-achtung-flaeche);
-      border-color: var(--am-achtung-rand);
-      color: var(--am-achtung);
-    }
-
-    .huelle-herkunft {
-      display: flex;
-      align-items: baseline;
-      gap: var(--am-raum-2);
-      margin-top: var(--am-raum-3);
-      padding: 0 var(--am-raum-3);
-      font-size: 0.6875rem;
-      line-height: 1.4;
-    }
-
-    .huelle-inhalt {
-      grid-row: 1;
-      grid-column: 2;
-      overflow-y: auto;
-      max-height: 100dvh;
-    }
-
-    .huelle-ablage {
-      grid-row: 1;
-      grid-column: 3;
-      border-top: none;
-      border-left: 1px solid var(--am-trennlinie);
-      overflow-y: auto;
-      max-height: 100dvh;
-    }
-  }
-
-  /* ── Leerzustand ──────────────────────────────────────────────────── */
+  /* ── Leerzustand [AM-LEER] ──────────────────────────────────────────────────── */
+@layer components {
   .leerzustand {
     text-align: center;
     padding: var(--am-raum-16) var(--am-raum-8);
@@ -934,249 +633,220 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   }
 }
 
+  /* ── Hinweiszeile [HB-ZUSTAND] ─────────────────────────────────────────────────── */
 @layer components {
-  /* Die Alt-Knöpfe .btn-primary/-secondary/-tertiary sind am 06.09.2026
-     entfernt worden — es gibt .btn-primaer, .btn-sekundaer, .btn-still. */
-
-  .btn-record {
-    background: var(--am-seite);
-    color: var(--am-text-primaer);
-    border: 2px solid var(--am-gold-500);
-    width: 120px;
-    height: 120px;
-    border-radius: 9999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    /* Kein Schatten, kein Pulsieren im Ruhezustand, kein Hover-Versatz —
-       Bewegung trägt hier nur eine Information: läuft die Aufnahme. */
-    transition: background var(--am-dauer-schnell) var(--am-kurve),
-                border-color var(--am-dauer-schnell) var(--am-kurve);
-  }
-  .btn-record:hover { border-color: var(--am-gold-600); }
-  .btn-record:disabled { animation: none; opacity: 0.6; cursor: not-allowed; }
-  .btn-record.recording {
-    background: var(--am-gold-500);
-    color: var(--am-blau-900);
-    animation: pulse-gold 2s ease-in-out infinite;
+  .hinweis {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--am-raum-2);
+    padding: var(--am-raum-3);
+    border-radius: var(--am-radius-mittel);
+    border: 1px solid var(--am-rand);
+    background: var(--am-flaeche-2);
+    font-size: 0.875rem;
+    color: var(--am-text-sekundaer);
   }
 
-  /* Der Ring während der Aufnahme: ein Zustand, keine Zierde — deshalb
-     die einzige Bewegung am Knopf. Gold aus dem Token, nie als Literal. */
-  @keyframes pulse-gold {
-    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--am-gold-500) 40%, transparent); }
-    50% { box-shadow: 0 0 0 16px color-mix(in srgb, var(--am-gold-500) 0%, transparent); }
+  /* Das Warnzeichen ist ein Flex-Kind und schrumpfte ohne diese Zeile auf
+     4,6 px zusammen — ein Strich, den niemand als Zeichen liest. Farbe
+     trägt eine Aussage nie allein (DESIGN.md), also muss das Zeichen da
+     sein. Zwei Pixel Versatz, damit es auf der ersten Zeile sitzt. */
+  .hinweis > svg {
+    flex: none;
+    margin-top: 2px;
   }
 
-  .recording-indicator {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+  .hinweis[data-art="achtung"] {
+    border-color: var(--am-achtung-rand);
+    background: var(--am-achtung-flaeche);
+    color: var(--am-achtung);
+  }
+
+  .hinweis[data-art="fehler"] {
+    border-color: var(--am-fehler-rand);
+    background: var(--am-fehler-flaeche);
+    color: var(--am-fehler);
+  }
+
+  /* Ein gemessener guter Zustand, etwa „alles bleibt auf der Box“ in
+     Insilos Datenschutz-Nachweis (ABGLEICH IN-B4). Mit Zeichen und Satz wie
+     jeder Zustand; nie als Auszeichnung. */
+  .hinweis[data-art="erfolg"] {
+    border-color: var(--am-erfolg-rand);
+    background: var(--am-erfolg-flaeche);
+    color: var(--am-erfolg);
+  }
+}
+
+/* ── Überfällig [HB-ZUSTAND] ──────────────────────────────────────────────────────── */
+/* Überschrittene Frist: Uhr und Wort neben dem Rot (R7) — Komponente Ueberfaellig. */
+[data-ueberfaellig="true"] { display: inline-flex; align-items: center; gap: var(--am-raum-1); }
+.ueberfaellig-zeichen { flex: none; }
+
+  /* ── Nur für Vorleser [HB-TABELLE] ─────────────────────────────────────────────── */
+@layer components {
+  .nur-vorleser {
+    position: absolute;
+    width: 1px;
     height: 1px;
-    background: var(--am-gold-500);
-    animation: pulse-line 2.4s ease-in-out infinite;
-    z-index: 1000;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Der Titel eines Leerzustands ist keine Überschrift: Als h4 übersprang
+     er auf den meisten Seiten zwei Ebenen. */
+  /* Das Zeichen über dem Satz: Die Grundregeln machen jedes SVG zum Block,
+     und ein Block folgt text-align nicht — bis 26.9.7 stand es links,
+     der Text mittig darunter (Kai, 1.10.2026). */
+  .leerzustand > svg { display: block; margin-inline: auto; }
+
+  .leerzustand .leerzustand-titel {
+    color: var(--am-text-primaer);
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0 auto var(--am-raum-2);
+  }
+}
+
+  /* ── Werkzeugleiste über der Liste [HB-TABELLE] ────────────────────────────────── */
+@layer components {
+  .werkzeugleiste {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    flex-wrap: wrap;
+    padding: var(--am-raum-3) var(--am-raum-8);
+    border-bottom: 1px solid var(--am-trennlinie);
+    background: var(--am-seite);
+  }
+
+  .suchfeld {
+    position: relative;
+    flex: 1 1 240px;
+    max-width: 360px;
+  }
+
+  .suchfeld svg {
+    position: absolute;
+    left: var(--am-raum-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--am-text-gedaempft);
     pointer-events: none;
   }
 
-  @keyframes pulse-line {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
-  }
-
-  /* ── Schauerfunktion / Quick-Capture (v0.1.53) ───────────────────────
-   * Header-Icon-Button mit ShowerHead, dezenter Gold-Hover, sichtbar
-   * auf allen Viewports (Mobile-first). Body-Class-Toggle wechselt die
-   * gesamte App in den Dark-Modus während /idee aktiv ist — smooth fade.
-   */
-
-  .quick-capture-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 9999px;
-    color: var(--am-text-primaer);
-    background: transparent;
-    transition:
-      background var(--am-dauer-schnell) var(--am-kurve),
-      color var(--am-dauer-schnell) var(--am-kurve),
-      transform var(--am-dauer-schnell) var(--am-kurve);
-  }
-  .quick-capture-trigger:hover {
-    background: var(--am-auswahl-flaeche);
-    color: var(--am-gold-beschriftung);
-  }
-  .quick-capture-trigger:active {
-    transform: scale(0.94);
-  }
-  .quick-capture-trigger:focus-visible {
-    outline: 2px solid var(--am-gold-500);
-    outline-offset: 2px;
-  }
-  /* Dark-Mode-Transition: triggered durch QuickCapture-useEffect
-     (body.classList.add("quick-capture-active")). Header verstecken,
-     Body-BG fade-to-black. !important damit der base-layer body{...}
-     definitiv überschrieben wird (war v0.1.53-54 ein Problem). */
-  body.quick-capture-active {
-    background: var(--am-blau-950) !important;
-    transition: background var(--am-dauer-langsam) var(--am-kurve);
-  }
-  body.quick-capture-active header {
-    display: none;
-  }
-
-  /* Hard-locked Dark-Shell für die /idee-Page. Tailwind-Classes und
-     inline-styles haben in v0.1.53-55 trotz Bundle-Fix nicht durchgesetzt
-     (Tailwind 4 JIT, layer-cascade oder service-worker-cache — Ursache
-     nicht endgültig isoliert). Dedizierte Klasse mit !important = idiot-proof. */
-  .quick-capture-shell {
-    background-color: var(--am-blau-950) !important;
-    color: var(--am-blau-25);
-  }
-
-  /* Page-Mount-Animation für die /idee-Component selbst. */
-  @keyframes immersive-in {
-    from { opacity: 0; transform: scale(0.98); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-  .immersive-in {
-    animation: immersive-in var(--am-dauer-langsam) var(--am-kurve) both;
-  }
-  .immersive-in-delayed {
-    animation: immersive-in var(--am-dauer-langsam) var(--am-dauer-schnell) var(--am-kurve) both;
-  }
-
-  /* Stärkerer Pulse für den Recording-State im Car-Mode (mehrere
-     ausstrahlende Ringe, analog .btn-record.recording aber prominenter). */
-  @keyframes pulse-gold-strong {
-    0%, 100% {
-      box-shadow:
-        0 0 0 0 color-mix(in srgb, var(--am-gold-500) 55%, transparent),
-        0 0 0 0 color-mix(in srgb, var(--am-gold-500) 30%, transparent);
-    }
-    50% {
-      box-shadow:
-        0 0 0 16px color-mix(in srgb, var(--am-gold-500) 0%, transparent),
-        0 0 0 32px color-mix(in srgb, var(--am-gold-500) 0%, transparent);
-    }
-  }
-
-  /* Reduced-Motion-User respektieren */
-  @media (prefers-reduced-motion: reduce) {
-    .btn-record,
-    .btn-record.recording,
-    .recording-indicator,
-    .quick-capture-trigger,
-    .immersive-in,
-    .immersive-in-delayed,
-    body.quick-capture-active {
-      animation: none !important;
-      transition: none !important;
-    }
-    .animate-spin, .pill-recording::before, .btn-record.recording { animation: none !important; }
-  }
-
-  .input {
+  .suchfeld input {
+    width: 100%;
+    height: var(--am-ziel-zeiger);
+    padding: 0 var(--am-raum-4) 0 calc(var(--am-raum-4) + 1.25rem);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
     background: var(--am-seite);
     color: var(--am-text-primaer);
-    border: 1px solid var(--am-rand-betont-farbe);
-    padding: 10px 14px;
-    border-radius: 4px;
-    font-weight: 400;
+    font-family: var(--am-schrift-sans);
     font-size: 0.9375rem;
-    transition: border-color var(--am-dauer-schnell) var(--am-kurve);
-    width: 100%;
   }
-  .input:focus-visible {
+
+  .suchfeld input:focus-visible {
     outline: 2px solid var(--am-fokus-ring);
     outline-offset: 2px;
-    border-color: var(--am-rand-betont-farbe);
-  }
-  @media (pointer: coarse) {
-    .input { min-height: var(--am-ziel-beruehrung); }
-  }
-  .input::placeholder { color: var(--am-text-deaktiviert); }
-
-  /* ── Auswahlfelder ────────────────────────────────────────────────
-     Der native Pfeil sitzt je nach Browser hart am Rand und ignoriert
-     das Padding. Deshalb abschalten und ein eigenes Zeichen setzen: auf
-     Abstand zur Kante (--am-raum-4, wie der Text links) und in der
-     gedämpften Textfarbe, damit es dem Feld untergeordnet bleibt.
-     Rechts wird so viel Platz freigehalten, dass lange Einträge nicht
-     unter das Zeichen laufen. */
-  select {
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23587898' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right var(--am-raum-4) center;
-    background-size: 1rem 1rem;
-    padding-right: calc(var(--am-raum-4) * 2 + 1rem);
   }
 
-  html.dunkel select {
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23afc0d2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  .werkzeugleiste select {
+    height: var(--am-ziel-zeiger);
+    padding: 0 var(--am-raum-4);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background-color: var(--am-seite);
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.875rem;
+  }
+}
+
+  /* ── Datentabelle [HB-TABELLE] ─────────────────────────────────────────────────
+     Dicht, ohne Zebrastreifen: Die Trennlinie reicht, und Streifen
+     kämpfen bei jeder Auswahlfarbe gegen die Auszeichnung. */
+  /* Oben dieselbe Luft wie beim Datensatz — sonst klebt die erste Karte
+     an der Trennlinie des Kopfes (Eingang, 5.9.2026). */
+@layer components {
+  .liste {
+    padding: var(--am-raum-6) var(--am-raum-8) var(--am-raum-16);
   }
 
-  /* Mehrfachauswahl und aufgeklappte Listen tragen kein Zeichen. */
-  select[multiple],
-  select[size]:not([size="1"]) {
-    background-image: none;
-    padding-right: var(--am-raum-4);
+  .tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
   }
 
+  .tabelle thead th {
+    position: sticky;
+    top: 0;
+    z-index: var(--am-ebene-tabellenkopf);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--am-text-gedaempft);
+    background: var(--am-seite);
+    padding: var(--am-raum-3) var(--am-raum-3);
+    border-bottom: 1px solid var(--am-rand);
+    white-space: nowrap;
+  }
 
-  .meeting-row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    padding: var(--am-raum-4) var(--am-raum-6);
+  .tabelle tbody tr {
     border-bottom: 1px solid var(--am-trennlinie);
-    cursor: pointer;
     transition: background var(--am-dauer-schnell) var(--am-kurve);
   }
-  .meeting-row:hover { background: var(--am-flaeche-1); }
-  /* Auswahl ist nicht Hover: eigene Fläche (Gold-200 hell, Blau-700 dunkel)
-     und 2 px Gold links. */
-  .meeting-row.selected {
-    background: var(--am-auswahl-flaeche);
-    border-left: 2px solid var(--am-gold-500);
-    padding-left: calc(var(--am-raum-6) - 2px);
+  /* Nur eine Zeile, die irgendwohin führt, zeigt die Hand. Mit der
+     Tastatur führt der Link in der ersten Spalte (.zeilen-ziel) dorthin —
+     vorher ließ sich keine Liste ohne Maus öffnen. */
+  .tabelle tbody tr[data-ziel] { cursor: pointer; }
+  .zeilen-ziel { color: inherit; text-decoration: none; }
+  .zeilen-ziel:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .zeilen-ziel:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+    border-radius: var(--am-radius-klein);
   }
+  /* Die zweite, leisere Zeile in einer Zelle (Beschreibung, Betreff). */
+  .zeile-unter { font-size: 0.8125rem; color: var(--am-text-gedaempft); font-weight: 400; }
 
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-weight: 500;
-    font-size: 0.75rem;
-    background: var(--am-flaeche-1);
+  .tabelle tbody tr:hover { background: var(--am-flaeche-1); }
+
+  .tabelle td {
+    padding: var(--am-raum-3);
+    vertical-align: middle;
     color: var(--am-text-sekundaer);
   }
-  /* Laufende Aufnahme trägt Gold — die Auszeichnung, nicht das Fehler-Rot. */
-  .pill-recording {
-    background: var(--am-auswahl-flaeche);
+
+  .tabelle td.haupt {
     color: var(--am-text-primaer);
-  }
-  .pill-recording::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 9999px;
-    background: var(--am-gold-500);
-    animation: blink 1s ease-in-out infinite;
+    font-weight: 500;
   }
 
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+  .tabelle td.zahl {
+    font-family: var(--am-schrift-mono);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
   }
+
+  /* Auf schmalen Geräten wird die Tabelle zur Rollfläche statt die Seite
+     nach rechts zu schieben — der erste Befund jeder Prüfseite. */
+  .rollbar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Mit der Tastatur erreichbar (tabIndex), damit sich auch ohne Maus
+     seitlich rollen lässt — dann soll man sehen, wo man steht. */
+  .rollbar:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
 }
 
   /* ── Dialogschicht [HB-DIALOG] ────────────────────────────────────────────────
@@ -1430,4 +1100,523 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
      der Strich, der überall 1,5 px sein soll (CI kern/icons.md). */
 @layer components {
   svg[data-symbol] { flex-shrink: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Insilos eigene Abschnitte — Kennung IN- (CI ABGLEICH.md, IN-K).
+   Alles darüber steht wörtlich so im AImighty-CI (bauteile/<KENNUNG>.css)
+   und wird dort geändert, nie hier. Was hierunter steht, ist Insilos
+   Fachlichkeit und bleibt in Insilo.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Auswahl [IN-AUSWAHL] ───────────────────────────────────────────────────────
+   Gewählte Vorlage, Sprache, Sprecher — Fläche folgt dem Modus (ABGLEICH IN-T2). */
+@layer components {
+  /* Ausgewählter Eintrag — Fläche folgt dem Modus, siehe Token oben. */
+  .flaeche-auswahl {
+    background: var(--am-auswahl-flaeche);
+  }
+}
+
+/* ── Hülle [IN-HUELLE] ──────────────────────────────────────────────────────────
+   Vorläufig: wird mit Etappe 6 des CI-Anschlusses AM-HUELLE (Grundgerüst, G1). */
+@layer components {
+  /* Die Hülle ────────────────────────────────────────────────────
+     Zeiger (≥1024px): Navigation links, Inhalt, Ablage rechts.
+     Berührung (<1024px): Navigation als untere Leiste, Ablage unter dem
+     Inhalt. Der mobile Fall steht nicht im Referenzblatt — Insilo ist
+     aber primär eine Smartphone-PWA, und 220px Seitenspalte gehen auf
+     375px nicht auf. */
+  .huelle {
+    display: grid;
+    /* minmax(0, …), nicht 1fr: sonst darf ein breites Kind die Spalte
+       aufdehnen und der Inhalt läuft seitlich aus dem Viewport. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 100dvh;
+    background: var(--am-seite);
+  }
+
+  .huelle-nav {
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: var(--am-raum-1);
+    background: var(--am-flaeche-1);
+    border-top: 1px solid var(--am-trennlinie);
+    padding: var(--am-raum-2) var(--am-raum-2);
+    padding-bottom: max(var(--am-raum-2), env(safe-area-inset-bottom));
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+  }
+
+  /* Kopfecke und die Gruppierung tragen erst ab der Seitenspalte. */
+  .huelle-kopfecke,
+  .huelle-nav-spacer {
+    display: none;
+  }
+
+  .huelle-nav-gruppe {
+    display: contents;
+  }
+
+  .huelle-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--am-raum-1);
+    padding: var(--am-raum-2);
+    min-width: var(--am-ziel-beruehrung);
+    min-height: var(--am-ziel-beruehrung);
+    border-radius: var(--am-radius-klein);
+    font-size: 0.6875rem;
+    color: var(--am-text-sekundaer);
+    text-align: center;
+    transition: color var(--am-dauer-schnell) var(--am-kurve);
+  }
+
+  .huelle-nav-item:hover { color: var(--am-text-primaer); }
+
+  .huelle-nav-item.aktiv {
+    color: var(--am-gold-beschriftung);
+    font-weight: 600;
+  }
+
+  /* Auf der Leiste ist Platz für fünf Ziele. „Über Insilo" ist eine
+     Infoseite und war auch in der alten Kopfzeile mobil ausgeblendet —
+     erreichbar bleibt sie über die Einstellungen. */
+  .huelle-nav-item[data-nachrangig="true"] {
+    display: none;
+  }
+
+  /* Wappen — zwei Fassungen im Markup, CSS zeigt die passende.
+     Ohne JavaScript, damit beim Laden nichts umspringt. */
+  .wappen {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .wappen svg {
+    height: 100%;
+    width: auto;
+    display: block;
+  }
+
+  .wappen .wappen-dunkel { display: none; }
+  html.dunkel .wappen .wappen-hell { display: none; }
+  html.dunkel .wappen .wappen-dunkel { display: block; }
+
+  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
+     sichtbar; Farbe und Schnitt gelten unabhängig davon. */
+  .huelle-herkunft {
+    display: none;
+  }
+
+  .huelle-herkunft-marke {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--am-text-sekundaer);
+    border-radius: var(--am-radius-klein);
+    transition: color var(--am-dauer-schnell) var(--am-kurve);
+  }
+
+  .huelle-herkunft-marke:hover {
+    color: var(--am-text-primaer);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .huelle-herkunft-marke:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+  }
+
+  .huelle-herkunft-recht {
+    font-family: var(--am-schrift-mono);
+    font-size: 0.625rem;
+    color: var(--am-text-deaktiviert);
+  }
+
+  /* Datenschutz-Nachweis ─────────────────────────────────────────
+     Sitzt unten in der Navigation. Auf der schmalen Leiste hat er keinen
+     Platz — dort trägt ihn die Ansicht „Was verlässt diese Box?" selbst. */
+  .huelle-schutz {
+    display: none;
+  }
+
+  .huelle-inhalt {
+    grid-row: 1;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .huelle-ablage {
+    grid-row: 3;
+    background: var(--am-flaeche-1);
+    border-top: 1px solid var(--am-trennlinie);
+    padding: var(--am-raum-4);
+    font-size: 0.8125rem;
+    color: var(--am-text-sekundaer);
+  }
+
+  @media (min-width: 1024px) {
+    .huelle {
+      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-rows: 1fr;
+    }
+
+    .huelle.hat-ablage {
+      grid-template-columns: 220px minmax(0, 1fr) 280px;
+    }
+
+    .huelle-nav {
+      grid-row: 1;
+      grid-column: 1;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: var(--am-raum-1);
+      background: var(--am-flaeche-1);
+      border-top: none;
+      border-right: 1px solid var(--am-trennlinie);
+      padding: var(--am-raum-4);
+      position: sticky;
+      top: 0;
+      bottom: auto;
+      height: 100dvh;
+    }
+
+    .huelle-kopfecke {
+      display: flex;
+      align-items: center;
+      gap: var(--am-raum-3);
+      padding-bottom: var(--am-raum-4);
+      margin-bottom: var(--am-raum-4);
+      border-bottom: 1px solid var(--am-trennlinie);
+    }
+
+    .huelle-wappen-link {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .huelle-wappen {
+      height: 28px;
+    }
+
+    .huelle-nav-gruppe {
+      display: flex;
+      flex-direction: column;
+      gap: var(--am-raum-1);
+    }
+
+    .huelle-nav-spacer {
+      display: block;
+      flex: 1;
+    }
+
+    .huelle-nav-item {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: var(--am-raum-3);
+      padding: var(--am-raum-2) var(--am-raum-3);
+      min-height: var(--am-ziel-zeiger);
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    /* In der Seitenspalte ist Platz für alle Ziele. */
+    .huelle-nav-item[data-nachrangig="true"] {
+      display: flex;
+    }
+
+    .huelle-nav-item:hover { background: var(--am-flaeche-2); }
+
+    .huelle-schutz {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--am-raum-2);
+      margin-top: var(--am-raum-3);
+      padding: var(--am-raum-2) var(--am-raum-3);
+      border-radius: var(--am-radius-klein);
+      border: 1px solid transparent;
+      font-family: var(--am-schrift-mono);
+      font-size: 0.6875rem;
+      line-height: 1.4;
+      transition: background var(--am-dauer-schnell) var(--am-kurve);
+    }
+
+    .huelle-schutz-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .huelle-schutz-kopf {
+      font-weight: 600;
+    }
+
+    .huelle-schutz-unter {
+      opacity: 0.85;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Alles intern — der ruhige Normalfall. */
+    .huelle-schutz-erfolg {
+      background: var(--am-erfolg-flaeche);
+      border-color: var(--am-erfolg-rand);
+      color: var(--am-erfolg);
+    }
+
+    /* Ziele konfiguriert, aber bewusst: neutral halten, nicht warnen. */
+    .huelle-schutz-neutral {
+      background: var(--am-flaeche-2);
+      border-color: var(--am-rand);
+      color: var(--am-text-sekundaer);
+    }
+
+    /* Sprachmodell außerhalb der Box — hier gehen ganze Transkripte
+       hinaus. Das ist der Fall, der auffallen muss. */
+    .huelle-schutz-achtung {
+      background: var(--am-achtung-flaeche);
+      border-color: var(--am-achtung-rand);
+      color: var(--am-achtung);
+    }
+
+    .huelle-herkunft {
+      display: flex;
+      align-items: baseline;
+      gap: var(--am-raum-2);
+      margin-top: var(--am-raum-3);
+      padding: 0 var(--am-raum-3);
+      font-size: 0.6875rem;
+      line-height: 1.4;
+    }
+
+    .huelle-inhalt {
+      grid-row: 1;
+      grid-column: 2;
+      overflow-y: auto;
+      max-height: 100dvh;
+    }
+
+    .huelle-ablage {
+      grid-row: 1;
+      grid-column: 3;
+      border-top: none;
+      border-left: 1px solid var(--am-trennlinie);
+      overflow-y: auto;
+      max-height: 100dvh;
+    }
+  }
+}
+
+/* ── Aufnahmeknopf [IN-AUFNAHME] ────────────────────────────────────────────────
+   Der runde Knopf, die eine große Hauptaktion (G3, G6). Gold zeichnet die laufende Aufnahme aus. */
+@layer components {
+  /* Die Alt-Knöpfe .btn-primary/-secondary/-tertiary sind am 06.09.2026
+     entfernt worden — es gibt .btn-primaer, .btn-sekundaer, .btn-still. */
+
+  .btn-record {
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    border: 2px solid var(--am-gold-500);
+    width: 120px;
+    height: 120px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Kein Schatten, kein Pulsieren im Ruhezustand, kein Hover-Versatz —
+       Bewegung trägt hier nur eine Information: läuft die Aufnahme. */
+    transition: background var(--am-dauer-schnell) var(--am-kurve),
+                border-color var(--am-dauer-schnell) var(--am-kurve);
+  }
+  .btn-record:hover { border-color: var(--am-gold-600); }
+  .btn-record:disabled { animation: none; opacity: 0.6; cursor: not-allowed; }
+  .btn-record.recording {
+    background: var(--am-gold-500);
+    color: var(--am-blau-900);
+    animation: pulse-gold 2s ease-in-out infinite;
+  }
+
+  /* Der Ring während der Aufnahme: ein Zustand, keine Zierde — deshalb
+     die einzige Bewegung am Knopf. Gold aus dem Token, nie als Literal. */
+  @keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--am-gold-500) 40%, transparent); }
+    50% { box-shadow: 0 0 0 16px color-mix(in srgb, var(--am-gold-500) 0%, transparent); }
+  }
+
+  .recording-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--am-gold-500);
+    animation: pulse-line 2.4s ease-in-out infinite;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  @keyframes pulse-line {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+}
+
+/* ── Schauerfunktion [IN-IDEE] ──────────────────────────────────────────────────
+   Die Aufnahme unterwegs auf /idee, immer dunkel. */
+@layer components {
+  /* Schauerfunktion / Quick-Capture (v0.1.53) ───────────────────────
+   * Header-Icon-Button mit ShowerHead, dezenter Gold-Hover, sichtbar
+   * auf allen Viewports (Mobile-first). Body-Class-Toggle wechselt die
+   * gesamte App in den Dark-Modus während /idee aktiv ist — smooth fade.
+   */
+
+  .quick-capture-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    color: var(--am-text-primaer);
+    background: transparent;
+    transition:
+      background var(--am-dauer-schnell) var(--am-kurve),
+      color var(--am-dauer-schnell) var(--am-kurve),
+      transform var(--am-dauer-schnell) var(--am-kurve);
+  }
+  .quick-capture-trigger:hover {
+    background: var(--am-auswahl-flaeche);
+    color: var(--am-gold-beschriftung);
+  }
+  .quick-capture-trigger:active {
+    transform: scale(0.94);
+  }
+  .quick-capture-trigger:focus-visible {
+    outline: 2px solid var(--am-gold-500);
+    outline-offset: 2px;
+  }
+  /* Dark-Mode-Transition: triggered durch QuickCapture-useEffect
+     (body.classList.add("quick-capture-active")). Header verstecken,
+     Body-BG fade-to-black. !important damit der base-layer body{...}
+     definitiv überschrieben wird (war v0.1.53-54 ein Problem). */
+  body.quick-capture-active {
+    background: var(--am-blau-950) !important;
+    transition: background var(--am-dauer-langsam) var(--am-kurve);
+  }
+  body.quick-capture-active header {
+    display: none;
+  }
+
+  /* Hard-locked Dark-Shell für die /idee-Page. Tailwind-Classes und
+     inline-styles haben in v0.1.53-55 trotz Bundle-Fix nicht durchgesetzt
+     (Tailwind 4 JIT, layer-cascade oder service-worker-cache — Ursache
+     nicht endgültig isoliert). Dedizierte Klasse mit !important = idiot-proof. */
+  .quick-capture-shell {
+    background-color: var(--am-blau-950) !important;
+    color: var(--am-blau-25);
+  }
+
+  /* Page-Mount-Animation für die /idee-Component selbst. */
+  @keyframes immersive-in {
+    from { opacity: 0; transform: scale(0.98); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .immersive-in {
+    animation: immersive-in var(--am-dauer-langsam) var(--am-kurve) both;
+  }
+  .immersive-in-delayed {
+    animation: immersive-in var(--am-dauer-langsam) var(--am-dauer-schnell) var(--am-kurve) both;
+  }
+
+  /* Stärkerer Pulse für den Recording-State im Car-Mode (mehrere
+     ausstrahlende Ringe, analog .btn-record.recording aber prominenter). */
+  @keyframes pulse-gold-strong {
+    0%, 100% {
+      box-shadow:
+        0 0 0 0 color-mix(in srgb, var(--am-gold-500) 55%, transparent),
+        0 0 0 0 color-mix(in srgb, var(--am-gold-500) 30%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 16px color-mix(in srgb, var(--am-gold-500) 0%, transparent),
+        0 0 0 32px color-mix(in srgb, var(--am-gold-500) 0%, transparent);
+    }
+  }
+
+  /* Reduced-Motion-User respektieren */
+  @media (prefers-reduced-motion: reduce) {
+    .btn-record,
+    .btn-record.recording,
+    .recording-indicator,
+    .quick-capture-trigger,
+    .immersive-in,
+    .immersive-in-delayed,
+    body.quick-capture-active {
+      animation: none !important;
+      transition: none !important;
+    }
+    .animate-spin, .pill-recording::before, .btn-record.recording { animation: none !important; }
+  }
+}
+
+/* ── Besprechung [IN-BESPRECHUNG] ───────────────────────────────────────────────
+   Zeile der Besprechungsliste und die Zustandspille (ABGLEICH IN-B5, bis HB-PILLE eine neutrale Fassung hat). */
+@layer components {
+  .meeting-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: var(--am-raum-4) var(--am-raum-6);
+    border-bottom: 1px solid var(--am-trennlinie);
+    cursor: pointer;
+    transition: background var(--am-dauer-schnell) var(--am-kurve);
+  }
+  .meeting-row:hover { background: var(--am-flaeche-1); }
+  /* Auswahl ist nicht Hover: eigene Fläche (Gold-200 hell, Blau-700 dunkel)
+     und 2 px Gold links. */
+  .meeting-row.selected {
+    background: var(--am-auswahl-flaeche);
+    border-left: 2px solid var(--am-gold-500);
+    padding-left: calc(var(--am-raum-6) - 2px);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-weight: 500;
+    font-size: 0.75rem;
+    background: var(--am-flaeche-1);
+    color: var(--am-text-sekundaer);
+  }
+  /* Laufende Aufnahme trägt Gold — die Auszeichnung, nicht das Fehler-Rot. */
+  .pill-recording {
+    background: var(--am-auswahl-flaeche);
+    color: var(--am-text-primaer);
+  }
+  .pill-recording::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--am-gold-500);
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
 }

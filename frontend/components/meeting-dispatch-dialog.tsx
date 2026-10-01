@@ -81,7 +81,7 @@ export function MeetingDispatchDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center deckschicht p-4"
+      className="dialog-schicht"
       role="dialog"
       aria-modal
       aria-label={t("header")}
@@ -89,7 +89,7 @@ export function MeetingDispatchDialog({
       {/* Header fix + Body scrollt + Footer sticky — selbe Struktur wie
           voice-enrollment-dialog, damit die Action-Buttons bei kleinen
           Viewports immer sichtbar bleiben. */}
-      <div className="relative flex max-h-[90vh] w-full max-w-[560px] flex-col rounded-lg border border-trennlinie bg-seite">
+      <div className="karte dialog-karte relative bg-seite" data-breite="normal">
         <div className="flex-shrink-0 border-b border-trennlinie p-6 pr-12">
           <button
             type="button"

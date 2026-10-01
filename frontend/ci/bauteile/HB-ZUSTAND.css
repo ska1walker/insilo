@@ -35,6 +35,15 @@
     background: var(--am-fehler-flaeche);
     color: var(--am-fehler);
   }
+
+  /* Ein gemessener guter Zustand, etwa „alles bleibt auf der Box“ in
+     Insilos Datenschutz-Nachweis (ABGLEICH IN-B4). Mit Zeichen und Satz wie
+     jeder Zustand; nie als Auszeichnung. */
+  .hinweis[data-art="erfolg"] {
+    border-color: var(--am-erfolg-rand);
+    background: var(--am-erfolg-flaeche);
+    color: var(--am-erfolg);
+  }
 }
 
 /* ── Überfällig [HB-ZUSTAND] ──────────────────────────────────────────────────────── */

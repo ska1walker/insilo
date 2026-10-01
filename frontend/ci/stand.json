@@ -1,6 +1,6 @@
 {
-  "stand": "ci-26.10.5",
-  "commit": "a84f47bed914e6bf70bf97dd333aac1e28983be9",
+  "stand": "ci-26.10.7",
+  "commit": "1121fd7f7723276e3c7ae3ad4a4c4f055fb048f3",
   "quelle": "ska1walker/aimighty-ci",
   "dateien": {
     "bauteile/AM-BASIS.css": "cff2007fa4abb4f864a1e4b453dc427e7fe00827cd6a178df172ce759997f17d",
@@ -34,7 +34,7 @@
     "bauteile/HB-TOR.css": "6cac30a848936ad88fc0d470e33d41a40d9dd18ac78ad8246b0a9242c7d1bc89",
     "bauteile/HB-UNTERNAV.css": "751028eae54c3e66520a19ab6a58fb1c12946c15fa898b8a20f4fae2a0226ea7",
     "bauteile/HB-ZEITLEISTE.css": "4abeba2a2c62cc2ab44c8943cc0d474bedb501c2b2bafa378c8c0b3a65482347",
-    "bauteile/HB-ZUSTAND.css": "a03982271804a576159afe7ad751ef61f3ed45c59f14c02e084eed9d7eba7c16",
+    "bauteile/HB-ZUSTAND.css": "61b8adb3eaa60a9cb298c6ed50a32854f457912221aa5a6dfce3410d8c82d30d",
     "marke/icons/ui/ablage.svg": "2aafbe873ce7f595abaf523a80f702554ece16c4f378a912f4b63bc911eb8c12",
     "marke/icons/ui/abmelden.svg": "f18e0cee522060efb55c74775f50652a6337b8ea84f692e3d49bb59dfbee3c2f",
     "marke/icons/ui/achtung.svg": "815fa73bd5c180296a337bf2302f1bc6766b8143de0de681d649f1a7e04e9543",
@@ -161,7 +161,7 @@
     "marke/icons/ui/ziel.svg": "14840bc6a4cca057edcd31ed4ffa8fcb2d2bc2487554157145034e1d424ab2d9",
     "marke/icons/ui/zurueck.svg": "136dc6cb84983c621a328637be80bfdd8cf42c7158c52b8496bf9c246badb045",
     "tokens/app.css": "db06739fe8c7cac0ba4d6c6c155e24f8af0927c251cd1cf06c121df9a7a29b6c",
-    "werkzeug/bauteile.py": "963e07a8c2c38985beacc09f4a44b520115b7afbbe1a9d99ffa5ad84468b5d85",
+    "werkzeug/bauteile.py": "77a00926377457f9c8a8170f9a9fa298937a27a5412d3c4ca492bfc884a97383",
     "werkzeug/lucide-1.31.0/LICENSE": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
   }
 }

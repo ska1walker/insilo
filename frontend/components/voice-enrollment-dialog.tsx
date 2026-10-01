@@ -195,7 +195,7 @@ export function VoiceEnrollmentDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center deckschicht p-4"
+      className="dialog-schicht"
       role="dialog"
       aria-modal
       aria-label={t("dialogAria")}
@@ -207,7 +207,7 @@ export function VoiceEnrollmentDialog({
         sticky Footer unten. Damit bleibt der „Aufnahme starten"-Button
         immer sichtbar — auch bei kleinen Viewports und langem Nordwind-Text.
       */}
-      <div className="relative flex max-h-[90vh] w-full max-w-[640px] flex-col rounded-lg border border-trennlinie bg-seite">
+      <div className="karte dialog-karte relative bg-seite" data-breite="breit">
         {/* Header — fix */}
         <div className="flex-shrink-0 border-b border-trennlinie p-6 pr-12">
           <button

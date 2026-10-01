@@ -13,7 +13,7 @@
  * Datenänderung wird geloggt" versprach.
  */
 
-import { ArrowLeft, KeyRound, Share2, User } from "lucide-react";
+import { ArrowLeft, KeyRound, Share2, User } from "@/lib/symbole";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -78,7 +78,7 @@ export default function ProtokollSeiteAnsicht() {
         href="/datenschutz"
         className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer"
       >
-        <ArrowLeft size={14} aria-hidden />
+        <ArrowLeft size={16} aria-hidden />
         {t("zurueck")}
       </Link>
 
@@ -223,7 +223,7 @@ function Zeile({ eintrag, locale }: { eintrag: ProtokollEintrag; locale: string 
           {eintrag.ausleitung && (
             // Zeichen und Wort, nicht nur Farbe.
             <span className="inline-flex items-center gap-1 rounded-voll border border-rand px-2 py-0.5 text-[0.6875rem] uppercase tracking-[0.06em] text-text-sekundaer">
-              <Share2 size={11} aria-hidden />
+              <Share2 size={16} aria-hidden />
               {t("ausleitungMarke")}
             </span>
           )}
@@ -238,9 +238,9 @@ function Zeile({ eintrag, locale }: { eintrag: ProtokollEintrag; locale: string 
       <td className="whitespace-nowrap text-[0.8125rem]">
         <span className="inline-flex items-center gap-2 text-text-sekundaer">
           {eintrag.urheber_art === "api_key" ? (
-            <KeyRound size={13} aria-hidden />
+            <KeyRound size={16} aria-hidden />
           ) : (
-            <User size={13} aria-hidden />
+            <User size={16} aria-hidden />
           )}
           {eintrag.urheber ?? t("unbekannterUrheber")}
           {eintrag.urheber_art === "api_key" && (

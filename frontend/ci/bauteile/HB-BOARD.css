@@ -1,0 +1,141 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Board [HB-BOARD] ────────────────────────────────────────────────────────
+     Waagerecht rollbar, Spalten fester Breite. Eine Spalte, die mit dem
+     Fenster mitwächst, wird bei sieben Stufen unlesbar schmal. */
+@layer components {
+  .board {
+    display: flex;
+    gap: var(--am-raum-4);
+    padding: var(--am-raum-6) var(--am-raum-8) var(--am-raum-16);
+    overflow-x: auto;
+    align-items: flex-start;
+    min-height: 60vh;
+  }
+
+  .board-spalte {
+    flex: 0 0 260px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--am-raum-2);
+    border-radius: var(--am-radius-gross);
+    background: var(--am-flaeche-1);
+    border: 1px solid var(--am-rand);
+    padding: var(--am-raum-3);
+    min-height: 120px;
+  }
+
+  /* Die Spalte, über der gerade ein Deal hängt. Der goldene Rand ist
+     Auszeichnung, keine Handlung — er sagt „hier landet es". */
+  .board-spalte[data-ziel="true"] {
+    border-color: var(--am-gold-500);
+    background: var(--am-flaeche-2);
+  }
+
+  .board-spalte-kopf {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 var(--am-raum-1) var(--am-raum-2);
+    border-bottom: 1px solid var(--am-trennlinie);
+  }
+
+  .board-spalte-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--am-text-primaer);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--am-raum-2);
+  }
+
+  .board-spalte-anzahl {
+    font-family: var(--am-schrift-mono);
+    font-size: 0.75rem;
+    color: var(--am-text-gedaempft);
+    font-weight: 400;
+  }
+
+  .board-spalte-summe {
+    font-family: var(--am-schrift-mono);
+    font-size: 0.75rem;
+    color: var(--am-text-sekundaer);
+  }
+
+  .board-spalte-gewichtet {
+    font-family: var(--am-schrift-mono);
+    font-size: 0.6875rem;
+    color: var(--am-text-gedaempft); /* lesbar, nicht gesperrt: 4,5:1 */
+  }
+
+  /* Alle Karten gleich hoch.
+     Ein Board, in dem die Karten unterschiedlich hoch sind, liest sich
+     wie eine Rangfolge, die keine ist: Der Lead mit dem langen Namen
+     wirkt größer als der mit dem kurzen. Deshalb steht die Höhe fest —
+     zwei Zeilen für den Namen, eine für die Firma, eine für den Fuß —
+     und der Name wird abgeschnitten statt die Karte zu dehnen. */
+  .deal-karte {
+    display: flex;
+    flex-direction: column;
+    padding: var(--am-raum-3);
+    border-radius: var(--am-radius-mittel);
+    border: 1px solid var(--am-rand);
+    background: var(--am-seite);
+    cursor: grab;
+    transition:
+      border-color var(--am-dauer-schnell) var(--am-kurve),
+      transform var(--am-dauer-schnell) var(--am-kurve);
+  }
+
+  .deal-karte:hover { border-color: var(--am-rand-betont-farbe); }
+  .deal-karte:active { cursor: grabbing; }
+
+  .deal-karte-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    font-weight: 500;
+    color: var(--am-text-primaer);
+    margin-bottom: 2px;
+    /* Reserviert, nicht nur begrenzt: Ein einzeiliger Name muss denselben
+       Platz einnehmen wie ein zweizeiliger, sonst wackelt die Höhe doch. */
+    min-height: calc(2 * 1.35 * 0.875rem);
+  }
+
+  .deal-karte-firma {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--am-text-gedaempft);
+    margin-bottom: var(--am-raum-2);
+    min-height: calc(1.4 * 0.75rem);
+    overflow: hidden;
+  }
+
+  .deal-karte-fuss {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--am-raum-2);
+    font-size: 0.75rem;
+    /* Drückt den Fuß nach unten, falls oben doch einmal Platz bleibt. */
+    margin-top: auto;
+  }
+
+  .deal-karte-betrag {
+    font-family: var(--am-schrift-mono);
+    font-weight: 600;
+    color: var(--am-text-primaer);
+  }
+
+  .deal-karte-datum {
+    font-family: var(--am-schrift-mono);
+    color: var(--am-text-gedaempft);
+  }
+
+  .deal-karte-datum[data-ueberfaellig="true"] { color: var(--am-fehler); }
+}

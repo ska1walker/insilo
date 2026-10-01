@@ -24,15 +24,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { DatenschutzNachweis } from "@/components/datenschutz-nachweis";
 import { OffeneAufnahmen } from "@/components/offene-aufnahmen";
 import { Wappen } from "@/components/wappen";
-import {
-  Archive,
-  Info,
-  Mic,
-  Settings,
-  ShowerHead,
-  Text,
-  type LucideIcon,
-} from "lucide-react";
+import { Archive, Info, Lightbulb, MessagesSquare, Mic, Settings } from "@/lib/symbole";
+import type { SymbolKomponente } from "@/components/symbol";
 import {
   createContext,
   useContext,
@@ -70,7 +63,7 @@ export function useAblage(node: ReactNode) {
 type Eintrag = {
   href: string;
   schluessel: string;
-  icon: LucideIcon;
+  icon: SymbolKomponente;
   /** Auf der mobilen Leiste ausgeblendet — dort ist Platz für fünf Ziele. */
   nachrangig?: boolean;
 };
@@ -84,9 +77,9 @@ const JAHR = 2026;
 
 const HANDLUNGEN: Eintrag[] = [
   { href: "/aufnahme", schluessel: "record", icon: Mic },
-  { href: "/besprechungen", schluessel: "meetings", icon: Text },
+  { href: "/besprechungen", schluessel: "meetings", icon: MessagesSquare },
   { href: "/archiv", schluessel: "archive", icon: Archive },
-  { href: "/idee", schluessel: "idee", icon: ShowerHead },
+  { href: "/idee", schluessel: "idee", icon: Lightbulb },
 ];
 
 const NACHGEORDNET: Eintrag[] = [
@@ -111,7 +104,7 @@ function NavEintrag({
       data-nachrangig={eintrag.nachrangig ? "true" : undefined}
       aria-current={aktiv ? "page" : undefined}
     >
-      <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+      <Icon size={20} aria-hidden />
       <span className="huelle-nav-text">{beschriftung}</span>
     </Link>
   );

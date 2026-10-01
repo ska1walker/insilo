@@ -1,0 +1,43 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Hinweiszeile [HB-ZUSTAND] ─────────────────────────────────────────────────── */
+@layer components {
+  .hinweis {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--am-raum-2);
+    padding: var(--am-raum-3);
+    border-radius: var(--am-radius-mittel);
+    border: 1px solid var(--am-rand);
+    background: var(--am-flaeche-2);
+    font-size: 0.875rem;
+    color: var(--am-text-sekundaer);
+  }
+
+  /* Das Warnzeichen ist ein Flex-Kind und schrumpfte ohne diese Zeile auf
+     4,6 px zusammen — ein Strich, den niemand als Zeichen liest. Farbe
+     trägt eine Aussage nie allein (DESIGN.md), also muss das Zeichen da
+     sein. Zwei Pixel Versatz, damit es auf der ersten Zeile sitzt. */
+  .hinweis > svg {
+    flex: none;
+    margin-top: 2px;
+  }
+
+  .hinweis[data-art="achtung"] {
+    border-color: var(--am-achtung-rand);
+    background: var(--am-achtung-flaeche);
+    color: var(--am-achtung);
+  }
+
+  .hinweis[data-art="fehler"] {
+    border-color: var(--am-fehler-rand);
+    background: var(--am-fehler-flaeche);
+    color: var(--am-fehler);
+  }
+}
+
+/* ── Überfällig [HB-ZUSTAND] ──────────────────────────────────────────────────────── */
+/* Überschrittene Frist: Uhr und Wort neben dem Rot (R7) — Komponente Ueberfaellig. */
+[data-ueberfaellig="true"] { display: inline-flex; align-items: center; gap: var(--am-raum-1); }
+.ueberfaellig-zeichen { flex: none; }

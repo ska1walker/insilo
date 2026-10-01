@@ -14,7 +14,7 @@
  * Telefon dunkel) und hat im Benutzerkonto nichts verloren.
  */
 
-import { Check, Monitor, Moon, Sun } from "lucide-react";
+import { Check, Monitor, Moon, Sun } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
@@ -117,16 +117,11 @@ export function DarstellungSwitcher() {
               style={{ minHeight: "var(--am-ziel-zeiger)" }}
             >
               <span className="flex items-center gap-3">
-                <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                <Icon size={16} aria-hidden />
                 {t(schluessel)}
               </span>
               {aktiv ? (
-                <Check
-                  className="h-3.5 w-3.5"
-                  strokeWidth={2}
-                  style={{ color: "var(--am-gold-beschriftung)" }}
-                  aria-hidden
-                />
+                <Check size={16} style={{ color: "var(--am-gold-beschriftung)" }} aria-hidden />
               ) : null}
             </button>
           );

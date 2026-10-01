@@ -1,0 +1,72 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Zeitleiste [HB-ZEITLEISTE] ───────────────────────────────────────────────────── */
+@layer components {
+  .zeitleiste { list-style: none; margin: 0; padding: 0; }
+
+  .zeitleiste li {
+    position: relative;
+    padding: 0 0 var(--am-raum-6) var(--am-raum-8);
+    border-left: 1px solid var(--am-trennlinie);
+  }
+
+  .zeitleiste li:last-child { border-left-color: transparent; padding-bottom: 0; }
+
+  .zeitleiste li::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 4px;
+    width: 9px;
+    height: 9px;
+    border-radius: var(--am-radius-voll);
+    background: var(--am-seite);
+    border: 2px solid var(--am-rand-betont-farbe);
+  }
+
+  /* Was die KI geschrieben hat, ist am goldenen Punkt zu erkennen —
+     und zusätzlich an der Beschriftung. Nie nur an der Farbe. */
+  .zeitleiste li[data-art="ai"]::before {
+    border-color: var(--am-gold-500);
+    background: var(--am-gold-500);
+  }
+
+  .zeitleiste-kopf {
+    display: flex;
+    align-items: baseline;
+    gap: var(--am-raum-2);
+    flex-wrap: wrap;
+    margin-bottom: var(--am-raum-1);
+  }
+
+  .zeitleiste-art {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--am-text-gedaempft);
+  }
+
+  .zeitleiste li[data-art="ai"] .zeitleiste-art { color: var(--am-gold-beschriftung); }
+
+  .zeitleiste-zeit {
+    font-family: var(--am-schrift-mono);
+    font-size: 0.6875rem;
+    color: var(--am-text-gedaempft); /* lesbar, nicht gesperrt: 4,5:1 */
+    margin-left: auto;
+  }
+
+  .zeitleiste-betreff {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--am-text-primaer);
+  }
+
+  .zeitleiste-text {
+    font-size: 0.875rem;
+    color: var(--am-text-sekundaer);
+    white-space: pre-wrap;
+    margin: var(--am-raum-1) 0 0;
+  }
+}

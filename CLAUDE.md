@@ -103,7 +103,7 @@ Aus dem offiziellen Olares Deployment Guide:
 - **Framework:** Next.js 15 (App Router, RSC)
 - **Sprache:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS v4 + shadcn/ui
-- **Icons:** Lucide React
+- **Icons:** das eine Set des AImighty-CI (`marke/icons/ui/`), Kopie unter `frontend/ci/`, gezeichnet über HB-SYMBOL (`components/symbol.tsx`, erzeugt nach `lib/symbole.tsx`) — kein `lucide-react`. Größen 16/20/24/40, Strich 1,5 px; Ausnahme nur der runde Aufnahmeknopf
 - **State:** Zustand (lokal) + TanStack Query (Server-State)
 - **Audio:** MediaRecorder API + WebRTC für Live-Streaming
 - **Offline:** Service Worker mit Workbox, IndexedDB

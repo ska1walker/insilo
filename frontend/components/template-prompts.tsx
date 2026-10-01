@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -112,7 +112,7 @@ export function TemplatePrompts() {
             onClick={() => setShowCreate(true)}
             className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            <Plus size={16} />
             {t("newTemplate")}
           </button>
         )}
@@ -870,7 +870,7 @@ function TemplateRow({
                         state.kind === "saving" || state.kind === "deleting"
                       }
                     >
-                      <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      <Trash2 size={16} />
                       {t("deleteBtn")}
                     </button>
                   )}
@@ -973,7 +973,7 @@ function CustomFieldsEditor({
           className="btn btn-still inline-flex items-center gap-1.5"
           disabled={disabled}
         >
-          <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+          <Plus size={16} />
           {t("addBtn")}
         </button>
       </header>
@@ -1071,7 +1071,7 @@ function CustomFieldsEditor({
                 className="btn btn-still btn-klein inline-flex items-center gap-1"
                 disabled={disabled}
               >
-                <Trash2 className="h-3 w-3" strokeWidth={1.75} />
+                <Trash2 size={16} />
                 {t("removeBtn")}
               </button>
             </div>

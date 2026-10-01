@@ -1,0 +1,95 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+/* ── Suchen oder fragen [HB-SUCHE] ───────────────────────────────────────────────
+   Das Feld sitzt in der Kopfleiste und ist das echte Feld. Bis 0.9.2 war
+   es ein Knopf, der ein Fenster in der Bildmitte öffnete — man klickte
+   auf ein Feld, es verschwand, und ein zweites erschien woanders. */
+.kopfsuche { position: relative; display: flex; align-items: center; width: 100%; }
+
+.kopfsuche-zeichen {
+  position: absolute;
+  left: var(--am-raum-3);
+  color: var(--am-text-gedaempft);
+  pointer-events: none;
+}
+
+.kopfsuche-feld {
+  width: 100%;
+  height: var(--am-ziel-zeiger);
+  padding: 0 3.25rem 0 calc(var(--am-raum-3) + 1.5rem);
+  border: 1px solid var(--am-rand);
+  border-radius: var(--am-radius-mittel);
+  background: var(--am-seite);
+  color: var(--am-text-primaer);
+  font-family: var(--am-schrift-sans);
+  font-size: 0.9375rem;
+}
+.kopfsuche-feld::placeholder { color: var(--am-text-gedaempft); }
+.kopfsuche-feld:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+
+/* Das Kürzel steht im Feld, solange nichts darin steht — danach wäre es
+   nur noch ein Hindernis vor dem eigenen Text. */
+.kopfsuche-taste {
+  position: absolute;
+  right: var(--am-raum-3);
+  pointer-events: none;
+}
+
+/* Die Treffer hängen am Feld, in seiner Breite. Ausgeklappt reicht das
+   Feld bis zum Rand des Bildes; unter 40 rem ist die Leiste selbst so
+   schmal, dass ein Mindestmaß nötig ist. */
+.kopfsuche-feld-auf {
+  position: absolute;
+  top: calc(100% + var(--am-raum-1));
+  left: 0;
+  right: 0;
+  z-index: var(--am-ebene-suche);
+  min-width: min(20rem, calc(100vw - var(--am-raum-6)));
+  max-height: min(70vh, 34rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--am-raum-1) 0;
+  border: 1px solid var(--am-rand-betont-farbe);
+  border-radius: var(--am-radius-mittel);
+  background: var(--am-flaeche-1);
+  box-shadow: var(--am-schatten-1);
+}
+
+.suchpalette-hinweis { margin: 0; padding: var(--am-raum-3) var(--am-raum-4); font-size: 0.8125rem; color: var(--am-text-gedaempft); }
+.suchpalette-liste { list-style: none; margin: 0; padding: var(--am-raum-1) 0; }
+.suchpalette-zeile {
+  display: flex; align-items: baseline; gap: var(--am-raum-3); inline-size: 100%; padding: var(--am-raum-2) var(--am-raum-4);
+  border: 0; background: transparent; font: inherit; color: var(--am-text-primaer); text-decoration: none; text-align: left; cursor: pointer;
+}
+.suchpalette-zeile.aktiv { background: var(--am-flaeche-2); }
+.suchpalette-art { flex: 0 0 5.5rem; font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--am-text-gedaempft); }
+.suchpalette-titel { font-weight: 500; }
+.suchpalette-unter { flex: 1; font-size: 0.8125rem; color: var(--am-text-gedaempft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suchpalette-frage { align-items: center; border-top: var(--am-rand-ruhend) solid var(--am-trennlinie); color: var(--am-gold-beschriftung); }
+.suchpalette-frage .suchpalette-titel { flex: 1; }
+.suchpalette-antwort { padding: var(--am-raum-3) var(--am-raum-4) var(--am-raum-4); border-top: var(--am-rand-ruhend) solid var(--am-trennlinie); font-size: 0.9375rem; line-height: 1.55; }
+.suchpalette-fundstellen { margin: var(--am-raum-3) 0 0; padding-left: 1.2em; font-size: 0.8125rem; color: var(--am-text-sekundaer); }
+
+/* Schmal hängt das Feld nicht mehr am Eingabefeld, sondern an der
+   Leiste: Bei 375 px blieben dem Feld sonst 320 px, die genau bis an den
+   rechten Bildrand stießen. Fixiert unter der Leiste hat es die volle
+   Breite und beide Ränder. */
+@media (max-width: 40rem) {
+  .kopfsuche-feld-auf {
+    position: fixed;
+    top: calc(var(--am-leistenhoehe) + var(--am-raum-1));
+    left: var(--am-raum-3);
+    right: var(--am-raum-3);
+    min-width: 0;
+  }
+  .suchpalette-art { flex-basis: 4rem; }
+  .suchpalette-zeile { padding-inline: var(--am-raum-3); }
+}
+
+/* Ohne das Kürzel braucht das Feld rechts keinen Platz mehr dafür —
+   bei 375 px stand sonst „Suchen oder frag" im Feld. */
+@media (max-width: 1100px) {
+  .kopfsuche-taste { display: none; }
+  .kopfsuche-feld { padding-right: var(--am-raum-3); }
+}

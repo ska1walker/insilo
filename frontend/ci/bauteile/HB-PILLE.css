@@ -1,0 +1,60 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Stufen-Pille [HB-PILLE] ─────────────────────────────────────────────────
+     Farbe trägt die Aussage nie allein: Der Text steht daneben, immer. */
+@layer components {
+  .stufe {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    padding: 2px var(--am-raum-2);
+    border-radius: var(--am-radius-voll);
+    border: 1px solid var(--am-rand);
+    background: var(--am-flaeche-1);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--am-text-sekundaer);
+    white-space: nowrap;
+  }
+
+  .stufe::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: var(--am-radius-voll);
+    background: currentColor;
+    flex: none;
+  }
+
+  .stufe[data-stufe="customer"],
+  .stufe[data-art="won"] {
+    color: var(--am-erfolg);
+    border-color: var(--am-erfolg-rand);
+    background: var(--am-erfolg-flaeche);
+  }
+
+  /* Auf der Goldfläche trägt erst Gold-900 (5,1:1); die übliche
+     Beschriftung Gold-800 kam dort nur auf 3,7:1. */
+  .stufe[data-stufe="opportunity"] {
+    color: var(--am-gold-900);
+    border-color: var(--am-gold-300);
+    background: var(--am-gold-200);
+  }
+  /* Im Dunkeln ohne Fläche, wie die übrigen Stufen: Die helle Goldfläche
+     hinter heller Beschriftung ergab 1,6:1. */
+  .dunkel .stufe[data-stufe="opportunity"] {
+    color: var(--am-gold-beschriftung);
+    border-color: var(--am-gold-600);
+    background: transparent;
+  }
+
+  /* „Verloren“ und „Disqualifiziert“ sind Ergebnisse, keine Fehler: neutral
+     wie die übrigen Stufen (ABGLEICH R7). Rot bleibt dem Handlungsbedarf. */
+
+  .stufe[data-stufe="qualified"] {
+    color: var(--am-hinweis);
+    border-color: var(--am-hinweis-rand);
+    background: var(--am-hinweis-flaeche);
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import type { Summary } from "@/lib/api/meetings";
 
@@ -106,11 +106,7 @@ export function SummaryView({ summary }: { summary: Summary }) {
       {mehrNamen.length > 0 && (
         <details className="group border-t border-trennlinie pt-6">
           <summary className="mono flex cursor-pointer select-none items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer">
-            <ChevronRight
-              size={14}
-              aria-hidden
-              className="transition-transform group-open:rotate-90"
-            />
+            <ChevronRight size={16} aria-hidden className="transition-transform group-open:rotate-90" />
             {t("mehrZeigen")}
             <span className="normal-case tracking-normal">
               · {t("mehrAnzahl", { n: mehrNamen.length })}

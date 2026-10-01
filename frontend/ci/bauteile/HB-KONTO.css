@@ -1,0 +1,74 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Wer gerade arbeitet [HB-KONTO] ──────────────────────────────────────────
+     Unten in der Navigation, immer sichtbar — auch allein. Die Frage
+     „unter welchem Namen schreibe ich das gerade" hängt an Besitz,
+     Zuordnung und Protokoll. Es ist trotzdem kein Benutzermenü:
+     angemeldet ist immer derselbe Olares-Zugang. */
+@layer components {
+  .person { position: relative; }
+
+  /* Eine Zeile, kein Kasten: Wer hier steht, ist eine Auskunft, keine
+     Handlung — der Rahmen wog früher schwerer als jeder Eintrag darüber.
+     Bedienbar bleibt sie trotzdem, sie öffnet Darstellung und Zugang. */
+  .person-knopf {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    width: 100%;
+    min-height: var(--am-ziel-zeiger);
+    padding: var(--am-raum-2);
+    border: 0;
+    border-radius: var(--am-radius-mittel);
+    background: transparent;
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .person-knopf:hover { background: var(--am-flaeche-2); }
+
+  .person-knopf:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+  }
+
+  .person-kreis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--am-radius-voll);
+    background: var(--am-blau-600);
+    color: var(--am-text-auf-farbe);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .person-kreis.klein { width: 22px; height: 22px; font-size: 0.625rem; }
+
+  /* Im Dunkelmodus trägt Blau auf Blau nicht — der Kreis wird hell. */
+  .dunkel .person-kreis { background: var(--am-blau-400); color: var(--am-blau-950); }
+
+  .person-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  .person-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .person-pfeil { margin-left: auto; flex: none; color: var(--am-text-gedaempft); }
+}

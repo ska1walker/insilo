@@ -1,21 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import {
-  ArrowDown,
-  ArrowRight,
-  Brain,
-  Building2,
-  Database,
-  FileText,
-  Globe,
-  Lock,
-  Mic,
-  Search,
-  Server,
-  ShieldCheck,
-  Star,
-  Waves,
-} from "lucide-react";
+import { ArrowDown, ArrowRight, Brain, Building2, Database, FileText, Globe, Lock, Mic, Search, Server, ShieldCheck, Star, Waves } from "@/lib/symbole";
 
 export async function generateMetadata() {
   const t = await getTranslations("about");
@@ -105,17 +90,17 @@ export default async function UeberPage() {
 
         <div className="mt-12 grid gap-10 md:grid-cols-3">
           <FeatureBlock
-            icon={<Mic className="h-5 w-5" strokeWidth={1.75} />}
+            icon={<Mic size={20} />}
             title={t("step1Title")}
             body={t("step1Body")}
           />
           <FeatureBlock
-            icon={<FileText className="h-5 w-5" strokeWidth={1.75} />}
+            icon={<FileText size={20} />}
             title={t("step2Title")}
             body={t("step2Body")}
           />
           <FeatureBlock
-            icon={<Brain className="h-5 w-5" strokeWidth={1.75} />}
+            icon={<Brain size={20} />}
             title={t("step3Title")}
             body={t("step3Body")}
           />
@@ -133,22 +118,22 @@ export default async function UeberPage() {
 
         <div className="mt-12 grid gap-10 md:grid-cols-2">
           <PersonaBlock
-            icon={<Lock className="h-4 w-4" strokeWidth={1.75} />}
+            icon={<Lock size={16} />}
             label={t("personaLawTitle")}
             body={t("personaLawBody")}
           />
           <PersonaBlock
-            icon={<FileText className="h-4 w-4" strokeWidth={1.75} />}
+            icon={<FileText size={16} />}
             label={t("personaTaxTitle")}
             body={t("personaTaxBody")}
           />
           <PersonaBlock
-            icon={<Search className="h-4 w-4" strokeWidth={1.75} />}
+            icon={<Search size={16} />}
             label={t("personaConsultTitle")}
             body={t("personaConsultBody")}
           />
           <PersonaBlock
-            icon={<Building2 className="h-4 w-4" strokeWidth={1.75} />}
+            icon={<Building2 size={16} />}
             label={t("personaIndustryTitle")}
             body={t("personaIndustryBody")}
           />
@@ -214,7 +199,7 @@ export default async function UeberPage() {
         <div className="flex flex-col gap-3 border-t border-trennlinie pt-8 text-xs text-text-gedaempft md:flex-row md:items-center md:justify-between">
           <p>{t("footerLeft")}</p>
           <p className="mono inline-flex items-center gap-2">
-            <Server className="h-3.5 w-3.5" strokeWidth={1.75} />
+            <Server size={16} />
             {t("footerRight")}
           </p>
         </div>
@@ -323,10 +308,10 @@ function MockSegment({
  *  Mobile: stacks vertically with ArrowDown icons. */
 function ArchitectureDiagram({ t }: { t: T }) {
   const boxes = [
-    { label: t("archDiagramBrowser"), icon: <Globe className="h-4 w-4" strokeWidth={1.75} /> },
-    { label: t("archDiagramApi"), icon: <Server className="h-4 w-4" strokeWidth={1.75} /> },
-    { label: t("archDiagramWhisper"), icon: <Mic className="h-4 w-4" strokeWidth={1.75} /> },
-    { label: t("archDiagramDb"), icon: <Database className="h-4 w-4" strokeWidth={1.75} /> },
+    { label: t("archDiagramBrowser"), icon: <Globe size={16} /> },
+    { label: t("archDiagramApi"), icon: <Server size={16} /> },
+    { label: t("archDiagramWhisper"), icon: <Mic size={16} /> },
+    { label: t("archDiagramDb"), icon: <Database size={16} /> },
   ];
 
   return (
@@ -344,12 +329,12 @@ function ArchitectureDiagram({ t }: { t: T }) {
 
       {/* LLM branch — md+ — sitzt unter „Box-API", einfach unterhalb gerendert */}
       <div className="hidden md:flex items-start gap-2 mt-3 pl-[calc(120px+1rem)]">
-        <ArrowDown className="h-4 w-4 text-text-gedaempft" strokeWidth={1.5} />
+        <ArrowDown size={16} className="text-text-gedaempft" />
         <div
           className="inline-flex items-center gap-2 rounded-md border border-trennlinie px-3 py-2 text-sm text-text-primaer"
           style={{ background: "var(--am-seite)" }}
         >
-          <Brain className="h-4 w-4" strokeWidth={1.75} />
+          <Brain size={16} />
           {t("archDiagramLlm")}
         </div>
       </div>
@@ -359,12 +344,12 @@ function ArchitectureDiagram({ t }: { t: T }) {
         {boxes.map((b, i) => (
           <DiagramRow key={i} icon={b.icon} label={b.label} isLast={i === boxes.length - 1} arrowDir="down" />
         ))}
-        <ArrowDown className="h-4 w-4 text-text-gedaempft self-center" strokeWidth={1.5} />
+        <ArrowDown size={16} className="text-text-gedaempft self-center" />
         <div
           className="inline-flex items-center gap-2 rounded-md border border-trennlinie px-3 py-2 text-sm text-text-primaer self-start"
           style={{ background: "var(--am-seite)" }}
         >
-          <Brain className="h-4 w-4" strokeWidth={1.75} />
+          <Brain size={16} />
           {t("archDiagramLlm")}
         </div>
       </div>
@@ -396,9 +381,9 @@ function DiagramRow({
       </div>
       {!isLast &&
         (arrowDir === "right" ? (
-          <ArrowRight className="h-4 w-4 text-text-gedaempft" strokeWidth={1.5} />
+          <ArrowRight size={16} className="text-text-gedaempft" />
         ) : (
-          <ArrowDown className="h-4 w-4 text-text-gedaempft self-center" strokeWidth={1.5} />
+          <ArrowDown size={16} className="text-text-gedaempft self-center" />
         ))}
     </>
   );
@@ -427,7 +412,7 @@ function SpeakerCatalogMock({ t }: { t: T }) {
   return (
     <div className="rounded-lg border border-trennlinie bg-flaeche-1 p-4">
       <p className="mono mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
-        <Waves className="mr-1.5 inline h-3 w-3" strokeWidth={1.75} />
+        <Waves size={16} className="mr-1.5 inline" />
         {t("speakerMockSectionLabel")}
       </p>
 
@@ -480,12 +465,7 @@ function SpeakerMockRow({
           {cluster}
         </span>
         {isSelf && (
-          <Star
-            className="h-3 w-3"
-            strokeWidth={2}
-            style={{ color: "var(--am-gold-500)" }}
-            aria-hidden
-          />
+          <Star size={16} style={{ color: "var(--am-gold-beschriftung)" }} aria-hidden />
         )}
         {unassigned ? (
           <span className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em] text-text-gedaempft">

@@ -1,0 +1,467 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Die Hülle [AM-HUELLE] ────────────────────────────────────────────────────
+     Zeiger (≥1024px): Navigation links, Inhalt, Ablage rechts.
+     Berührung (<1024px): Navigation als untere Leiste, Ablage unter dem
+     Inhalt. Der mobile Fall steht nicht im Referenzblatt — Insilo ist
+     aber primär eine Smartphone-PWA, und 220px Seitenspalte gehen auf
+     375px nicht auf. */
+@layer components {
+  .huelle {
+    display: grid;
+    /* minmax(0, …), nicht 1fr: sonst darf ein breites Kind die Spalte
+       aufdehnen und der Inhalt läuft seitlich aus dem Viewport. */
+    grid-template-columns: minmax(0, 1fr);
+    /* Kopfleiste, Inhalt, und unten die schmale Navigationsleiste. */
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-height: 100dvh;
+    background: var(--am-seite);
+  }
+}
+
+  /* ── Kopfleiste [AM-HUELLE] ───────────────────────────────────────────────────
+     Die zwei Dinge, die man von überall tut: suchen und anlegen. Sie
+     spannt über beide Spalten, damit die Marke einen Anfang hat und die
+     Navigationsspalte mit Navigation beginnt. */
+@layer components {
+  .kopfleiste {
+    grid-row: 1;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    height: var(--am-leistenhoehe);
+    box-sizing: border-box;
+    padding: 0 var(--am-raum-4);
+    background: var(--am-flaeche-1);
+    border-bottom: 1px solid var(--am-trennlinie);
+    position: sticky;
+    top: 0;
+    z-index: var(--am-ebene-kopfleiste);
+  }
+
+  .kopfleiste-marke {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    flex: none;
+  }
+
+  .kopfleiste-marke .marke { min-width: 0; }
+  .kopfleiste-marke .marke-produkt { overflow: hidden; text-overflow: ellipsis; }
+
+  /* Die Suche bekommt den Platz, den sie verdient — sie geht über den
+     ganzen Bestand, nicht über einen Bereich. Nach oben gedeckelt,
+     damit sie auf einem breiten Bildschirm nicht zum Balken wird. */
+  .kopfleiste-suche {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 520px;
+  }
+
+  /* Ein Rechteck mit knappem Polster, Radius wie jeder Knopf (8 px, ABGLEICH
+     G3). Neben einem Suchfeld von 40 px Höhe las sich der runde 24-px-Knopf
+     wie ein Fremdkörper. */
+  .kopf-neu {
+    flex: none;
+    gap: var(--am-raum-2);
+    padding: 0 var(--am-raum-4);
+    border-radius: var(--am-radius-mittel);
+    font-size: 0.875rem;
+  }
+  /* Das Zeichen trägt erst, wenn das Wort weicht. */
+  .kopf-neu-zeichen { display: none; }
+
+
+  .huelle-nav {
+    grid-row: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: var(--am-raum-1);
+    background: var(--am-flaeche-1);
+    border-top: 1px solid var(--am-trennlinie);
+    padding: var(--am-raum-2) var(--am-raum-2);
+    padding-bottom: max(var(--am-raum-2), env(safe-area-inset-bottom));
+    position: sticky;
+    bottom: 0;
+    z-index: var(--am-ebene-navigation);
+  }
+
+  /* Die Gruppierung trägt erst ab der Seitenspalte. */
+  .huelle-nav-spacer {
+    display: none;
+  }
+
+  /* Schmal: Der Produktname und der Klappschalter weichen, die Suche
+     bekommt die Zeile. Das Wappen bleibt — es ist die Herkunft. */
+  @media (max-width: 1023px) {
+    .kopfleiste-marke .marke-produkt,
+    .kopfleiste .huelle-klapp { display: none; }
+    .kopf-neu-text { display: none; }
+    .kopf-neu-zeichen { display: block; }
+    .kopf-neu { padding: 0 var(--am-raum-3); }
+    .kopfleiste-suche { max-width: none; }
+  }
+
+  /* Auf dem Handy zählt jedes Pixel für das Suchfeld: Bei 375 px stand
+     dort „Suchen oder fr…". Die Wortmarke gibt 22 px her, ohne unter die
+     gelieferte Mindestgröße von 45 px Breite zu fallen. */
+  @media (max-width: 30rem) {
+    .kopfleiste { gap: var(--am-raum-2); padding: 0 var(--am-raum-3); }
+    .kopfleiste-marke .marke-logo-bild { height: 22px; }
+  }
+
+  /* Gruppen, Titel, Lesezeichen und der Klappschalter gehören der Seitenspalte.
+     Die schmale Leiste unten zeigt vier Ziele und „Mehr“. */
+  .huelle-nav-gruppe,
+  .huelle-nav-titel,
+  .huelle-nav-stern,
+  .huelle-klapp,
+  .huelle-nav .huelle-mehr-knopf,
+  .huelle-mehr {
+    display: none;
+  }
+
+  .huelle-nav-mobil {
+    display: contents;
+  }
+
+  .huelle-nav-mehr {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--am-raum-1);
+    padding: var(--am-raum-2);
+    background: var(--am-flaeche-1);
+    /* Schwebt über der Leiste: betonter Rand und der eine Schatten (R6). */
+    border-top: 1px solid var(--am-rand-betont-farbe);
+    box-shadow: var(--am-schatten-1);
+  }
+
+  .huelle-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--am-raum-1);
+    padding: var(--am-raum-2);
+    min-width: var(--am-ziel-beruehrung);
+    min-height: var(--am-ziel-beruehrung);
+    border: 0;
+    border-radius: var(--am-radius-mittel);
+    background: transparent;
+    font: inherit;
+    font-size: 0.6875rem;
+    color: var(--am-text-sekundaer);
+    text-align: center;
+    cursor: pointer;
+    transition: color var(--am-dauer-schnell) var(--am-kurve);
+  }
+
+  .huelle-nav-item:hover { color: var(--am-text-primaer); }
+
+  .huelle-nav-item.aktiv {
+    color: var(--am-gold-beschriftung);
+    font-weight: 600;
+  }
+
+  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
+     sichtbar; Farbe und Schnitt gelten unabhängig davon. */
+  /* Der Fuß der Navigation: Kontozeile über der Herkunftszeile. Auf der
+     schmalen Leiste unten am Bildschirm ist dafür kein Platz — dort ist
+     beides ausgeblendet, wie schon vorher der Nachweis. */
+  .huelle-fuss,
+  .nachweis {
+    display: none;
+  }
+
+
+  .huelle-inhalt {
+    grid-row: 2;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .huelle-ablage {
+    grid-row: 4;
+    background: var(--am-flaeche-1);
+    border-top: 1px solid var(--am-trennlinie);
+    padding: var(--am-raum-4);
+    font-size: 0.8125rem;
+    color: var(--am-text-sekundaer);
+  }
+
+  @media (min-width: 1024px) {
+    .huelle {
+      /* 240 statt 220: Wappen, Wortmarke, „Rocket" und der Klappschalter
+         brauchen zusammen 227 px. Bei 220 lief die Beschriftung aus ihrem
+         Kasten heraus und der Fokusring des Knopfes legte sich über das
+         letzte Zeichen. */
+      --huelle-nav-breite: var(--am-navigation-breite);
+      grid-template-columns: var(--huelle-nav-breite) minmax(0, 1fr);
+      /* Zeile 1 die Kopfleiste über alles, Zeile 2 der Rest. */
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    /* Der Markenblock ist so breit wie die Navigationsspalte plus der Rand
+       der Inhaltsspalte (abzüglich Polster und Abstand). Dadurch beginnt die
+       Suche auf derselben Linie wie Seitentitel und Blöcke darunter — vorher
+       stand sie an der Spaltenkante, 32 px links von allem anderen (Kai,
+       1.10.2026). */
+    .kopfleiste-marke {
+      width: calc(var(--huelle-nav-breite) + var(--am-raum-8) - var(--am-raum-4) - var(--am-raum-3));
+    }
+
+    .huelle.hat-ablage {
+      grid-template-columns: var(--huelle-nav-breite) minmax(0, 1fr) 280px;
+    }
+
+    /* Eingeklappt: nur Symbole. Das Attribut setzt navigation.tsx am <html>,
+       vor dem ersten Anstrich per Inline-Script. */
+    html[data-navigation="eingeklappt"] .huelle {
+      --huelle-nav-breite: 64px;
+    }
+
+    .huelle-nav {
+      grid-row: 2;
+      grid-column: 1;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: var(--am-raum-1);
+      background: var(--am-flaeche-1);
+      border-top: none;
+      border-right: 1px solid var(--am-trennlinie);
+      padding: var(--am-raum-4);
+      /* Unter der Kopfleiste kleben, nicht unter ihr durchlaufen. */
+      position: sticky;
+      top: var(--am-leistenhoehe);
+      bottom: auto;
+      height: calc(100dvh - var(--am-leistenhoehe));
+      overflow-y: auto;
+    }
+
+    /* Mindesthöhe statt fester Höhe: Im Regelfall trifft der Kopf die
+       Linie der linken Spalte; braucht er mehr Platz (Lead ohne
+       Sprachmodell, schmale Fenster), wächst er. Mit fester Höhe hing die
+       umgebrochene Knopfreihe über dem ersten Block. */
+    .seitenkopf {
+      min-height: var(--am-kopfhoehe);
+      box-sizing: border-box;
+      flex-wrap: nowrap;
+    }
+    .seitenkopf > .btn-reihe { justify-content: flex-end; }
+    .seitenkopf .ki-hinweis { max-width: 20rem; line-height: 1.3; }
+
+    .huelle-nav-gruppe {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: var(--am-raum-2);
+    }
+
+    /* Eine Überschrift je Gruppe — klein, versal, gedämpft, wie ein
+       Tabellenkopf. Sie ordnet, sie klappt nichts auf. */
+    .huelle-nav-titel {
+      display: block;
+      margin: 0;
+      padding: var(--am-raum-3) var(--am-raum-3) var(--am-raum-1);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--am-text-gedaempft);
+    }
+
+    .huelle-nav-mobil,
+    .huelle-nav-mehr {
+      display: none;
+    }
+
+    .huelle-nav-spacer {
+      display: block;
+      flex: 1;
+    }
+
+    .huelle-nav-eintrag {
+      position: relative;
+      display: flex;
+    }
+
+    .huelle-nav-item {
+      flex: 1;
+      min-width: 0;
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: var(--am-raum-3);
+      padding: var(--am-raum-2) var(--am-raum-3);
+      min-height: var(--am-ziel-zeiger);
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    .huelle-nav-eintrag .huelle-nav-item { padding-right: 2rem; }
+    .huelle-nav-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .huelle-nav-item:hover { background: var(--am-flaeche-2); }
+
+    /* Gewählt: eine Goldkante am Rand, fette dunkle Schrift, keine Fläche —
+       eine goldene Fläche war zu laut, eine blaue sah aus wie das Überfahren
+       (Kai, 1.10.2026, CI G1). Ein Rahmen gehört allein dem Fokus. */
+    .huelle-nav-item.aktiv {
+      background: transparent;
+      color: var(--am-text-primaer);
+      box-shadow: inset 2px 0 0 var(--am-gold-auszeichnung);
+      border-radius: 0 var(--am-radius-mittel) var(--am-radius-mittel) 0;
+    }
+    .huelle-nav-item.aktiv:hover { background: var(--am-flaeche-2); }
+    .huelle-nav-item.aktiv svg { color: var(--am-gold-beschriftung); }
+
+    /* Das Lesezeichen: unsichtbar, bis man hinzeigt — und gefüllt, wenn es gilt.
+       Gold zeichnet aus, es handelt nicht. */
+    .huelle-nav-stern {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      right: var(--am-raum-2);
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 0;
+      border-radius: var(--am-radius-mittel);
+      background: transparent;
+      color: var(--am-text-gedaempft);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity var(--am-dauer-schnell) var(--am-kurve), color var(--am-dauer-schnell) var(--am-kurve);
+    }
+
+    .huelle-nav-eintrag:hover .huelle-nav-stern,
+    .huelle-nav-eintrag:focus-within .huelle-nav-stern,
+    .huelle-nav-eintrag.ist-favorit .huelle-nav-stern { opacity: 1; }
+
+    /* „Mehr“: das Feld rechts neben der Leiste, alle vier Gruppen
+       nebeneinander. Lesezeichen hier immer sichtbar — das Feld ist zum
+       Anheften da, nicht nur zum Hinkommen. */
+    .huelle-nav .huelle-mehr-knopf { display: flex; }
+    .huelle-mehr {
+      display: block;
+      position: fixed;
+      left: var(--huelle-nav-breite);
+      top: 0;
+      bottom: 0;
+      z-index: var(--am-ebene-menue);
+      width: min(760px, calc(100vw - var(--huelle-nav-breite) - var(--am-raum-8)));
+      padding: var(--am-raum-6) var(--am-raum-6) var(--am-raum-8);
+      overflow-y: auto;
+      background: var(--am-flaeche-1);
+      border-right: 1px solid var(--am-rand-betont-farbe);
+      box-shadow: var(--am-schatten-1);
+    }
+    .huelle-mehr-hinweis {
+      margin: 0 0 var(--am-raum-4);
+      padding: 0 var(--am-raum-3);
+      font-size: 0.8125rem;
+      color: var(--am-text-gedaempft);
+    }
+    .huelle-mehr-spalten {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--am-raum-4);
+    }
+    .huelle-mehr .huelle-nav-gruppe { margin-bottom: 0; }
+    .huelle-mehr .huelle-nav-stern { opacity: 1; }
+    @media (max-width: 1279px) {
+      .huelle-mehr-spalten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .huelle-nav-stern:hover { background: var(--am-flaeche-2); color: var(--am-text-primaer); }
+    .huelle-nav-eintrag.ist-favorit .huelle-nav-stern { color: var(--am-gold-beschriftung); }
+    .huelle-nav-stern:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+
+    .huelle-klapp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      margin-left: auto;
+      width: var(--am-ziel-zeiger);
+      height: var(--am-ziel-zeiger);
+      border: 0;
+      border-radius: var(--am-radius-mittel);
+      background: transparent;
+      color: var(--am-text-gedaempft);
+      cursor: pointer;
+    }
+    .huelle-klapp:hover { background: var(--am-flaeche-2); color: var(--am-text-primaer); }
+    .huelle-klapp:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+
+    /* Eingeklappt: Symbole zentriert, Beschriftung als Tooltip, Gruppen
+       durch eine Linie getrennt statt durch eine Überschrift. */
+    html[data-navigation="eingeklappt"] .huelle-nav { padding: var(--am-raum-2); }
+    /* Eingeklappt trägt der Markenblock nur noch Wappen und Schalter —
+       eine feste Breite von 64 px klemmte beide übereinander. */
+    html[data-navigation="eingeklappt"] .kopfleiste-marke { width: auto; }
+    html[data-navigation="eingeklappt"] .huelle-nav-titel { display: none; }
+    html[data-navigation="eingeklappt"] .huelle-nav-gruppe + .huelle-nav-gruppe { border-top: 1px solid var(--am-trennlinie); padding-top: var(--am-raum-2); }
+    html[data-navigation="eingeklappt"] .huelle-nav-eintrag .huelle-nav-item { padding: var(--am-raum-2); justify-content: center; }
+    html[data-navigation="eingeklappt"] .huelle-nav-item span { display: none; }
+    html[data-navigation="eingeklappt"] .huelle-nav-stern { display: none; }
+    html[data-navigation="eingeklappt"] .huelle-mehr-knopf { padding: var(--am-raum-2); justify-content: center; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-titel { display: block; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-gruppe + .huelle-nav-gruppe { border-top: none; padding-top: 0; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-item { padding: var(--am-raum-2) var(--am-raum-3); padding-right: 2rem; justify-content: flex-start; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-item span { display: inline; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-stern { display: inline-flex; }
+    html[data-navigation="eingeklappt"] .huelle-fuss { padding: 0; align-items: center; }
+    html[data-navigation="eingeklappt"] .person-text,
+    html[data-navigation="eingeklappt"] .person-pfeil,
+    html[data-navigation="eingeklappt"] .nachweis { display: none; }
+    html[data-navigation="eingeklappt"] .person-knopf { justify-content: center; padding-inline: 0; }
+
+    .huelle-fuss {
+      display: flex;
+      flex-direction: column;
+      gap: var(--am-raum-2);
+      margin-top: var(--am-raum-3);
+      padding: 0 var(--am-raum-3);
+    }
+
+    .nachweis {
+      display: flex;
+      align-items: center;
+      gap: var(--am-raum-2);
+      padding: var(--am-raum-1) var(--am-raum-2);
+      border-radius: var(--am-radius-klein);
+      font-size: 0.6875rem;
+      line-height: 1.4;
+      color: var(--am-text-gedaempft);
+    }
+    .nachweis svg { flex: none; }
+    .nachweis:hover { color: var(--am-text-primaer); background: var(--am-flaeche-2); }
+    .nachweis:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+    .nachweis[data-extern="true"] svg { color: var(--am-gold-beschriftung); }
+
+    .huelle-inhalt {
+      grid-row: 2;
+      grid-column: 2;
+      overflow-y: auto;
+      max-height: calc(100dvh - var(--am-leistenhoehe));
+    }
+
+    .huelle-ablage {
+      grid-row: 2;
+      grid-column: 3;
+      border-top: none;
+      border-left: 1px solid var(--am-trennlinie);
+      overflow-y: auto;
+      max-height: calc(100dvh - var(--am-leistenhoehe));
+    }
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2 } from "@/lib/symbole";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -71,7 +71,7 @@ export default function Home() {
             href="/papierkorb"
             className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer"
           >
-            <Trash2 size={14} aria-hidden />
+            <Trash2 size={16} aria-hidden />
             {tPapierkorb("link")}
           </Link>
         </div>

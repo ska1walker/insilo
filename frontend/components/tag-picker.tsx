@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Tag as TagIcon } from "lucide-react";
+import { Plus, Tag as TagIcon } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -140,7 +140,7 @@ export function TagPicker({
           onClick={() => setOpen((v) => !v)}
           className="inline-flex items-center gap-1 rounded-full border border-dashed border-rand-betont px-2.5 py-0.5 text-[0.75rem] font-medium text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
         >
-          <TagIcon className="h-3 w-3" strokeWidth={2} />
+          <TagIcon size={16} />
           {tags.length === 0 ? t("pickerAdd") : t("pickerShort")}
         </button>
       </div>
@@ -187,7 +187,7 @@ export function TagPicker({
                 onClick={() => createAndAttach(filter)}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-primaer hover:bg-flaeche-1"
               >
-                <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+                <Plus size={16} />
                 <span>{t("pickerCreateNew", { name: filter.trim() })}</span>
               </button>
             )}

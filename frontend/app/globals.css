@@ -960,8 +960,6 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     color: var(--am-blau-900);
     animation: pulse-gold 2s ease-in-out infinite;
   }
-  .btn-record-icon { width: 36px; height: 36px; }
-  .btn-record.recording .btn-record-icon { fill: currentColor; }
 
   /* Der Ring während der Aufnahme: ein Zustand, keine Zierde — deshalb
      die einzige Bewegung am Knopf. Gold aus dem Token, nie als Literal. */
@@ -1424,4 +1422,12 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   .eig-archiv .eig-feld { grid-template-columns: minmax(0, 1fr) auto; }
   .eig-neue-eigenschaft { grid-template-columns: 1fr; }
   .eig-pflege { padding-left: var(--am-raum-3); }
+}
+
+  /* ── Zeichen [HB-SYMBOL] ─────────────────────────────────────────────
+     Die Größe steht am Zeichen (16/20/24/40, components/symbol.tsx). Neben
+     langem Text in einer Flex-Zeile würde es sonst gestaucht — und mit ihm
+     der Strich, der überall 1,5 px sein soll (CI kern/icons.md). */
+@layer components {
+  svg[data-symbol] { flex-shrink: 0; }
 }

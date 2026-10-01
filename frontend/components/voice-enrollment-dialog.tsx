@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Loader2, Mic, Square, X } from "lucide-react";
+import { CheckCircle2, Loader2, Mic, Square, X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
@@ -216,7 +216,7 @@ export function VoiceEnrollmentDialog({
             className="absolute right-4 top-4 rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={t("closeAria")}
           >
-            <X className="h-4 w-4" strokeWidth={1.75} />
+            <X size={16} />
           </button>
           <h2 className="font-display text-2xl font-medium tracking-tight">
             {t("titlePrefix")}{" "}
@@ -263,7 +263,7 @@ export function VoiceEnrollmentDialog({
 
           {phase === "uploading" && (
             <div className="flex items-center gap-3 rounded-md bg-flaeche-1 p-4 text-sm text-text-sekundaer">
-              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
+              <Loader2 size={16} className="animate-spin" />
               {t("processing")}
             </div>
           )}
@@ -278,7 +278,7 @@ export function VoiceEnrollmentDialog({
               }}
             >
               <div className="flex items-center gap-2 font-medium">
-                <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} />
+                <CheckCircle2 size={16} />
                 {t("successHeader")}
               </div>
               <p className="mt-1 text-xs opacity-90">
@@ -354,7 +354,7 @@ export function VoiceEnrollmentDialog({
                   onClick={startRecording}
                   className="btn btn-primaer inline-flex items-center gap-2"
                 >
-                  <Mic className="h-4 w-4" strokeWidth={1.75} />
+                  <Mic size={16} />
                   {t("start")}
                 </button>
               </>
@@ -371,7 +371,7 @@ export function VoiceEnrollmentDialog({
                 className="btn btn-primaer inline-flex items-center gap-2"
                 style={{ background: "var(--am-gold-800)" }}
               >
-                <Square className="h-4 w-4 fill-current" strokeWidth={1.75} />
+                <Square size={16} className="fill-current" />
                 {t("stop")}
               </button>
             )}

@@ -1,0 +1,57 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Seitenkopf [HB-SEITENKOPF] ───────────────────────────────────────────────────
+     Bleibt beim Rollen stehen. In einer Liste mit 200 Zeilen ist die
+     Frage „wo bin ich und was kann ich hier tun" sonst nach dem dritten
+     Bildschirm unbeantwortet. */
+@layer components {
+  .seitenkopf {
+    position: sticky;
+    top: 0;
+    z-index: var(--am-ebene-seitenkopf);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--am-raum-4);
+    flex-wrap: wrap;
+    padding: var(--am-raum-4) var(--am-raum-8);
+    background: var(--am-seite);
+    border-bottom: 1px solid var(--am-trennlinie);
+  }
+
+  /* Titel und Anzahl in einer Zeile. Untereinander wuchs der Kopf mit
+     seinem Inhalt und riss die Linie von der linken Spalte weg. */
+  .seitenkopf-zeile {
+    display: flex;
+    align-items: baseline;
+    gap: var(--am-raum-3);
+    flex-wrap: wrap;
+  }
+
+  /* Seitentitel in jeder AImighty-Anwendung gleich groß (ABGLEICH G1). */
+  .seitenkopf h1 {
+    font-size: var(--am-seitentitel);
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .seitenkopf-zahl {
+    font-family: var(--am-schrift-mono);
+    font-size: 0.8125rem;
+    color: var(--am-text-gedaempft);
+  }
+
+  .seitenkopf-pfad {
+    font-size: 0.8125rem;
+    color: var(--am-text-gedaempft);
+    margin-bottom: var(--am-raum-1);
+  }
+
+  .seitenkopf-pfad a:hover {
+    color: var(--am-text-primaer);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}

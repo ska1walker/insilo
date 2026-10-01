@@ -1,0 +1,38 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Darstellungsschalter [HB-DARSTELLUNG] ─────────────────────────────────────────── */
+@layer components {
+  .darstellung-schalter {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-flaeche-2);
+  }
+
+  .darstellung-knopf {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: var(--am-radius-mittel);
+    background: transparent;
+    color: var(--am-text-gedaempft);
+    cursor: pointer;
+  }
+
+  .darstellung-knopf:hover { color: var(--am-text-primaer); }
+
+  .darstellung-knopf.aktiv {
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+  }
+
+  .darstellung-knopf:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+  }
+}

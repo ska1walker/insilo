@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import {
   createContext,
@@ -207,7 +207,7 @@ function ToastCard({
             className="-my-1 -mr-1 shrink-0 rounded p-1.5 text-text-gedaempft hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={tCommon("close")}
           >
-            <X className="h-3.5 w-3.5" strokeWidth={2} />
+            <X size={16} />
           </button>
         </div>
 

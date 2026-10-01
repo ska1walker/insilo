@@ -1,0 +1,19 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+/* ── Erklärung: ein Satz, der Rest hinter dem Symbol [HB-ERKLAERUNG] ─────────────────── */
+.erklaerung { margin-bottom: var(--am-raum-4); }
+.erklaerung-kurz { font-size: 0.875rem; color: var(--am-text-sekundaer); margin: 0; display: inline; }
+.erklaerung-knopf {
+  display: inline-flex; align-items: center; justify-content: center;
+  inline-size: 24px; block-size: 24px; margin-inline-start: var(--am-raum-1);
+  vertical-align: middle; border: 0; border-radius: 999px; background: transparent;
+  color: var(--am-text-gedaempft); cursor: pointer;
+}
+.erklaerung-knopf:hover, .erklaerung-knopf[aria-expanded="true"] { color: var(--am-gold-beschriftung); background: var(--am-flaeche-2); }
+.erklaerung-lang {
+  margin-top: var(--am-raum-2); padding: var(--am-raum-3) var(--am-raum-4);
+  font-size: 0.8125rem; line-height: 1.55; color: var(--am-text-sekundaer);
+  background: var(--am-flaeche-2); border-inline-start: 2px solid var(--am-gold-auszeichnung); border-radius: 0 var(--am-radius-mittel) var(--am-radius-mittel) 0;
+}
+.erklaerung-lang code { font-size: 0.75rem; }

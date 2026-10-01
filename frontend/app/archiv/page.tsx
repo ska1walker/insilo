@@ -16,6 +16,7 @@ const EXAMPLE_KEYS = ["example1", "example2", "example3"] as const;
 export default function AskPage() {
   const t = useTranslations("archiv");
   const tErrors = useTranslations("errors");
+  const tNav = useTranslations("nav");
   const examples = EXAMPLE_KEYS.map((k) => t(k));
   const [question, setQuestion] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
@@ -53,7 +54,8 @@ export default function AskPage() {
       <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
         {t("eyebrow")}
       </p>
-      <Seitentitel>{t("title")}</Seitentitel>
+      {/* Der Titel ist eine Aufforderung; der Tab nennt den Ort. */}
+      <Seitentitel tab={tNav("archive")}>{t("title")}</Seitentitel>
       <p className="mt-4 max-w-[640px] text-text-sekundaer">
         {t("intro")}
       </p>

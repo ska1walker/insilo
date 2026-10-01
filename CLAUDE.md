@@ -340,6 +340,15 @@ hüpfenden Knöpfe.
    Plattformfragen vor.
 9. **Sprachregel:** UI-Texte über `useTranslations()` aus `frontend/messages/*.json` (5 Sprachen). Default DE / Sie-Form, formelle Anrede in allen Sprachen. Code + Commit-Messages weiter Englisch. Neue inline-Strings → erst Key in alle 5 JSONs aufnehmen, dann `t('namespace.key')` verwenden.
 10. **Tests:** Vitest fürs Frontend, pytest fürs Backend. Kritische Pfade (Audio-Upload, Transkription) immer mit Tests.
+
+    **Rundgang im Browser** (`frontend/e2e/`, nach Rocket): jede Seite auf
+    Desktop und Handy, hell und dunkel — API-Fehler, Skriptfehler,
+    Überlauf und Abgeschnittenes, genau eine h1, Symbolknöpfe mit Namen und
+    Tooltip, Zeichengrößen, axe einschließlich Kontrast. Läuft in der CI
+    als Job `oberflaeche` gegen echte Datenbank mit `e2e/beispiel/`.
+    Lokal: App starten, dann `INSILO_URL=… npm run e2e` (in einer
+    Claude-Sitzung mit `INSILO_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`).
+    Eine neue Seite kommt in `SEITEN` in `e2e/rundgang.spec.ts`.
 11. **Bei Unsicherheit:** stoppen und Kai fragen.
 
 ---

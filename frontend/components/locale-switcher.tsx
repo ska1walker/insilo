@@ -155,7 +155,11 @@ function LocaleOption({
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium text-text-primaer">{label}</span>
-        {hint && <span className="mt-0.5 block text-xs text-text-gedaempft">{hint}</span>}
+        {/* Auf der gewählten Fläche Sekundär: Gedämpft hält auf Gold-200 nur
+            4,2 : 1 (Rundgang, axe color-contrast). */}
+        {hint && (
+          <span className={`mt-0.5 block text-xs ${selected ? "text-text-sekundaer" : "text-text-gedaempft"}`}>{hint}</span>
+        )}
       </span>
     </button>
   );

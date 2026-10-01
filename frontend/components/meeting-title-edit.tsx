@@ -92,6 +92,7 @@ export function MeetingTitleEdit({
           onClick={commit}
           className="rounded-mittel p-2 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={tCommon("save")}
+          title={tCommon("save")}
           disabled={saving}
         >
           <Check size={20} />
@@ -101,6 +102,7 @@ export function MeetingTitleEdit({
           onClick={cancel}
           className="rounded-mittel p-2 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={tCommon("cancel")}
+          title={tCommon("cancel")}
           disabled={saving}
         >
           <X size={20} />

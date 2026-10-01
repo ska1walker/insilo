@@ -60,6 +60,7 @@ export function TagPill({
           }}
           className="-mr-0.5 rounded-full p-0.5 hover:bg-flaeche-2"
           aria-label={t("removeAria", { name })}
+          title={t("removeAria", { name })}
         >
           <X size={16} />
         </button>

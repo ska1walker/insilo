@@ -1,0 +1,42 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Marke in der Kopfecke [HB-MARKE] ────────────────────────────────────────── */
+@layer components {
+  .marke {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    color: var(--am-text-primaer);
+  }
+
+  /* Die Wortmarke, nicht nachgebaut: zwei gelieferte Dateien, von denen
+     je nach Darstellung eine sichtbar ist. Beide tragen dasselbe goldene
+     Wappen — nur „mighty" wechselt die Farbe. */
+  .marke-logo { display: block; flex: none; line-height: 0; }
+
+  .marke-logo-bild {
+    display: block;
+    width: auto;
+    height: 28px;   /* 472×167 → 79 px breit, deutlich über der Mindestgröße von 45 px */
+  }
+
+  .marke-logo-bild.dunkel { display: none; }
+  .dunkel .marke-logo-bild.hell { display: none; }
+  .dunkel .marke-logo-bild.dunkel { display: block; }
+
+  /* Welche der AImighty-Anwendungen das hier ist. Gedämpft: Die Marke
+     trägt, das Produktwort ordnet nur ein. */
+  .marke-produkt {
+    white-space: nowrap;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--am-text-gedaempft);
+    padding-left: var(--am-raum-2);
+    border-left: 1px solid var(--am-trennlinie);
+  }
+}

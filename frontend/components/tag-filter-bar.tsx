@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { listTags, type TagDto } from "@/lib/api/tags";
@@ -68,7 +68,7 @@ export function TagFilterBar({
           onClick={() => onChange([])}
           className="ml-1 inline-flex items-center gap-1 text-[0.75rem] text-text-gedaempft transition hover:text-text-primaer"
         >
-          <X className="h-3 w-3" strokeWidth={2} />
+          <X size={16} />
           {t("resetAll")}
         </button>
       )}

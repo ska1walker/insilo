@@ -1,0 +1,54 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+/* ── Zahlen: tabellarisch, rechtsbündig, Geist Mono [AM-BASIS] ───────────────── */
+.am-zahl {
+  font-family: var(--am-schrift-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ── Grundstil [AM-BASIS] ─────────────────────────────────────────────────────────── */
+  /* Bewegung reduziert: Der Zustand stellt sich sofort ein, der Weg fällt
+     weg — derselbe Knopf, nur ohne Übergang (kern/bewegung.md im CI:
+     „ist fertig“, nicht „steht still“). Die beiden Schleifen (Schild,
+     Suchbalken) haben eigene Fassungen weiter unten. */
+@layer base {
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0s !important; }
+  }
+
+  html {
+    color-scheme: light;
+    background: var(--am-seite);
+  }
+
+  /* Der Dunkelmodus-Umschalter setzt die Klasse; color-scheme muss
+     mitziehen, sonst bleiben Scrollbalken und Formularelemente hell. */
+  html.dunkel {
+    color-scheme: dark;
+  }
+
+  body {
+    color: var(--am-text-primaer);
+    background: var(--am-seite);
+    font-family: var(--am-schrift-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--am-schrift-sans);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  p { text-wrap: pretty; }
+
+  code, .mono {
+    font-family: var(--am-schrift-mono);
+  }
+}

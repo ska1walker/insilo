@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Send, X } from "lucide-react";
+import { Loader2, Send, X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -97,7 +97,7 @@ export function MeetingDispatchDialog({
             className="absolute right-4 top-4 rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={tCommon("close")}
           >
-            <X className="h-4 w-4" strokeWidth={1.75} />
+            <X size={16} />
           </button>
           <h2 className="font-display text-2xl font-medium tracking-tight">
             {t("header")}
@@ -110,7 +110,7 @@ export function MeetingDispatchDialog({
         <div className="flex-1 overflow-y-auto p-6">
           {webhooks === null ? (
             <div className="flex items-center gap-3 rounded-md bg-flaeche-1 p-4 text-sm text-text-sekundaer">
-              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
+              <Loader2 size={16} className="animate-spin" />
               {t("loadingRecipients")}
             </div>
           ) : webhooks.length === 0 ? (
@@ -193,12 +193,12 @@ export function MeetingDispatchDialog({
             >
               {sending ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
+                  <Loader2 size={16} className="animate-spin" />
                   {t("sending")}
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4" strokeWidth={1.75} />
+                  <Send size={16} />
                   {t("send")}
                 </>
               )}

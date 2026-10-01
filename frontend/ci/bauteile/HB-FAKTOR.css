@@ -1,0 +1,71 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+/* ── Zweiter Faktor [HB-FAKTOR] ───────────────────────────────────────────────────── */
+/* Der zweite Faktor. Der QR-Code braucht hellen Grund und Ruhezone, auch
+   im Dunkelmodus — Kameras lesen hell auf dunkel schlecht. Deshalb die
+   feste Palettenstufe statt der wechselnden Fläche. */
+.faktor-einrichtung {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--am-raum-4);
+  align-items: flex-start;
+  margin-bottom: var(--am-raum-4);
+}
+
+.faktor-qr {
+  flex: none;
+  width: 11rem;
+  height: 11rem;
+  padding: var(--am-raum-2);
+  background: var(--am-blau-25);
+  border: 1px solid var(--am-rand);
+  border-radius: var(--am-radius-mittel);
+}
+
+.faktor-geheimnis {
+  font-family: var(--am-schrift-mono);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+/* Wiederherstellungscodes: einmal gezeigt, zum Abschreiben. Monospace,
+   damit sich 2 und Z, 5 und S unterscheiden lassen. */
+.faktor-codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: var(--am-raum-2);
+  margin: var(--am-raum-3) 0;
+  padding: var(--am-raum-3);
+  list-style: none;
+  font-family: var(--am-schrift-mono);
+  font-size: 0.875rem;
+  border: 1px solid var(--am-rand);
+  border-radius: var(--am-radius-mittel);
+  background: var(--am-flaeche-2);
+}
+
+.faktor-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--am-raum-2);
+  align-items: flex-end;
+  margin-top: var(--am-raum-3);
+}
+
+.faktor-zeile .feld { margin-bottom: 0; flex: 1 1 10rem; }
+
+.faktor-bestaetigung {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--am-raum-2);
+  margin-bottom: var(--am-raum-3);
+  font-size: 0.875rem;
+}
+
+.faktor-pflicht {
+  margin-top: var(--am-raum-4);
+  padding-top: var(--am-raum-3);
+  border-top: 1px solid var(--am-trennlinie);
+}

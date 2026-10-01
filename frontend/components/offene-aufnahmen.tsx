@@ -10,7 +10,7 @@
  * gespeichert oder ausdrücklich verworfen — und Verwerfen fragt nach.
  */
 
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/lib/symbole";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -190,7 +190,7 @@ export function OffeneAufnahme({
               disabled={sendet}
             >
               {sendet && (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                <Loader2 size={16} className="animate-spin" aria-hidden />
               )}
               {sendet
                 ? (fortschrittText(fortschritt) ?? t("sendet"))

@@ -1,0 +1,168 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Nur für Vorleser [HB-TABELLE] ─────────────────────────────────────────────── */
+@layer components {
+  .nur-vorleser {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Der Titel eines Leerzustands ist keine Überschrift: Als h4 übersprang
+     er auf den meisten Seiten zwei Ebenen. */
+  /* Das Zeichen über dem Satz: Die Grundregeln machen jedes SVG zum Block,
+     und ein Block folgt text-align nicht — bis 26.9.7 stand es links,
+     der Text mittig darunter (Kai, 1.10.2026). */
+  .leerzustand > svg { display: block; margin-inline: auto; }
+
+  .leerzustand .leerzustand-titel {
+    color: var(--am-text-primaer);
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0 auto var(--am-raum-2);
+  }
+}
+
+  /* ── Werkzeugleiste über der Liste [HB-TABELLE] ────────────────────────────────── */
+@layer components {
+  .werkzeugleiste {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    flex-wrap: wrap;
+    padding: var(--am-raum-3) var(--am-raum-8);
+    border-bottom: 1px solid var(--am-trennlinie);
+    background: var(--am-seite);
+  }
+
+  .suchfeld {
+    position: relative;
+    flex: 1 1 240px;
+    max-width: 360px;
+  }
+
+  .suchfeld svg {
+    position: absolute;
+    left: var(--am-raum-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--am-text-gedaempft);
+    pointer-events: none;
+  }
+
+  .suchfeld input {
+    width: 100%;
+    height: var(--am-ziel-zeiger);
+    padding: 0 var(--am-raum-4) 0 calc(var(--am-raum-4) + 1.25rem);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.9375rem;
+  }
+
+  .suchfeld input:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+  }
+
+  .werkzeugleiste select {
+    height: var(--am-ziel-zeiger);
+    padding: 0 var(--am-raum-4);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background-color: var(--am-seite);
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.875rem;
+  }
+}
+
+  /* ── Datentabelle [HB-TABELLE] ─────────────────────────────────────────────────
+     Dicht, ohne Zebrastreifen: Die Trennlinie reicht, und Streifen
+     kämpfen bei jeder Auswahlfarbe gegen die Auszeichnung. */
+  /* Oben dieselbe Luft wie beim Datensatz — sonst klebt die erste Karte
+     an der Trennlinie des Kopfes (Eingang, 5.9.2026). */
+@layer components {
+  .liste {
+    padding: var(--am-raum-6) var(--am-raum-8) var(--am-raum-16);
+  }
+
+  .tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .tabelle thead th {
+    position: sticky;
+    top: 0;
+    z-index: var(--am-ebene-tabellenkopf);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--am-text-gedaempft);
+    background: var(--am-seite);
+    padding: var(--am-raum-3) var(--am-raum-3);
+    border-bottom: 1px solid var(--am-rand);
+    white-space: nowrap;
+  }
+
+  .tabelle tbody tr {
+    border-bottom: 1px solid var(--am-trennlinie);
+    transition: background var(--am-dauer-schnell) var(--am-kurve);
+  }
+  /* Nur eine Zeile, die irgendwohin führt, zeigt die Hand. Mit der
+     Tastatur führt der Link in der ersten Spalte (.zeilen-ziel) dorthin —
+     vorher ließ sich keine Liste ohne Maus öffnen. */
+  .tabelle tbody tr[data-ziel] { cursor: pointer; }
+  .zeilen-ziel { color: inherit; text-decoration: none; }
+  .zeilen-ziel:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .zeilen-ziel:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+    border-radius: var(--am-radius-klein);
+  }
+  /* Die zweite, leisere Zeile in einer Zelle (Beschreibung, Betreff). */
+  .zeile-unter { font-size: 0.8125rem; color: var(--am-text-gedaempft); font-weight: 400; }
+
+  .tabelle tbody tr:hover { background: var(--am-flaeche-1); }
+
+  .tabelle td {
+    padding: var(--am-raum-3);
+    vertical-align: middle;
+    color: var(--am-text-sekundaer);
+  }
+
+  .tabelle td.haupt {
+    color: var(--am-text-primaer);
+    font-weight: 500;
+  }
+
+  .tabelle td.zahl {
+    font-family: var(--am-schrift-mono);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Auf schmalen Geräten wird die Tabelle zur Rollfläche statt die Seite
+     nach rechts zu schieben — der erste Befund jeder Prüfseite. */
+  .rollbar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Mit der Tastatur erreichbar (tabIndex), damit sich auch ohne Maus
+     seitlich rollen lässt — dann soll man sehen, wo man steht. */
+  .rollbar:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+}

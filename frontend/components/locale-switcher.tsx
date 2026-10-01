@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -146,9 +146,9 @@ function LocaleOption({
     >
       <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center">
         {loading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-text-gedaempft" strokeWidth={1.75} />
+          <Loader2 size={16} className="animate-spin text-text-gedaempft" />
         ) : selected ? (
-          <Check className="h-3.5 w-3.5" strokeWidth={2} style={{ color: "var(--am-gold-beschriftung)" }} />
+          <Check size={16} style={{ color: "var(--am-gold-beschriftung)" }} />
         ) : (
           <span className="h-3 w-3 rounded-full border border-rand-betont" />
         )}

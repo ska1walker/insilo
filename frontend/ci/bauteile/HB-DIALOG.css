@@ -1,0 +1,247 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Dialogschicht [HB-DIALOG] ────────────────────────────────────────────────
+     Das Paket liefert mit .deckschicht nur die Farbe. Die Lage ist
+     Sache der Anwendung, deshalb steht sie hier und nicht dort. */
+@layer components {
+  .dialog-schicht {
+    position: fixed;
+    inset: 0;
+    z-index: var(--am-ebene-dialog);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--am-raum-4);
+    background: var(--am-deckschicht);
+    overflow-y: auto;
+  }
+}
+
+  /* ── Dialoge [HB-DIALOG] ──────────────────────────────────────────────────────
+     Ein Dialog ist ein Rahmen mit drei Teilen, nicht eine lange Rolle:
+     Kopf und Fuß stehen fest, nur die Mitte rollt. Vorher wanderte
+     „Anlegen“ mit dem Inhalt nach unten aus dem Bild — bei der Firma mit
+     Beschreiben-Feld, Fundbericht und sechs Feldern reichte ein Fenster
+     von 800 px nicht mehr, und man musste erst suchen, wo der Knopf
+     geblieben ist. */
+@layer components {
+  .dialog-karte {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* 46rem gedeckelt: Ein Dialog, der die ganze Bildschirmhöhe nimmt,
+       liest sich wie eine Seite und nicht mehr wie eine Frage. */
+    max-height: min(calc(100dvh - var(--am-raum-8)), 46rem);
+    padding: 0;
+    overflow: hidden;
+    /* Schwebt über der Deckschicht: betonter Rand, der eine Schatten (R6). */
+    border-color: var(--am-rand-betont-farbe);
+    box-shadow: var(--am-schatten-1);
+  }
+  /* Breiten als Varianten statt inline am Bauteil (HB-DIALOG). */
+  .dialog-karte[data-breite="normal"] { width: 100%; max-width: 35rem; }
+  .dialog-karte[data-breite="schmal"] { width: 100%; max-width: 27.5rem; } /* 440 px */
+  .dialog-karte[data-breite="breit"] { width: 100%; max-width: 45rem; } /* 720 px */
+  /* Mitgebrachter Text zum Lesen (Eingang): Umbrüche bleiben, Schrift wie sonst. */
+  .lesetext { margin: 0; white-space: pre-wrap; font-family: var(--am-schrift-sans); font-size: 0.875rem; line-height: 1.6; }
+
+  .dialog-kopf {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    padding: var(--am-raum-4) var(--am-raum-6);
+    border-bottom: 1px solid var(--am-trennlinie);
+  }
+
+  .dialog-kopf h2 {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 1.0625rem;
+  }
+
+  .dialog-zu {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--am-ziel-zeiger);
+    height: var(--am-ziel-zeiger);
+    border: 0;
+    border-radius: var(--am-radius-klein);
+    background: transparent;
+    color: var(--am-text-gedaempft);
+    cursor: pointer;
+  }
+  .dialog-zu:hover { background: var(--am-flaeche-2); color: var(--am-text-primaer); }
+  .dialog-zu:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+
+  /* Das Formular muss Mitte und Fuß umschließen, sonst löst der Knopf im
+     Fuß kein submit aus. Es ist selbst der Flex-Behälter. */
+  .dialog-form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .dialog-koerper {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--am-raum-6);
+  }
+
+  /* Im Dialog stehen die Felder enger als auf einer Seite: raum-6 ergab
+     bei sechs Feldern eine halbe Bildschirmhöhe Luft. */
+  .dialog-koerper .feld { margin-bottom: var(--am-raum-4); }
+  .dialog-koerper .feld:last-child { margin-bottom: 0; }
+
+  .dialog-fuss {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    padding: var(--am-raum-4) var(--am-raum-6);
+    border-top: 1px solid var(--am-trennlinie);
+    background: var(--am-flaeche-1);
+  }
+
+  /* Zwei kurze Felder nebeneinander. Unter 30rem Fensterbreite gibt es
+     dafür keinen Platz — dann untereinander. */
+  .feld-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--am-raum-4); }
+  @media (max-width: 30rem) {
+    .feld-paar { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .erfassung {
+    border: var(--am-rand-ruhend) solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-flaeche-1);
+    padding: var(--am-raum-3);
+    margin-bottom: var(--am-raum-4);
+  }
+
+  .erfassung-kopf {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    margin-bottom: var(--am-raum-2);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--am-text-sekundaer);
+  }
+
+  .erfassung-kopf svg { color: var(--am-gold-beschriftung); flex: none; }
+
+  .erfassung-wurf {
+    position: relative;
+    border-radius: var(--am-radius-klein);
+  }
+
+  .erfassung-wurf[data-ueber="true"]::after {
+    content: "Loslassen";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: var(--am-rand-betont) dashed var(--am-handlung-ruhend);
+    border-radius: var(--am-radius-klein);
+    background: var(--am-seite);
+    color: var(--am-handlung-ruhend);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .erfassung-wurf textarea {
+    width: 100%;
+    padding: var(--am-raum-2) var(--am-raum-3);
+    border: var(--am-rand-ruhend) solid var(--am-rand);
+    border-radius: var(--am-radius-klein);
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .erfassung-wurf textarea:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+  .erfassung-wurf textarea::placeholder { color: var(--am-text-deaktiviert); }
+
+  .erfassung-bild {
+    position: relative;
+    display: inline-block;
+    margin-top: var(--am-raum-2);
+  }
+
+  .erfassung-bild img {
+    max-height: 7rem;
+    border: var(--am-rand-ruhend) solid var(--am-rand);
+    border-radius: var(--am-radius-klein);
+    display: block;
+  }
+
+  .erfassung-bild button {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 1.125rem;
+    height: 1.125rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: var(--am-rand-ruhend) solid var(--am-rand);
+    border-radius: var(--am-radius-voll);
+    background: var(--am-seite);
+    color: var(--am-text-sekundaer);
+    cursor: pointer;
+  }
+
+  .erfassung-leiste {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    flex-wrap: wrap;
+    margin-top: var(--am-raum-2);
+  }
+
+  .erfassung-tipp {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--am-raum-1);
+    font-size: 0.75rem;
+    color: var(--am-text-gedaempft);
+  }
+
+  .erfassung-hinweis {
+    margin: var(--am-raum-2) 0 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--am-text-sekundaer);
+  }
+
+  .erfassung-hinweis.warnung { color: var(--am-achtung); }
+  .erfassung-hinweis a { color: inherit; font-weight: 500; }
+}
+
+/* ── Rückfrage [HB-DIALOG] ────────────────────────────────────────────────────────── */
+/* Rückfrage vor einem Schritt mit Folgen [HB-DIALOG] — vorher viermal
+   mit eigenen Inline-Maßen gebaut. */
+.rueckfrage { width: 100%; max-width: 27.5rem; border-color: var(--am-rand-betont-farbe); box-shadow: var(--am-schatten-1); }
+.rueckfrage h2 { font-size: 1.125rem; margin-bottom: var(--am-raum-3); }
+.rueckfrage-text { font-size: 0.875rem; color: var(--am-text-sekundaer); margin-bottom: var(--am-raum-4); }
+
+.eig-archiv { margin-top: var(--am-raum-4); }
+.eig-archiv summary { cursor: pointer; font-size: 0.875rem; font-weight: 500; margin-bottom: var(--am-raum-2); }
+
+@media (max-width: 40rem) {
+  .eig-zeile { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .eig-art, .eig-zahl { display: none; }
+  .eig-archiv .eig-feld { grid-template-columns: minmax(0, 1fr) auto; }
+  .eig-neue-eigenschaft { grid-template-columns: 1fr; }
+  .eig-pflege { padding-left: var(--am-raum-3); }
+}

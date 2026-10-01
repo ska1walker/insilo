@@ -1,0 +1,24 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Leerzustand [AM-LEER] ──────────────────────────────────────────────────── */
+@layer components {
+  .leerzustand {
+    text-align: center;
+    padding: var(--am-raum-16) var(--am-raum-8);
+    color: var(--am-text-sekundaer);
+  }
+  .leerzustand svg {
+    color: var(--am-blau-300);
+    margin-bottom: var(--am-raum-4);
+  }
+  .leerzustand h4 {
+    color: var(--am-text-primaer);
+    font-size: 1rem;
+    margin-bottom: var(--am-raum-2);
+  }
+  .leerzustand p {
+    max-width: 320px;
+    margin: 0 auto var(--am-raum-6);
+  }
+}

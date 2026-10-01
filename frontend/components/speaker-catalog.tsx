@@ -1,6 +1,6 @@
 "use client";
 
-import { Mic, Pencil, Plus, Star, Trash2, UserRound, X } from "lucide-react";
+import { Mic, Pencil, Plus, Star, Trash2, User, X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { Rueckfrage } from "@/components/dialog";
 import { useEffect, useState } from "react";
@@ -59,7 +59,7 @@ export function SpeakerCatalog() {
             onClick={() => setAdding(true)}
             className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            <Plus size={16} />
             {t("addBtn")}
           </button>
         )}
@@ -170,17 +170,9 @@ function SpeakerRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           {speaker.is_self ? (
-            <Star
-              className="h-3.5 w-3.5"
-              strokeWidth={2}
-              style={{ color: "var(--am-gold-500)" }}
-              aria-label={t("isSelfAria")}
-            />
+            <Star size={16} style={{ color: "var(--am-gold-beschriftung)" }} aria-label={t("isSelfAria")} />
           ) : (
-            <UserRound
-              className="h-3.5 w-3.5 text-text-gedaempft"
-              strokeWidth={1.75}
-            />
+            <User size={16} className="text-text-gedaempft" />
           )}
           <span className="font-medium text-text-primaer">
             {speaker.display_name}
@@ -219,7 +211,7 @@ function SpeakerRow({
               : t("addSampleTitleNew")
           }
         >
-          <Mic className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <Mic size={16} />
           {speaker.has_voiceprint ? t("addSampleBtnAddon") : t("addSampleBtnNew")}
         </button>
         <button
@@ -228,14 +220,14 @@ function SpeakerRow({
           className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={t("editAria")}
         >
-          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <Pencil size={16} />
         </button>
         <button
           type="button"
           onClick={() => setFragt(true)}
           className="btn btn-still btn-klein inline-flex items-center gap-1"
         >
-          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+          <Trash2 size={16} aria-hidden />
           {t("deleteAria")}
         </button>
       </div>
@@ -401,7 +393,7 @@ function SpeakerForm({
           className="btn btn-still inline-flex items-center gap-1"
           disabled={saving}
         >
-          <X className="h-3.5 w-3.5" strokeWidth={2} />
+          <X size={16} />
           {t("cancel")}
         </button>
         <button type="submit" className="btn btn-primaer" disabled={saving}>

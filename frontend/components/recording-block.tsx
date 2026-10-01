@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Mic, ShieldAlert, ShieldCheck, Square, Upload } from "lucide-react";
+import { AlertTriangle, Loader2, Lokal, Mic, Square, Upload } from "@/lib/symbole";
+import { Aufnahmezeichen } from "@/components/symbol";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -344,7 +345,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
   const dateiKnopf = (
     <button type="button" className="btn btn-still" onClick={dateiWaehlen}>
-      <Upload className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+      <Upload size={16} aria-hidden />
       {t("dateiHochladen")}
     </button>
   );
@@ -448,7 +449,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             onClick={startRecording}
             aria-label={t("start")}
           >
-            <Mic className="btn-record-icon" strokeWidth={1.5} />
+            <Aufnahmezeichen zeichen={Mic} size={36} />
           </button>
         )}
 
@@ -459,10 +460,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             disabled
             aria-label={t("requestingMic")}
           >
-            <Loader2
-              className="btn-record-icon animate-spin"
-              strokeWidth={1.5}
-            />
+            <Aufnahmezeichen zeichen={Loader2} size={36} className="animate-spin" />
           </button>
         )}
 
@@ -474,11 +472,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             aria-pressed
             aria-label={t("stop")}
           >
-            <Square
-              className="btn-record-icon"
-              strokeWidth={0}
-              fill="currentColor"
-            />
+            <Aufnahmezeichen zeichen={Square} size={36} fill="currentColor" />
           </button>
         )}
 
@@ -490,10 +484,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
               disabled
               aria-label={t("saving")}
             >
-              <Loader2
-                className="btn-record-icon animate-spin"
-                strokeWidth={1.5}
-              />
+              <Aufnahmezeichen zeichen={Loader2} size={36} className="animate-spin" />
             </button>
             <p
               className="mono mt-5 text-sm tabular-nums text-text-sekundaer"
@@ -797,19 +788,9 @@ function Datensouveraenitaet() {
         }
       >
         {llm_extern ? (
-          <ShieldAlert
-            className="h-5 w-5"
-            style={{ color: "var(--am-achtung)" }}
-            strokeWidth={1.75}
-            aria-hidden
-          />
+          <AlertTriangle size={20} style={{ color: "var(--am-achtung)" }} aria-hidden />
         ) : (
-          <ShieldCheck
-            className="h-5 w-5"
-            style={{ color: "var(--am-gold-beschriftung)" }}
-            strokeWidth={1.75}
-            aria-hidden
-          />
+          <Lokal size={20} style={{ color: "var(--am-gold-beschriftung)" }} aria-hidden />
         )}
       </div>
       <div className="max-w-[360px] text-center">

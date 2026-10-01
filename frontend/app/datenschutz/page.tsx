@@ -10,7 +10,7 @@
  * steht, was tatsächlich hinausging".
  */
 
-import { FolderOpen, ScrollText, ShieldAlert, ShieldCheck, Share2 } from "lucide-react";
+import { AlertTriangle, Folder, ScrollText, Share2, ShieldCheck } from "@/lib/symbole";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -130,23 +130,11 @@ export default function DatenschutzSeite() {
                     <tr key={`${z.art}-${z.host}-${i}`}>
                       <td className="w-10">
                         {z.art === "llm" || z.art === "stt" ? (
-                          <ShieldAlert
-                            className="h-4 w-4 text-achtung"
-                            strokeWidth={1.75}
-                            aria-hidden
-                          />
+                          <AlertTriangle size={16} className="text-achtung" aria-hidden />
                         ) : z.art === "freigabe" ? (
-                          <FolderOpen
-                            className="h-4 w-4 text-text-gedaempft"
-                            strokeWidth={1.75}
-                            aria-hidden
-                          />
+                          <Folder size={16} className="text-text-gedaempft" aria-hidden />
                         ) : (
-                          <Share2
-                            className="h-4 w-4 text-text-gedaempft"
-                            strokeWidth={1.75}
-                            aria-hidden
-                          />
+                          <Share2 size={16} className="text-text-gedaempft" aria-hidden />
                         )}
                       </td>
                       <td>
@@ -175,7 +163,7 @@ export default function DatenschutzSeite() {
             // Tabelle zeigen *würde* — sonst liest sich die Seite, als
             // hätte jemand denselben Satz zweimal gesetzt.
             <div className="leerzustand mt-8">
-              <ShieldCheck className="mx-auto h-8 w-8" strokeWidth={1.5} aria-hidden />
+              <ShieldCheck size={24} className="mx-auto" aria-hidden />
               <h4>{t("keineZiele")}</h4>
               <p>{t("keineZieleLang")}</p>
             </div>
@@ -190,7 +178,7 @@ export default function DatenschutzSeite() {
         href="/protokoll"
         className="mono mt-10 inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer"
       >
-        <ScrollText size={14} aria-hidden />
+        <ScrollText size={16} aria-hidden />
         {tProtokoll("titel")}
       </Link>
     </main>

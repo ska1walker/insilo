@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Trash2, X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { ClusterAssignmentPanel } from "@/components/cluster-assignment-panel";
@@ -180,11 +180,7 @@ export function TranscriptView({
         onToggle={(e) => setOffen(e.currentTarget.open)}
       >
         <summary className="mono group flex cursor-pointer select-none items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer">
-          <ChevronRight
-            size={14}
-            aria-hidden
-            className="transition-transform group-open:rotate-90"
-          />
+          <ChevronRight size={16} aria-hidden className="transition-transform group-open:rotate-90" />
           {t("transkriptZeigen")}
           {segments.length > 0 && (
             <span className="normal-case tracking-normal">
@@ -332,7 +328,7 @@ function SpeakerRoster({
             onClick={() => setAdding(true)}
             className="btn btn-still inline-flex items-center gap-1.5"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            <Plus size={16} />
             {t("addSpeaker")}
           </button>
         )}
@@ -365,7 +361,7 @@ function SpeakerRoster({
                 className="rounded-full p-1 text-text-gedaempft hover:bg-flaeche-1 hover:text-text-primaer"
                 aria-label={t("renameAria", { name: s.name })}
               >
-                <Pencil className="h-3 w-3" strokeWidth={2} />
+                <Pencil size={16} />
               </button>
               <button
                 type="button"
@@ -373,7 +369,7 @@ function SpeakerRoster({
                 className="btn btn-still btn-klein inline-flex items-center gap-1"
                 aria-label={t("removeAria", { name: s.name })}
               >
-                <Trash2 className="h-3 w-3" strokeWidth={2} aria-hidden />
+                <Trash2 size={16} aria-hidden />
                 {tCommon("remove")}
               </button>
             </div>
@@ -412,7 +408,7 @@ function SpeakerRoster({
               className="rounded-full p-1 text-text-gedaempft hover:bg-flaeche-1"
               aria-label={tCommon("cancel")}
             >
-              <X className="h-3 w-3" strokeWidth={2} />
+              <X size={16} />
             </button>
           </div>
         )}
@@ -493,7 +489,7 @@ function SegmentPicker({
           className="text-text-gedaempft hover:text-text-primaer"
           aria-label={tCommon("close")}
         >
-          <X className="h-3.5 w-3.5" strokeWidth={2} />
+          <X size={16} />
         </button>
       </div>
 
@@ -534,7 +530,7 @@ function SegmentPicker({
             onClick={() => setCreating(true)}
             className="inline-flex items-center gap-1 rounded-full border border-dashed border-rand-betont bg-seite px-3 py-1 text-[0.8125rem] text-text-gedaempft transition hover:bg-flaeche-1"
           >
-            <Plus className="h-3 w-3" strokeWidth={2} /> {t("createNew")}
+            <Plus size={16} /> {t("createNew")}
           </button>
         ) : (
           <div className="inline-flex items-center gap-1 rounded-full border border-rand-betont bg-seite py-1 pl-3 pr-1">

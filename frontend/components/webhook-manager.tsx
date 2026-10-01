@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Copy, Pencil, Plus, RefreshCw, Trash2 } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -79,7 +69,7 @@ export function WebhookManager() {
             onClick={() => setAdding(true)}
             className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            <Plus size={16} />
             {t("addNew")}
           </button>
         )}
@@ -269,10 +259,7 @@ function WebhookRow({
             disabled={testing}
             aria-label={t("testAria")}
           >
-            <RefreshCw
-              className={"h-3.5 w-3.5" + (testing ? " animate-spin" : "")}
-              strokeWidth={1.75}
-            />
+            <RefreshCw size={16} className={"h-3.5 w-3.5" + (testing ? " animate-spin" : "")} />
             {testing ? t("testing") : t("test")}
           </button>
           <button
@@ -283,9 +270,9 @@ function WebhookRow({
             title={webhook.is_active ? t("deactivate") : t("activate")}
           >
             {webhook.is_active ? (
-              <XCircle className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <AlertCircle size={16} />
             ) : (
-              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <CheckCircle2 size={16} />
             )}
           </button>
           <button
@@ -294,14 +281,14 @@ function WebhookRow({
             className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={t("editAria")}
           >
-            <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+            <Pencil size={16} />
           </button>
           <button
             type="button"
             onClick={handleDelete}
             className="btn btn-still btn-klein inline-flex items-center gap-1"
           >
-            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            <Trash2 size={16} aria-hidden />
             {t("deleteAria")}
           </button>
         </div>
@@ -346,9 +333,9 @@ function WebhookRow({
         className="mt-3 inline-flex items-center gap-1 text-xs text-text-sekundaer hover:text-text-primaer"
       >
         {showDeliveries ? (
-          <ChevronUp className="h-3 w-3" strokeWidth={2} />
+          <ChevronUp size={16} />
         ) : (
-          <ChevronDown className="h-3 w-3" strokeWidth={2} />
+          <ChevronDown size={16} />
         )}
         {t("lastDeliveries")}
       </button>
@@ -703,7 +690,7 @@ function SecretReveal({
           onClick={copy}
           className="btn btn-sekundaer inline-flex items-center gap-1"
         >
-          <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <Copy size={16} />
           {copied ? t("copied") : t("copy")}
         </button>
       </div>

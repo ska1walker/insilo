@@ -1,0 +1,74 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+/* ── Zweite Navigationsebene [HB-UNTERNAV] ──────────────────────────────────────────────
+   Ersetzt seit 26.10.4 die Pillenreihe der Einstellungen. Am Desktop eine
+   senkrechte, mitlaufende Liste in Gruppen links neben dem Inhalt; auf dem
+   Handy die Übersicht, aus der man in einen Bereich wechselt. Welche
+   Ansicht gilt, steht an `.unternav-seite[data-auswahl]` — CSS, kein JS. */
+.unternav-seite { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.unternav ul { list-style: none; margin: 0; padding: 0; }
+.unternav { padding: var(--am-raum-6) var(--am-raum-8) var(--am-raum-16); }
+.unternav-gruppe + .unternav-gruppe { margin-top: var(--am-raum-6); }
+.unternav-titel {
+  margin: 0 0 var(--am-raum-2);
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--am-text-gedaempft);
+}
+.unternav-eintrag {
+  display: flex; align-items: center; gap: var(--am-raum-3);
+  min-height: var(--am-ziel-zeiger); padding: var(--am-raum-2) var(--am-raum-3);
+  border-radius: var(--am-radius-mittel);
+  color: var(--am-text-sekundaer); text-decoration: none; font-size: 0.875rem;
+}
+.unternav-eintrag:hover { background: var(--am-flaeche-2); color: var(--am-text-primaer); }
+.unternav-eintrag:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+.unternav-symbol { flex: none; }
+.unternav-text { display: grid; min-width: 0; flex: 1; }
+.unternav-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.unternav-beschreibung { font-size: 0.8125rem; color: var(--am-text-gedaempft); }
+.unternav-pfeil { flex: none; color: var(--am-text-gedaempft); }
+
+/* Handy: Übersicht als Liste mit Trennlinien, oder der gewählte Bereich. */
+.unternav-gruppe ul {
+  border: 1px solid var(--am-rand); border-radius: var(--am-radius-gross); background: var(--am-flaeche-1);
+}
+.unternav-gruppe li + li { border-top: 1px solid var(--am-trennlinie); }
+.unternav-gruppe .unternav-eintrag { border-radius: 0; padding: var(--am-raum-3) var(--am-raum-4); min-height: var(--am-ziel-beruehrung); }
+.unternav-seite[data-auswahl="ja"] .unternav { display: none; }
+.unternav-seite[data-auswahl="nein"] .unternav-inhalt { display: none; }
+.unternav-zurueck {
+  display: flex; align-items: center; gap: var(--am-raum-2);
+  padding: var(--am-raum-6) var(--am-raum-8) 0; font-size: 0.875rem; color: var(--am-text-sekundaer);
+}
+.unternav-zurueck a { display: inline-flex; align-items: center; gap: var(--am-raum-1); color: var(--am-handlung-ruhend); text-decoration: none; min-height: var(--am-ziel-zeiger); }
+.unternav-zurueck a:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+
+/* Desktop: Spalte links, mitlaufend; beide Teile immer sichtbar. */
+@media (min-width: 1024px) {
+  .unternav-seite { grid-template-columns: 15rem minmax(0, 1fr); }
+  .unternav-seite[data-auswahl] .unternav { display: block; }
+  .unternav-seite[data-auswahl] .unternav-inhalt { display: block; }
+  .unternav {
+    position: sticky; top: var(--am-leistenhoehe);
+    padding: var(--am-raum-6) 0 var(--am-raum-6) var(--am-raum-8);
+  }
+  .unternav-gruppe ul { border: 0; background: transparent; }
+  .unternav-gruppe li + li { border-top: 0; }
+  .unternav-gruppe .unternav-eintrag { border-radius: var(--am-radius-mittel); padding: var(--am-raum-2) var(--am-raum-3); min-height: var(--am-ziel-zeiger); }
+  .unternav-beschreibung, .unternav-pfeil, .unternav-zurueck { display: none; }
+  /* Gewählt wie in der Seitenleiste: Goldkante, fette dunkle Schrift, keine
+     Fläche (Kai, 1.10.2026, CI G1). */
+  .unternav-eintrag.aktiv {
+    background: transparent; color: var(--am-text-primaer); font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--am-gold-auszeichnung);
+    border-radius: 0 var(--am-radius-mittel) var(--am-radius-mittel) 0;
+  }
+  .unternav-eintrag.aktiv:hover { background: var(--am-flaeche-2); }
+  .unternav-eintrag.aktiv svg { color: var(--am-gold-beschriftung); }
+}
+
+.kopfsuche kbd, .kopfsuche-feld-auf kbd {
+  font: inherit; font-size: 0.6875rem; color: var(--am-text-gedaempft);
+  border: var(--am-rand-ruhend) solid var(--am-rand); border-radius: var(--am-radius-klein); padding: 0 6px; line-height: 1.6;
+}

@@ -1,0 +1,10 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Zeichen [HB-SYMBOL] ─────────────────────────────────────────────
+     Die Größe steht am Zeichen (16/20/24/40, components/symbol.tsx). Neben
+     langem Text in einer Flex-Zeile würde es sonst gestaucht — und mit ihm
+     der Strich, der überall 1,5 px sein soll (CI kern/icons.md). */
+@layer components {
+  svg[data-symbol] { flex-shrink: 0; }
+}

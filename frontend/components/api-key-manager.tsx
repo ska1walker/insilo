@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Copy, KeyRound, Plus, Trash2 } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { Rueckfrage } from "@/components/dialog";
 import { useEffect, useState } from "react";
@@ -55,7 +55,7 @@ export function ApiKeyManager() {
             onClick={() => setAdding(true)}
             className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            <Plus size={16} />
             {t("addBtn")}
           </button>
         )}
@@ -127,7 +127,7 @@ function ApiKeyRow({
     <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <KeyRound className="h-3.5 w-3.5 text-text-gedaempft" strokeWidth={1.75} />
+          <KeyRound size={16} className="text-text-gedaempft" />
           <span className="font-medium text-text-primaer">{apiKey.name}</span>
           {revoked && (
             <span className="rounded-full bg-flaeche-1 px-2 py-0.5 text-xs text-text-gedaempft">
@@ -165,7 +165,7 @@ function ApiKeyRow({
           onClick={() => setFragt(true)}
           className="btn btn-still inline-flex items-center gap-1"
         >
-          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+          <Trash2 size={16} aria-hidden />
           {t("revoke")}
         </button>
       )}
@@ -313,7 +313,7 @@ function TokenReveal({
           onClick={copy}
           className="btn btn-sekundaer inline-flex items-center gap-1"
         >
-          <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <Copy size={16} />
           {copied ? t("copied") : t("copy")}
         </button>
       </div>

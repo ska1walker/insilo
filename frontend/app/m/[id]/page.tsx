@@ -10,7 +10,7 @@ import { SummaryView } from "@/components/summary-view";
 import { TagPicker } from "@/components/tag-picker";
 import { useToast } from "@/components/toast";
 import { TranscriptView } from "@/components/transcript-view";
-import { Send } from "lucide-react";
+import { Send } from "@/lib/symbole";
 import { ApiError } from "@/lib/api/client";
 import { useTranslations } from "next-intl";
 import {
@@ -406,7 +406,7 @@ export default function MeetingDetail() {
             className="btn btn-sekundaer inline-flex items-center gap-2"
             title={t("dispatchTitle")}
           >
-            <Send className="h-3.5 w-3.5" strokeWidth={1.75} />
+            <Send size={16} />
             {t("dispatchButton")}
           </button>
         ) : (

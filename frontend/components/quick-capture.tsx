@@ -1,13 +1,8 @@
 "use client";
 
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Loader2,
-  Mic,
-  ShieldCheck,
-  Square,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Lokal, Mic, Square } from "@/lib/symbole";
+import { useEgress } from "@/lib/api/egress";
+import { Aufnahmezeichen } from "@/components/symbol";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
@@ -89,6 +84,7 @@ const COLORS = {
  */
 export function QuickCapture() {
   const t = useTranslations("quickCapture");
+  const egress = useEgress();
   const tCommon = useTranslations("common");
   const locale = useLocale();
   const [phase, setPhase] = useState<Phase>("idle");
@@ -334,7 +330,7 @@ export function QuickCapture() {
             border: "1px solid color-mix(in srgb, var(--am-gold-500) 35%, transparent)",
           }}
         >
-          <ArrowLeft className="h-6 w-6" strokeWidth={1.5} />
+          <ArrowLeft size={24} />
         </Link>
         <p
           className="mono text-[0.6875rem] uppercase tracking-[0.18em]"
@@ -435,7 +431,7 @@ export function QuickCapture() {
                 style={{ background: COLORS.gold, color: COLORS.black }}
               >
                 {sendetErneut && (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  <Loader2 size={16} className="animate-spin" aria-hidden />
                 )}
                 {sendetErneut
                   ? (fortschrittText(fortschritt) ?? tAufnahme("sendet"))
@@ -463,21 +459,19 @@ export function QuickCapture() {
         )}
       </main>
 
-      {/* Bottom — trust hint with ShieldCheck */}
-      <footer className="flex items-center justify-center gap-2 px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-2 sm:px-12">
-        <ShieldCheck
-          className="h-3.5 w-3.5 shrink-0"
-          strokeWidth={1.75}
-          style={{ color: COLORS.goldDeep, opacity: 0.8 }}
-          aria-hidden
-        />
-        <p
-          className="text-center text-xs"
-          style={{ color: COLORS.goldLight, opacity: 0.6 }}
-        >
-          {t("footerHint")}
-        </p>
-      </footer>
+      {/* Fußzeile: „alles bleibt auf der Box“ nur, wenn die Messung es sagt
+          (docs/DESIGN.md §5) — mit einem externen Ziel wäre der Satz falsch. */}
+      {egress?.alles_bleibt && (
+        <footer className="flex items-center justify-center gap-2 px-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] pt-2 sm:px-12">
+          <Lokal size={16} style={{ color: COLORS.goldLight, opacity: 0.8 }} aria-hidden />
+          <p
+            className="text-center text-xs"
+            style={{ color: COLORS.goldLight, opacity: 0.6 }}
+          >
+            {t("footerHint")}
+          </p>
+        </footer>
+      )}
     </div>
   );
 }
@@ -509,7 +503,7 @@ function MicButton({
           color: COLORS.black,
         }}
       >
-        <Mic className="h-24 w-24 sm:h-28 sm:w-28" strokeWidth={1.5} />
+        <Aufnahmezeichen zeichen={Mic} size={96} />
       </button>
     );
   }
@@ -528,11 +522,7 @@ function MicButton({
           animation: "pulse-gold-strong 1.8s ease-in-out infinite",
         }}
       >
-        <Square
-          className="h-20 w-20 sm:h-24 sm:w-24"
-          strokeWidth={0}
-          fill="currentColor"
-        />
+        <Aufnahmezeichen zeichen={Square} size={80} fill="currentColor" />
       </button>
     );
   }
@@ -549,10 +539,7 @@ function MicButton({
         color: COLORS.goldLight,
       }}
     >
-      <Loader2
-        className="h-24 w-24 animate-spin sm:h-28 sm:w-28"
-        strokeWidth={1.5}
-      />
+      <Aufnahmezeichen zeichen={Loader2} size={96} className="animate-spin" />
     </button>
   );
 }
@@ -608,11 +595,7 @@ function StatusLine({
   if (phase === "saved") {
     return (
       <div className="flex flex-col items-center text-center">
-        <CheckCircle2
-          className="h-12 w-12"
-          strokeWidth={1.5}
-          style={{ color: COLORS.goldLight }}
-        />
+        <CheckCircle2 size={40} style={{ color: COLORS.goldLight }} />
         <p className="mt-4 text-2xl" style={{ color: COLORS.white }}>
           {t("statusSaved")}
         </p>

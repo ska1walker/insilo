@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -52,7 +52,7 @@ export function TagManager() {
             onClick={() => setAdding(true)}
             className="btn btn-sekundaer inline-flex items-center gap-1.5"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            <Plus size={16} />
             {t("addNew")}
           </button>
         )}
@@ -107,7 +107,7 @@ export function TagManager() {
                     className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
                     aria-label={t("renameAria", { name: tag.name })}
                   >
-                    <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    <Pencil size={16} />
                   </button>
                   <button
                     type="button"
@@ -141,7 +141,7 @@ export function TagManager() {
                     className="btn btn-still btn-klein inline-flex items-center gap-1"
                     aria-label={t("deleteAria", { name: tag.name })}
                   >
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+                    <Trash2 size={16} aria-hidden />
                     {tCommon("delete")}
                   </button>
                 </div>
@@ -241,7 +241,7 @@ function TagForm({
           className="btn btn-still inline-flex items-center gap-1"
           disabled={saving}
         >
-          <X className="h-3.5 w-3.5" strokeWidth={2} />
+          <X size={16} />
           {tCommon("cancel")}
         </button>
         <button type="submit" className="btn btn-primaer" disabled={saving}>

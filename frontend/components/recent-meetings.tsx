@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -74,7 +74,7 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
             className="mono inline-flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft transition hover:text-text-primaer"
           >
             {t("viewAll")}
-            <ArrowRight className="h-3 w-3" strokeWidth={2} />
+            <ArrowRight size={16} />
           </Link>
         )}
       </div>

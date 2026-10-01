@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 
 /**
@@ -57,7 +57,7 @@ export function TagPill({
           className="-mr-0.5 rounded-full p-0.5 hover:bg-flaeche-2"
           aria-label={t("removeAria", { name })}
         >
-          <X className="h-2.5 w-2.5" strokeWidth={2.5} />
+          <X size={16} />
         </button>
       )}
     </Component>

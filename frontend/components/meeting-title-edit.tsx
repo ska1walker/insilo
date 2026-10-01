@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Pencil, X } from "lucide-react";
+import { Check, Pencil, X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -93,7 +93,7 @@ export function MeetingTitleEdit({
           aria-label={tCommon("save")}
           disabled={saving}
         >
-          <Check className="h-5 w-5" strokeWidth={1.75} />
+          <Check size={20} />
         </button>
         <button
           type="button"
@@ -102,7 +102,7 @@ export function MeetingTitleEdit({
           aria-label={tCommon("cancel")}
           disabled={saving}
         >
-          <X className="h-5 w-5" strokeWidth={1.75} />
+          <X size={20} />
         </button>
       </div>
     );
@@ -118,7 +118,7 @@ export function MeetingTitleEdit({
         aria-label={tMeeting("renameAria")}
         title={tMeeting("renameAria")}
       >
-        <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+        <Pencil size={16} />
       </button>
     </div>
   );

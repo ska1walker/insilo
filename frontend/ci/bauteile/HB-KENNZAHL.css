@@ -1,0 +1,70 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Kennzahlen auf der Startseite [HB-KENNZAHL] ────────────────────────────────── */
+@layer components {
+  .kennzahlen {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--am-raum-4);
+    padding: var(--am-raum-6) var(--am-raum-8) 0;
+  }
+
+  .kennzahl {
+    padding: var(--am-raum-4);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-gross);
+    background: var(--am-flaeche-1);
+  }
+
+  .kennzahl dt {
+    font-size: 0.75rem;
+    color: var(--am-text-gedaempft);
+    margin-bottom: var(--am-raum-2);
+  }
+
+  .kennzahl dd {
+    margin: 0;
+    font-family: var(--am-schrift-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--am-text-primaer);
+    line-height: 1.1;
+  }
+
+  /* Als dd, damit die Liste gültig bleibt — deshalb hebt sie die
+     Zahlengestalt von `.kennzahl dd` wieder auf. */
+  .kennzahl .kennzahl-fuss {
+    font-family: inherit;
+    font-weight: 400;
+    line-height: inherit;
+    font-size: 0.75rem;
+    color: var(--am-text-gedaempft);
+    margin-top: var(--am-raum-1);
+  }
+}
+
+  /* ── Balken [HB-KENNZAHL] ───────────────────────────────────────────────────────
+     Sechs Balken rechtfertigen keine Diagrammbibliothek. Eine Breite in
+     Prozent sagt dasselbe und kostet nichts. */
+@layer components {
+  .balken {
+    height: 8px;
+    border-radius: var(--am-radius-voll);
+    background: var(--am-flaeche-2);
+    overflow: hidden;
+  }
+
+  .balken-fuell {
+    height: 100%;
+    border-radius: var(--am-radius-voll);
+    background: var(--am-blau-500);
+  }
+
+  /* Verlustgründe tragen die Auszeichnungsfarbe, nicht Rot: Sie sind kein
+     Fehler, sondern das Wichtigste auf der Seite. */
+  .balken-fuell[data-betont="true"] {
+    background: var(--am-gold-500);
+  }
+}

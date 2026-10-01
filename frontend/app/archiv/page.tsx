@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, MessageSquareQuote, Sparkles } from "lucide-react";
+import { ArrowRight, Quote, Sparkles } from "@/lib/symbole";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -95,13 +95,13 @@ export default function AskPage() {
             >
               {phase === "asking" ? (
                 <>
-                  <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  <Sparkles size={16} />
                   {t("asking")}
                 </>
               ) : (
                 <>
                   {t("submit")}
-                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+                  <ArrowRight size={16} />
                 </>
               )}
             </button>
@@ -113,10 +113,7 @@ export default function AskPage() {
       {phase === "idle" && !result && (
         <section className="mt-12">
           <div className="mb-4 flex items-baseline gap-2">
-            <MessageSquareQuote
-              className="h-3.5 w-3.5 text-text-gedaempft"
-              strokeWidth={1.75}
-            />
+            <Quote size={16} className="text-text-gedaempft" />
             <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
               {t("examplesTitle")}
             </p>
@@ -135,10 +132,7 @@ export default function AskPage() {
                 <span className="text-sm leading-relaxed text-text-primaer">
                   {ex}
                 </span>
-                <ArrowRight
-                  className="h-4 w-4 shrink-0 text-text-gedaempft transition group-hover:translate-x-0.5 group-hover:text-text-primaer"
-                  strokeWidth={1.75}
-                />
+                <ArrowRight size={16} className="shrink-0 text-text-gedaempft transition group-hover:translate-x-0.5 group-hover:text-text-primaer" />
               </button>
             ))}
           </div>

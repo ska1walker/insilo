@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Plus, Star, UserRound } from "lucide-react";
+import { ChevronDown, Plus, Star, User } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -178,12 +178,7 @@ function ClusterRow({
           {matched ? (
             <>
               {cluster.is_self && (
-                <Star
-                  className="h-3 w-3"
-                  strokeWidth={2}
-                  style={{ color: "var(--am-gold-500)" }}
-                  aria-label={t("isSelfAria")}
-                />
+                <Star size={16} style={{ color: "var(--am-gold-beschriftung)" }} aria-label={t("isSelfAria")} />
               )}
               <span
                 className="mono text-[0.8125rem] font-medium uppercase tracking-[0.02em]"
@@ -223,7 +218,7 @@ function ClusterRow({
           className="btn btn-still inline-flex items-center gap-1"
         >
           {matched ? t("change") : t("assign")}
-          <ChevronDown className="h-3 w-3" strokeWidth={2} />
+          <ChevronDown size={16} />
         </button>
       </div>
 
@@ -306,13 +301,9 @@ function ClusterPicker({
               }
             >
               {s.is_self ? (
-                <Star
-                  className="h-3 w-3"
-                  strokeWidth={2}
-                  style={{ color: "var(--am-gold-500)" }}
-                />
+                <Star size={16} style={{ color: "var(--am-gold-beschriftung)" }} />
               ) : (
-                <UserRound className="h-3 w-3" strokeWidth={1.75} />
+                <User size={16} />
               )}
               {s.display_name}
             </button>
@@ -325,7 +316,7 @@ function ClusterPicker({
             onClick={() => setCreating(true)}
             className="inline-flex items-center gap-1 rounded-full border border-dashed border-rand-betont bg-seite px-3 py-1 text-[0.8125rem] text-text-gedaempft transition hover:bg-flaeche-1"
           >
-            <Plus className="h-3 w-3" strokeWidth={2} />
+            <Plus size={16} />
             {t("newSpeaker")}
           </button>
         ) : (

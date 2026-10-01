@@ -1,0 +1,149 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Formularfelder [AM-FELD] ───────────────────────────────────────────────── */
+@layer components {
+  .feld { margin-bottom: var(--am-raum-6); }
+
+  .feld label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: var(--am-raum-2);
+    color: var(--am-text-primaer);
+  }
+
+  .feld label .optional {
+    font-weight: 400;
+    color: var(--am-text-gedaempft);
+  }
+
+  .feld input:not([type="checkbox"]),
+  .feld select,
+  .feld textarea {
+    width: 100%;
+    min-height: var(--am-ziel-zeiger);
+    padding: 0 var(--am-raum-4);
+    border: var(--am-rand-ruhend) solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.9375rem;
+  }
+
+  .feld textarea {
+    padding: var(--am-raum-3) var(--am-raum-4);
+    line-height: 1.6;
+    resize: vertical;
+  }
+
+  .feld input:focus-visible,
+  .feld select:focus-visible,
+  .feld textarea:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+  }
+
+  .feld.fehler input,
+  .feld.fehler select,
+  .feld.fehler textarea {
+    border-color: var(--am-fehler-rand);
+    border-width: var(--am-rand-betont);
+  }
+
+  .feld-fehlertext {
+    color: var(--am-fehler);
+    font-size: 0.8125rem;
+    margin-top: var(--am-raum-2);
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+  }
+
+  .feld-hinweis {
+    color: var(--am-text-gedaempft);
+    font-size: 0.8125rem;
+    margin-top: var(--am-raum-2);
+  }
+
+  @media (pointer: coarse) {
+    .feld input:not([type="checkbox"]),
+    .feld select,
+    .feld textarea { min-height: var(--am-ziel-beruehrung); }
+  }
+}
+
+/* ── Eingabefeld, aus dem Paket übernommen [AM-FELD] ──────────────────────────── */
+@layer components {
+  .input {
+    padding: 0 var(--am-raum-4);
+    height: var(--am-ziel-zeiger);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-seite);
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.9375rem;
+    width: 100%;
+  }
+
+  .input:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+  }
+
+  .input::placeholder { color: var(--am-text-deaktiviert); }
+
+  /* Der native Pfeil sitzt je nach Browser hart am Rand und ignoriert das
+     Padding. Deshalb abschalten und ein eigenes Zeichen setzen. */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23587898' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--am-raum-4) center;
+    background-size: 1rem 1rem;
+    padding-right: calc(var(--am-raum-4) * 2 + 1rem);
+  }
+
+  html.dunkel select {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23afc0d2' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  select[multiple],
+  select[size]:not([size="1"]) {
+    background-image: none;
+    padding-right: var(--am-raum-4);
+  }
+}
+
+/* ── Auswahlfelder haben ein Zeichen [AM-FELD] ──────────────────────────────────
+   Irgendwo in der Grundlage steht `appearance: none` auf Formularfeldern.
+   Damit verlor **jedes** Auswahlfeld der Anwendung sein Zeichen und sah
+   aus wie ein Textfeld: Man sah der Rolle in der Mitgliederliste nicht
+   an, dass man sie ändern kann, und dem Stufenfeld im Firmendialog nicht,
+   dass es eine Liste öffnet.
+
+   Die Farbe steht fest im Bild und folgt keinem Token — ein Data-URI
+   kennt keine CSS-Variablen. `--am-blau-500` ist genau dafür gewählt:
+   „Wendepunkt — als Text in beiden Modi lesbar". Ein Zeichen je
+   Darstellung wäre zwei Dateien für einen Haken.
+
+   Ganz am Ende der Datei, weil `.feld select` spezifischer ist als
+   `select`: Das Polster muss aus einer Regel kommen, die diese Auswahl
+   ebenfalls trifft, und die spätere gewinnt. */
+select,
+.feld select,
+.werkzeugleiste select,
+.mitglied-rolle {
+  /* `background-image`, nicht die Kurzform: `.feld select` setzt
+     `background: var(--am-seite)`, und eine Kurzform löscht das Bild
+     wieder. Beim ersten Versuch stand das Zeichen in einer eigenen
+     `select`-Regel und war deshalb unsichtbar. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%23587898' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--am-raum-3) center;
+  background-size: 12px 8px;
+  padding-right: calc(var(--am-raum-3) + 1.25rem);
+}

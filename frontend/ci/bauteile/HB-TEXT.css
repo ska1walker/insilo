@@ -1,0 +1,33 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Textrollen [HB-TEXT] ───────────────────────────────────────────
+     Was bis 26.9.6 an über sechzig Stellen als Inline-Stil stand: der
+     leise Satz unter einem Block, die kleine Randnotiz, die Bestätigung
+     „gespeichert", die rechtsbündige Zahlenspalte, der Seitenrand für
+     Meldungen unter dem Seitenkopf. Benannt, damit man sie wiederfindet. */
+@layer components {
+  .text-leise { font-size: 0.875rem; color: var(--am-text-gedaempft); }
+  .text-leise-klein { font-size: 0.75rem; color: var(--am-text-gedaempft); }
+  .text-zweit { font-size: 0.875rem; color: var(--am-text-sekundaer); }
+  .text-gelungen { font-size: 0.8125rem; color: var(--am-erfolg); }
+  .rechts,
+  .tabelle th.rechts,
+  .tabelle td.rechts { text-align: right; }
+  .seitenrand { padding: 0 var(--am-raum-8); }
+  /* Hinweise über dem Inhalt einer Seite (Einstellungen): im selben Rand
+     wie die Blöcke darunter. Standen bis 26.9.7 ohne eigenen Rand direkt
+     in der Seite — bündig an der Navigation, ohne Abstand an den Reitern. */
+  .seitenhinweise {
+    display: grid;
+    gap: var(--am-raum-3);
+    padding: var(--am-raum-6) var(--am-raum-8) 0;
+    max-inline-size: calc(40rem + 2 * var(--am-raum-8));
+  }
+  .seitenhinweise:empty { display: none; }
+  /* Eine Seite in Lesebreite ohne Block-Kachel (Einfuhr). */
+  .seite-lesespalte {
+    padding: var(--am-raum-6) var(--am-raum-8) var(--am-raum-16);
+    max-inline-size: calc(40rem + 2 * var(--am-raum-8));
+  }
+}

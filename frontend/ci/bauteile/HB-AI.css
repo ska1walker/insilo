@@ -1,0 +1,39 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── AI-Block [HB-AI] ─────────────────────────────────────────────────────
+     Ergebnisse eines Modells stehen abgesetzt und beschriftet. Wer in
+     einem Jahr auf diese Seite sieht, muss erkennen, was ein Mensch
+     geschrieben hat und was nicht. */
+@layer components {
+  .ki-block {
+    border: 1px solid var(--am-gold-300);
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-gold-200);
+    padding: var(--am-raum-3);
+  }
+
+  html.dunkel .ki-block {
+    background: var(--am-flaeche-2);
+    border-color: var(--am-gold-700);
+  }
+
+  .ki-block-kopf {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--am-gold-beschriftung);
+    margin-bottom: var(--am-raum-2);
+  }
+
+  .ki-block-text {
+    font-size: 0.875rem;
+    color: var(--am-text-primaer);
+    white-space: pre-wrap;
+    margin: 0;
+  }
+}

@@ -17,7 +17,7 @@
  * wie das Paket es für Zustandsmeldungen verlangt.
  */
 
-import { ShieldAlert, ShieldCheck, Share2 } from "lucide-react";
+import { AlertTriangle, Lokal, Share2 } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -52,7 +52,10 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
   // steht deshalb vor allen anderen Fällen.
   const warnung = stt_extern || llm_extern;
   const ton = warnung ? "achtung" : alles_bleibt || llm_eigene_box ? "erfolg" : "neutral";
-  const Icon = warnung ? ShieldAlert : alles_bleibt || llm_eigene_box ? ShieldCheck : Share2;
+  // Zeichen aus dem CI-Set (ABGLEICH IN-Z3): `lokal`, solange nichts die
+  // Box verlässt — wie Rockets Nachweiszeile —, `achtung`, wenn ein Ziel
+  // draußen liegt, `weitergabe` für bewusst eingetragene Ziele.
+  const Icon = warnung ? AlertTriangle : alles_bleibt || llm_eigene_box ? Lokal : Share2;
 
   // Kurzfassungen: die Navigationsspalte ist 220px breit und die Schrift
   // hier ist Mono. Die ausführlichen Sätze stehen auf der Detailseite,
@@ -87,7 +90,7 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
           : undefined
       }
     >
-      <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
+      <Icon size={16} aria-hidden />
       <span className="huelle-schutz-text">
         <span className="huelle-schutz-kopf">{kopf}</span>
         {unterzeile ? (

@@ -1,0 +1,69 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+/* ── Das Tor [HB-TOR] ────────────────────────────────────────────────────────────
+   Die Anmelde- und die Einladungsseite. Eine Karte, mittig, sonst nichts:
+   Wer hier steht, hat genau eine Aufgabe, und jedes weitere Element wäre
+   eine Ablenkung davon — oder eine Auskunft an jemanden, der keine
+   bekommen soll. */
+.tor {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--am-raum-6);
+  background: var(--am-seite);
+}
+
+.tor-karte {
+  width: 100%;
+  max-width: 26rem;
+  background: var(--am-flaeche-1);
+  border: 1px solid var(--am-rand);
+  border-radius: var(--am-radius-gross);
+  padding: var(--am-raum-8);
+}
+
+.tor-marke {
+  display: flex;
+  align-items: center;
+  gap: var(--am-raum-2);
+  margin-bottom: var(--am-raum-6);
+}
+
+.tor-titel {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 0 0 var(--am-raum-2);
+  color: var(--am-text-primaer);
+}
+
+.tor-unter {
+  font-size: 0.875rem;
+  color: var(--am-text-sekundaer);
+  margin: 0 0 var(--am-raum-6);
+  line-height: 1.5;
+}
+
+.tor-knopf {
+  width: 100%;
+  justify-content: center;
+  margin-top: var(--am-raum-2);
+}
+
+.tor-fuss {
+  font-size: 0.8125rem;
+  color: var(--am-text-sekundaer);
+  margin: var(--am-raum-6) 0 0;
+  line-height: 1.5;
+}
+
+/* ── Einrichten und Einladung annehmen [HB-TOR] ───────────────────────────────────── */
+/* Die Kennung entscheidet, wessen Zugang eingerichtet wird — der
+   Anzeigename ist nur ein Etikett und kann auf jemand anderen zeigen.
+   Deshalb steht sie in der Schrift, in der sich l und 1 unterscheiden. */
+.tor-kennung { font-family: var(--am-schrift-mono); }
+
+/* Welches Rocket. Auf dem Handy ist die Adresszeile abgeschnitten. */
+.tor-wo { font-family: var(--am-schrift-mono); overflow-wrap: anywhere; }
+
+.einladung-fuer .mono { font-family: var(--am-schrift-mono); }

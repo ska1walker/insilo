@@ -1,0 +1,17 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Felder nebeneinander [HB-FELDREIHE] ─────────────────────────────────────────
+     Server, Port und Verschlüsselung in einer Zeile — auf dem Handy
+     schnitt das Beschriftung und Auswahl ab. Die Spalten kommen vom
+     Bauteil (--spalten), unter 40rem steht alles untereinander. */
+@layer components {
+  .feldreihe {
+    display: grid;
+    grid-template-columns: var(--spalten, minmax(0, 1fr) minmax(0, 1fr));
+    gap: 0 var(--am-raum-4);
+  }
+  @media (max-width: 40rem) {
+    .feldreihe { grid-template-columns: minmax(0, 1fr); }
+  }
+}

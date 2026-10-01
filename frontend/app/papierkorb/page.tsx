@@ -14,7 +14,7 @@
  * stehen und schon keine Aufnahme mehr haben.
  */
 
-import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
+import { ArchiveRestore, ArrowLeft, Trash2 } from "@/lib/symbole";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -92,7 +92,7 @@ export default function PapierkorbSeite() {
         href="/besprechungen"
         className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer"
       >
-        <ArrowLeft size={14} aria-hidden />
+        <ArrowLeft size={16} aria-hidden />
         {t("zurueck")}
       </Link>
 
@@ -187,7 +187,7 @@ export default function PapierkorbSeite() {
                     disabled={arbeitet === e.id}
                     className="btn btn-sekundaer inline-flex items-center gap-2"
                   >
-                    <RotateCcw size={16} aria-hidden />
+                    <ArchiveRestore size={16} aria-hidden />
                     {t("zurueckholen")}
                   </button>
                   <button

@@ -1,0 +1,77 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Datensatzseite — drei Bereiche [HB-BLOCK] ───────────────────────────────
+     Links die Eigenschaften, Mitte der Verlauf, rechts was daranhängt.
+     Auf schmalen Geräten untereinander, Verlauf zuerst: dort steht,
+     was zuletzt passiert ist, und danach wird zuerst gefragt. */
+@layer components {
+  .datensatz {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--am-raum-6);
+    padding: var(--am-raum-6) var(--am-raum-8) var(--am-raum-16);
+    align-items: start;
+  }
+
+  @media (min-width: 1100px) {
+    .datensatz {
+      grid-template-columns: 300px minmax(0, 1fr) 300px;
+    }
+  }
+
+  /* Zwei Abwandlungen: Prognose zweispaltig, Angebot mit Seitenleiste.
+     Stand früher inline am Bauteil und galt damit auch auf dem Handy —
+     dort blieb von den Positionen ein Streifen von 30px. */
+  @media (min-width: 1100px) {
+    .datensatz.datensatz-zwei { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .datensatz.datensatz-seitenleiste { grid-template-columns: minmax(0, 1fr) 260px; }
+  }
+  /* Eine Spalte auf jeder Breite (Start, Fragen) und die Lesespalte der
+     Einstellungen — standen inline an den Seiten. */
+  .datensatz.datensatz-einzeln { grid-template-columns: minmax(0, 1fr); }
+  .datensatz.datensatz-lesespalte { grid-template-columns: minmax(0, 40rem); }
+
+  .block {
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-gross);
+    background: var(--am-flaeche-1);
+    overflow: hidden;
+  }
+
+  .block + .block { margin-top: var(--am-raum-4); }
+
+  .block-kopf {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--am-raum-2);
+    padding: var(--am-raum-3) var(--am-raum-4);
+    border-bottom: 1px solid var(--am-trennlinie);
+  }
+
+  /* Mehrere Handlungen im Kopf: eine Zeile, kein Umbruch — der Kopf
+     bleibt so hoch wie mit einem Knopf. */
+  .block-kopf-aktionen { display: inline-flex; flex: none; align-items: center; gap: var(--am-raum-1); flex-wrap: nowrap; }
+
+  .block-kopf h2 {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--am-text-gedaempft);
+    margin: 0;
+  }
+
+  .block-inhalt {
+    padding: var(--am-raum-4);
+    /* Eine Tabelle, die breiter ist als ihre Karte, rollt **in** der
+       Karte — sie steht nicht darüber hinaus. Zwei taten das bisher
+       („Wer hier arbeitet" um 31 px, „Eigene Eigenschaften" um 112 px),
+       weil eine Tabelle mit `table-layout: auto` ihre Mindestbreite aus
+       dem Inhalt nimmt und sich von `width: 100%` nicht kleinrechnen
+       lässt. Karten ohne zu breiten Inhalt bekommen dadurch keine
+       Rollleiste. */
+    overflow-x: auto;
+  }
+}

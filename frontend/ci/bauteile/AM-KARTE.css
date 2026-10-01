@@ -1,0 +1,12 @@
+/* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
+   Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
+
+  /* ── Karte [AM-KARTE] ────────────────────────────────────────────────────────── */
+@layer components {
+  .karte {
+    background: var(--am-flaeche-1);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    padding: var(--am-raum-6);
+  }
+}

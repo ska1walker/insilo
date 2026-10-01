@@ -221,6 +221,28 @@ Rückfrage; eine zu Unrecht gezeigte Entwarnung kostet das Versprechen.
 
 ---
 
+## 5a. Zeichen
+
+**Ein Set für alle AImighty-Apps** (CI `ABGLEICH.md`, R2 und IN-Z1–Z3). Die
+Zeichen kommen aus `marke/icons/ui/` im CI-Repo, als Kopie eines Stands
+unter `frontend/ci/` (`node scripts/ci-holen.mjs --von <klon> --stand
+ci-YY.M.n`). `scripts/symbole-erzeugen.mjs` schreibt daraus
+`lib/symbole.tsx`; gezeichnet wird über `components/symbol.tsx` (HB-SYMBOL).
+
+- Größen nur 16 (Text, Knöpfe), 20 (Navigation), 24 (Hauptzeichen), 40
+  (Leerzustand). Der Strich ist bei jeder Größe 1,5 px.
+- **Ausnahme Aufnahmeknopf** (IN-Z2, in CI `medien/app.md`): 36 px im
+  120-px-Knopf, 80/96 px im großen Knopf auf `/idee` — über
+  `Aufnahmezeichen`, Strich auch dort 1,5 px.
+- Der Datenschutz-Hinweis zeigt `lokal`, solange nichts die Box verlässt,
+  `achtung` bei einem Ziel draußen, `weitergabe` für eingetragene Ziele
+  (IN-Z3). „Idee“ trägt `erkenntnis` (IN-Z4).
+- **Fehlt ein Zeichen**, kommt es zuerst ins CI-Set (`werkzeug/icons-erzeugen.py`),
+  dann mit einem neuen Stand hierher — nie direkt aus Lucide.
+  `tests/symbole.test.ts` wacht.
+
+---
+
 ## 6. Bewegung
 
 Animationen sind funktional, nie dekorativ. Das CI gibt drei Dauern vor

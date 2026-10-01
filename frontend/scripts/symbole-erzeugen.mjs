@@ -39,6 +39,7 @@ export const NAMEN = {
   ChevronUp: "chevron-hoch",
   Copy: "kopieren",
   Database: "datenbank",
+  Ellipsis: "mehr",
   FileText: "dokumente",
   Folder: "ordner",
   Globe: "netzrecherche",

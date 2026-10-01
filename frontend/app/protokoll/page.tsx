@@ -22,6 +22,7 @@ import {
   type ProtokollEintrag,
   type ProtokollSeite,
 } from "@/lib/api/protokoll";
+import { Seitentitel } from "@/components/seitentitel";
 
 const SEITENGROESSE = 50;
 
@@ -82,11 +83,11 @@ export default function ProtokollSeiteAnsicht() {
         {t("zurueck")}
       </Link>
 
-      <h1 className="mb-4 mt-4 text-3xl font-medium md:text-4xl">{t("titel")}</h1>
-      <p className="max-w-[720px] text-text-sekundaer">{t("einleitung")}</p>
+      <Seitentitel className="mb-4 mt-4">{t("titel")}</Seitentitel>
+      <p className="max-w-[var(--am-lesespalte)] text-text-sekundaer">{t("einleitung")}</p>
 
       {lage.art === "ok" && !lage.seite.darf_alles_sehen && (
-        <div className="hinweis mt-6 max-w-[720px]">
+        <div className="hinweis mt-6 max-w-[var(--am-lesespalte)]">
           <Info size={16} aria-hidden />
           <span>{t("nurEigene")}</span>
         </div>

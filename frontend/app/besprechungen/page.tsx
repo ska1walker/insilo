@@ -10,6 +10,7 @@ import { TagPillRow } from "@/components/tag-pill";
 import { ApiError } from "@/lib/api/client";
 import { listMeetings, type MeetingDto } from "@/lib/api/meetings";
 import { formatDuration, formatMeetingDate } from "@/lib/format";
+import { Seitentitel } from "@/components/seitentitel";
 
 type LoadState =
   | { kind: "loading" }
@@ -57,9 +58,9 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-[1280px] px-6 py-10 md:px-12 md:py-16">
-      <div className="mb-10 flex items-baseline justify-between gap-4">
-        <h1 className="text-3xl font-medium md:text-4xl">{t("listTitle")}</h1>
-        <div className="flex shrink-0 items-baseline gap-5">
+      <div className="mb-10 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <Seitentitel className="min-w-0">{t("listTitle")}</Seitentitel>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           {state.kind === "ok" && state.meetings.length > 0 && (
             <p className="mono text-xs uppercase tracking-[0.08em] text-text-gedaempft">
               {t("listCount", { count: state.meetings.length })}
@@ -69,7 +70,7 @@ export default function Home() {
               sucht ihn dort, wo man gelöscht hat. */}
           <Link
             href="/papierkorb"
-            className="mono inline-flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer"
+            className="mono inline-flex min-h-10 items-center gap-2 text-xs uppercase tracking-[0.08em] text-text-gedaempft hover:text-text-primaer"
           >
             <Trash2 size={16} aria-hidden />
             {tPapierkorb("link")}

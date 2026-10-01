@@ -7,11 +7,13 @@
  * oder gar nicht". Deshalb steht hier nichts, solange der Zustand nicht
  * abrufbar ist: eine Zusage ohne Beleg wäre schlimmer als gar keine.
  *
- * Drei Lagen:
- *   alles intern   → Erfolgston, „Alles bleibt auf dieser Box"
- *   Ziele aktiv    → neutral, Anzahl und übertragene Menge
- *   LLM extern     → Achtungston; hier verlassen vollständige
- *                    Transkripte das Haus, das muss man sehen
+ * Drei Lagen, wie im CI-Baustein HB-KONTO (Nachweiszeile, CSS in
+ * AM-HUELLE; ABGLEICH IN-B4):
+ *   alles intern   → leise, Zeichen `lokal`, „Alles bleibt auf dieser Box"
+ *   Ziele aktiv    → `data-extern`, Zeichen `weitergabe` in Gold, Anzahl
+ *                    und übertragene Menge
+ *   LLM/STT extern → `data-zustand="achtung"`; hier verlassen vollständige
+ *                    Transkripte oder der Ton das Haus, das muss man sehen
  *
  * Farbe trägt die Aussage nie allein — jede Lage hat Zeichen und Satz,
  * wie das Paket es für Zustandsmeldungen verlangt.
@@ -51,10 +53,6 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
   // Ton, der die Box verlässt, wiegt schwerer als ein Transkript — er
   // steht deshalb vor allen anderen Fällen.
   const warnung = stt_extern || llm_extern;
-  const ton = warnung ? "achtung" : alles_bleibt || llm_eigene_box ? "erfolg" : "neutral";
-  // Zeichen aus dem CI-Set (ABGLEICH IN-Z3): `lokal`, solange nichts die
-  // Box verlässt — wie Rockets Nachweiszeile —, `achtung`, wenn ein Ziel
-  // draußen liegt, `weitergabe` für bewusst eingetragene Ziele.
   const Icon = warnung ? AlertTriangle : alles_bleibt || llm_eigene_box ? Lokal : Share2;
 
   // Kurzfassungen: die Navigationsspalte ist 220px breit und die Schrift
@@ -81,7 +79,9 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
   return (
     <Link
       href="/datenschutz"
-      className={`huelle-schutz huelle-schutz-${ton}`}
+      className="nachweis"
+      data-zustand={warnung ? "achtung" : undefined}
+      data-extern={!warnung && !alles_bleibt && !llm_eigene_box ? "true" : undefined}
       title={
         llm_host
           ? llm_extern
@@ -91,11 +91,9 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
       }
     >
       <Icon size={16} aria-hidden />
-      <span className="huelle-schutz-text">
-        <span className="huelle-schutz-kopf">{kopf}</span>
-        {unterzeile ? (
-          <span className="huelle-schutz-unter">{unterzeile}</span>
-        ) : null}
+      <span className="nachweis-text">
+        <span>{kopf}</span>
+        {unterzeile ? <span className="nachweis-unter">{unterzeile}</span> : null}
       </span>
     </Link>
   );

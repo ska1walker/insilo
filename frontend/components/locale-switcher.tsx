@@ -133,7 +133,7 @@ function LocaleOption({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className={`flex items-start gap-3 rounded-md border px-4 py-3 text-left transition ${
+      className={`flex items-start gap-3 rounded-mittel border px-4 py-3 text-left transition ${
         selected
           ? "border-gold-600 flaeche-auswahl"
           : "border-trennlinie bg-seite hover:bg-flaeche-1"

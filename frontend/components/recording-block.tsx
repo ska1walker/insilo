@@ -555,7 +555,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
                     value={t.id}
                     checked={selectedTemplate === t.id}
                     onChange={(e) => setSelectedTemplate(e.target.value)}
-                    className="mt-1 accent-black"
+                    className="mt-1"
                   />
                   <div className="min-w-0">
                     <p className="font-medium text-text-primaer">{t.name}</p>
@@ -585,7 +585,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
               onChange={(e) => setAudioLanguage(e.target.value as AudioLanguage)}
               // pr-12 hält rechts Platz für das Auswahlzeichen frei, damit
               // lange Einträge nicht darunter laufen.
-              className="w-full rounded-lg border border-trennlinie bg-seite py-3 pl-4 pr-12 text-text-primaer focus:border-rand-betont focus:outline-none"
+              className="w-full rounded-mittel border border-trennlinie bg-seite py-3 pl-4 pr-12 text-text-primaer focus:border-rand-betont focus:outline-none"
             >
               {AUDIO_LANGUAGE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>

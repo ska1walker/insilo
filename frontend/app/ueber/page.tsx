@@ -20,7 +20,7 @@ export default async function UeberPage() {
           <p className="mono mb-6 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
             {t("version")}
           </p>
-          <h1 className="font-display text-[2.5rem] font-medium leading-[1.05] tracking-tight text-text-primaer md:text-[3.75rem]">
+          <h1 className="text-[length:var(--am-seitentitel)] font-semibold leading-tight text-text-primaer">
             {t("heroTitle")}
           </h1>
           <p className="mt-8 max-w-[560px] text-lg leading-relaxed text-text-sekundaer md:text-xl">
@@ -43,7 +43,7 @@ export default async function UeberPage() {
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
           {t("promiseLabel")}
         </p>
-        <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+        <h2 className="text-xl font-semibold leading-tight">
           {t("promiseTitle")}
         </h2>
         <p className="mt-6 max-w-[720px] text-text-sekundaer">
@@ -61,7 +61,7 @@ export default async function UeberPage() {
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
           {t("speakerLabel")}
         </p>
-        <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+        <h2 className="text-xl font-semibold leading-tight">
           {t("speakerTitle")}
         </h2>
         <p className="mt-6 max-w-[720px] text-text-sekundaer">
@@ -84,7 +84,7 @@ export default async function UeberPage() {
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
           {t("stepsLabel")}
         </p>
-        <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+        <h2 className="text-xl font-semibold leading-tight">
           {t("stepsTitle")}
         </h2>
 
@@ -112,7 +112,7 @@ export default async function UeberPage() {
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
           {t("audienceLabel")}
         </p>
-        <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+        <h2 className="text-xl font-semibold leading-tight">
           {t("audienceTitle")}
         </h2>
 
@@ -145,7 +145,7 @@ export default async function UeberPage() {
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
           {t("archLabel")}
         </p>
-        <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+        <h2 className="text-xl font-semibold leading-tight">
           {t("archTitle")}
         </h2>
 
@@ -167,7 +167,7 @@ export default async function UeberPage() {
         <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
           {t("signatureLabel")}
         </p>
-        <h2 className="font-display text-2xl font-medium leading-tight tracking-tight md:text-3xl">
+        <h2 className="text-xl font-semibold leading-tight">
           {t("signatureTitle")}
         </h2>
         <p className="mt-4 text-text-sekundaer">{t("signatureBody")}</p>
@@ -177,7 +177,7 @@ export default async function UeberPage() {
       <section className="border-t border-trennlinie pt-20 pb-8">
         <div className="flex flex-col items-start gap-6 md:flex-row md:items-end md:justify-between md:gap-10">
           <div>
-            <h2 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+            <h2 className="text-xl font-semibold leading-tight">
               {t("finalTitle")}
             </h2>
             <p className="mt-3 max-w-[480px] text-text-sekundaer">

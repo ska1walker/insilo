@@ -265,7 +265,7 @@ function WebhookRow({
           <button
             type="button"
             onClick={handleToggle}
-            className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
+            className="rounded-mittel p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={webhook.is_active ? t("deactivate") : t("activate")}
             title={webhook.is_active ? t("deactivate") : t("activate")}
           >
@@ -278,7 +278,7 @@ function WebhookRow({
           <button
             type="button"
             onClick={onEdit}
-            className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
+            className="rounded-mittel p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={t("editAria")}
           >
             <Pencil size={16} />

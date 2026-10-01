@@ -2,10 +2,15 @@
 
 import { RecentMeetings } from "@/components/recent-meetings";
 import { RecordingBlock } from "@/components/recording-block";
+import { Seitentitel } from "@/components/seitentitel";
+import { useTranslations } from "next-intl";
 
 export default function Home() {
+  const t = useTranslations("nav");
   return (
-    <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12 md:py-16">
+    <main className="mx-auto max-w-[var(--am-lesespalte)] px-6 py-12 md:px-12 md:py-16">
+      {/* Die Startseite ist die Aufnahme — so ist sie auch in der Navigation gewählt. */}
+      <Seitentitel className="mb-10">{t("record")}</Seitentitel>
       {/* Hero · Aufnahme-Block */}
       <section className="mb-16">
         <RecordingBlock variant="compact" />

@@ -9,7 +9,9 @@
     "logoAlt": "Insilo",
     "homeAria": "Insilo — torna alla panoramica",
     "navAria": "Navigazione principale",
-    "herkunftAria": "AImighty — apri il sito (nuova finestra)"
+    "herkunftAria": "AImighty — apri il sito (nuova finestra)",
+    "mehr": "Altro",
+    "mehrAria": "Altre destinazioni"
   },
   "common": {
     "save": "Salva",
@@ -532,7 +534,7 @@
     "errGenericUpload": "Upload non riuscito — verifichi la connessione."
   },
   "about": {
-    "metadataTitle": "Informazioni su Insilo · Intelligenza delle riunioni a sovranità dei dati",
+    "metadataTitle": "Informazioni",
     "version": "Insilo · v0.1",
     "heroTitle": "Intelligenza delle riunioni che non lascia mai la Sua sede.",
     "heroBody": "Insilo registra le conversazioni di business, le trascrive e produce verbali strutturati — interamente sulla Sua scatola Olares nella sala server. Nessun upload cloud, nessuna terza parte, nessuna telemetria.",

@@ -16,6 +16,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { formatBytes } from "@/lib/format";
 import { fetchEgress, type EgressRead } from "@/lib/api/egress";
+import { Seitentitel } from "@/components/seitentitel";
 
 export default function DatenschutzSeite() {
   const t = useTranslations("egress");
@@ -29,8 +30,8 @@ export default function DatenschutzSeite() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-[720px] px-6 py-10 md:px-12 md:py-16">
-      <h1 className="text-2xl font-medium text-text-primaer">{t("titel")}</h1>
+    <main className="mx-auto max-w-[var(--am-lesespalte)] px-6 py-10 md:px-12 md:py-16">
+      <Seitentitel>{t("titel")}</Seitentitel>
 
       {fehler ? (
         <div className="hinweis mt-8">

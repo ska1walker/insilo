@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="-1 -1 26 26">
+<!-- Das Zeichen im Browser-Tab: nur das Mikrofon (Lucide `mic` 1.31.0),
+     ohne Kachel und Wappen. Bei 16 px wäre die Kachel ein goldener Punkt
+     mit blauem Fleck, und alle AImighty-Apps sähen gleich aus (CI,
+     ABGLEICH.md G7, medien/app.md „Im Browser-Tab — nur das Zeichen",
+     01.10.2026). Die Farbe folgt der Tableiste: hell Gold 800 #8c6c1f,
+     dunkel Gold 500 #caa960. Safari nimmt kein SVG-Favicon und bekommt
+     tab-32.png in #b08a3e (scripts/icons.mjs). -->
+<style>
+  g { stroke: #8c6c1f; }
+  @media (prefers-color-scheme: dark) { g { stroke: #caa960; } }
+</style>
+<g fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>
+</g>
+</svg>

@@ -28,6 +28,7 @@ import {
   type PapierkorbEintrag,
 } from "@/lib/api/meetings";
 import { formatDuration, formatMeetingDate } from "@/lib/format";
+import { Seitentitel } from "@/components/seitentitel";
 
 type Lage =
   | { art: "laedt" }
@@ -96,8 +97,8 @@ export default function PapierkorbSeite() {
         {t("zurueck")}
       </Link>
 
-      <div className="mb-6 mt-4 flex items-baseline justify-between gap-4">
-        <h1 className="text-3xl font-medium md:text-4xl">{t("titel")}</h1>
+      <div className="mb-6 mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <Seitentitel className="min-w-0">{t("titel")}</Seitentitel>
         {eintraege.length > 0 && (
           <p className="mono shrink-0 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
             {t("anzahl", { n: eintraege.length })}
@@ -144,7 +145,7 @@ export default function PapierkorbSeite() {
           {eintraege.map((e) => (
             <div key={e.id} className="border-b border-trennlinie last:border-b-0">
               <div className="flex flex-wrap items-center gap-4 px-5 py-4">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-[16rem]">
                   <p className="truncate text-base font-medium text-text-primaer">
                     {e.title}
                   </p>
@@ -178,7 +179,9 @@ export default function PapierkorbSeite() {
                   </p>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2">
+                {/* Darf umbrechen: am Handy stehen die Knöpfe sonst
+                    abgeschnitten rechts außerhalb (CI ABGLEICH IN-G8). */}
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => zurueckholen(e)}

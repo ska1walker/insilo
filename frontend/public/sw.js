@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION to force clients to refresh after a release.
  */
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const STATIC_CACHE = `insilo-static-${CACHE_VERSION}`;
 const HTML_CACHE = `insilo-html-${CACHE_VERSION}`;
 

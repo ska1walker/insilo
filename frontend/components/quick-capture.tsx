@@ -54,26 +54,23 @@ type Phase =
 
 const SAVED_AUTO_RESET_MS = 5000;
 
-// Die dunkle Car-Mode-Palette aus den AImighty-Token. Hex statt var(),
-// weil die Werte in Inline-Styles und im Gradient stehen — die Zahlen sind
-// dieselben wie in globals.css (Blau 950/25, Gold 500/300/700). Die laufende
-// Aufnahme trägt Gold, nicht Rot: Rot bleibt dem Fehler vorbehalten
-// (docs/DESIGN.md §3). Altpalette (#0A0A0A, #C9A961, #C84A3F) entfernt am
-// 06.09.2026.
+// Die dunkle Car-Mode-Palette, aus den Token (Blau 950/25, Gold
+// 500/300/700). Die laufende Aufnahme trägt Gold, nicht Rot: Rot bleibt dem
+// Fehler vorbehalten (docs/DESIGN.md §3).
 const COLORS = {
-  black: "#010c1a",     // --am-blau-950
-  white: "#f5f9fc",     // --am-blau-25
-  gold: "#caa960",      // --am-gold-500
-  goldLight: "#dfc896", // --am-gold-300
-  goldDeep: "#a4843a",  // --am-gold-700
-  recording: "#caa960", // --am-gold-500 — Gold zeichnet die Aufnahme aus
+  black: "var(--am-blau-950)",
+  white: "var(--am-blau-25)",
+  gold: "var(--am-gold-500)",
+  goldLight: "var(--am-gold-300)",
+  goldDeep: "var(--am-gold-700)",
+  recording: "var(--am-gold-500)",
 } as const;
 
 // Gradient als Image-Layer; backgroundColor wird separat gesetzt.
 const BG_GRADIENT_IDLE_IMG =
-  "radial-gradient(circle at 50% 42%, rgb(202 169 96 / 10%) 0%, transparent 55%)";
+  "radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--am-gold-500) 10%, transparent) 0%, transparent 55%)";
 const BG_GRADIENT_ACTIVE_IMG =
-  "radial-gradient(circle at 50% 42%, rgb(202 169 96 / 22%) 0%, transparent 60%)";
+  "radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--am-gold-500) 22%, transparent) 0%, transparent 60%)";
 
 /**
  * Schauerfunktion — Car-Mode-Aufnahme für unterwegs (auto, walking, shower).
@@ -319,7 +316,7 @@ export function QuickCapture() {
     backgroundColor: COLORS.black,
     backgroundImage: isActive ? BG_GRADIENT_ACTIVE_IMG : BG_GRADIENT_IDLE_IMG,
     color: COLORS.white,
-    transition: "background-image 600ms var(--ease-out)",
+    transition: "background-image var(--am-dauer-langsam) var(--am-kurve)",
   };
 
   return (
@@ -341,8 +338,8 @@ export function QuickCapture() {
           className="flex h-12 w-12 items-center justify-center rounded-full transition-transform active:scale-95"
           style={{
             color: COLORS.goldLight,
-            background: "rgba(201, 169, 97, 0.10)",
-            border: "1px solid rgba(201, 169, 97, 0.35)",
+            background: "color-mix(in srgb, var(--am-gold-500) 10%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--am-gold-500) 35%, transparent)",
           }}
         >
           <ArrowLeft className="h-6 w-6" strokeWidth={1.5} />
@@ -400,7 +397,7 @@ export function QuickCapture() {
           />
         ) : phase === "denied" ? (
           <div className="mt-16 max-w-sm text-center">
-            <p className="text-lg" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <p className="text-lg" style={{ color: "color-mix(in srgb, var(--am-blau-25) 80%, transparent)" }}>
               {t("deniedBody")}
             </p>
             <button
@@ -414,7 +411,7 @@ export function QuickCapture() {
           </div>
         ) : (
           <div className="mt-16 max-w-sm text-center">
-            <p className="text-lg" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <p className="text-lg" style={{ color: "color-mix(in srgb, var(--am-blau-25) 80%, transparent)" }}>
               {t("unsupportedBody")}
             </p>
           </div>
@@ -432,7 +429,7 @@ export function QuickCapture() {
 
         {phase === "error" && gescheitert && (
           <div className="mt-6 flex max-w-sm flex-col items-center gap-3 text-center">
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>
+            <p className="text-sm" style={{ color: "color-mix(in srgb, var(--am-blau-25) 75%, transparent)" }}>
               {gescheitert.sicherung.gesichert
                 ? tAufnahme("gesichert")
                 : tAufnahme("nichtGesichert")}
@@ -464,7 +461,7 @@ export function QuickCapture() {
                 className="min-h-[44px] rounded-full px-6 text-base font-medium"
                 style={{
                   color: COLORS.goldLight,
-                  border: "1px solid rgba(201, 169, 97, 0.45)",
+                  border: "1px solid color-mix(in srgb, var(--am-gold-500) 45%, transparent)",
                 }}
               >
                 {tAufnahme("alsDatei")}
@@ -519,7 +516,7 @@ function MicButton({
           background: COLORS.gold,
           color: COLORS.black,
           boxShadow:
-            "0 0 0 1px rgba(201, 169, 97, 0.45), 0 0 80px rgba(201, 169, 97, 0.25)",
+            "0 0 0 1px color-mix(in srgb, var(--am-gold-500) 45%, transparent), 0 0 80px color-mix(in srgb, var(--am-gold-500) 25%, transparent)",
         }}
       >
         <Mic className="h-24 w-24 sm:h-28 sm:w-28" strokeWidth={1.5} />
@@ -558,7 +555,7 @@ function MicButton({
       aria-label={ariaLabel}
       className={baseClasses}
       style={{
-        background: "rgba(201, 169, 97, 0.18)",
+        background: "color-mix(in srgb, var(--am-gold-500) 18%, transparent)",
         color: COLORS.goldLight,
       }}
     >
@@ -603,7 +600,7 @@ function StatusLine({
   if (phase === "saving") {
     return (
       <div className="text-center">
-        <p className="text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
+        <p className="text-lg" style={{ color: "color-mix(in srgb, var(--am-blau-25) 75%, transparent)" }}>
           {t("statusSaving")}
         </p>
         {fortschritt && (
@@ -642,7 +639,7 @@ function StatusLine({
     return (
       <p
         className="text-center text-lg"
-        style={{ color: "rgba(255,255,255,0.75)" }}
+        style={{ color: "color-mix(in srgb, var(--am-blau-25) 75%, transparent)" }}
       >
         {t("requestingMic")}
       </p>
@@ -659,7 +656,7 @@ function StatusLine({
       </p>
       <p
         className="mt-4 max-w-sm text-base"
-        style={{ color: "rgba(255,255,255,0.65)" }}
+        style={{ color: "color-mix(in srgb, var(--am-blau-25) 65%, transparent)" }}
       >
         {t("idleHint")}
       </p>

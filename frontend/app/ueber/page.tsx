@@ -513,7 +513,7 @@ function SpeakerMockRow({
             style={
               assignment === "auto"
                 ? {
-                    background: "rgba(74,124,89,0.08)",
+                    background: "var(--am-erfolg-flaeche)",
                     color: "var(--am-erfolg)",
                   }
                 : {

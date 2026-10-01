@@ -279,7 +279,7 @@ function TokenReveal({
       className="rounded-lg border p-4"
       style={{
         borderColor: "var(--am-gold-500)",
-        background: "rgba(201,169,97,0.08)",
+        background: "var(--am-auswahl-flaeche)",
       }}
     >
       <h4 className="text-sm font-medium text-text-primaer">

@@ -154,7 +154,7 @@ export default function AskPage() {
           className="mt-10 rounded-lg border bg-seite p-6"
           style={{
             borderColor: "var(--am-fehler)",
-            background: "rgba(163, 58, 47, 0.04)",
+            background: "var(--am-fehler-flaeche)",
           }}
         >
           <p

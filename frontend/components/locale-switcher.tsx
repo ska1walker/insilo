@@ -140,7 +140,7 @@ function LocaleOption({
       }`}
       style={
         selected
-          ? { borderColor: "var(--am-gold-800)", background: "var(--am-gold-200)" }
+          ? { borderColor: "var(--am-gold-800)" }
           : undefined
       }
     >

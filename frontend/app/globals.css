@@ -2,18 +2,29 @@
 @config "../tailwind.config.ts";
 
 /* ═══════════════════════════════════════════════════════════════════════
-   AImighty-Designsystem — Quelle der Werte
-   Übernommen aus dem InSilo_Design-Paket (tokens/globals.css), abgeleitet
-   aus AImighty claude/Marke-Regeln.md und claude/Anwendung.md.
+   AImighty — Token der Anwendung (tokens/app.css)
 
-   Wer einen Wert ändert, ändert ihn HIER, nicht am Bauteil.
+   Der Dialekt der Anwendung, siehe medien/app.md und ABGLEICH.md, T1
+   (entschieden von Kai am 01.10.2026). **Diese Datei ist die Quelle** für
+   Rocket, Insilo und Relay; jede App trägt eine unveränderte Kopie.
 
-   Die Schriften lädt next/font/local in app/layout.tsx (self-hosted,
-   nie vom Google-CDN) und reicht sie als --font-geist-* herein.
+   Nicht mit tokens/tokens.css mischen: Dort ist der Auftritt.
+   - --am-raum-* heißt dort Stufe (raum-6 = 32 px), hier Vielfaches
+     (raum-6 = 24 px).
+   - Dunkel schaltet dort .dark, hier die Klasse dunkel am <html>.
 
-   Die früheren Insilo-Tokens (--gold, --surface-soft, …) sind entfallen —
-   jedes Bauteil liest --am-*.
+   Herkunft: Rocket v26.10.4, frontend/app/globals.css, Abschnitt
+   [AM-TOKEN]. Rocket hatte ihn aus dem InSilo_Design-Paket
+   (tokens/globals.css). Übernommen ohne Wertänderung — was sich ändern
+   soll, steht als Eintrag in ABGLEICH.md und wird hier geändert, nicht
+   in einer App.
+
+   Die Schriften bindet jede App selbst ein (self-hosted, nie vom CDN) und
+   reicht sie als --font-geist-sans / --font-geist-mono herein.
+
+   Prüfen:  python3 werkzeug/app-abgleich.py pfad/zur/app.css
    ═══════════════════════════════════════════════════════════════════════ */
+
 
 :root {
   /* ── Schrift ─────────────────────────────────────────────────────── */
@@ -48,6 +59,36 @@
   /* ── Zeilenhöhe Tabellen, an Dichte gebunden: 56·48·40 ────────────── */
   --am-zeile-tabelle: 3.5rem;
 
+  /* Die Höhe der Kopfzeile — **beide Spalten teilen sie sich**. Links
+     endet darauf die Linie unter der Wortmarke, rechts die unter dem
+     Seitentitel. Vorher rechnete jede Seite ihre Höhe aus ihrem Inhalt
+     aus, und die beiden Linien lagen 27 px auseinander: ein Versatz, den
+     man nicht benennen kann und trotzdem sieht. Wer hier etwas ändert,
+     verschiebt beide Linien gemeinsam — das ist der Zweck. */
+  --am-kopfhoehe: 5rem;
+  --am-leistenhoehe: 3.5rem;
+  /* Breite der Navigation am Desktop — für alle Anwendungen gleich, damit
+     die Kante beim Wechsel zwischen ihnen nicht springt (ABGLEICH R9). */
+  --am-navigation-breite: 15rem; /* 240px */
+  /* Lesespalte: Formulare, Einstellungen und Ansichten mit einer Hauptsache
+     stehen höchstens so breit, mittig oder links im Inhalt. Listen, Board,
+     Post und Kalender bleiben fließend (ABGLEICH G1). */
+  --am-lesespalte: 45rem; /* 720px */
+  /* Seitentitel in jeder Anwendung gleich groß: 22 px war kaum mehr als ein
+     Abschnittstitel, 40 px kostet in Listen eine Zeile (ABGLEICH G1). */
+  --am-seitentitel: 1.75rem; /* 28px */
+
+  /* ── Ebenen — wer über wem liegt (ABGLEICH R9) ────────────────────── */
+  --am-ebene-tabellenkopf: 10;
+  --am-ebene-seitenkopf: 20;
+  --am-ebene-navigation: 40;
+  --am-ebene-kopfleiste: 50;
+  --am-ebene-menue: 60;
+  --am-ebene-suche: 70;
+  --am-ebene-assistent: 90;
+  --am-ebene-dialog: 100;
+  --am-ebene-ueber-dialog: 200; /* Palette, Klappliste in einem Dialog */
+
   /* ── Radien — Vorschlag, siehe Paket-README "Was noch fehlt" ──────── */
   --am-radius-klein: 0.25rem;
   --am-radius-mittel: 0.5rem;
@@ -59,8 +100,13 @@
   --am-rand-betont: 2px;
 
   /* ── Bewegung — nur die dokumentierten Ausnahmen ──────────────────── */
-  --am-dauer-kurz: 120ms;
-  --am-dauer-lang: 200ms;
+  /* Dieselbe Leiter und Kurve wie im Auftritt (kern/bewegung.md,
+     ABGLEICH T6, Kai 01.10.2026). Bis dahin trug die App --am-dauer-kurz
+     und --am-dauer-lang; sie entfallen. */
+  --am-dauer-schnell: 120ms;  /* Hover, Fokus, Farbwechsel */
+  --am-dauer-mittel: 200ms;   /* Aufklappen, Einblenden */
+  --am-dauer-langsam: 320ms;  /* Menü, Overlay */
+  --am-kurve: cubic-bezier(0.2, 0, 0, 1); /* kein Federn, kein Überschwingen */
 
   /* ── Hanseatenblau — Flächenleiter, Farbton 249,9 ─────────────────── */
   --am-blau-25: #f5f9fc;
@@ -83,7 +129,8 @@
   --am-gold-500: #caa960; /* das eine Markengold */
   --am-gold-600: #b7974e;
   --am-gold-700: #a4843a;
-  --am-gold-800: #8b6c1f; /* Gold als Text auf Weiß, 4,93:1 */
+  --am-gold-800: #8c6c1f; /* Gold als Text auf Weiß, 4,91:1 — derselbe Wert
+                              wie --am-gold-text im Auftritt (ABGLEICH T3) */
   --am-gold-900: #71560f;
 
   /* ── Zustandsfarben — Text und Rand, keine Fläche außer im Formular ─ */
@@ -99,6 +146,9 @@
   --am-achtung-rand: #eec8af;
   --am-fehler-flaeche: #ffedeb;
   --am-fehler-rand: #f3c4be;
+  /* Lösch-Knopf beim Überfahren — heller wie die Handlung, nicht dunkler
+     (ABGLEICH R1). Weiß darauf 4,59:1; weiter aufhellen hieße durchfallen. */
+  --am-fehler-hover: #b9584f;
 
   /* ── Halbsemantische Ebene, Hellmodus (Vorgabe) ───────────────────── */
   --am-seite: #ffffff;
@@ -107,17 +157,42 @@
   --am-flaeche-3: var(--am-blau-100);  /* Dialog, Popover */
   --am-trennlinie: var(--am-blau-200);
   --am-rand: var(--am-blau-200);
-  --am-rand-betont-farbe: var(--am-blau-300);
+  /* Der Rand, an dem man ein Bedienelement erkennt (sekundärer Knopf,
+     offenes Auswahlfeld) — WCAG 1.4.11 verlangt 3:1. Blau 300 kam auf
+     1,86:1 (ABGLEICH T9). Blau 500, der Wendepunkt: Weiß 4,61 ·
+     Fläche 1 4,36 · Fläche 3 3,80:1. */
+  --am-rand-betont-farbe: var(--am-blau-500);
 
   --am-text-primaer: var(--am-blau-900);
   --am-text-sekundaer: var(--am-blau-600);
-  --am-text-gedaempft: var(--am-blau-500);
+  /* Eine eigene Rolle, keine Leiterstufe (ABGLEICH T9, Kai 01.10.2026).
+     #4f6c8a trägt auf jeder hellen Fläche: Weiß 5,46 · Fläche 1 5,16 ·
+     Fläche 2 4,94 · Fläche 3 4,51:1. Fläche 2 ist jede Zeile unter dem
+     Zeiger — dort fiel #567595 auf 4,34:1, im Dialog auf 3,96:1.
+     Blau 500 bleibt, wie es ist: Es ist der Wendepunkt für Zeichen, die in
+     beiden Modi tragen müssen (Pfeil im Auswahlfeld, Balken). */
+  --am-text-gedaempft: #4f6c8a;
   --am-text-deaktiviert: var(--am-blau-400);
 
   --am-handlung-ruhend: #002f56;
   --am-handlung-hover: #104472;
   --am-handlung-aktiv: #002140;
   --am-handlung-text: #ffffff;
+
+  /* Der eine Schatten: nur für das, was schwebt — Klappmenü, Suchtreffer,
+     Popover, Dialog, Assistent —, immer zusammen mit dem betonten Rand.
+     Karten, Tafeln, Spalten und Knöpfe tragen nie einen (ABGLEICH R6,
+     Kai 01.10.2026). */
+  --am-schatten-1: 0 8px 24px rgb(5 23 41 / 12%), 0 1px 2px rgb(5 23 41 / 8%);
+  /* Das schwebende Schild des Assistenten unten rechts. */
+  --am-schatten-schild: 0 6px 16px rgb(5 23 41 / 28%);
+
+  /* Schrift auf einer satten Fläche, die in beiden Modi dunkel bleibt
+     (Blau 600/900, Fehlerrot) — dort ist Weiß richtig, auch im Dunkeln.
+     Auf der Handlungsfläche gilt dagegen --am-handlung-text. */
+  --am-text-auf-farbe: #ffffff;
+  /* Trennlinie innerhalb eines Handlungsknopfs (Knopfmenü). */
+  --am-trenner-auf-handlung: rgb(255 255 255 / 0.25);
 
   --am-gold-auszeichnung: var(--am-gold-500);
   --am-fokus-ring: #002f56;
@@ -145,11 +220,17 @@ html.dunkel {
   --am-flaeche-1: var(--am-blau-800);
   --am-flaeche-2: var(--am-blau-700);
   --am-flaeche-3: var(--am-blau-700);
-  --am-rand-betont-farbe: var(--am-blau-600);
+  /* Blau 600 kam im Dunkeln auf 2,34:1 (ABGLEICH T9). Blau 400: Seite
+     6,29 · Fläche 3 4,83:1. */
+  --am-rand-betont-farbe: var(--am-blau-400);
   --am-trennlinie: var(--am-blau-700);
   --am-rand: var(--am-blau-700);
 
-  --am-text-primaer: #ffffff;
+  /* Gebrochenes Weiß wie im Auftritt: reines Weiß überstrahlt auf
+     Hanseatenblau beim langen Lesen. 16,08:1 auf der Seite, 12,35:1 auf
+     Fläche 3 (ABGLEICH T3, Kai 01.10.2026). Weiß bleibt nur auf satten
+     Flächen: --am-text-auf-farbe. */
+  --am-text-primaer: #eef2f6;
   --am-text-sekundaer: var(--am-blau-200);
   --am-text-gedaempft: var(--am-blau-300);
   --am-text-deaktiviert: var(--am-blau-400);
@@ -158,6 +239,8 @@ html.dunkel {
   --am-handlung-hover: var(--am-gold-400);
   --am-handlung-aktiv: var(--am-gold-600);
   --am-handlung-text: var(--am-blau-900);
+  --am-schatten-1: 0 8px 24px rgb(0 0 0 / 40%), 0 1px 2px rgb(0 0 0 / 30%);
+  --am-schatten-schild: 0 6px 16px rgb(0 0 0 / 45%);
 
   --am-erfolg: #55c483;
   --am-hinweis: #60b0ff;
@@ -171,8 +254,12 @@ html.dunkel {
   --am-achtung-rand: #5f371a;
   --am-fehler-flaeche: #371b18;
   --am-fehler-rand: #62332e;
+  --am-fehler-hover: #f9948a; /* Blau 900 darauf 8,30:1 */
 
-  --am-fokus-ring: var(--am-gold-900);
+  /* Der Ring folgt der Handlung wie im Auftritt (kern/schaltflaechen.md):
+     Gold 500, 8,06:1 auf der Seite, 6,19:1 auf Fläche 3. Gold 900 kam
+     auf 2,62:1 (ABGLEICH T9). */
+  --am-fokus-ring: var(--am-gold-500);
 
   /* Auf Hanseatenblau trägt das Markengold: 7,2:1 auf der Navigationsfläche,
      8,1:1 auf der Grundfläche. Es ist zugleich die Handlungsfarbe im
@@ -200,16 +287,6 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
 }
 
 @layer base {
-  :root {
-    /* Die früheren Insilo-Farbtoken (--gold, --surface-soft, --text-meta …)
-       sind entfallen — alle Bauteile lesen jetzt --am-*. Geblieben sind nur
-       die Bewegungswerte: das AImighty-Paket gibt Dauern vor, aber keine
-       Beschleunigungskurve. */
-    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-    --duration-fast: 150ms;
-    --duration-medium: 250ms;
-  }
-
   html {
     color-scheme: light;
     background: var(--am-seite);
@@ -275,9 +352,9 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     justify-content: center;
     gap: var(--am-raum-2);
     transition:
-      background var(--am-dauer-kurz) ease,
-      color var(--am-dauer-kurz) ease,
-      border-color var(--am-dauer-kurz) ease;
+      background var(--am-dauer-schnell) var(--am-kurve),
+      color var(--am-dauer-schnell) var(--am-kurve),
+      border-color var(--am-dauer-schnell) var(--am-kurve);
     height: var(--am-ziel-zeiger);
     padding: 0 var(--am-raum-6);
   }
@@ -563,7 +640,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     font-size: 0.6875rem;
     color: var(--am-text-sekundaer);
     text-align: center;
-    transition: color var(--am-dauer-kurz) ease;
+    transition: color var(--am-dauer-schnell) var(--am-kurve);
   }
 
   .huelle-nav-item:hover { color: var(--am-text-primaer); }
@@ -608,7 +685,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     letter-spacing: 0.01em;
     color: var(--am-text-sekundaer);
     border-radius: var(--am-radius-klein);
-    transition: color var(--am-dauer-kurz) ease;
+    transition: color var(--am-dauer-schnell) var(--am-kurve);
   }
 
   .huelle-herkunft-marke:hover {
@@ -734,7 +811,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
       font-family: var(--am-schrift-mono);
       font-size: 0.6875rem;
       line-height: 1.4;
-      transition: background var(--am-dauer-kurz) ease;
+      transition: background var(--am-dauer-schnell) var(--am-kurve);
     }
 
     .huelle-schutz-text {
@@ -840,8 +917,8 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     justify-content: center;
     /* Kein Schatten, kein Pulsieren im Ruhezustand, kein Hover-Versatz —
        Bewegung trägt hier nur eine Information: läuft die Aufnahme. */
-    transition: background var(--am-dauer-kurz) ease,
-                border-color var(--am-dauer-kurz) ease;
+    transition: background var(--am-dauer-schnell) var(--am-kurve),
+                border-color var(--am-dauer-schnell) var(--am-kurve);
   }
   .btn-record:hover { border-color: var(--am-gold-600); }
   .btn-record:disabled { animation: none; opacity: 0.6; cursor: not-allowed; }
@@ -884,7 +961,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     from { opacity: 0; transform: translateY(4px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .page-in { animation: page-in 220ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both; }
+  .page-in { animation: page-in var(--am-dauer-mittel) var(--am-kurve) both; }
 
   /* Kaskadiertes Erscheinen von Listenzeilen — Index-basierter delay
      wird per inline-style gesetzt (z. B. RecentMeetings). */
@@ -893,14 +970,14 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     to   { opacity: 1; transform: translateY(0); }
   }
   .stagger-in {
-    animation: stagger-in 220ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) both;
+    animation: stagger-in var(--am-dauer-mittel) var(--am-kurve) both;
   }
 
   /* Klickbare Karten: Zustand über den Rand, nicht über Versatz oder
      Schatten (Guide: kein Vergrößern bei Hover, kein Schattenwechsel). */
   .lift-on-hover {
-    transition: border-color var(--am-dauer-kurz) ease,
-                background var(--am-dauer-kurz) ease;
+    transition: border-color var(--am-dauer-schnell) var(--am-kurve),
+                background var(--am-dauer-schnell) var(--am-kurve);
   }
   .lift-on-hover:hover {
     border-color: var(--am-rand-betont-farbe);
@@ -922,9 +999,9 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     color: var(--am-text-primaer);
     background: transparent;
     transition:
-      background var(--duration-fast) ease,
-      color var(--duration-fast) ease,
-      transform 80ms ease-out;
+      background var(--am-dauer-schnell) var(--am-kurve),
+      color var(--am-dauer-schnell) var(--am-kurve),
+      transform var(--am-dauer-schnell) var(--am-kurve);
   }
   .quick-capture-trigger:hover {
     background: var(--am-auswahl-flaeche);
@@ -955,7 +1032,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
      definitiv überschrieben wird (war v0.1.53-54 ein Problem). */
   body.quick-capture-active {
     background: var(--am-blau-950) !important;
-    transition: background 280ms var(--ease-out);
+    transition: background var(--am-dauer-langsam) var(--am-kurve);
   }
   body.quick-capture-active header {
     display: none;
@@ -976,10 +1053,10 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     to   { opacity: 1; transform: scale(1); }
   }
   .immersive-in {
-    animation: immersive-in 320ms var(--ease-out) both;
+    animation: immersive-in var(--am-dauer-langsam) var(--am-kurve) both;
   }
   .immersive-in-delayed {
-    animation: immersive-in 360ms 80ms var(--ease-out) both;
+    animation: immersive-in var(--am-dauer-langsam) var(--am-dauer-schnell) var(--am-kurve) both;
   }
 
   /* Stärkerer Pulse für den Recording-State im Car-Mode (mehrere
@@ -1023,7 +1100,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     border-radius: 4px;
     font-weight: 400;
     font-size: 0.9375rem;
-    transition: border-color var(--duration-fast) ease;
+    transition: border-color var(--am-dauer-schnell) var(--am-kurve);
     width: 100%;
   }
   .input:focus-visible {
@@ -1073,7 +1150,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
     padding: var(--am-raum-4) var(--am-raum-6);
     border-bottom: 1px solid var(--am-trennlinie);
     cursor: pointer;
-    transition: background var(--am-dauer-kurz) ease;
+    transition: background var(--am-dauer-schnell) var(--am-kurve);
   }
   .meeting-row:hover { background: var(--am-flaeche-1); }
   /* Auswahl ist nicht Hover: eigene Fläche (Gold-200 hell, Blau-700 dunkel)
@@ -1098,7 +1175,7 @@ html[data-dichte="kompakt"] { --am-skalierung: 0.9; }
   /* Laufende Aufnahme trägt Gold — die Auszeichnung, nicht das Fehler-Rot. */
   .pill-recording {
     background: var(--am-auswahl-flaeche);
-    color: var(--am-gold-beschriftung);
+    color: var(--am-text-primaer);
   }
   .pill-recording::before {
     content: "";

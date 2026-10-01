@@ -501,10 +501,8 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
         {dateiFehler &&
           (phase === "idle" || phase === "denied" || phase === "unsupported") && (
-            <div className="streifen streifen-achtung mt-6 text-left" role="alert">
-              <span className="zeichen" aria-hidden>
-                !
-              </span>
+            <div className="hinweis mt-6 text-left" data-art="achtung" role="alert">
+              <AlertTriangle size={16} aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="text-sm">{dateiFehler.fehler}</p>
                 <div className="mt-3 flex flex-wrap gap-2">

@@ -19,7 +19,8 @@
 | Alle Token (Farbe, Raum, Schrift, Radien, Zustände, Bewegung, Ebenen) | `frontend/app/globals.css`, Block ganz oben — **wörtlich `tokens/app.css` aus dem AImighty-CI** (Stand `ci-26.10.3`, seit Etappe 1 des CI-Anschlusses). Geändert wird er im CI, nie hier |
 | Tailwind-Anbindung | `frontend/tailwind.insilo.preset.js` — unverändert aus dem Paket |
 | Schriften | `frontend/app/fonts/`, geladen per `next/font/local` |
-| Bauteile (Knöpfe, Felder, Streifen, Tabelle) | `frontend/app/globals.css`, `@layer components` |
+| Bausteine (Knopf, Feld, Karte, Leerzustand, Hinweiszeile, Tabelle, Dialog, Zeichen) | `frontend/app/globals.css`, je Abschnitt mit Kennung `[AM-…]`/`[HB-…]` — **wortgleich mit `bauteile/<KENNUNG>.css` aus dem CI**, geprüft mit `python3 frontend/ci/werkzeug/bauteile.py frontend/app/globals.css --ohne-md` |
+| Insilos Eigenes (Hülle bis Etappe 6, Aufnahmeknopf, Schauerfunktion, Besprechungszeile, Auswahl) | dieselbe Datei, Kennung `[IN-…]` (CI ABGLEICH IN-K) — bleibt in Insilo |
 | Lebendes Referenzblatt | `InSilo_Design-Paket.html` aus der Lieferung |
 
 **Regel:** Wer einen Wert ändert, ändert ihn in `globals.css` — nie am

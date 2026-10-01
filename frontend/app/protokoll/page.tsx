@@ -13,7 +13,7 @@
  * Datenänderung wird geloggt" versprach.
  */
 
-import { ArrowLeft, KeyRound, Share2, User } from "@/lib/symbole";
+import { AlertCircle, ArrowLeft, Info, KeyRound, Share2, User } from "@/lib/symbole";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -86,10 +86,8 @@ export default function ProtokollSeiteAnsicht() {
       <p className="max-w-[720px] text-text-sekundaer">{t("einleitung")}</p>
 
       {lage.art === "ok" && !lage.seite.darf_alles_sehen && (
-        <div className="streifen streifen-hinweis mt-6 max-w-[720px]">
-          <span className="zeichen" aria-hidden>
-            i
-          </span>
+        <div className="hinweis mt-6 max-w-[720px]">
+          <Info size={16} aria-hidden />
           <span>{t("nurEigene")}</span>
         </div>
       )}
@@ -132,10 +130,8 @@ export default function ProtokollSeiteAnsicht() {
       )}
 
       {lage.art === "fehler" && (
-        <div className="streifen streifen-fehler mt-8">
-          <span className="zeichen" aria-hidden>
-            !
-          </span>
+        <div className="hinweis mt-8" data-art="fehler">
+          <AlertCircle size={16} aria-hidden />
           <span>{t("nichtGeladen")}</span>
         </div>
       )}
@@ -151,8 +147,8 @@ export default function ProtokollSeiteAnsicht() {
 
       {lage.art === "ok" && lage.eintraege.length > 0 && (
         <>
-          <div className="tabelle-rahmen mt-8 overflow-x-auto">
-            <table className="am-tabelle w-full">
+          <div className="rollbar mt-8 rounded-lg border border-trennlinie" tabIndex={0}>
+            <table className="tabelle">
               <thead>
                 <tr>
                   <th scope="col">{t("spalteZeit")}</th>

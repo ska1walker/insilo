@@ -14,7 +14,7 @@
  * stehen und schon keine Aufnahme mehr haben.
  */
 
-import { ArchiveRestore, ArrowLeft, Trash2 } from "@/lib/symbole";
+import { AlertCircle, AlertTriangle, ArchiveRestore, ArrowLeft, Trash2 } from "@/lib/symbole";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -124,10 +124,8 @@ export default function PapierkorbSeite() {
       )}
 
       {lage.art === "fehler" && (
-        <div className="streifen streifen-fehler mt-8">
-          <span className="zeichen" aria-hidden>
-            !
-          </span>
+        <div className="hinweis mt-8" data-art="fehler">
+          <AlertCircle size={16} aria-hidden />
           <span>{t("nichtGeladen")}</span>
         </div>
       )}
@@ -204,10 +202,8 @@ export default function PapierkorbSeite() {
               </div>
 
               {fragt === e.id && (
-                <div className="streifen streifen-achtung mx-5 mb-4">
-                  <span className="zeichen" aria-hidden>
-                    !
-                  </span>
+                <div className="hinweis mx-5 mb-4" data-art="achtung">
+                  <AlertTriangle size={16} aria-hidden />
                   <span className="flex-1">
                     <span className="block">
                       {t("endgueltigFrage", { titel: e.title })}

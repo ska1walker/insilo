@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle, Info } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -218,10 +219,8 @@ export default function EinstellungenPage() {
           Besprechung aufnimmt und sich über das fehlende Protokoll
           wundert. Kein Fehlerton — es fehlt etwas, kaputt ist nichts. */}
       {settings !== null && !settings.llm_base_url && !settings.defaults?.llm_base_url && (
-        <div className="streifen streifen-hinweis mb-6">
-          <span className="zeichen" aria-hidden>
-            i
-          </span>
+        <div className="hinweis mb-6">
+          <Info size={16} aria-hidden />
           <span>
             <strong className="block">{tSettings("llmFehltTitel")}</strong>
             {tSettings("llmFehltText")}
@@ -452,10 +451,8 @@ export default function EinstellungenPage() {
               unfertige Einrichtung — und sie hat Vorrang, weil sie die
               Transkription stillstehen lässt. */}
           {form.sttBaseUrl.trim() !== "" && form.sttModel.trim() === "" && (
-            <div className="streifen streifen-hinweis">
-              <span className="zeichen" aria-hidden>
-                i
-              </span>
+            <div className="hinweis">
+              <Info size={16} aria-hidden />
               <span>{tSettings("sttModellFehlt")}</span>
             </div>
           )}
@@ -464,10 +461,8 @@ export default function EinstellungenPage() {
               Der Streifen erscheint nur, wenn wirklich eine Adresse steht:
               ohne Eintrag gibt es nichts zu warnen. */}
           {form.sttBaseUrl.trim() !== "" && (
-            <div className="streifen streifen-achtung">
-              <span className="zeichen" aria-hidden>
-                !
-              </span>
+            <div className="hinweis" data-art="achtung">
+              <AlertTriangle size={16} aria-hidden />
               <span>{tSettings("sttWarnung")}</span>
             </div>
           )}

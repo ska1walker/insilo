@@ -10,7 +10,7 @@
  * gespeichert oder ausdrücklich verworfen — und Verwerfen fragt nach.
  */
 
-import { Loader2 } from "@/lib/symbole";
+import { AlertTriangle, Loader2 } from "@/lib/symbole";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -143,10 +143,8 @@ export function OffeneAufnahme({
   }
 
   return (
-    <div className="streifen streifen-achtung text-left" role="alert">
-      <span className="zeichen" aria-hidden>
-        !
-      </span>
+    <div className="hinweis text-left" data-art="achtung" role="alert">
+      <AlertTriangle size={16} aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="font-medium">{t("titel")}</p>
         <p className="mono mt-1 text-xs text-text-gedaempft">

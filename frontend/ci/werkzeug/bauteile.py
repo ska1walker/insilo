@@ -11,7 +11,8 @@ Kopfzeile ``/* ── Titel [KENNUNG] ─…``. Alles bis zur nächsten solchen 
 gehört zu dieser Kennung. Je Fundament (``AM-``) und Anwendungsbaustein
 (``HB-``) gibt es ``bauteile/<KENNUNG>.css`` und ``bauteile/<KENNUNG>.md`` mit
 der Liste der Token, die der Baustein liest. ``AM-TOKEN`` ist
-``tokens/app.css``; ``RK-`` ist Fachlichkeit der Anwendung und bleibt dort.
+``tokens/app.css``; ``RK-`` (Rocket) und ``IN-`` (Insilo) sind Fachlichkeit der
+Anwendung und bleiben dort.
 
 **Das CI ist die Quelle** (ABGLEICH.md, Paket 4; Kai, 01.10.2026). Eine App
 nimmt die Bausteine aus einem Stand ``ci-YY.M.n`` und prüft sich mit diesem
@@ -28,9 +29,9 @@ HIER = Path(__file__).resolve().parent.parent
 ZIEL = HIER / "bauteile"
 TOKEN = HIER / "tokens" / "app.css"
 
-KOPF = re.compile(r"^\s*/\* ── (.*?)(?:\s*\[((?:AM|HB|RK)-[A-Z]+)\])?\s*[─\s]*(?:\*/)?\s*$")
+KOPF = re.compile(r"^\s*/\* ── (.*?)(?:\s*\[((?:AM|HB|RK|IN)-[A-Z]+)\])?\s*[─\s]*(?:\*/)?\s*$")
 KOPF_LOSE = re.compile(r"^\s*/\* ── ")
-KENNUNG_IM_KOPF = re.compile(r"\[((?:AM|HB|RK)-[A-Z]+)\]")
+KENNUNG_IM_KOPF = re.compile(r"\[((?:AM|HB|RK|IN)-[A-Z]+)\]")
 BANNER = re.compile(r"^\s*/\* ═")
 FARBE = re.compile(r"#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch|oklab)\(")
 VAR = re.compile(r"var\((--am-[a-z0-9-]+)")

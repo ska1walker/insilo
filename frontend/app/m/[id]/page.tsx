@@ -41,11 +41,9 @@ export default function MeetingDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const toast = useToast();
-  // Diese Seite ist noch nicht durchgehend übersetzt — die Schlüssel im
-  // Namensraum `meeting` gibt es seit der i18n-Umstellung, angeschlossen
-  // wurde sie nie. Der Fehlerblock unten nutzt sie jetzt; der Rest der
-  // Seite steht weiter fest auf Deutsch und gehört bei Gelegenheit nach.
   const t = useTranslations("meeting");
+  const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -69,9 +67,9 @@ export default function MeetingDetail() {
         if (err instanceof ApiError && err.status === 404) {
           setState({ kind: "not-found" });
         } else if (err instanceof ApiError) {
-          setState({ kind: "error", message: `Backend antwortete mit HTTP ${err.status}.` });
+          setState({ kind: "error", message: tErrors("httpStatus", { status: err.status }) });
         } else {
-          setState({ kind: "error", message: "Backend nicht erreichbar." });
+          setState({ kind: "error", message: tErrors("network") });
         }
       }
     }
@@ -81,7 +79,7 @@ export default function MeetingDetail() {
       cancelled = true;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [params.id]);
+  }, [params.id, tErrors]);
 
   const [retrying, setRetrying] = useState(false);
   const [retryingTranscription, setRetryingTranscription] = useState(false);
@@ -145,7 +143,7 @@ export default function MeetingDetail() {
     } catch (err) {
       console.error("retry-summary failed", err);
       toast.show({
-        message: "Erneutes Zusammenfassen fehlgeschlagen. Bitte später erneut versuchen.",
+        message: t("retrySummaryFailed"),
         variant: "error",
       });
     } finally {
@@ -165,11 +163,11 @@ export default function MeetingDetail() {
     router.push("/");
 
     toast.show({
-      message: `„${meeting.title}" wird gelöscht`,
+      message: t("deleteConfirm", { title: meeting.title }),
       variant: "undo",
       duration: 5000,
       action: {
-        label: "Rückgängig",
+        label: tCommon("undo"),
         onClick: () => {
           cancelled = true;
           // Send the user back to the detail page they came from.
@@ -183,7 +181,7 @@ export default function MeetingDetail() {
         } catch (err) {
           console.error("delete failed", err);
           toast.show({
-            message: "Löschen fehlgeschlagen. Bitte erneut versuchen.",
+            message: t("deleteFailed"),
             variant: "error",
           });
           // Bring the user back to the meeting so they can retry.
@@ -206,12 +204,12 @@ export default function MeetingDetail() {
   if (state.kind === "not-found") {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-24 text-center md:px-12">
-        <p className="font-display text-xl font-medium">Aufnahme nicht gefunden</p>
+        <p className="font-display text-xl font-medium">{t("notFoundTitle")}</p>
         <p className="mx-auto mt-3 max-w-[420px] text-text-sekundaer">
-          Diese Aufnahme existiert nicht oder wurde bereits gelöscht.
+          {t("notFoundHint")}
         </p>
         <Link href="/" className="btn btn-primaer mt-8 inline-flex">
-          Zur Übersicht
+          {t("toOverview")}
         </Link>
       </main>
     );
@@ -220,14 +218,14 @@ export default function MeetingDetail() {
   if (state.kind === "error") {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-24 text-center md:px-12">
-        <p className="font-display text-xl font-medium">Verbindung unterbrochen</p>
+        <p className="font-display text-xl font-medium">{t("connectionLost")}</p>
         <p className="mx-auto mt-3 max-w-[420px] text-text-sekundaer">{state.message}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
           className="btn btn-sekundaer mt-8 inline-flex"
         >
-          Erneut versuchen
+          {tCommon("retry")}
         </button>
       </main>
     );
@@ -238,7 +236,7 @@ export default function MeetingDetail() {
   return (
     <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12 md:py-16">
       <Link href="/" className="btn btn-still -ml-3 mb-8 inline-flex">
-        ← Übersicht
+        ← {tCommon("overview")}
       </Link>
 
       <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -288,7 +286,7 @@ export default function MeetingDetail() {
             {t("failedTitle")}
           </p>
           <p className="mt-2 text-sm text-text-sekundaer">
-            {meeting.error_message ?? "Unbekannter Fehler."}
+            {meeting.error_message ?? tErrors("unknown")}
           </p>
           {/* Der Ton liegt noch da: dann geht die ganze Verarbeitung von
               vorn. Das ist der Weg für eine Aufnahme, die an einem
@@ -319,12 +317,13 @@ export default function MeetingDetail() {
           {meeting.transcript && (
             <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-trennlinie pt-4">
               <p className="text-xs text-text-sekundaer">
-                Transkript ist vorhanden. Sie können die Zusammenfassung
-                erneut anstoßen — z.&nbsp;B. nachdem Sie unter{" "}
-                <Link href="/einstellungen" className="underline">
-                  Einstellungen
-                </Link>{" "}
-                einen erreichbaren LLM-Endpunkt eingetragen haben.
+                {t.rich("retrySummaryHint", {
+                  link: (teile) => (
+                    <Link href="/einstellungen" className="underline">
+                      {teile}
+                    </Link>
+                  ),
+                })}
               </p>
               <button
                 type="button"
@@ -342,7 +341,7 @@ export default function MeetingDetail() {
       {POLLING_STATUS.has(meeting.status) && (
         <section className="mt-10 rounded-lg border border-trennlinie bg-flaeche-1 p-6">
           <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
-            Verarbeitung
+            {t("processingTitle")}
           </p>
           <p className="mt-2 text-sm text-text-sekundaer">
             {meeting.fortschritt
@@ -350,7 +349,7 @@ export default function MeetingDetail() {
                   fertig: meeting.fortschritt.fertig,
                   gesamt: meeting.fortschritt.gesamt,
                 })
-              : "Die Aufnahme wird transkribiert. Diese Ansicht aktualisiert sich automatisch."}
+              : t("processingHint")}
           </p>
           {meeting.fortschritt && (
             // Lange Aufnahmen laufen abschnittsweise durch. Ohne diesen
@@ -383,7 +382,7 @@ export default function MeetingDetail() {
         <section className="mt-12">
           <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
             <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
-              Zusammenfassung · {meeting.summary.template_name}
+              {t("summaryHeading", { template: meeting.summary.template_name })}
             </p>
             <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
               {meeting.summary.llm_model} · {Math.round(meeting.summary.generation_time_ms / 1000)}s
@@ -405,16 +404,16 @@ export default function MeetingDetail() {
             type="button"
             onClick={() => setShowDispatch(true)}
             className="btn btn-sekundaer inline-flex items-center gap-2"
-            title="Diese Besprechung manuell an externe Systeme schicken"
+            title={t("dispatchTitle")}
           >
             <Send className="h-3.5 w-3.5" strokeWidth={1.75} />
-            An externe Systeme senden
+            {t("dispatchButton")}
           </button>
         ) : (
           <span />
         )}
         <button type="button" onClick={onDelete} className="btn btn-still text-fehler">
-          Aufnahme löschen
+          {t("delete")}
         </button>
       </div>
 

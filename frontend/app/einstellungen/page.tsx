@@ -50,9 +50,11 @@ const initialForm: FormState = {
 };
 
 export default function EinstellungenPage() {
-  // Die übrigen Texte dieser Seite sind noch deutsch verdrahtet (Altlast);
-  // neue kommen aus den Sprachdateien, damit die Lücke nicht wächst.
+  const t = useTranslations("einstellungen");
   const tSettings = useTranslations("settings");
+  const tTags = useTranslations("tags");
+  const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<SettingsRead | null>(null);
@@ -84,13 +86,13 @@ export default function EinstellungenPage() {
       .catch((err: unknown) => {
         if (cancelled) return;
         console.error("settings load failed", err);
-        setError("Einstellungen konnten nicht geladen werden.");
+        setError(t("loadFailed"));
         setPhase("error");
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   async function handleTest() {
     setTesting(true);
@@ -106,7 +108,7 @@ export default function EinstellungenPage() {
       console.error("settings test failed", err);
       setTestResult({
         ok: false,
-        detail: "Test fehlgeschlagen — Backend nicht erreichbar.",
+        detail: t("testUnreachable"),
       });
     } finally {
       setTesting(false);
@@ -164,7 +166,7 @@ export default function EinstellungenPage() {
       setPhase("ready");
     } catch (err: unknown) {
       console.error("settings save failed", err);
-      setError("Speichern fehlgeschlagen. Bitte erneut versuchen.");
+      setError(tErrors("saveFailed"));
       setPhase("ready");
     }
   }
@@ -172,7 +174,7 @@ export default function EinstellungenPage() {
   if (phase === "loading") {
     return (
       <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12">
-        <p className="text-sm text-text-sekundaer">Wird geladen…</p>
+        <p className="text-sm text-text-sekundaer">{tCommon("loading")}</p>
       </main>
     );
   }
@@ -194,18 +196,15 @@ export default function EinstellungenPage() {
   return (
     <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12">
       <Link href="/" className="text-sm text-text-sekundaer hover:text-text-primaer">
-        ← Übersicht
+        ← {tCommon("overview")}
       </Link>
 
       <div className="mt-6 mb-10">
         <h1 className="font-display text-4xl font-medium tracking-tight">
-          Einstellungen
+          {t("title")}
         </h1>
         <p className="mt-3 max-w-prose text-text-sekundaer">
-          Verbinden Sie Insilo mit Ihrem bevorzugten Sprachmodell. Jeder
-          OpenAI-kompatible Endpunkt funktioniert — die lokale Olares-LiteLLM,
-          ein eigener Ollama-Server oder ein externer Anbieter. Wenn ein Feld
-          leer bleibt, nutzt Insilo die im Deployment hinterlegten Vorgaben.
+          {t("intro")}
         </p>
       </div>
 
@@ -238,22 +237,21 @@ export default function EinstellungenPage() {
         className="space-y-7 rounded-lg border border-trennlinie bg-seite p-7"
       >
         <header>
-          <h2 className="font-display text-xl font-medium">Sprachmodell</h2>
+          <h2 className="font-display text-xl font-medium">{t("sectionLlm")}</h2>
           <p className="mt-1 text-sm text-text-sekundaer">
-            Wird für Zusammenfassungen und die „Fragen"-Funktion verwendet.
+            {t("llmHint")}
           </p>
         </header>
 
         <Field
-          label="Endpunkt-URL"
-          hint="z. B. https://llm.ihre-box.olares.de/v1 oder https://api.openai.com/v1"
-          placeholder={s.defaults.llm_base_url}
+          label={t("llmUrl")}
+          hint={t("llmUrlHint")}
         >
           <input
             type="url"
             className="input w-full"
             value={form.baseUrl}
-            placeholder={s.defaults.llm_base_url}
+            placeholder={s.defaults.llm_base_url || t("llmUrlPlaceholder")}
             onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
             autoComplete="off"
             spellCheck={false}
@@ -261,11 +259,11 @@ export default function EinstellungenPage() {
         </Field>
 
         <Field
-          label="API-Schlüssel"
+          label={tSettings("sttKey")}
           hint={
             s.llm_api_key_set
-              ? `Hinterlegt: ${hint}. Leer lassen, um den Schlüssel beizubehalten.`
-              : "Bei Anbietern wie OpenAI mit sk- beginnend. Wird verschlüsselt übertragen, niemals zurückgegeben."
+              ? t("keyStored", { hint })
+              : t("llmKeyHint")
           }
         >
           <div className="flex gap-2">
@@ -273,7 +271,7 @@ export default function EinstellungenPage() {
               type="password"
               className="input flex-1"
               value={form.apiKey}
-              placeholder={s.llm_api_key_set ? "•••••••••• (beibehalten)" : "sk-…"}
+              placeholder={s.llm_api_key_set ? t("keyKeepPlaceholder") : "sk-…"}
               onChange={(e) =>
                 setForm({
                   ...form,
@@ -299,16 +297,15 @@ export default function EinstellungenPage() {
                   })
                 }
               >
-                {form.clearKey ? "Doch behalten" : "Schlüssel löschen"}
+                {form.clearKey ? t("keyKeep") : t("keyDelete")}
               </button>
             )}
           </div>
         </Field>
 
         <Field
-          label="Modell-ID"
-          hint="Modellname wie er beim Endpunkt registriert ist, z. B. gpt-4o, qwen36a3bvisionone, llama3.1:8b."
-          placeholder={s.defaults.llm_model}
+          label={tSettings("sttModell")}
+          hint={tSettings("sttModellHinweis")}
         >
           <input
             type="text"
@@ -322,12 +319,14 @@ export default function EinstellungenPage() {
         </Field>
 
         <div className="rounded-md bg-flaeche-1 px-4 py-3 text-xs text-text-sekundaer">
-          <p className="font-medium text-text-primaer">Wird getestet / gespeichert</p>
+          <p className="font-medium text-text-primaer">{t("effectiveTitle")}</p>
           <p className="mt-1">
-            Endpunkt: <span className="font-mono">{effectiveBaseUrl || "—"}</span>
+            {t("effectiveEndpoint")}:{" "}
+            <span className="font-mono">{effectiveBaseUrl || "—"}</span>
           </p>
           <p>
-            Modell: <span className="font-mono">{effectiveModel || "—"}</span>
+            {t("effectiveModel")}:{" "}
+            <span className="font-mono">{effectiveModel || "—"}</span>
           </p>
         </div>
 
@@ -349,7 +348,7 @@ export default function EinstellungenPage() {
             }
           >
             <p className="font-medium">
-              {testResult.ok ? "Verbindung erfolgreich" : "Verbindung fehlgeschlagen"}
+              {testResult.ok ? t("testOk") : t("testFailed")}
             </p>
             <p className="mt-1 text-xs opacity-90">
               {testResult.detail}
@@ -394,7 +393,7 @@ export default function EinstellungenPage() {
               label={tSettings("sttKey")}
               hint={
                 s.stt_api_key_set
-                  ? `Hinterlegt: ${sttHint}. Leer lassen, um den Schlüssel beizubehalten.`
+                  ? t("keyStored", { hint: sttHint })
                   : tSettings("sttKeyHinweis")
               }
             >
@@ -405,9 +404,9 @@ export default function EinstellungenPage() {
                   value={form.sttApiKey}
                   placeholder={
                     form.sttClearKey
-                      ? "wird gelöscht"
+                      ? t("keyWillBeDeleted")
                       : s.stt_api_key_set
-                        ? "•••••••••• (beibehalten)"
+                        ? t("keyKeepPlaceholder")
                         : ""
                   }
                   disabled={form.sttClearKey}
@@ -429,7 +428,7 @@ export default function EinstellungenPage() {
                       })
                     }
                   >
-                    {form.sttClearKey ? "Doch behalten" : "Löschen"}
+                    {form.sttClearKey ? t("keyKeep") : tCommon("delete")}
                   </button>
                 )}
               </div>
@@ -477,7 +476,7 @@ export default function EinstellungenPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-trennlinie pt-5">
           <p className="text-xs text-text-sekundaer">
-            {savedAt && phase === "ready" ? "Gespeichert." : " "}
+            {savedAt && phase === "ready" ? t("saved") : " "}
           </p>
           <div className="flex gap-2">
             <button
@@ -486,35 +485,30 @@ export default function EinstellungenPage() {
               className="btn btn-sekundaer"
               disabled={testing || phase === "saving"}
             >
-              {testing ? "Teste…" : "Verbindung testen"}
+              {testing ? t("testing") : t("test")}
             </button>
             <button
               type="submit"
               className="btn btn-primaer"
               disabled={phase === "saving"}
             >
-              {phase === "saving" ? "Wird gespeichert…" : "Speichern"}
+              {phase === "saving" ? tCommon("saving") : tCommon("save")}
             </button>
           </div>
         </div>
       </form>
 
       <p className="mt-6 text-xs text-text-sekundaer">
-        Hinweis: Bestehende Zusammenfassungen werden nicht neu generiert. Die
-        neuen Einstellungen gelten für künftige Aufnahmen und Fragen.
+        {t("afterSave")}
       </p>
 
       <section className="mt-14">
         <header className="mb-5">
           <h2 className="font-display text-xl font-medium">
-            Vorlagen für Zusammenfassungen
+            {t("sectionTemplates")}
           </h2>
           <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
-            Jede Vorlage steuert über einen System-Prompt, wie das Sprachmodell
-            das Transkript strukturiert. Passen Sie die Prompts an Ihre
-            Fachsprache an — z.&nbsp;B. anwaltliche Formulierungen für
-            Mandantengespräche oder Vertriebs-Vokabular für Discovery-Calls.
-            Mit „Auf Standard zurücksetzen" kehren Sie zur Werks-Vorlage zurück.
+            {t("sectionTemplatesHint")}
           </p>
         </header>
 
@@ -523,13 +517,9 @@ export default function EinstellungenPage() {
 
       <section className="mt-14">
         <header className="mb-5">
-          <h2 className="font-display text-xl font-medium">Sprecher-Katalog</h2>
+          <h2 className="font-display text-xl font-medium">{t("sectionSpeakers")}</h2>
           <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
-            Personen, deren Stimme Insilo wiedererkennt. Sobald Sie einer
-            Stimme im Transkript einen Namen geben, lernt das System die
-            Stimm-Charakteristik — beim nächsten Meeting derselben Person
-            erscheint der Name automatisch. Alle Stimm-Daten bleiben auf
-            Ihrer Olares-Box; sie verlassen das Gerät nie.
+            {t("sectionSpeakersHint")}
           </p>
         </header>
 
@@ -538,12 +528,9 @@ export default function EinstellungenPage() {
 
       <section className="mt-14">
         <header className="mb-5">
-          <h2 className="font-display text-xl font-medium">Tags</h2>
+          <h2 className="font-display text-xl font-medium">{tTags("sectionTitle")}</h2>
           <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
-            Markieren Sie Besprechungen mit thematischen Tags, um sie
-            später leicht zu finden — z.&nbsp;B. „Mandant Müller",
-            „Q2 Strategie" oder „Vertriebs-Pipeline". Im Archiv können
-            Sie mehrere Tags gleichzeitig als Filter kombinieren.
+            {tTags("sectionHint")}
           </p>
         </header>
 
@@ -552,14 +539,9 @@ export default function EinstellungenPage() {
 
       <section className="mt-14">
         <header className="mb-5">
-          <h2 className="font-display text-xl font-medium">Webhooks</h2>
+          <h2 className="font-display text-xl font-medium">{t("sectionWebhooks")}</h2>
           <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
-            Lassen Sie sich von Insilo benachrichtigen, wenn sich der
-            Status einer Besprechung ändert — z.&nbsp;B. wenn eine
-            Zusammenfassung fertig ist. Insilo schickt dann einen
-            signierten POST-Request an die hinterlegte URL. Bei
-            <code className="mx-1 rounded bg-flaeche-1 px-1 font-mono">meeting.ready</code>
-            enthält der Payload zusätzlich das vollständige Meeting-Markdown.
+            {t.rich("sectionWebhooksHint", { code: codeTag })}
           </p>
         </header>
 
@@ -568,20 +550,21 @@ export default function EinstellungenPage() {
 
       <section className="mt-14 pb-12">
         <header className="mb-5">
-          <h2 className="font-display text-xl font-medium">API-Schlüssel</h2>
+          <h2 className="font-display text-xl font-medium">{t("sectionApiKeys")}</h2>
           <p className="mt-2 max-w-prose text-sm text-text-sekundaer">
-            Schlüssel erlauben externen Systemen, Besprechungen lesend
-            über die REST-API abzurufen
-            (<code className="mx-1 rounded bg-flaeche-1 px-1 font-mono">/api/external/v1/meetings</code>).
-            Jeder Schlüssel ist auf Ihre Organisation beschränkt — die
-            Daten verlassen Ihre Box nur dorthin, wohin Sie den Schlüssel
-            aushändigen.
+            {t.rich("sectionApiKeysHint", { code: codeTag })}
           </p>
         </header>
 
         <ApiKeyManager />
       </section>
     </main>
+  );
+}
+
+function codeTag(teile: React.ReactNode) {
+  return (
+    <code className="rounded bg-flaeche-1 px-1 font-mono">{teile}</code>
   );
 }
 

@@ -9,7 +9,9 @@
     "logoAlt": "Insilo",
     "homeAria": "Insilo — zur Übersicht",
     "navAria": "Hauptnavigation",
-    "herkunftAria": "AImighty — Website öffnen (neues Fenster)"
+    "herkunftAria": "AImighty — Website öffnen (neues Fenster)",
+    "mehr": "Mehr",
+    "mehrAria": "Weitere Ziele"
   },
   "common": {
     "save": "Speichern",
@@ -532,7 +534,7 @@
     "errGenericUpload": "Upload fehlgeschlagen — Verbindung prüfen."
   },
   "about": {
-    "metadataTitle": "Über Insilo · Datensouveräne Meeting-Intelligenz",
+    "metadataTitle": "Über",
     "version": "Insilo · v0.1",
     "heroTitle": "Meeting-Intelligenz, die niemals Ihr Haus verlässt.",
     "heroBody": "Insilo nimmt Geschäftsgespräche auf, transkribiert sie und erzeugt strukturierte Protokolle — vollständig auf Ihrer Olares-Box im Serverraum. Kein Cloud-Upload, keine Drittanbieter, keine Telemetrie.",

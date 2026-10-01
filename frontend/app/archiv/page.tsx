@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ApiError } from "@/lib/api/client";
 import { ask, type AskResponse, type AskSource } from "@/lib/api/ask";
 import { formatMeetingDate } from "@/lib/format";
+import { Seitentitel } from "@/components/seitentitel";
 
 type Phase = "idle" | "asking" | "done" | "error";
 
@@ -52,9 +53,7 @@ export default function AskPage() {
       <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
         {t("eyebrow")}
       </p>
-      <h1 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
-        {t("title")}
-      </h1>
+      <Seitentitel>{t("title")}</Seitentitel>
       <p className="mt-4 max-w-[640px] text-text-sekundaer">
         {t("intro")}
       </p>
@@ -127,7 +126,7 @@ export default function AskPage() {
                   setQuestion(ex);
                   submit(ex);
                 }}
-                className="group flex items-center justify-between gap-4 rounded-lg border border-trennlinie bg-seite px-5 py-4 text-left transition hover:border-rand-betont hover:bg-flaeche-1"
+                className="group flex items-center justify-between gap-4 rounded-mittel border border-trennlinie bg-seite px-5 py-4 text-left transition hover:border-rand-betont hover:bg-flaeche-1"
               >
                 <span className="text-sm leading-relaxed text-text-primaer">
                   {ex}

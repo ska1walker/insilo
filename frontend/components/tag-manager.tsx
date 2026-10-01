@@ -104,7 +104,7 @@ export function TagManager() {
                   <button
                     type="button"
                     onClick={() => setEditingId(tag.id)}
-                    className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
+                    className="rounded-mittel p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
                     aria-label={t("renameAria", { name: tag.name })}
                   >
                     <Pencil size={16} />

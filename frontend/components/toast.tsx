@@ -204,7 +204,7 @@ function ToastCard({
           <button
             type="button"
             onClick={handleClose}
-            className="-my-1 -mr-1 shrink-0 rounded p-1.5 text-text-gedaempft hover:bg-flaeche-1 hover:text-text-primaer"
+            className="-my-1 -mr-1 shrink-0 rounded-mittel p-1.5 text-text-gedaempft hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={tCommon("close")}
           >
             <X size={16} />

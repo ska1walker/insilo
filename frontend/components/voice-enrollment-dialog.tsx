@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Loader2, Mic, Square, X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
+import { useDialogfalle } from "@/components/dialogfalle";
 import { useEffect, useRef, useState } from "react";
 import { RecordingIndicator } from "@/components/recording-indicator";
 import { ApiError } from "@/lib/api/client";
@@ -193,12 +194,16 @@ export function VoiceEnrollmentDialog({
     onClose();
   }
 
+  // Fokus hinein, Tab bleibt drin, Escape schließt (HB-DIALOG).
+  const falle = useDialogfalle(handleClose);
+
   return (
     <div
       className="dialog-schicht"
       role="dialog"
-      aria-modal
+      aria-modal="true"
       aria-label={t("dialogAria")}
+      ref={falle}
     >
       {phase === "recording" && <RecordingIndicator />}
 
@@ -213,7 +218,7 @@ export function VoiceEnrollmentDialog({
           <button
             type="button"
             onClick={handleClose}
-            className="absolute right-4 top-4 rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
+            className="absolute right-4 top-4 rounded-mittel p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={t("closeAria")}
           >
             <X size={16} />

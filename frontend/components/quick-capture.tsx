@@ -332,12 +332,14 @@ export function QuickCapture() {
         >
           <ArrowLeft size={24} />
         </Link>
-        <p
-          className="mono text-[0.6875rem] uppercase tracking-[0.18em]"
+        {/* Der Seitentitel der Vollbildansicht: klein, weil der Knopf die
+            Seite trägt (G6, eigene Fläche). */}
+        <h1
+          className="mono text-[0.6875rem] font-normal uppercase tracking-[0.18em]"
           style={{ color: COLORS.goldLight }}
         >
           {t("eyebrow")}
-        </p>
+        </h1>
         <div className="w-12" aria-hidden />
       </header>
 

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
 import { renameMeeting } from "@/lib/api/meetings";
+import { Seitentitel } from "@/components/seitentitel";
 
 /**
  * Inline-editable meeting title for the detail page. Renders as an H1
@@ -83,13 +84,13 @@ export function MeetingTitleEdit({
           }}
           maxLength={255}
           disabled={saving}
-          className="input flex-1 min-w-[280px] text-3xl font-medium md:text-4xl"
+          className="input min-w-0 flex-1 text-[length:var(--am-seitentitel)] font-semibold"
           aria-label={tMeeting("renameInputAria")}
         />
         <button
           type="button"
           onClick={commit}
-          className="rounded-md p-2 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
+          className="rounded-mittel p-2 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={tCommon("save")}
           disabled={saving}
         >
@@ -98,7 +99,7 @@ export function MeetingTitleEdit({
         <button
           type="button"
           onClick={cancel}
-          className="rounded-md p-2 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
+          className="rounded-mittel p-2 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={tCommon("cancel")}
           disabled={saving}
         >
@@ -110,11 +111,11 @@ export function MeetingTitleEdit({
 
   return (
     <div className="group flex flex-wrap items-baseline gap-2">
-      <h1 className="text-3xl font-medium md:text-4xl">{initialTitle}</h1>
+      <Seitentitel className="min-w-0 break-words">{initialTitle}</Seitentitel>
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="rounded-md p-1.5 text-text-gedaempft opacity-0 transition hover:bg-flaeche-1 hover:text-text-primaer group-hover:opacity-100 focus:opacity-100"
+        className="rounded-mittel p-1.5 text-text-gedaempft opacity-0 transition hover:bg-flaeche-1 hover:text-text-primaer group-hover:opacity-100 focus:opacity-100"
         aria-label={tMeeting("renameAria")}
         title={tMeeting("renameAria")}
       >

@@ -9,7 +9,9 @@
     "logoAlt": "Insilo",
     "homeAria": "Insilo — retour à l'aperçu",
     "navAria": "Navigation principale",
-    "herkunftAria": "AImighty — ouvrir le site (nouvelle fenêtre)"
+    "herkunftAria": "AImighty — ouvrir le site (nouvelle fenêtre)",
+    "mehr": "Plus",
+    "mehrAria": "Autres destinations"
   },
   "common": {
     "save": "Enregistrer",
@@ -532,7 +534,7 @@
     "errGenericUpload": "Échec de l'envoi — vérifiez la connexion."
   },
   "about": {
-    "metadataTitle": "À propos d'Insilo · Intelligence de réunion souveraine",
+    "metadataTitle": "À propos",
     "version": "Insilo · v0.1",
     "heroTitle": "Une intelligence de réunion qui ne quitte jamais vos locaux.",
     "heroBody": "Insilo enregistre les entretiens d'affaires, les transcrit et produit des comptes rendus structurés — entièrement sur votre boîte Olares dans la salle serveur. Aucun envoi cloud, aucun tiers, aucune télémétrie.",

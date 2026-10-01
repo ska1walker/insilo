@@ -185,7 +185,7 @@ export function TagPicker({
               <button
                 type="button"
                 onClick={() => createAndAttach(filter)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-primaer hover:bg-flaeche-1"
+                className="flex w-full items-center gap-2 rounded-mittel px-2 py-1.5 text-left text-sm text-text-primaer hover:bg-flaeche-1"
               >
                 <Plus size={16} />
                 <span>{t("pickerCreateNew", { name: filter.trim() })}</span>
@@ -198,7 +198,7 @@ export function TagPicker({
                     <button
                       type="button"
                       onClick={() => attach(tag)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-flaeche-1"
+                      className="flex w-full items-center gap-2 rounded-mittel px-2 py-1.5 text-left hover:bg-flaeche-1"
                     >
                       <span className="truncate text-sm text-text-primaer">
                         {tag.name}

@@ -22,6 +22,16 @@
  *   denn iOS rundet ebenfalls selbst und geht mit Transparenz schlecht
  *   um.
  *
+ * Dazu das Zeichen im Browser-Tab (CI, ABGLEICH.md G7, 01.10.2026):
+ *
+ * - `tab.svg` — nur das Mikrofon, ohne Kachel und Wappen; wird als SVG
+ *   direkt ausgeliefert und färbt sich per `prefers-color-scheme` nach
+ *   der Tableiste. Safari nimmt kein SVG-Favicon und bekommt
+ *   `tab-32.png` in einem Gold dazwischen (#b08a3e), das auf hellen und
+ *   dunklen Leisten trägt.
+ *
+ * Seit 01.10.2026 (CI R5) trägt das Wappen das Mikrofon statt des „I".
+ *
  * `sharp` liegt bereits im Frontend (Next.js bringt es mit) — deshalb
  * kommt keine weitere Abhängigkeit dazu.
  */
@@ -37,7 +47,17 @@ const sharp = require("sharp");
 
 const QUELLEN = join(WURZEL, "frontend/public/icons");
 
-/** [Quelle, Zieldatei, Kantenlänge, deckend?] */
+// Ersatz-PNG fürs Favicon: Farbregel aus der SVG nehmen und das Gold
+// dazwischen fest setzen — sonst hinge die Farbe am Renderer.
+const TAB_PNG = (svg) => {
+  const fest = svg
+    .replace(/<style>[\s\S]*?<\/style>/, "")
+    .replace("<g ", '<g stroke="#b08a3e" ');
+  if (fest === svg) throw new Error("tab.svg hat sich verändert — Ersetzung prüfen");
+  return fest;
+};
+
+/** [Quelle, Zieldatei, Kantenlänge, deckend?, Umformung?] */
 const ZIELE = [
   // Olares: Markt-Kachel, Entrance-Symbol und featuredImage zeigen alle
   // auf die Datei in der Wurzel (siehe OlaresManifest).
@@ -53,13 +73,16 @@ const ZIELE = [
   ["icon-maskable-quelle.svg", "frontend/public/icons/icon-maskable-512.png", 512, false],
   // iOS rundet selbst und mag keine Transparenz → deckend
   ["icon-maskable-quelle.svg", "frontend/public/icons/apple-touch-icon.png", 180, true],
+  // Favicon-Ersatz für Browser ohne SVG-Favicon (Safari)
+  ["tab.svg", "frontend/public/icons/tab-32.png", 32, false, TAB_PNG],
 ];
 
 // Grundton der Kachel — nur als Untergrund für das deckende Symbol.
 const SAND = { r: 0xd6, g: 0xb2, b: 0x65, alpha: 1 };
 
-for (const [quelle, ziel, kante, deckend] of ZIELE) {
-  const svg = readFileSync(join(QUELLEN, quelle));
+for (const [quelle, ziel, kante, deckend, umformung] of ZIELE) {
+  const roh = readFileSync(join(QUELLEN, quelle), "utf8");
+  const svg = Buffer.from(umformung ? umformung(roh) : roh);
   // `density` hoch genug, damit die Weichzeichner-Filter sauber
   // aufgelöst werden, bevor verkleinert wird.
   let bild = sharp(svg, { density: 900 }).resize(kante, kante, {

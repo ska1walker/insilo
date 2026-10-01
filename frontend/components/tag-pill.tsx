@@ -38,7 +38,11 @@ export function TagPill({
       type={onClick ? "button" : undefined}
       onClick={onClick}
       aria-pressed={filter ? active : undefined}
-      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.75rem] font-medium leading-5 transition"
+      // Als Filter ein Ziel wie jedes andere: 40 px am Zeiger, 44 px am
+      // Finger (CI ABGLEICH IN-G8). Zum Lesen bleibt die Pille klein.
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.75rem] font-medium leading-5 transition${
+        filter ? " min-h-[var(--am-ziel-zeiger)] px-3.5 pointer-coarse:min-h-[var(--am-ziel-beruehrung)]" : ""
+      }`}
       style={{
         background: bg,
         borderColor: border,

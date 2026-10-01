@@ -2,6 +2,7 @@
 
 import { Loader2, Send, X } from "@/lib/symbole";
 import { useTranslations } from "next-intl";
+import { useDialogfalle } from "@/components/dialogfalle";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import { ApiError } from "@/lib/api/client";
@@ -79,12 +80,16 @@ export function MeetingDispatchDialog({
     }
   }
 
+  // Fokus hinein, Tab bleibt drin, Escape schließt (HB-DIALOG).
+  const falle = useDialogfalle(onClose);
+
   return (
     <div
       className="dialog-schicht"
       role="dialog"
-      aria-modal
+      aria-modal="true"
       aria-label={t("header")}
+      ref={falle}
     >
       {/* Header fix + Body scrollt + Footer sticky — selbe Struktur wie
           voice-enrollment-dialog, damit die Action-Buttons bei kleinen
@@ -94,7 +99,7 @@ export function MeetingDispatchDialog({
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
+            className="absolute right-4 top-4 rounded-mittel p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={tCommon("close")}
           >
             <X size={16} />

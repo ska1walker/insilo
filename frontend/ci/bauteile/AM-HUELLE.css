@@ -447,6 +447,14 @@
     .nachweis:hover { color: var(--am-text-primaer); background: var(--am-flaeche-2); }
     .nachweis:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
     .nachweis[data-extern="true"] svg { color: var(--am-gold-beschriftung); }
+    /* Der dritte Zustand, aus Insilo (ABGLEICH IN-B4): Ein Ziel draußen
+       bekommt ganze Transkripte oder den Ton (Sprachmodell, Spracherkennung).
+       Das muss auffallen — in der Zustandsfarbe, mit Zeichen und Wort. */
+    .nachweis[data-zustand="achtung"],
+    .nachweis[data-zustand="achtung"] svg { color: var(--am-achtung); }
+    /* Zweite Zeile, wo gemessen wird: der Host oder die übertragene Menge. */
+    .nachweis-text { display: flex; flex-direction: column; min-width: 0; }
+    .nachweis-unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .huelle-inhalt {
       grid-row: 2;

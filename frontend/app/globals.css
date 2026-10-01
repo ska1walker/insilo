@@ -601,6 +601,139 @@ select,
   padding-right: calc(var(--am-raum-3) + 1.25rem);
 }
 
+  /* ── Häkchen und Schalter [AM-HAKEN] ─────────────────────────────────────────
+     Das Browser-Häkchen ist in keinem System zu Hause. Eines in den
+     Farben des Hauses: ruhend ein Rahmen, gewählt Hanseatenblau mit
+     weißem Haken — im Dunkeln Gold, weil Blau auf Blau nicht trägt. */
+@layer components {
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    border: var(--am-rand-betont) solid var(--am-rand);
+    border-radius: var(--am-radius-klein);
+    background: var(--am-seite);
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    vertical-align: -0.2em;
+    transition: background-color var(--am-dauer-schnell) var(--am-kurve), border-color var(--am-dauer-schnell) var(--am-kurve);
+  }
+  input[type="checkbox"]::before {
+    content: "";
+    width: 0.625rem;
+    height: 0.625rem;
+    transform: scale(0);
+    transition: transform var(--am-dauer-schnell) var(--am-kurve);
+    background: currentColor;
+    clip-path: polygon(14% 44%, 0 62%, 40% 100%, 100% 22%, 84% 8%, 40% 66%);
+  }
+  input[type="checkbox"]:hover { border-color: var(--am-handlung-ruhend); }
+  input[type="checkbox"]:checked {
+    border-color: var(--am-handlung-ruhend);
+    background: var(--am-handlung-ruhend);
+    color: var(--am-text-auf-farbe);
+  }
+  input[type="checkbox"]:checked::before { transform: scale(1); }
+  input[type="checkbox"]:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+  input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
+  html.dunkel input[type="checkbox"]:hover { border-color: var(--am-gold-500); }
+  html.dunkel input[type="checkbox"]:checked { border-color: var(--am-gold-500); background: var(--am-gold-500); color: var(--am-blau-900); }
+
+  /* Der Auswahlknopf (eins aus mehreren): derselbe Rahmen, rund; gewählt
+     ein Punkt in Hanseatenblau, im Dunkeln Gold. Seit Insilo (IN-G8). */
+  input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    border: var(--am-rand-betont) solid var(--am-rand);
+    border-radius: var(--am-radius-voll);
+    background: var(--am-seite);
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    vertical-align: -0.2em;
+    transition: border-color var(--am-dauer-schnell) var(--am-kurve);
+  }
+  input[type="radio"]::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--am-radius-voll);
+    transform: scale(0);
+    transition: transform var(--am-dauer-schnell) var(--am-kurve);
+    background: var(--am-handlung-ruhend);
+  }
+  input[type="radio"]:hover,
+  input[type="radio"]:checked { border-color: var(--am-handlung-ruhend); }
+  input[type="radio"]:checked::before { transform: scale(1); }
+  input[type="radio"]:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+  input[type="radio"]:disabled { opacity: 0.5; cursor: not-allowed; }
+  html.dunkel input[type="radio"]:hover,
+  html.dunkel input[type="radio"]:checked { border-color: var(--am-gold-500); }
+  html.dunkel input[type="radio"]::before { background: var(--am-gold-500); }
+
+  .schalter-zeile {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--am-raum-3);
+    margin: var(--am-raum-4) 0;
+  }
+  .schalter {
+    flex: none;
+    position: relative;
+    width: 2.5rem;
+    height: 1.5rem;
+    margin-top: 0.05rem;
+    padding: 0;
+    border: var(--am-rand-betont) solid var(--am-rand);
+    border-radius: var(--am-radius-voll);
+    background: var(--am-flaeche-2);
+    cursor: pointer;
+    transition: background-color var(--am-dauer-schnell) var(--am-kurve), border-color var(--am-dauer-schnell) var(--am-kurve);
+  }
+  .schalter-knauf {
+    position: absolute;
+    top: 50%;
+    left: 0.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 50%;
+    /* Kein Schatten (ABGLEICH R6): Der Knauf hebt sich durch seinen Rand ab. */
+    background: var(--am-text-auf-farbe);
+    border: var(--am-rand-ruhend) solid var(--am-rand-betont-farbe);
+    box-sizing: border-box;
+    transform: translateY(-50%);
+    transition: transform var(--am-dauer-schnell) var(--am-kurve);
+  }
+  .schalter:hover { border-color: var(--am-handlung-ruhend); }
+  .schalter.an { background: var(--am-handlung-ruhend); border-color: var(--am-handlung-ruhend); }
+  .schalter.an .schalter-knauf { transform: translate(1rem, -50%); }
+  .schalter:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+  html.dunkel .schalter:hover { border-color: var(--am-gold-500); }
+  html.dunkel .schalter.an { background: var(--am-gold-500); border-color: var(--am-gold-500); }
+  html.dunkel .schalter.an .schalter-knauf { background: var(--am-blau-900); }
+  .schalter-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--am-text-primaer);
+    cursor: pointer;
+  }
+  .schalter-hinweis {
+    font-size: 0.8125rem;
+    color: var(--am-text-gedaempft);
+  }
+}
+
   /* ── Karte [AM-KARTE] ────────────────────────────────────────────────────────── */
 @layer components {
   .karte {
@@ -1102,6 +1235,519 @@ select,
   svg[data-symbol] { flex-shrink: 0; }
 }
 
+  /* ── Die Hülle [AM-HUELLE] ────────────────────────────────────────────────────
+     Zeiger (≥1024px): Navigation links, Inhalt, Ablage rechts.
+     Berührung (<1024px): Navigation als untere Leiste, Ablage unter dem
+     Inhalt. Der mobile Fall steht nicht im Referenzblatt — Insilo ist
+     aber primär eine Smartphone-PWA, und 220px Seitenspalte gehen auf
+     375px nicht auf. */
+@layer components {
+  .huelle {
+    display: grid;
+    /* minmax(0, …), nicht 1fr: sonst darf ein breites Kind die Spalte
+       aufdehnen und der Inhalt läuft seitlich aus dem Viewport. */
+    grid-template-columns: minmax(0, 1fr);
+    /* Kopfleiste, Inhalt, und unten die schmale Navigationsleiste. */
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-height: 100dvh;
+    background: var(--am-seite);
+  }
+}
+
+  /* ── Kopfleiste [AM-HUELLE] ───────────────────────────────────────────────────
+     Die zwei Dinge, die man von überall tut: suchen und anlegen. Sie
+     spannt über beide Spalten, damit die Marke einen Anfang hat und die
+     Navigationsspalte mit Navigation beginnt. */
+@layer components {
+  .kopfleiste {
+    grid-row: 1;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    height: var(--am-leistenhoehe);
+    box-sizing: border-box;
+    padding: 0 var(--am-raum-4);
+    background: var(--am-flaeche-1);
+    border-bottom: 1px solid var(--am-trennlinie);
+    position: sticky;
+    top: 0;
+    z-index: var(--am-ebene-kopfleiste);
+  }
+
+  .kopfleiste-marke {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    flex: none;
+  }
+
+  .kopfleiste-marke .marke { min-width: 0; }
+  .kopfleiste-marke .marke-produkt { overflow: hidden; text-overflow: ellipsis; }
+
+  /* Die Suche bekommt den Platz, den sie verdient — sie geht über den
+     ganzen Bestand, nicht über einen Bereich. Nach oben gedeckelt,
+     damit sie auf einem breiten Bildschirm nicht zum Balken wird. */
+  .kopfleiste-suche {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 520px;
+  }
+
+  /* Ein Rechteck mit knappem Polster, Radius wie jeder Knopf (8 px, ABGLEICH
+     G3). Neben einem Suchfeld von 40 px Höhe las sich der runde 24-px-Knopf
+     wie ein Fremdkörper. */
+  .kopf-neu {
+    flex: none;
+    gap: var(--am-raum-2);
+    padding: 0 var(--am-raum-4);
+    border-radius: var(--am-radius-mittel);
+    font-size: 0.875rem;
+  }
+  /* Das Zeichen trägt erst, wenn das Wort weicht. */
+  .kopf-neu-zeichen { display: none; }
+
+
+  .huelle-nav {
+    grid-row: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: var(--am-raum-1);
+    background: var(--am-flaeche-1);
+    border-top: 1px solid var(--am-trennlinie);
+    padding: var(--am-raum-2) var(--am-raum-2);
+    padding-bottom: max(var(--am-raum-2), env(safe-area-inset-bottom));
+    position: sticky;
+    bottom: 0;
+    z-index: var(--am-ebene-navigation);
+  }
+
+  /* Die Gruppierung trägt erst ab der Seitenspalte. */
+  .huelle-nav-spacer {
+    display: none;
+  }
+
+  /* Schmal: Der Produktname und der Klappschalter weichen, die Suche
+     bekommt die Zeile. Das Wappen bleibt — es ist die Herkunft. */
+  @media (max-width: 1023px) {
+    .kopfleiste-marke .marke-produkt,
+    .kopfleiste .huelle-klapp { display: none; }
+    .kopf-neu-text { display: none; }
+    .kopf-neu-zeichen { display: block; }
+    .kopf-neu { padding: 0 var(--am-raum-3); }
+    .kopfleiste-suche { max-width: none; }
+  }
+
+  /* Auf dem Handy zählt jedes Pixel für das Suchfeld: Bei 375 px stand
+     dort „Suchen oder fr…". Die Wortmarke gibt 22 px her, ohne unter die
+     gelieferte Mindestgröße von 45 px Breite zu fallen. */
+  @media (max-width: 30rem) {
+    .kopfleiste { gap: var(--am-raum-2); padding: 0 var(--am-raum-3); }
+    .kopfleiste-marke .marke-logo-bild { height: 22px; }
+  }
+
+  /* Gruppen, Titel, Lesezeichen und der Klappschalter gehören der Seitenspalte.
+     Die schmale Leiste unten zeigt vier Ziele und „Mehr“. */
+  .huelle-nav-gruppe,
+  .huelle-nav-titel,
+  .huelle-nav-stern,
+  .huelle-klapp,
+  .huelle-nav .huelle-mehr-knopf,
+  .huelle-mehr {
+    display: none;
+  }
+
+  .huelle-nav-mobil {
+    display: contents;
+  }
+
+  .huelle-nav-mehr {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--am-raum-1);
+    padding: var(--am-raum-2);
+    background: var(--am-flaeche-1);
+    /* Schwebt über der Leiste: betonter Rand und der eine Schatten (R6). */
+    border-top: 1px solid var(--am-rand-betont-farbe);
+    box-shadow: var(--am-schatten-1);
+  }
+
+  .huelle-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--am-raum-1);
+    padding: var(--am-raum-2);
+    min-width: var(--am-ziel-beruehrung);
+    min-height: var(--am-ziel-beruehrung);
+    border: 0;
+    border-radius: var(--am-radius-mittel);
+    background: transparent;
+    font: inherit;
+    font-size: 0.6875rem;
+    color: var(--am-text-sekundaer);
+    text-align: center;
+    cursor: pointer;
+    transition: color var(--am-dauer-schnell) var(--am-kurve);
+  }
+
+  .huelle-nav-item:hover { color: var(--am-text-primaer); }
+
+  .huelle-nav-item.aktiv {
+    color: var(--am-gold-beschriftung);
+    font-weight: 600;
+  }
+
+  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
+     sichtbar; Farbe und Schnitt gelten unabhängig davon. */
+  /* Der Fuß der Navigation: Kontozeile über der Herkunftszeile. Auf der
+     schmalen Leiste unten am Bildschirm ist dafür kein Platz — dort ist
+     beides ausgeblendet, wie schon vorher der Nachweis. */
+  .huelle-fuss,
+  .nachweis {
+    display: none;
+  }
+
+
+  .huelle-inhalt {
+    grid-row: 2;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .huelle-ablage {
+    grid-row: 4;
+    background: var(--am-flaeche-1);
+    border-top: 1px solid var(--am-trennlinie);
+    padding: var(--am-raum-4);
+    font-size: 0.8125rem;
+    color: var(--am-text-sekundaer);
+  }
+
+  @media (min-width: 1024px) {
+    .huelle {
+      /* 240 statt 220: Wappen, Wortmarke, „Rocket" und der Klappschalter
+         brauchen zusammen 227 px. Bei 220 lief die Beschriftung aus ihrem
+         Kasten heraus und der Fokusring des Knopfes legte sich über das
+         letzte Zeichen. */
+      --huelle-nav-breite: var(--am-navigation-breite);
+      grid-template-columns: var(--huelle-nav-breite) minmax(0, 1fr);
+      /* Zeile 1 die Kopfleiste über alles, Zeile 2 der Rest. */
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    /* Der Markenblock ist so breit wie die Navigationsspalte plus der Rand
+       der Inhaltsspalte (abzüglich Polster und Abstand). Dadurch beginnt die
+       Suche auf derselben Linie wie Seitentitel und Blöcke darunter — vorher
+       stand sie an der Spaltenkante, 32 px links von allem anderen (Kai,
+       1.10.2026). */
+    .kopfleiste-marke {
+      width: calc(var(--huelle-nav-breite) + var(--am-raum-8) - var(--am-raum-4) - var(--am-raum-3));
+    }
+
+    .huelle.hat-ablage {
+      grid-template-columns: var(--huelle-nav-breite) minmax(0, 1fr) 280px;
+    }
+
+    /* Eingeklappt: nur Symbole. Das Attribut setzt navigation.tsx am <html>,
+       vor dem ersten Anstrich per Inline-Script. */
+    html[data-navigation="eingeklappt"] .huelle {
+      --huelle-nav-breite: 64px;
+    }
+
+    .huelle-nav {
+      grid-row: 2;
+      grid-column: 1;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: var(--am-raum-1);
+      background: var(--am-flaeche-1);
+      border-top: none;
+      border-right: 1px solid var(--am-trennlinie);
+      padding: var(--am-raum-4);
+      /* Unter der Kopfleiste kleben, nicht unter ihr durchlaufen. */
+      position: sticky;
+      top: var(--am-leistenhoehe);
+      bottom: auto;
+      height: calc(100dvh - var(--am-leistenhoehe));
+      overflow-y: auto;
+    }
+
+    /* Mindesthöhe statt fester Höhe: Im Regelfall trifft der Kopf die
+       Linie der linken Spalte; braucht er mehr Platz (Lead ohne
+       Sprachmodell, schmale Fenster), wächst er. Mit fester Höhe hing die
+       umgebrochene Knopfreihe über dem ersten Block. */
+    .seitenkopf {
+      min-height: var(--am-kopfhoehe);
+      box-sizing: border-box;
+      flex-wrap: nowrap;
+    }
+    .seitenkopf > .btn-reihe { justify-content: flex-end; }
+    .seitenkopf .ki-hinweis { max-width: 20rem; line-height: 1.3; }
+
+    .huelle-nav-gruppe {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: var(--am-raum-2);
+    }
+
+    /* Eine Überschrift je Gruppe — klein, versal, gedämpft, wie ein
+       Tabellenkopf. Sie ordnet, sie klappt nichts auf. */
+    .huelle-nav-titel {
+      display: block;
+      margin: 0;
+      padding: var(--am-raum-3) var(--am-raum-3) var(--am-raum-1);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--am-text-gedaempft);
+    }
+
+    .huelle-nav-mobil,
+    .huelle-nav-mehr {
+      display: none;
+    }
+
+    .huelle-nav-spacer {
+      display: block;
+      flex: 1;
+    }
+
+    .huelle-nav-eintrag {
+      position: relative;
+      display: flex;
+    }
+
+    .huelle-nav-item {
+      flex: 1;
+      min-width: 0;
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: var(--am-raum-3);
+      padding: var(--am-raum-2) var(--am-raum-3);
+      min-height: var(--am-ziel-zeiger);
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    .huelle-nav-eintrag .huelle-nav-item { padding-right: 2rem; }
+    .huelle-nav-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .huelle-nav-item:hover { background: var(--am-flaeche-2); }
+
+    /* Gewählt: eine Goldkante am Rand, fette dunkle Schrift, keine Fläche —
+       eine goldene Fläche war zu laut, eine blaue sah aus wie das Überfahren
+       (Kai, 1.10.2026, CI G1). Ein Rahmen gehört allein dem Fokus. */
+    .huelle-nav-item.aktiv {
+      background: transparent;
+      color: var(--am-text-primaer);
+      box-shadow: inset 2px 0 0 var(--am-gold-auszeichnung);
+      border-radius: 0 var(--am-radius-mittel) var(--am-radius-mittel) 0;
+    }
+    .huelle-nav-item.aktiv:hover { background: var(--am-flaeche-2); }
+    .huelle-nav-item.aktiv svg { color: var(--am-gold-beschriftung); }
+
+    /* Das Lesezeichen: unsichtbar, bis man hinzeigt — und gefüllt, wenn es gilt.
+       Gold zeichnet aus, es handelt nicht. */
+    .huelle-nav-stern {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      right: var(--am-raum-2);
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 0;
+      border-radius: var(--am-radius-mittel);
+      background: transparent;
+      color: var(--am-text-gedaempft);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity var(--am-dauer-schnell) var(--am-kurve), color var(--am-dauer-schnell) var(--am-kurve);
+    }
+
+    .huelle-nav-eintrag:hover .huelle-nav-stern,
+    .huelle-nav-eintrag:focus-within .huelle-nav-stern,
+    .huelle-nav-eintrag.ist-favorit .huelle-nav-stern { opacity: 1; }
+
+    /* „Mehr“: das Feld rechts neben der Leiste, alle vier Gruppen
+       nebeneinander. Lesezeichen hier immer sichtbar — das Feld ist zum
+       Anheften da, nicht nur zum Hinkommen. */
+    .huelle-nav .huelle-mehr-knopf { display: flex; }
+    .huelle-mehr {
+      display: block;
+      position: fixed;
+      left: var(--huelle-nav-breite);
+      top: 0;
+      bottom: 0;
+      z-index: var(--am-ebene-menue);
+      width: min(760px, calc(100vw - var(--huelle-nav-breite) - var(--am-raum-8)));
+      padding: var(--am-raum-6) var(--am-raum-6) var(--am-raum-8);
+      overflow-y: auto;
+      background: var(--am-flaeche-1);
+      border-right: 1px solid var(--am-rand-betont-farbe);
+      box-shadow: var(--am-schatten-1);
+    }
+    .huelle-mehr-hinweis {
+      margin: 0 0 var(--am-raum-4);
+      padding: 0 var(--am-raum-3);
+      font-size: 0.8125rem;
+      color: var(--am-text-gedaempft);
+    }
+    .huelle-mehr-spalten {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--am-raum-4);
+    }
+    .huelle-mehr .huelle-nav-gruppe { margin-bottom: 0; }
+    .huelle-mehr .huelle-nav-stern { opacity: 1; }
+    @media (max-width: 1279px) {
+      .huelle-mehr-spalten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .huelle-nav-stern:hover { background: var(--am-flaeche-2); color: var(--am-text-primaer); }
+    .huelle-nav-eintrag.ist-favorit .huelle-nav-stern { color: var(--am-gold-beschriftung); }
+    .huelle-nav-stern:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+
+    .huelle-klapp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      margin-left: auto;
+      width: var(--am-ziel-zeiger);
+      height: var(--am-ziel-zeiger);
+      border: 0;
+      border-radius: var(--am-radius-mittel);
+      background: transparent;
+      color: var(--am-text-gedaempft);
+      cursor: pointer;
+    }
+    .huelle-klapp:hover { background: var(--am-flaeche-2); color: var(--am-text-primaer); }
+    .huelle-klapp:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+
+    /* Eingeklappt: Symbole zentriert, Beschriftung als Tooltip, Gruppen
+       durch eine Linie getrennt statt durch eine Überschrift. */
+    html[data-navigation="eingeklappt"] .huelle-nav { padding: var(--am-raum-2); }
+    /* Eingeklappt trägt der Markenblock nur noch Wappen und Schalter —
+       eine feste Breite von 64 px klemmte beide übereinander. */
+    html[data-navigation="eingeklappt"] .kopfleiste-marke { width: auto; }
+    html[data-navigation="eingeklappt"] .huelle-nav-titel { display: none; }
+    html[data-navigation="eingeklappt"] .huelle-nav-gruppe + .huelle-nav-gruppe { border-top: 1px solid var(--am-trennlinie); padding-top: var(--am-raum-2); }
+    html[data-navigation="eingeklappt"] .huelle-nav-eintrag .huelle-nav-item { padding: var(--am-raum-2); justify-content: center; }
+    html[data-navigation="eingeklappt"] .huelle-nav-item span { display: none; }
+    html[data-navigation="eingeklappt"] .huelle-nav-stern { display: none; }
+    html[data-navigation="eingeklappt"] .huelle-mehr-knopf { padding: var(--am-raum-2); justify-content: center; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-titel { display: block; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-gruppe + .huelle-nav-gruppe { border-top: none; padding-top: 0; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-item { padding: var(--am-raum-2) var(--am-raum-3); padding-right: 2rem; justify-content: flex-start; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-item span { display: inline; }
+    html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-stern { display: inline-flex; }
+    html[data-navigation="eingeklappt"] .huelle-fuss { padding: 0; align-items: center; }
+    html[data-navigation="eingeklappt"] .person-text,
+    html[data-navigation="eingeklappt"] .person-pfeil,
+    html[data-navigation="eingeklappt"] .nachweis { display: none; }
+    html[data-navigation="eingeklappt"] .person-knopf { justify-content: center; padding-inline: 0; }
+
+    .huelle-fuss {
+      display: flex;
+      flex-direction: column;
+      gap: var(--am-raum-2);
+      margin-top: var(--am-raum-3);
+      padding: 0 var(--am-raum-3);
+    }
+
+    .nachweis {
+      display: flex;
+      align-items: center;
+      gap: var(--am-raum-2);
+      padding: var(--am-raum-1) var(--am-raum-2);
+      border-radius: var(--am-radius-klein);
+      font-size: 0.6875rem;
+      line-height: 1.4;
+      color: var(--am-text-gedaempft);
+    }
+    .nachweis svg { flex: none; }
+    .nachweis:hover { color: var(--am-text-primaer); background: var(--am-flaeche-2); }
+    .nachweis:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+    .nachweis[data-extern="true"] svg { color: var(--am-gold-beschriftung); }
+    /* Der dritte Zustand, aus Insilo (ABGLEICH IN-B4): Ein Ziel draußen
+       bekommt ganze Transkripte oder den Ton (Sprachmodell, Spracherkennung).
+       Das muss auffallen — in der Zustandsfarbe, mit Zeichen und Wort. */
+    .nachweis[data-zustand="achtung"],
+    .nachweis[data-zustand="achtung"] svg { color: var(--am-achtung); }
+    /* Zweite Zeile, wo gemessen wird: der Host oder die übertragene Menge. */
+    .nachweis-text { display: flex; flex-direction: column; min-width: 0; }
+    .nachweis-unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .huelle-inhalt {
+      grid-row: 2;
+      grid-column: 2;
+      overflow-y: auto;
+      max-height: calc(100dvh - var(--am-leistenhoehe));
+    }
+
+    .huelle-ablage {
+      grid-row: 2;
+      grid-column: 3;
+      border-top: none;
+      border-left: 1px solid var(--am-trennlinie);
+      overflow-y: auto;
+      max-height: calc(100dvh - var(--am-leistenhoehe));
+    }
+  }
+}
+
+  /* ── Marke in der Kopfecke [HB-MARKE] ────────────────────────────────────────── */
+@layer components {
+  .marke {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    color: var(--am-text-primaer);
+  }
+
+  /* Die Wortmarke, nicht nachgebaut: zwei gelieferte Dateien, von denen
+     je nach Darstellung eine sichtbar ist. Beide tragen dasselbe goldene
+     Wappen — nur „mighty" wechselt die Farbe. */
+  .marke-logo { display: block; flex: none; line-height: 0; }
+
+  .marke-logo-bild {
+    display: block;
+    width: auto;
+    height: 28px;   /* 472×167 → 79 px breit, deutlich über der Mindestgröße von 45 px */
+  }
+
+  .marke-logo-bild.dunkel { display: none; }
+  .dunkel .marke-logo-bild.hell { display: none; }
+  .dunkel .marke-logo-bild.dunkel { display: block; }
+
+  /* Welche der AImighty-Anwendungen das hier ist. Gedämpft: Die Marke
+     trägt, das Produktwort ordnet nur ein. */
+  .marke-produkt {
+    white-space: nowrap;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--am-text-gedaempft);
+    padding-left: var(--am-raum-2);
+    border-left: 1px solid var(--am-trennlinie);
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    Insilos eigene Abschnitte — Kennung IN- (CI ABGLEICH.md, IN-K).
    Alles darüber steht wörtlich so im AImighty-CI (bauteile/<KENNUNG>.css)
@@ -1118,300 +1764,30 @@ select,
   }
 }
 
-/* ── Hülle [IN-HUELLE] ──────────────────────────────────────────────────────────
-   Vorläufig: wird mit Etappe 6 des CI-Anschlusses AM-HUELLE (Grundgerüst, G1). */
+/* ── Herkunftsvermerk [IN-HERKUNFT] ────────────────────────────────────
+   „AImighty © Jahr“ unten in der Navigation, mit Verweis auf den Hersteller.
+   Wie der Nachweis nur in der Seitenspalte sichtbar. */
 @layer components {
-  /* Die Hülle ────────────────────────────────────────────────────
-     Zeiger (≥1024px): Navigation links, Inhalt, Ablage rechts.
-     Berührung (<1024px): Navigation als untere Leiste, Ablage unter dem
-     Inhalt. Der mobile Fall steht nicht im Referenzblatt — Insilo ist
-     aber primär eine Smartphone-PWA, und 220px Seitenspalte gehen auf
-     375px nicht auf. */
-  .huelle {
-    display: grid;
-    /* minmax(0, …), nicht 1fr: sonst darf ein breites Kind die Spalte
-       aufdehnen und der Inhalt läuft seitlich aus dem Viewport. */
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
-    min-height: 100dvh;
-    background: var(--am-seite);
-  }
-
-  .huelle-nav {
-    grid-row: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    gap: var(--am-raum-1);
-    background: var(--am-flaeche-1);
-    border-top: 1px solid var(--am-trennlinie);
-    padding: var(--am-raum-2) var(--am-raum-2);
-    padding-bottom: max(var(--am-raum-2), env(safe-area-inset-bottom));
-    position: sticky;
-    bottom: 0;
-    z-index: 40;
-  }
-
-  /* Kopfecke und die Gruppierung tragen erst ab der Seitenspalte. */
-  .huelle-kopfecke,
-  .huelle-nav-spacer {
-    display: none;
-  }
-
-  .huelle-nav-gruppe {
-    display: contents;
-  }
-
-  .huelle-nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--am-raum-1);
-    padding: var(--am-raum-2);
-    min-width: var(--am-ziel-beruehrung);
-    min-height: var(--am-ziel-beruehrung);
-    border-radius: var(--am-radius-klein);
-    font-size: 0.6875rem;
-    color: var(--am-text-sekundaer);
-    text-align: center;
-    transition: color var(--am-dauer-schnell) var(--am-kurve);
-  }
-
-  .huelle-nav-item:hover { color: var(--am-text-primaer); }
-
-  .huelle-nav-item.aktiv {
-    color: var(--am-gold-beschriftung);
-    font-weight: 600;
-  }
-
-  /* Auf der Leiste ist Platz für fünf Ziele. „Über Insilo" ist eine
-     Infoseite und war auch in der alten Kopfzeile mobil ausgeblendet —
-     erreichbar bleibt sie über die Einstellungen. */
-  .huelle-nav-item[data-nachrangig="true"] {
-    display: none;
-  }
-
-  /* Wappen — zwei Fassungen im Markup, CSS zeigt die passende.
-     Ohne JavaScript, damit beim Laden nichts umspringt. */
-  .wappen {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .wappen svg {
-    height: 100%;
-    width: auto;
-    display: block;
-  }
-
-  .wappen .wappen-dunkel { display: none; }
-  html.dunkel .wappen .wappen-hell { display: none; }
-  html.dunkel .wappen .wappen-dunkel { display: block; }
-
-  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
-     sichtbar; Farbe und Schnitt gelten unabhängig davon. */
-  .huelle-herkunft {
-    display: none;
-  }
-
-  .huelle-herkunft-marke {
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--am-text-sekundaer);
-    border-radius: var(--am-radius-klein);
-    transition: color var(--am-dauer-schnell) var(--am-kurve);
-  }
-
-  .huelle-herkunft-marke:hover {
-    color: var(--am-text-primaer);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  .huelle-herkunft-marke:focus-visible {
-    outline: 2px solid var(--am-fokus-ring);
-    outline-offset: 2px;
-  }
-
-  .huelle-herkunft-recht {
-    font-family: var(--am-schrift-mono);
-    font-size: 0.625rem;
-    color: var(--am-text-deaktiviert);
-  }
-
-  /* Datenschutz-Nachweis ─────────────────────────────────────────
-     Sitzt unten in der Navigation. Auf der schmalen Leiste hat er keinen
-     Platz — dort trägt ihn die Ansicht „Was verlässt diese Box?" selbst. */
-  .huelle-schutz {
-    display: none;
-  }
-
-  .huelle-inhalt {
-    grid-row: 1;
-    min-width: 0;
-    overflow-x: hidden;
-  }
-
-  .huelle-ablage {
-    grid-row: 3;
-    background: var(--am-flaeche-1);
-    border-top: 1px solid var(--am-trennlinie);
-    padding: var(--am-raum-4);
-    font-size: 0.8125rem;
-    color: var(--am-text-sekundaer);
-  }
-
+  .huelle-herkunft { display: none; }
   @media (min-width: 1024px) {
-    .huelle {
-      grid-template-columns: 220px minmax(0, 1fr);
-      grid-template-rows: 1fr;
-    }
-
-    .huelle.hat-ablage {
-      grid-template-columns: 220px minmax(0, 1fr) 280px;
-    }
-
-    .huelle-nav {
-      grid-row: 1;
-      grid-column: 1;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: flex-start;
-      gap: var(--am-raum-1);
-      background: var(--am-flaeche-1);
-      border-top: none;
-      border-right: 1px solid var(--am-trennlinie);
-      padding: var(--am-raum-4);
-      position: sticky;
-      top: 0;
-      bottom: auto;
-      height: 100dvh;
-    }
-
-    .huelle-kopfecke {
-      display: flex;
-      align-items: center;
-      gap: var(--am-raum-3);
-      padding-bottom: var(--am-raum-4);
-      margin-bottom: var(--am-raum-4);
-      border-bottom: 1px solid var(--am-trennlinie);
-    }
-
-    .huelle-wappen-link {
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .huelle-wappen {
-      height: 28px;
-    }
-
-    .huelle-nav-gruppe {
-      display: flex;
-      flex-direction: column;
-      gap: var(--am-raum-1);
-    }
-
-    .huelle-nav-spacer {
-      display: block;
-      flex: 1;
-    }
-
-    .huelle-nav-item {
-      flex-direction: row;
-      justify-content: flex-start;
-      gap: var(--am-raum-3);
-      padding: var(--am-raum-2) var(--am-raum-3);
-      min-height: var(--am-ziel-zeiger);
-      font-size: 0.875rem;
-      text-align: left;
-    }
-
-    /* In der Seitenspalte ist Platz für alle Ziele. */
-    .huelle-nav-item[data-nachrangig="true"] {
-      display: flex;
-    }
-
-    .huelle-nav-item:hover { background: var(--am-flaeche-2); }
-
-    .huelle-schutz {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--am-raum-2);
-      margin-top: var(--am-raum-3);
-      padding: var(--am-raum-2) var(--am-raum-3);
-      border-radius: var(--am-radius-klein);
-      border: 1px solid transparent;
-      font-family: var(--am-schrift-mono);
-      font-size: 0.6875rem;
-      line-height: 1.4;
-      transition: background var(--am-dauer-schnell) var(--am-kurve);
-    }
-
-    .huelle-schutz-text {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-
-    .huelle-schutz-kopf {
-      font-weight: 600;
-    }
-
-    .huelle-schutz-unter {
-      opacity: 0.85;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* Alles intern — der ruhige Normalfall. */
-    .huelle-schutz-erfolg {
-      background: var(--am-erfolg-flaeche);
-      border-color: var(--am-erfolg-rand);
-      color: var(--am-erfolg);
-    }
-
-    /* Ziele konfiguriert, aber bewusst: neutral halten, nicht warnen. */
-    .huelle-schutz-neutral {
-      background: var(--am-flaeche-2);
-      border-color: var(--am-rand);
-      color: var(--am-text-sekundaer);
-    }
-
-    /* Sprachmodell außerhalb der Box — hier gehen ganze Transkripte
-       hinaus. Das ist der Fall, der auffallen muss. */
-    .huelle-schutz-achtung {
-      background: var(--am-achtung-flaeche);
-      border-color: var(--am-achtung-rand);
-      color: var(--am-achtung);
-    }
-
     .huelle-herkunft {
       display: flex;
       align-items: baseline;
       gap: var(--am-raum-2);
-      margin-top: var(--am-raum-3);
-      padding: 0 var(--am-raum-3);
+      padding: 0 var(--am-raum-2);
       font-size: 0.6875rem;
-      line-height: 1.4;
+      color: var(--am-text-gedaempft);
     }
-
-    .huelle-inhalt {
-      grid-row: 1;
-      grid-column: 2;
-      overflow-y: auto;
-      max-height: 100dvh;
+    .huelle-herkunft-marke {
+      font-weight: 600;
+      color: var(--am-text-sekundaer);
+      text-decoration: none;
     }
-
-    .huelle-ablage {
-      grid-row: 1;
-      grid-column: 3;
-      border-top: none;
-      border-left: 1px solid var(--am-trennlinie);
-      overflow-y: auto;
-      max-height: 100dvh;
+    .huelle-herkunft-marke:hover { color: var(--am-text-primaer); }
+    .huelle-herkunft-marke:focus-visible {
+      outline: 2px solid var(--am-fokus-ring);
+      outline-offset: 2px;
+      border-radius: var(--am-radius-klein);
     }
   }
 }
@@ -1582,6 +1958,11 @@ select,
     transition: background var(--am-dauer-schnell) var(--am-kurve);
   }
   .meeting-row:hover { background: var(--am-flaeche-1); }
+  /* Am Handy rutschen Zustand und Dauer unter den Titel, statt ihn auf ein
+     Wort zu kürzen (HB-TABELLE am Handy, CI ABGLEICH IN-G8). */
+  @media (max-width: 640px) {
+    .meeting-row { flex-direction: column; align-items: stretch; gap: var(--am-raum-2); }
+  }
   /* Auswahl ist nicht Hover: eigene Fläche (Gold-200 hell, Blau-700 dunkel)
      und 2 px Gold links. */
   .meeting-row.selected {

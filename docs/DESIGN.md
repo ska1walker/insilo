@@ -16,11 +16,11 @@
 
 | Was | Wo |
 |---|---|
-| Alle Token (Farbe, Raum, Schrift, Radien, Zustände, Bewegung, Ebenen) | `frontend/app/globals.css`, Block ganz oben — **wörtlich `tokens/app.css` aus dem AImighty-CI** (Stand `ci-26.10.3`, seit Etappe 1 des CI-Anschlusses). Geändert wird er im CI, nie hier |
+| Alle Token (Farbe, Raum, Schrift, Radien, Zustände, Bewegung, Ebenen) | `frontend/app/globals.css`, Block ganz oben — **wörtlich `tokens/app.css` aus dem AImighty-CI** (seit Etappe 1 des CI-Anschlusses; welcher Stand, sagt `frontend/ci/stand.json`). Geändert wird er im CI, nie hier |
 | Tailwind-Anbindung | `frontend/tailwind.insilo.preset.js` — unverändert aus dem Paket |
 | Schriften | `frontend/app/fonts/`, geladen per `next/font/local` |
 | Bausteine (Knopf, Feld, Karte, Leerzustand, Hinweiszeile, Tabelle, Dialog, Zeichen) | `frontend/app/globals.css`, je Abschnitt mit Kennung `[AM-…]`/`[HB-…]` — **wortgleich mit `bauteile/<KENNUNG>.css` aus dem CI**, geprüft mit `python3 frontend/ci/werkzeug/bauteile.py frontend/app/globals.css --ohne-md` |
-| Insilos Eigenes (Hülle bis Etappe 6, Aufnahmeknopf, Schauerfunktion, Besprechungszeile, Auswahl) | dieselbe Datei, Kennung `[IN-…]` (CI ABGLEICH IN-K) — bleibt in Insilo |
+| Insilos Eigenes (Aufnahmeknopf, Schauerfunktion, Besprechungszeile, Auswahl, Herkunft) | dieselbe Datei, Kennung `[IN-…]` (CI ABGLEICH IN-K) — bleibt in Insilo |
 | Lebendes Referenzblatt | `InSilo_Design-Paket.html` aus der Lieferung |
 
 ### Stand aus dem CI
@@ -128,27 +128,29 @@ linear. Ein linearer Faktor sättigt schon bei halber Aussteuerung; die
 Anzeige stünde beim Sprechen dauerhaft am Anschlag und zeigte nichts
 mehr. Gold, weil die laufende Aufnahme die Auszeichnung trägt.
 
-### Das Wappen
+### Die Kopfecke
 
-`components/wappen.tsx`, kein `<img>` — und **zwei Fassungen statt einer
-umgefärbten**. Die Vorlagen unterscheiden sich um mehr als die Textfarbe:
-auf hellem Grund ist die Wortmarke Hanseatenblau mit weißem Monogramm,
-auf dunklem beides weiß. Das ist eine gestalterische Entscheidung, keine
-Umfärbung — sie wird deshalb übernommen, nicht nachgerechnet.
+Seit Etappe 6 des CI-Anschlusses (CI ABGLEICH R4, G1): **die
+AImighty-Wortmarke und daneben „Insilo“** — dieselbe Kopfecke wie in jeder
+AImighty-Anwendung, 240 × 56 px, Bausteine HB-MARKE und AM-HUELLE
+(`components/marke.tsx`, `components/huelle.tsx`). Die Wortmarke ist
+unverändert aus dem CI (`public/marke/`, siehe README dort), hell und dunkel
+als zwei Dateien, das CSS zeigt die passende. Das frühere eigene Wappen mit
+dem Schriftzug „insilo“ (`components/wappen.tsx`, Figma 98:441/98:426) ist
+entfallen.
 
-Beide liegen im Markup, CSS zeigt die passende (`.wappen-hell` /
-`.wappen-dunkel`). Ohne JavaScript, damit beim Laden nichts umspringt.
-
-**Werden die Vorlagen ersetzt, muss das Bauteil neu erzeugt werden** —
-sonst zeigt die Navigation weiter das alte Zeichen. Quellen im Repo:
-`public/insilo_logo_hell.svg`, `_dunkel.svg`.
+Insilo sucht nicht und legt nicht von überall an — die Leiste über der
+Seite trägt deshalb nur die Kopfecke, auf derselben Höhe wie Rocket (G1:
+„eine Kopfleiste nur, wer sucht oder anlegt; die anderen haben trotzdem
+dieselbe Kopfecke“).
 
 ### Das App-Symbol
 
-Aus derselben Figma-Quelle, als Vektor geholt und aus einem
-1024-px-Rendering abgeleitet — kleine Größen aus einem großen verkleinert
-sind schärfer als ein hochskaliertes Original. Quelle bleibt als
-`icons/icon-quelle.svg` im Repo.
+Sandgrund, Wappen und darin seit 01.10.2026 das **Mikrofon** statt des
+„I" (CI R5). Quelle ist `icons/icon-quelle.svg` im Repo; alle Größen
+entstehen daraus, kleine aus einem großen Rendering verkleinert — das ist
+schärfer als ein hochskaliertes Original. Im Browser-Tab steht nur das
+Mikrofon (CI G7). Einzelheiten unten unter „Symbol der Anwendung".
 
 **Die maskable-Fassung wird nachgerechnet, nicht verkleinert.** Android
 beschneidet App-Symbole auf beliebige Formen; garantiert sichtbar ist nur
@@ -254,7 +256,7 @@ dass jede `IN-` Kennung in dieser Tabelle steht.
 | Kennung | Was |
 |---|---|
 | `IN-AUSWAHL` | gewählte Vorlage, Sprache, Sprecher — Fläche je Modus (IN-T2) |
-| `IN-HUELLE` | Hülle, Navigation, Wappen, Nachweis — **vorläufig**, wird mit Etappe 6 AM-HUELLE |
+| `IN-HERKUNFT` | „AImighty © Jahr“ mit Verweis auf den Hersteller, am Fuß der Navigation |
 | `IN-AUFNAHME` | der runde Aufnahmeknopf, Ring und Anzeige der laufenden Aufnahme |
 | `IN-IDEE` | Schauerfunktion `/idee` |
 | `IN-BESPRECHUNG` | Zeile der Besprechungsliste, Zustandspille (IN-B5 offen) |
@@ -315,29 +317,71 @@ respektiert.
 
 ## Symbol der Anwendung
 
-Kachel in Sand mit Verlauf (`#D6B265`), Schild in Hanseatenblau, Monogramm
-„I" in Gold. Quelle: Figma AImighty, Knoten **301:164** („Icon-Labor" ›
-„Gold fuer die Anwender-Apps" › „app goldgrund I"). Der Sandgrund ist der
-Ton, den die Farbtablette für **Anwender-Apps** vorsieht — er
-unterscheidet sie von den Werkzeugen, die der Kunde nie sieht.
+Kachel in Sand mit Verlauf (`#D6B265`), Schild in Hanseatenblau, darin
+**das Zeichen der Anwendung: das Mikrofon** (Lucide `mic`, 1.31.0) als
+goldene Linie. Der Sandgrund ist der Ton, den die Farbtablette für
+**Anwender-Apps** vorsieht — er unterscheidet sie von den Werkzeugen, die
+der Kunde nie sieht. Verbindlich: `medien/app.md` im CI-Repo, Abschnitte
+„App-Icons — die Kacheln" und „Im Browser-Tab — nur das Zeichen".
 
-Zwei Vektorquellen unter `frontend/public/icons/`:
+**Zeichen statt Buchstabe** — entschieden am 01.10.2026 (CI, ABGLEICH.md
+**R5**, Kai mit Marc; Figma AImighty, „Icon-Labor", Abschnitt „0 — Icon-Set
+(final)"). Mit Buchstaben hätten Relay und Rocket beide ein „R" getragen.
+Bis dahin trug Insilo das Monogramm „I" (Figma-Knoten 301:164; Sandgrund
+und Wappen stammen unverändert von dort). Gezeichnet „wie Rewind":
+
+- Lucide-Zeichen auf 24er-Raster, um 1,4 skaliert, mittig bei (80 | 78,5)
+  der 160er-Kachel — im SVG `translate(63.2 61.7) scale(1.4)`;
+- Strich 3,4 auf der Kachel (2,43 im 24er-Raster), runde Enden, keine
+  Füllung;
+- Strich im Goldverlauf `#dfc387 → #b89957`, von oben nach unten über das
+  Zeichen (y 2 → 22 im 24er-Raster).
+
+Verlauf und Glanz sind **nur auf der Kachel** erlaubt (die einzige Ausnahme
+vom Verlaufsverbot); die Kachelfarben sind keine Token.
+
+Drei Vektorquellen unter `frontend/public/icons/`:
 
 | Quelle | Wofür | Warum eigen |
 |---|---|---|
-| `icon-quelle.svg` | Olares-Kachel, PWA „any" | zeigt das Symbol wie gestaltet, mit Eckenrundung |
+| `icon-quelle.svg` | Olares-Markt (`icon.png`, `olares/icon-256.png`), PWA „any" | zeigt das Symbol wie gestaltet, mit Eckenrundung |
 | `icon-maskable-quelle.svg` | Android-Maske, Apple-Touch | randlos, ohne Rundung und ohne Kante — beide Systeme runden selbst, eine mitgelieferte Rundung ergäbe einen doppelten Rand |
+| `tab.svg` | Favicon im Browser-Tab | nur das Mikrofon, ohne Kachel und Wappen (siehe unten) |
 
-**Alle PNG-Größen entstehen aus diesen beiden Dateien:**
+**Im Browser-Tab nur das Zeichen** (CI, ABGLEICH.md **G7**, 01.10.2026).
+Bei 16 und 32 px wäre die Kachel ein goldener Punkt mit blauem Fleck, und
+alle AImighty-Apps sähen gleich aus. `tab.svg` zeichnet das Mikrofon auf
+dem 24er-Raster mit Strich 2,4, runden Enden, ohne Füllung; die Farbe
+richtet sich per `@media (prefers-color-scheme: dark)` **in der SVG** nach
+der Tableiste — hell `#8c6c1f` (Gold 800), dunkel `#caa960` (Gold 500).
+Safari nimmt kein SVG-Favicon und bekommt `tab-32.png` in `#b08a3e`. Die
+Kachel bleibt für Home-Bildschirm (Apple-Touch), Manifest und Markt.
+
+Eingebunden werden Favicon und Apple-Touch als `<link>` im `<head>` von
+`app/layout.tsx` — **nie als `app/icon.*` und nie über `metadata.icons`**:
+Dann rendert Next 15.5 eine Marke `<meta name="«nxt-icon»">`, die beim
+Streamen stehen bleiben kann, und der Browser meldet React #418 (in Rocket
+gefunden). Das Manifest nennt weiter die Kachel.
+
+**Tab-Titel: zuerst die Seite, dann „Insilo"** (G7), etwa „Aufnahme ·
+Insilo". Das Root-Layout setzt `title: { default: "Insilo", template:
+"%s · Insilo" }`; eine Seite gibt als `metadata.title` nur ihren eigenen
+Namen an, nie „· Insilo" dazu.
+
+**Alle PNG-Größen entstehen aus diesen Dateien:**
 
 ```bash
 node scripts/icons.mjs
 ```
 
-Eine neue Größe ist eine Zeile in `ZIELE`, kein Figma. In v0.1.68 war
-`icons/` leer, während `manifest.json` drei Dateien versprach — wer die
-App auf den Home-Bildschirm legte, bekam kein Symbol. Deshalb ein Skript
-statt Handarbeit.
+Das schreibt `icon.png` (512, Markt-Kachel in der Wurzel, auf die das
+`OlaresManifest` zeigt), `olares/icon-256.png`, `icons/icon-512/192/96.png`,
+`icons/icon-maskable-512.png`, `icons/apple-touch-icon.png` (180, deckend)
+und `icons/tab-32.png`. Ändert sich das Zeichen, werden **alle** neu
+erzeugt — nie eines von Hand. Eine neue Größe ist eine Zeile in `ZIELE`,
+kein Figma. In v0.1.68 war `icons/` leer, während `manifest.json` drei
+Dateien versprach — wer die App auf den Home-Bildschirm legte, bekam kein
+Symbol. Deshalb ein Skript statt Handarbeit.
 
 **Verkleinert wird für die Android-Maske nichts.** Das Schild reicht nur
 bis 51 von 64 erlaubten Einheiten vom Mittelpunkt und liegt damit im
@@ -345,6 +389,5 @@ garantierten Innenkreis (80 % Durchmesser). Das alte Symbol trug ein
 randnahes Zeichen und musste auf 78 % — dieses nicht. Wer die Vorlage
 ändert, rechnet das nach, statt es zu übernehmen.
 
-**Nicht dasselbe wie das Wappen in der Navigation.**
-`components/wappen.tsx` zeigt die Wortmarke (Schild *plus* Schriftzug) aus
-den Knoten 98:441/98:426 und bleibt davon unberührt.
+**Nicht dasselbe wie die Kopfecke.** Dort steht die AImighty-Wortmarke
+aus dem CI (`components/marke.tsx`); sie bleibt davon unberührt.

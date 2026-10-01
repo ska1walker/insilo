@@ -9,7 +9,9 @@
     "logoAlt": "Insilo",
     "homeAria": "Insilo — back to overview",
     "navAria": "Main navigation",
-    "herkunftAria": "AImighty — open website (new window)"
+    "herkunftAria": "AImighty — open website (new window)",
+    "mehr": "More",
+    "mehrAria": "More destinations"
   },
   "common": {
     "save": "Save",
@@ -532,7 +534,7 @@
     "errGenericUpload": "Upload failed — check your connection."
   },
   "about": {
-    "metadataTitle": "About Insilo · Data-sovereign meeting intelligence",
+    "metadataTitle": "About",
     "version": "Insilo · v0.1",
     "heroTitle": "Meeting intelligence that never leaves your premises.",
     "heroBody": "Insilo records business conversations, transcribes them and produces structured minutes — entirely on your Olares box in the server room. No cloud upload, no third parties, no telemetry.",

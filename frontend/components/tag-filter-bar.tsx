@@ -39,7 +39,7 @@ export function TagFilterBar({
 
   if (tags === null) {
     return (
-      <div className="mb-6 h-[34px] rounded-full bg-flaeche-3" />
+      <div className="mb-6 h-[var(--am-ziel-zeiger)] rounded-mittel bg-flaeche-3" />
     );
   }
 
@@ -66,7 +66,7 @@ export function TagFilterBar({
         <button
           type="button"
           onClick={() => onChange([])}
-          className="ml-1 inline-flex items-center gap-1 text-[0.75rem] text-text-gedaempft transition hover:text-text-primaer"
+          className="ml-1 inline-flex min-h-[var(--am-ziel-zeiger)] items-center gap-1 text-[0.75rem] text-text-gedaempft transition hover:text-text-primaer pointer-coarse:min-h-[var(--am-ziel-beruehrung)]"
         >
           <X size={16} />
           {t("resetAll")}

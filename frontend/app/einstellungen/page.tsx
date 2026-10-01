@@ -18,6 +18,7 @@ import {
   type SettingsRead,
   type TestResult,
 } from "@/lib/api/settings";
+import { Seitentitel } from "@/components/seitentitel";
 
 type Phase = "loading" | "ready" | "saving" | "error";
 
@@ -174,7 +175,7 @@ export default function EinstellungenPage() {
 
   if (phase === "loading") {
     return (
-      <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12">
+      <main className="mx-auto max-w-[var(--am-lesespalte)] px-6 py-12 md:px-12">
         <p className="text-sm text-text-sekundaer">{tCommon("loading")}</p>
       </main>
     );
@@ -182,7 +183,7 @@ export default function EinstellungenPage() {
 
   if (phase === "error" && !settings) {
     return (
-      <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12">
+      <main className="mx-auto max-w-[var(--am-lesespalte)] px-6 py-12 md:px-12">
         <p className="text-sm text-fehler">{error}</p>
       </main>
     );
@@ -195,15 +196,13 @@ export default function EinstellungenPage() {
   const effectiveModel = form.model.trim() || s.defaults.llm_model;
 
   return (
-    <main className="mx-auto max-w-[720px] px-6 py-12 md:px-12">
+    <main className="mx-auto max-w-[var(--am-lesespalte)] px-6 py-12 md:px-12">
       <Link href="/" className="text-sm text-text-sekundaer hover:text-text-primaer">
         ← {tCommon("overview")}
       </Link>
 
       <div className="mt-6 mb-10">
-        <h1 className="font-display text-4xl font-medium tracking-tight">
-          {t("title")}
-        </h1>
+        <Seitentitel>{t("title")}</Seitentitel>
         <p className="mt-3 max-w-prose text-text-sekundaer">
           {t("intro")}
         </p>

@@ -66,11 +66,6 @@ const COLORS = {
   recording: "var(--am-gold-500)",
 } as const;
 
-// Gradient als Image-Layer; backgroundColor wird separat gesetzt.
-const BG_GRADIENT_IDLE_IMG =
-  "radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--am-gold-500) 10%, transparent) 0%, transparent 55%)";
-const BG_GRADIENT_ACTIVE_IMG =
-  "radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--am-gold-500) 22%, transparent) 0%, transparent 60%)";
 
 /**
  * Schauerfunktion — Car-Mode-Aufnahme für unterwegs (auto, walking, shower).
@@ -311,12 +306,9 @@ export function QuickCapture() {
     }
   }
 
-  const isActive = phase === "recording" || phase === "saving";
   const bgStyle = {
     backgroundColor: COLORS.black,
-    backgroundImage: isActive ? BG_GRADIENT_ACTIVE_IMG : BG_GRADIENT_IDLE_IMG,
     color: COLORS.white,
-    transition: "background-image var(--am-dauer-langsam) var(--am-kurve)",
   };
 
   return (
@@ -324,7 +316,7 @@ export function QuickCapture() {
       // .quick-capture-shell in globals.css setzt background-color via
       // !important — Tailwind-Class und inline-style haben in v0.1.53-55
       // trotz korrektem Bundle nicht durchgesetzt. Diese Klasse ist
-      // idiot-proof. Inline-style enthält weiterhin den Gradient-Overlay.
+      // idiot-proof. Kein Verlauf mehr (CI kern/nicht.md, ABGLEICH IN-R6).
       className="quick-capture-shell immersive-in fixed inset-0 z-50 flex flex-col"
       style={bgStyle}
     >
@@ -515,8 +507,6 @@ function MicButton({
         style={{
           background: COLORS.gold,
           color: COLORS.black,
-          boxShadow:
-            "0 0 0 1px color-mix(in srgb, var(--am-gold-500) 45%, transparent), 0 0 80px color-mix(in srgb, var(--am-gold-500) 25%, transparent)",
         }}
       >
         <Mic className="h-24 w-24 sm:h-28 sm:w-28" strokeWidth={1.5} />

@@ -2,6 +2,7 @@
 
 import { Copy, KeyRound, Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Rueckfrage } from "@/components/dialog";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import {
@@ -103,10 +104,12 @@ function ApiKeyRow({
   const toast = useToast();
   const revoked = apiKey.revoked_at != null;
 
+  // Endgültig: ein widerrufener Schlüssel kommt nicht zurück — Rückfrage
+  // als Dialog statt Browser-confirm() (ABGLEICH IN-R2).
+  const [fragt, setFragt] = useState(false);
+
   function handleRevoke() {
-    if (!confirm(t("revokeConfirm", { name: apiKey.name }))) {
-      return;
-    }
+    setFragt(false);
     revokeApiKey(apiKey.id)
       .then(() => {
         toast.show({ message: t("revokedToast"), variant: "success" });
@@ -159,13 +162,24 @@ function ApiKeyRow({
       {!revoked && (
         <button
           type="button"
-          onClick={handleRevoke}
+          onClick={() => setFragt(true)}
           className="btn btn-still inline-flex items-center gap-1"
-          aria-label={t("revokeAria")}
         >
-          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
           {t("revoke")}
         </button>
+      )}
+      {fragt && (
+        <Rueckfrage
+          titel={t("revokeConfirm", { name: apiKey.name })}
+          label={t("revokeBtn")}
+          beiSchliessen={() => setFragt(false)}
+          knopf={
+            <button type="button" className="btn btn-gefahr" onClick={handleRevoke}>
+              {t("revokeBtn")}
+            </button>
+          }
+        />
       )}
     </div>
   );

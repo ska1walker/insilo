@@ -173,7 +173,7 @@ function ToastCard({
       <div
         className="relative overflow-hidden rounded-lg border bg-seite"
         style={{
-          borderColor: "var(--am-trennlinie)",
+          borderColor: "var(--am-rand-betont-farbe)",
           boxShadow: "var(--am-schatten-1)",
         }}
       >

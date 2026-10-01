@@ -217,7 +217,7 @@ export default function PapierkorbSeite() {
                         type="button"
                         onClick={() => endgueltig(e)}
                         disabled={arbeitet === e.id}
-                        className="btn btn-primaer"
+                        className="btn btn-gefahr"
                       >
                         {t("endgueltigBestaetigen")}
                       </button>

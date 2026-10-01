@@ -865,8 +865,7 @@ function TemplateRow({
                     <button
                       type="button"
                       onClick={handleDeleteRequest}
-                      className="btn btn-still inline-flex items-center gap-1.5"
-                      style={{ color: "var(--am-fehler)" }}
+                      className="btn btn-gefahr inline-flex items-center gap-1.5"
                       disabled={
                         state.kind === "saving" || state.kind === "deleting"
                       }
@@ -1069,8 +1068,7 @@ function CustomFieldsEditor({
               <button
                 type="button"
                 onClick={() => remove(idx)}
-                className="btn btn-still inline-flex items-center gap-1 text-xs"
-                style={{ color: "var(--am-fehler)" }}
+                className="btn btn-still btn-klein inline-flex items-center gap-1"
                 disabled={disabled}
               >
                 <Trash2 className="h-3 w-3" strokeWidth={1.75} />

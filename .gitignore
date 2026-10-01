@@ -94,3 +94,7 @@ desktop.ini
 *.safetensors
 models/
 insilo_new/
+
+# Rundgang im Browser (frontend/e2e)
+frontend/e2e-bericht/
+frontend/test-results/

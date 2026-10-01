@@ -433,9 +433,12 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
           </p>
         )}
 
+        {/* Gedämpft, nicht „deaktiviert“: Die ruhende Zeit ist kein
+            gesperrtes Bedienelement, und Deaktiviert-Blau hält auf Weiß nur
+            2,9 : 1 (Rundgang, axe color-contrast). */}
         {phase === "idle" && (
           <p
-            className={`mono mt-3 mb-10 ${timerSize} font-medium tabular-nums text-text-deaktiviert`}
+            className={`mono mt-3 mb-10 ${timerSize} font-medium tabular-nums text-text-gedaempft`}
             aria-hidden
           >
             00:00
@@ -448,6 +451,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             className="btn-record"
             onClick={startRecording}
             aria-label={t("start")}
+            title={t("start")}
           >
             <Aufnahmezeichen zeichen={Mic} size={36} />
           </button>
@@ -459,6 +463,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             className="btn-record"
             disabled
             aria-label={t("requestingMic")}
+            title={t("requestingMic")}
           >
             <Aufnahmezeichen zeichen={Loader2} size={36} className="animate-spin" />
           </button>
@@ -471,6 +476,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
             onClick={stopAndSave}
             aria-pressed
             aria-label={t("stop")}
+            title={t("stop")}
           >
             <Aufnahmezeichen zeichen={Square} size={36} fill="currentColor" />
           </button>
@@ -483,6 +489,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
               className={`btn-record${phase === "saving" ? " recording" : ""}`}
               disabled
               aria-label={t("saving")}
+              title={t("saving")}
             >
               <Aufnahmezeichen zeichen={Loader2} size={36} className="animate-spin" />
             </button>

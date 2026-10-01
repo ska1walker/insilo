@@ -323,6 +323,7 @@ export function QuickCapture() {
         <Link
           href="/"
           aria-label={tCommon("back")}
+          title={tCommon("back")}
           className="flex h-12 w-12 items-center justify-center rounded-full transition-transform active:scale-95"
           style={{
             color: COLORS.goldLight,
@@ -498,6 +499,7 @@ function MicButton({
         type="button"
         onClick={onClick}
         aria-label={ariaLabel}
+        title={ariaLabel}
         disabled={disabled}
         className={`${baseClasses} active:scale-95 disabled:opacity-40`}
         style={{
@@ -516,6 +518,7 @@ function MicButton({
         type="button"
         onClick={onClick}
         aria-label={ariaLabel}
+        title={ariaLabel}
         aria-pressed
         className={`${baseClasses} active:scale-95`}
         style={{
@@ -535,6 +538,7 @@ function MicButton({
       type="button"
       disabled
       aria-label={ariaLabel}
+      title={ariaLabel}
       className={baseClasses}
       style={{
         background: "color-mix(in srgb, var(--am-gold-500) 18%, transparent)",

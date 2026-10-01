@@ -219,6 +219,7 @@ function SpeakerRow({
           onClick={onEdit}
           className="rounded-mittel p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
           aria-label={t("editAria")}
+          title={t("editAria")}
         >
           <Pencil size={16} />
         </button>

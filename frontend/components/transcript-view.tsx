@@ -360,6 +360,7 @@ function SpeakerRoster({
                 onClick={() => setEditingId(s.id)}
                 className="rounded-full p-1 text-text-gedaempft hover:bg-flaeche-1 hover:text-text-primaer"
                 aria-label={t("renameAria", { name: s.name })}
+                title={t("renameAria", { name: s.name })}
               >
                 <Pencil size={16} />
               </button>
@@ -407,6 +408,7 @@ function SpeakerRoster({
               }}
               className="rounded-full p-1 text-text-gedaempft hover:bg-flaeche-1"
               aria-label={tCommon("cancel")}
+              title={tCommon("cancel")}
             >
               <X size={16} />
             </button>
@@ -488,6 +490,7 @@ function SegmentPicker({
           onClick={onClose}
           className="text-text-gedaempft hover:text-text-primaer"
           aria-label={tCommon("close")}
+          title={tCommon("close")}
         >
           <X size={16} />
         </button>

@@ -25,7 +25,10 @@ export function TabTitel({ seite }: { seite: string }) {
     const wache = new MutationObserver(() => {
       if (document.title !== soll) document.title = soll;
     });
-    wache.observe(document.head, { subtree: true, childList: true, characterData: true });
+    // Ganzes Dokument, nicht nur <head>: Next 15 streamt die Metadaten und
+    // setzt <title> dabei in den <body> (gemessen an /archiv, Next 15.5) —
+    // eine Wache nur am Kopf sah das nie, der Tab blieb bei „Insilo“.
+    wache.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
     return () => {
       wache.disconnect();
       document.title = ANWENDUNG;

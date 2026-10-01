@@ -101,6 +101,7 @@ export function MeetingDispatchDialog({
             onClick={onClose}
             className="absolute right-4 top-4 rounded-mittel p-1.5 text-text-gedaempft transition hover:bg-flaeche-1 hover:text-text-primaer"
             aria-label={tCommon("close")}
+            title={tCommon("close")}
           >
             <X size={16} />
           </button>

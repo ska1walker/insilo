@@ -23,8 +23,31 @@
 | Insilos Eigenes (Hülle bis Etappe 6, Aufnahmeknopf, Schauerfunktion, Besprechungszeile, Auswahl) | dieselbe Datei, Kennung `[IN-…]` (CI ABGLEICH IN-K) — bleibt in Insilo |
 | Lebendes Referenzblatt | `InSilo_Design-Paket.html` aus der Lieferung |
 
-**Regel:** Wer einen Wert ändert, ändert ihn in `globals.css` — nie am
-Bauteil. Das Tailwind-Preset dupliziert keine Werte, es liest sie über
+### Stand aus dem CI
+
+Seit dem CI-Anschluss (Oktober 2026, Etappen 1–5) ist **das CI-Repo
+`ska1walker/aimighty-ci` die Quelle** für Token, Zeichen und Bausteine.
+
+- **Ein Stand ist ein Tag `ci-YY.M.n`** im CI-Repo, gesetzt von dessen
+  Action `stand.yml` nach jedem Merge, der das Paket ändert. Insilo holt
+  nie `main`.
+- **Die Kopie** liegt unter `frontend/ci/` (Token, Zeichen, Bausteine,
+  `werkzeug/bauteile.py`) mit `stand.json` (Tag, Commit, sha256 je Datei).
+  Gebaut und geprüft wird ohne Netz gegen diese Kopie.
+- **Holen** beim Entwickeln, aus einem Klon des CI-Repos, aus `frontend/`:
+  `node scripts/ci-holen.mjs --von ../../aimighty-ci --stand ci-YY.M.n`.
+  Danach entsteht `lib/symbole.tsx` neu. Ändert sich ein Token oder
+  Baustein, wird der Block in `globals.css` aus der Kopie übernommen.
+- **Was wacht:** `tests/ci-stand.test.ts` (Kopie unverändert, Token-Block =
+  `ci/tokens/app.css`, jeder `AM-`/`HB-` Abschnitt = `ci/bauteile/`),
+  `tests/abschnitte.test.ts`, `tests/symbole.test.ts`.
+
+**Eine Änderung** an Token, Zeichen oder gemeinsamem Baustein: im CI (PR,
+mergen, neuer Stand), dann hier holen. Bleiben soll eine Abweichung nur mit
+Eintrag im Abschnitt „Insilo“ der CI-`ABGLEICH.md`.
+
+**Regel:** Wer einen Wert ändert, ändert ihn im CI — nie in
+`globals.css` und nie am Bauteil. Das Tailwind-Preset dupliziert keine Werte, es liest sie über
 `var(--am-*)`.
 
 **Das Preset bleibt unverändert.** Es ist eine Kopie der Quelle. Was
@@ -219,6 +242,22 @@ verlässt, und rät dabei nicht — was nicht nachweislich intern ist, gilt
 als extern. 23 Tests decken das ab, inklusive Namen wie
 `localhost.evil.example`. Ein zu Unrecht gezeigter Hinweis kostet eine
 Rückfrage; eine zu Unrecht gezeigte Entwarnung kostet das Versprechen.
+
+---
+
+## 4a. Insilos eigene Abschnitte
+
+Was nur Insilo hat, steht in `globals.css` unter der Kennung `IN-` (CI
+`ABGLEICH.md`, IN-K) und bleibt hier. `tests/abschnitte.test.ts` verlangt,
+dass jede `IN-` Kennung in dieser Tabelle steht.
+
+| Kennung | Was |
+|---|---|
+| `IN-AUSWAHL` | gewählte Vorlage, Sprache, Sprecher — Fläche je Modus (IN-T2) |
+| `IN-HUELLE` | Hülle, Navigation, Wappen, Nachweis — **vorläufig**, wird mit Etappe 6 AM-HUELLE |
+| `IN-AUFNAHME` | der runde Aufnahmeknopf, Ring und Anzeige der laufenden Aufnahme |
+| `IN-IDEE` | Schauerfunktion `/idee` |
+| `IN-BESPRECHUNG` | Zeile der Besprechungsliste, Zustandspille (IN-B5 offen) |
 
 ---
 

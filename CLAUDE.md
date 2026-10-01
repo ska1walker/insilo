@@ -216,11 +216,34 @@ insilo/
 Das frühere eigene System (Weiß/Schwarz/Gold, Lexend Deca + Inter, Anker
 HubSpot/aimighty/PLAUD) ist abgelöst.
 
-**Die Werte stehen nicht in dieser Datei**, sondern in
-`frontend/app/globals.css` (Token-Block oben). Wer einen Wert ändert,
-ändert ihn dort — nie am Bauteil. `frontend/tailwind.insilo.preset.js`
-ist eine unveränderte Kopie aus der Lieferung und liest die Token über
-`var(--am-*)`.
+**Werte, Zeichen und Bausteine kommen aus dem CI; Abweichung nur über
+`ABGLEICH.md`.** Quelle ist das Repo `ska1walker/aimighty-ci` (CI
+`STAND.md`, Kai 1.10.2026). Insilo hält einen Stand `ci-YY.M.n` als Kopie
+unter `frontend/ci/` (mit `stand.json`), geholt mit
+`node scripts/ci-holen.mjs --von <klon> --stand ci-YY.M.n` aus `frontend/` —
+**nie `main`, nie zur Bauzeit**. Danach:
+
+- Der Token-Block oben in `frontend/app/globals.css` ist wörtlich
+  `ci/tokens/app.css`.
+- Jeder `AM-`/`HB-` Abschnitt in `globals.css` ist wörtlich
+  `ci/bauteile/<KENNUNG>.css`; Insilos Eigenes steht unter `IN-`
+  (`docs/DESIGN.md` §4a).
+- Jedes Zeichen kommt aus `ci/marke/icons/ui/` über HB-SYMBOL
+  (`components/symbol.tsx`, erzeugt nach `lib/symbole.tsx`) — kein
+  `lucide-react`, Größen 16/20/24/40, Strich 1,5 px; Ausnahme nur der
+  runde Aufnahmeknopf.
+
+**Ändern nur im CI**: dort PR, mergen, die Action setzt einen neuen Stand,
+dann hier holen. Wer in Insilo ausprobiert, sieht die eigene CI rot werden —
+das ist gewollt. Eine Abweichung, die bleiben soll, steht als Eintrag mit
+Kais Entscheidung im Abschnitt „Insilo“ der CI-`ABGLEICH.md`, nie still
+hier. Was wacht: `tests/ci-stand.test.ts` (Kopie, Token-Block, Bausteine),
+`tests/abschnitte.test.ts` (jede Kopfzeile mit Kennung),
+`tests/symbole.test.ts` (Zeichen), `tests/kontrast.test.ts`,
+`tests/wording.test.ts` (AI, in allen Sprachen), `tests/sprachen.test.ts`.
+
+`frontend/tailwind.insilo.preset.js` ist eine unveränderte Kopie aus der
+Lieferung und liest die Token über `var(--am-*)`.
 
 **Farbe:** Hanseatenblau trägt die Fläche, Gold zeichnet aus. Im
 Dunkelmodus handelt Gold — Blau auf Blau trägt nicht.
@@ -301,7 +324,7 @@ hüpfenden Knöpfe.
 ## Wie Claude Code in diesem Repo arbeitet
 
 1. **Vor jeder Code-Entscheidung:** `docs/ARCHITECTURE.md` und Olares-Constraints aus dieser CLAUDE.md lesen. Bei Olares-Themen zusätzlich `docs/HANDOFF.md §7g` — codifiziert die teuren Lessons aus v0.1.7→v0.1.17.
-2. **Bei UI-Arbeit:** Werte kommen aus `frontend/app/globals.css` (AImighty-Token), Regeln aus `docs/DESIGN.md`. Das Referenzblatt `InSilo_Design-Paket.html` zeigt jedes Bauteil an echten Beispielen. Generische Design-Skills sind hier nachrangig — das gelieferte Paket ist präziser und geht vor.
+2. **Bei UI-Arbeit:** Werte, Zeichen und Bausteine kommen aus dem AImighty-CI (`ska1walker/aimighty-ci`, Kopie unter `frontend/ci/`); Abweichung nur über `ABGLEICH.md` dort (Abschnitt „Designsystem“ oben). Die Regeln stehen im CI (`kern/`, `medien/app.md`, `bauteile/`), Insilos Ergänzungen in `docs/DESIGN.md`. Generische Design-Skills sind nachrangig.
 3. **Bei Backend-Änderungen:** Wir bauen *keine* Auth-Logik. Eingehende Requests sind authentifiziert via Envoy. User-ID kommt aus `X-Bfl-User` Header.
 4. **Bei DB-Schema-Änderungen:** Migration in `supabase/migrations/0NNN_*.sql` anlegen, RLS auf jede neue Tabelle, **dann `python3 scripts/regen-migrations.py` laufen lassen** — das mirroret die SQL in `olares/files/` und regeneriert die inlinete `olares/templates/configmap-migrations.yaml`. CI bricht sonst beim Drift-Check ab.
 5. **Bei Storage:** Nur `/app/data/`, `/app/cache/`, `/app/Home/`. Niemals beliebige Pfade.

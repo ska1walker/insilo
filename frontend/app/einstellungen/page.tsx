@@ -383,6 +383,7 @@ export default function EinstellungenPage() {
               className="input w-full"
               value={form.sttBaseUrl}
               onChange={(e) => setForm({ ...form, sttBaseUrl: e.target.value })}
+              placeholder={tSettings("sttUrlPlatzhalter")}
               autoComplete="off"
               spellCheck={false}
             />

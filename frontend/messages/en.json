@@ -133,7 +133,6 @@
     "noneYet": "No tags yet. Use \"New tag\" to create your first — e.g. \"Client Müller\" or \"Q2 strategy\".",
     "nameLabel": "Name",
     "namePlaceholder": "e.g. Client Müller",
-    "colorLabel": "Colour",
     "create": "Create",
     "deleteConfirm": "Tag \"{name}\" is being deleted",
     "deleteFailed": "Tag could not be deleted.",
@@ -142,7 +141,6 @@
     "deleteAria": "Delete \"{name}\"",
     "duplicate": "A tag with this name already exists.",
     "removeAria": "Remove tag \"{name}\"",
-    "colorAria": "Colour: {label}",
     "errSave": "Save failed.",
     "filterPrefix": "Filter:",
     "resetAll": "Reset all",
@@ -467,7 +465,8 @@
       "save": "Save",
       "create": "Create",
       "cancel": "Cancel"
-    }
+    },
+    "deleteBtn": "Delete speaker"
   },
   "apiKeyManager": {
     "addBtn": "Create new key",
@@ -497,7 +496,8 @@
       "creating": "Creating …",
       "create": "Create key",
       "cancel": "Cancel"
-    }
+    },
+    "revokeBtn": "Revoke key"
   },
   "voiceEnrollment": {
     "dialogAria": "Record voice sample",
@@ -739,18 +739,19 @@
   },
   "settings": {
     "llmFehltTitel": "Language model not set up yet",
-    "llmFehltText": "Recording and transcription work. For summaries, enter the address of your LiteLLM instance below.",
+    "llmFehltText": "Recording and transcription work. For summaries, enter the address of your language model below.",
     "llmFehltWoher": "Find the address by opening LiteLLM on the Olares desktop and copying the address bar — it ends in /v1.",
     "sttTitel": "Speech recognition",
     "sttHinweis": "Leave empty and the bundled service on this box transcribes — then no recording leaves the box.",
     "sttUrl": "API URL",
-    "sttUrlHinweis": "OpenAI-compatible STT server, e.g. https://speaches.your-box.olares.de/v1",
+    "sttUrlHinweis": "Address of an OpenAI-compatible speech recognition server, usually ending in /v1.",
     "sttKey": "API key",
     "sttKeyHinweis": "Optional. Local endpoints usually do not ask for one.",
     "sttModell": "Model ID",
     "sttModellHinweis": "Model name as registered at the endpoint.",
     "sttWarnung": "With an address here, the recording itself goes to that server. On an address of this box it stays on the same machine; with a third-party provider it does not.",
-    "sttModellFehlt": "Address set, model ID missing. Without it the endpoint rejects every request — recording works, transcription does not. Its /v1/models lists the ids it accepts."
+    "sttModellFehlt": "Address set, model ID missing. Without it the endpoint rejects every request — recording works, transcription does not. Its /v1/models lists the ids it accepts.",
+    "sttUrlPlatzhalter": "https://….olares.de/v1"
   },
   "protokoll": {
     "titel": "Audit log",
@@ -832,7 +833,7 @@
     "zurueckholen": "Restore",
     "endgueltigLoeschen": "Delete permanently",
     "endgueltigFrage": "Remove “{titel}” for good? Audio, transcript and summary will be gone — with no way back.",
-    "endgueltigBestaetigen": "Yes, remove permanently",
+    "endgueltigBestaetigen": "Delete recording permanently",
     "abbrechen": "Cancel",
     "leer": "The trash is empty",
     "leerHinweis": "What you delete stays here until the retention period ends — you can restore it until then.",

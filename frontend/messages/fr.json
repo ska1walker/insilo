@@ -133,7 +133,6 @@
     "noneYet": "Aucune étiquette pour l'instant. Créez la première via « Nouvelle étiquette » — p. ex. « Client Müller » ou « Stratégie Q2 ».",
     "nameLabel": "Nom",
     "namePlaceholder": "p. ex. Client Müller",
-    "colorLabel": "Couleur",
     "create": "Créer",
     "deleteConfirm": "L'étiquette « {name} » est en cours de suppression",
     "deleteFailed": "L'étiquette n'a pas pu être supprimée.",
@@ -142,7 +141,6 @@
     "deleteAria": "Supprimer « {name} »",
     "duplicate": "Une étiquette portant ce nom existe déjà.",
     "removeAria": "Retirer l'étiquette « {name} »",
-    "colorAria": "Couleur : {label}",
     "errSave": "Échec de l'enregistrement.",
     "filterPrefix": "Filtre :",
     "resetAll": "Tout réinitialiser",
@@ -308,7 +306,7 @@
     "errSave": "Échec de l'enregistrement. Veuillez réessayer.",
     "errReset": "Échec de la réinitialisation.",
     "errFieldInvalid": "Nom de champ « {name} » invalide — uniquement minuscules, chiffres et _ autorisés (p. ex. « date_naissance »).",
-    "errFieldDuplicate": "Nom de champ « {name } » en double.",
+    "errFieldDuplicate": "Nom de champ « {name} » en double.",
     "errFieldNoLabel": "Le champ « {name} » n'a pas d'intitulé.",
     "tagSystem": "· système",
     "tagCustomized": "· personnalisé",
@@ -467,7 +465,8 @@
       "save": "Enregistrer",
       "create": "Créer",
       "cancel": "Annuler"
-    }
+    },
+    "deleteBtn": "Supprimer l'intervenant"
   },
   "apiKeyManager": {
     "addBtn": "Créer une nouvelle clé",
@@ -497,7 +496,8 @@
       "creating": "Création …",
       "create": "Créer la clé",
       "cancel": "Annuler"
-    }
+    },
+    "revokeBtn": "Révoquer la clé"
   },
   "voiceEnrollment": {
     "dialogAria": "Enregistrer un échantillon vocal",
@@ -739,18 +739,19 @@
   },
   "settings": {
     "llmFehltTitel": "Modèle de langage pas encore configuré",
-    "llmFehltText": "L'enregistrement et la transcription fonctionnent. Pour les résumés, indiquez ci-dessous l'adresse de votre instance LiteLLM.",
+    "llmFehltText": "L'enregistrement et la transcription fonctionnent. Pour les résumés, indiquez ci-dessous l'adresse de votre modèle de langage.",
     "llmFehltWoher": "Ouvrez LiteLLM sur le bureau Olares et copiez la barre d'adresse — elle se termine par /v1.",
     "sttTitel": "Reconnaissance vocale",
     "sttHinweis": "Sans adresse, le service inclus transcrit sur cette machine — aucun enregistrement ne quitte alors la boîte.",
     "sttUrl": "URL de l'API",
-    "sttUrlHinweis": "Serveur STT compatible OpenAI, par ex. https://speaches.votre-boite.olares.de/v1",
+    "sttUrlHinweis": "Adresse d'un serveur de reconnaissance vocale compatible OpenAI, se terminant généralement par /v1.",
     "sttKey": "Clé d'API",
     "sttKeyHinweis": "Facultatif. Les points de terminaison locaux n'en demandent généralement pas.",
     "sttModell": "Identifiant du modèle",
     "sttModellHinweis": "Nom du modèle tel qu'il est enregistré sur le point de terminaison.",
     "sttWarnung": "Avec une adresse ici, l'enregistrement lui-même part vers ce serveur. Sur une adresse de cette boîte il reste sur la même machine ; chez un tiers, non.",
-    "sttModellFehlt": "Adresse renseignée, identifiant du modèle manquant. Sans lui, le point de terminaison refuse chaque requête : l'enregistrement fonctionne, pas la transcription. Son /v1/models liste les identifiants acceptés."
+    "sttModellFehlt": "Adresse renseignée, identifiant du modèle manquant. Sans lui, le point de terminaison refuse chaque requête : l'enregistrement fonctionne, pas la transcription. Son /v1/models liste les identifiants acceptés.",
+    "sttUrlPlatzhalter": "https://….olares.de/v1"
   },
   "protokoll": {
     "titel": "Journal d'audit",
@@ -832,7 +833,7 @@
     "zurueckholen": "Restaurer",
     "endgueltigLoeschen": "Supprimer définitivement",
     "endgueltigFrage": "Supprimer «{titel}» définitivement ? L'enregistrement, la transcription et la synthèse seront perdus — sans retour possible.",
-    "endgueltigBestaetigen": "Oui, supprimer définitivement",
+    "endgueltigBestaetigen": "Supprimer définitivement l'enregistrement",
     "abbrechen": "Annuler",
     "leer": "La corbeille est vide",
     "leerHinweis": "Ce que vous supprimez reste ici jusqu'à la fin du délai — vous pouvez le restaurer jusque-là.",

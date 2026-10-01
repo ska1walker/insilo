@@ -133,7 +133,6 @@
     "noneYet": "Aún no hay etiquetas. Cree la primera con «Nueva etiqueta» — p. ej. «Cliente Müller» o «Estrategia T2».",
     "nameLabel": "Nombre",
     "namePlaceholder": "p. ej. Cliente Müller",
-    "colorLabel": "Color",
     "create": "Crear",
     "deleteConfirm": "La etiqueta «{name}» se está eliminando",
     "deleteFailed": "No se ha podido eliminar la etiqueta.",
@@ -142,7 +141,6 @@
     "deleteAria": "Eliminar «{name}»",
     "duplicate": "Ya existe una etiqueta con este nombre.",
     "removeAria": "Quitar la etiqueta «{name}»",
-    "colorAria": "Color: {label}",
     "errSave": "Error al guardar.",
     "filterPrefix": "Filtro:",
     "resetAll": "Restablecer todo",
@@ -467,7 +465,8 @@
       "save": "Guardar",
       "create": "Crear",
       "cancel": "Cancelar"
-    }
+    },
+    "deleteBtn": "Eliminar interlocutor"
   },
   "apiKeyManager": {
     "addBtn": "Crear nueva clave",
@@ -497,7 +496,8 @@
       "creating": "Creando …",
       "create": "Crear clave",
       "cancel": "Cancelar"
-    }
+    },
+    "revokeBtn": "Revocar la clave"
   },
   "voiceEnrollment": {
     "dialogAria": "Grabar muestra de voz",
@@ -739,18 +739,19 @@
   },
   "settings": {
     "llmFehltTitel": "Modelo de lenguaje aún no configurado",
-    "llmFehltText": "La grabación y la transcripción funcionan. Para los resúmenes, introduzca abajo la dirección de su instancia de LiteLLM.",
+    "llmFehltText": "La grabación y la transcripción funcionan. Para los resúmenes, introduzca abajo la dirección de su modelo de lenguaje.",
     "llmFehltWoher": "Abra LiteLLM en el escritorio de Olares y copie la barra de direcciones — termina en /v1.",
     "sttTitel": "Reconocimiento de voz",
     "sttHinweis": "Sin dirección, transcribe el servicio incluido en esta caja: entonces ninguna grabación sale de ella.",
     "sttUrl": "URL de la API",
-    "sttUrlHinweis": "Servidor STT compatible con OpenAI, p. ej. https://speaches.su-caja.olares.de/v1",
+    "sttUrlHinweis": "Dirección de un servidor de reconocimiento de voz compatible con OpenAI, normalmente terminada en /v1.",
     "sttKey": "Clave de API",
     "sttKeyHinweis": "Opcional. Los puntos finales locales no suelen pedirla.",
     "sttModell": "ID del modelo",
     "sttModellHinweis": "Nombre del modelo tal como figura en el punto de conexión.",
     "sttWarnung": "Con una dirección aquí, la propia grabación va a ese servidor. En una dirección de esta caja permanece en la misma máquina; con un proveedor ajeno, no.",
-    "sttModellFehlt": "Dirección indicada, falta el ID del modelo. Sin él, el punto final rechaza cada solicitud: la grabación funciona, la transcripción no. Su /v1/models enumera los ID admitidos."
+    "sttModellFehlt": "Dirección indicada, falta el ID del modelo. Sin él, el punto final rechaza cada solicitud: la grabación funciona, la transcripción no. Su /v1/models enumera los ID admitidos.",
+    "sttUrlPlatzhalter": "https://….olares.de/v1"
   },
   "protokoll": {
     "titel": "Registro de auditoría",
@@ -832,7 +833,7 @@
     "zurueckholen": "Restaurar",
     "endgueltigLoeschen": "Eliminar definitivamente",
     "endgueltigFrage": "¿Eliminar «{titel}» definitivamente? La grabación, la transcripción y el resumen se perderán, sin vuelta atrás.",
-    "endgueltigBestaetigen": "Sí, eliminar definitivamente",
+    "endgueltigBestaetigen": "Eliminar la grabación definitivamente",
     "abbrechen": "Cancelar",
     "leer": "La papelera está vacía",
     "leerHinweis": "Lo que elimine permanece aquí hasta que venza el plazo; hasta entonces puede restaurarlo.",

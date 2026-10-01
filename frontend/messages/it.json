@@ -133,7 +133,6 @@
     "noneYet": "Ancora nessun tag. Crei il primo tramite «Nuovo tag» — p. es. «Cliente Müller» o «Strategia Q2».",
     "nameLabel": "Nome",
     "namePlaceholder": "p. es. Cliente Müller",
-    "colorLabel": "Colore",
     "create": "Crea",
     "deleteConfirm": "Il tag «{name}» è in fase di eliminazione",
     "deleteFailed": "Impossibile eliminare il tag.",
@@ -142,7 +141,6 @@
     "deleteAria": "Elimina «{name}»",
     "duplicate": "Esiste già un tag con questo nome.",
     "removeAria": "Rimuovi il tag «{name}»",
-    "colorAria": "Colore: {label}",
     "errSave": "Salvataggio non riuscito.",
     "filterPrefix": "Filtro:",
     "resetAll": "Reimposta tutto",
@@ -467,7 +465,8 @@
       "save": "Salva",
       "create": "Crea",
       "cancel": "Annulla"
-    }
+    },
+    "deleteBtn": "Elimina interlocutore"
   },
   "apiKeyManager": {
     "addBtn": "Crea nuova chiave",
@@ -497,7 +496,8 @@
       "creating": "Creazione …",
       "create": "Crea chiave",
       "cancel": "Annulla"
-    }
+    },
+    "revokeBtn": "Revoca la chiave"
   },
   "voiceEnrollment": {
     "dialogAria": "Registra campione vocale",
@@ -739,18 +739,19 @@
   },
   "settings": {
     "llmFehltTitel": "Modello linguistico non ancora configurato",
-    "llmFehltText": "Registrazione e trascrizione funzionano. Per i riepiloghi, inserisci qui sotto l'indirizzo della tua istanza LiteLLM.",
-    "llmFehltWoher": "Apri LiteLLM sulla scrivania Olares e copia la barra degli indirizzi — termina con /v1.",
+    "llmFehltText": "Registrazione e trascrizione funzionano. Per i riepiloghi, inserisca qui sotto l'indirizzo del Suo modello linguistico.",
+    "llmFehltWoher": "Apra LiteLLM sulla scrivania Olares e copi la barra degli indirizzi — termina con /v1.",
     "sttTitel": "Riconoscimento vocale",
     "sttHinweis": "Senza indirizzo trascrive il servizio incluso su questo box: allora nessuna registrazione lo lascia.",
     "sttUrl": "URL dell'API",
-    "sttUrlHinweis": "Server STT compatibile con OpenAI, ad es. https://speaches.suo-box.olares.de/v1",
+    "sttUrlHinweis": "Indirizzo di un server di riconoscimento vocale compatibile con OpenAI, di solito terminante in /v1.",
     "sttKey": "Chiave API",
     "sttKeyHinweis": "Facoltativa. Gli endpoint locali di norma non la richiedono.",
     "sttModell": "ID del modello",
     "sttModellHinweis": "Nome del modello così come è registrato presso l'endpoint.",
     "sttWarnung": "Con un indirizzo qui, la registrazione stessa va a quel server. Su un indirizzo di questo box resta sulla stessa macchina; presso un fornitore esterno no.",
-    "sttModellFehlt": "Indirizzo inserito, manca l'ID del modello. Senza, l'endpoint rifiuta ogni richiesta: la registrazione funziona, la trascrizione no. Il suo /v1/models elenca gli ID accettati."
+    "sttModellFehlt": "Indirizzo inserito, manca l'ID del modello. Senza, l'endpoint rifiuta ogni richiesta: la registrazione funziona, la trascrizione no. Il suo /v1/models elenca gli ID accettati.",
+    "sttUrlPlatzhalter": "https://….olares.de/v1"
   },
   "protokoll": {
     "titel": "Registro di controllo",
@@ -832,7 +833,7 @@
     "zurueckholen": "Ripristina",
     "endgueltigLoeschen": "Elimina definitivamente",
     "endgueltigFrage": "Rimuovere «{titel}» definitivamente? Registrazione, trascrizione e sintesi andranno perse, senza possibilità di recupero.",
-    "endgueltigBestaetigen": "Sì, rimuovi definitivamente",
+    "endgueltigBestaetigen": "Elimina definitivamente la registrazione",
     "abbrechen": "Annulla",
     "leer": "Il cestino è vuoto",
     "leerHinweis": "Ciò che elimina resta qui fino alla scadenza del termine: fino ad allora può ripristinarlo.",

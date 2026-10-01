@@ -412,7 +412,7 @@ export default function MeetingDetail() {
         ) : (
           <span />
         )}
-        <button type="button" onClick={onDelete} className="btn btn-still text-fehler">
+        <button type="button" onClick={onDelete} className="btn btn-gefahr">
           {t("delete")}
         </button>
       </div>

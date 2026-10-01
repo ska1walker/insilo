@@ -91,12 +91,11 @@ export default function Home() {
 
       {state.kind === "ok" && state.meetings.length > 0 && (
         <div className="overflow-hidden rounded-lg border border-trennlinie bg-seite">
-          {state.meetings.map((m, i) => (
+          {state.meetings.map((m) => (
             <Link
               key={m.id}
               href={`/m/${m.id}`}
-              className="stagger-in block"
-              style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}
+              className="block"
             >
               <div className="meeting-row">
                 <div className="min-w-0 flex-1">

@@ -133,7 +133,6 @@
     "noneYet": "Noch keine Tags. Legen Sie über „Neuer Tag“ Ihren ersten an — z. B. „Mandant Müller“ oder „Q2 Strategie“.",
     "nameLabel": "Name",
     "namePlaceholder": "z. B. Mandant Müller",
-    "colorLabel": "Farbe",
     "create": "Anlegen",
     "deleteConfirm": "Tag „{name}“ wird gelöscht",
     "deleteFailed": "Tag konnte nicht gelöscht werden.",
@@ -142,7 +141,6 @@
     "deleteAria": "„{name}“ löschen",
     "duplicate": "Ein Tag mit diesem Namen existiert bereits.",
     "removeAria": "Tag „{name}“ entfernen",
-    "colorAria": "Farbe: {label}",
     "errSave": "Speichern fehlgeschlagen.",
     "filterPrefix": "Filter:",
     "resetAll": "Alle zurücksetzen",
@@ -467,7 +465,8 @@
       "save": "Speichern",
       "create": "Anlegen",
       "cancel": "Abbrechen"
-    }
+    },
+    "deleteBtn": "Sprecher löschen"
   },
   "apiKeyManager": {
     "addBtn": "Neuen Schlüssel anlegen",
@@ -497,7 +496,8 @@
       "creating": "Erstellt …",
       "create": "Schlüssel erstellen",
       "cancel": "Abbrechen"
-    }
+    },
+    "revokeBtn": "Schlüssel widerrufen"
   },
   "voiceEnrollment": {
     "dialogAria": "Stimmprobe aufnehmen",
@@ -739,18 +739,19 @@
   },
   "settings": {
     "llmFehltTitel": "Sprachmodell noch nicht eingerichtet",
-    "llmFehltText": "Aufnahme und Transkription laufen. Für Zusammenfassungen tragen Sie unten die Adresse Ihrer LiteLLM-Instanz ein.",
+    "llmFehltText": "Aufnahme und Transkription laufen. Für Zusammenfassungen tragen Sie unten die Adresse Ihres Sprachmodells ein.",
     "llmFehltWoher": "Die Adresse finden Sie, indem Sie LiteLLM auf dem Olares-Schreibtisch öffnen und die Adresszeile kopieren — sie endet auf /v1.",
     "sttTitel": "Spracherkennung",
     "sttHinweis": "Ohne Eintrag transkribiert der mitgelieferte Dienst auf dieser Box — dann verlässt keine Tonaufnahme die Box.",
     "sttUrl": "API-URL",
-    "sttUrlHinweis": "OpenAI-kompatibler STT-Server, z. B. https://speaches.ihre-box.olares.de/v1",
+    "sttUrlHinweis": "Adresse eines OpenAI-kompatiblen Servers für die Spracherkennung, meist mit /v1 am Ende.",
     "sttKey": "API-Schlüssel",
     "sttKeyHinweis": "Optional. Lokale Endpunkte verlangen meist keinen.",
     "sttModell": "Modell-ID",
     "sttModellHinweis": "Modellname, wie er beim Endpunkt eingetragen ist.",
     "sttWarnung": "Mit einer Adresse hier geht die Tonaufnahme selbst an diesen Server. Auf einer Adresse dieser Box bleibt sie auf derselben Maschine; bei einem fremden Anbieter nicht.",
-    "sttModellFehlt": "Adresse eingetragen, Modell-ID fehlt. Ohne sie lehnt der Endpunkt jede Anfrage ab — die Aufnahme läuft, die Transkription nicht. Welche Kennungen er kennt, steht unter /v1/models."
+    "sttModellFehlt": "Adresse eingetragen, Modell-ID fehlt. Ohne sie lehnt der Endpunkt jede Anfrage ab — die Aufnahme läuft, die Transkription nicht. Welche Kennungen er kennt, steht unter /v1/models.",
+    "sttUrlPlatzhalter": "https://….olares.de/v1"
   },
   "protokoll": {
     "titel": "Protokoll",
@@ -832,7 +833,7 @@
     "zurueckholen": "Zurückholen",
     "endgueltigLoeschen": "Endgültig löschen",
     "endgueltigFrage": "„{titel}“ endgültig entfernen? Tonaufnahme, Transkript und Zusammenfassung sind danach weg — ohne Weg zurück.",
-    "endgueltigBestaetigen": "Ja, endgültig entfernen",
+    "endgueltigBestaetigen": "Aufnahme endgültig löschen",
     "abbrechen": "Abbrechen",
     "leer": "Der Papierkorb ist leer",
     "leerHinweis": "Was Sie löschen, liegt hier, bis die Frist abläuft — Sie können es bis dahin zurückholen.",

@@ -58,7 +58,6 @@ export function TagFilterBar({
         <TagPill
           key={t.id}
           name={t.name}
-          color={t.color}
           active={selectedIds.includes(t.id)}
           onClick={() => toggle(t.id)}
         />

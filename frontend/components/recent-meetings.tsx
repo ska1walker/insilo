@@ -106,12 +106,11 @@ export function RecentMeetings({ limit = 5 }: { limit?: number }) {
 
       {state.kind === "ok" && state.meetings.length > 0 && (
         <div className="overflow-hidden rounded-lg border border-trennlinie bg-seite">
-          {state.meetings.map((m, i) => (
+          {state.meetings.map((m) => (
             <Link
               key={m.id}
               href={`/m/${m.id}`}
-              className="stagger-in block"
-              style={{ animationDelay: `${i * 40}ms` }}
+              className="block"
             >
               <div className="meeting-row">
                 <div className="min-w-0 flex-1">

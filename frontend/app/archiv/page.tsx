@@ -2,6 +2,7 @@
 
 import { ArrowRight, MessageSquareQuote, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { ApiError } from "@/lib/api/client";
 import { ask, type AskResponse, type AskSource } from "@/lib/api/ask";
@@ -9,13 +10,12 @@ import { formatMeetingDate } from "@/lib/format";
 
 type Phase = "idle" | "asking" | "done" | "error";
 
-const EXAMPLES = [
-  "Welche Beschlüsse wurden in den letzten Mandantengesprächen gefasst?",
-  "Wer ist verantwortlich für die Cyberversicherung?",
-  "Welche Wiedervorlagen sind in den nächsten zwei Wochen fällig?",
-];
+const EXAMPLE_KEYS = ["example1", "example2", "example3"] as const;
 
 export default function AskPage() {
+  const t = useTranslations("archiv");
+  const tErrors = useTranslations("errors");
+  const examples = EXAMPLE_KEYS.map((k) => t(k));
   const [question, setQuestion] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<AskResponse | null>(null);
@@ -35,14 +35,12 @@ export default function AskPage() {
       console.error("ask failed", err);
       if (err instanceof ApiError) {
         if (err.status === 503) {
-          setError(
-            "Die KI-Dienste sind gerade nicht erreichbar. Bitte gleich erneut versuchen.",
-          );
+          setError(t("errorUnavailable"));
         } else {
-          setError(`Anfrage fehlgeschlagen (HTTP ${err.status}).`);
+          setError(t("errorHttp", { status: err.status }));
         }
       } else {
-        setError("Verbindung zum Backend unterbrochen.");
+        setError(tErrors("network"));
       }
       setPhase("error");
     }
@@ -52,15 +50,13 @@ export default function AskPage() {
     <main className="mx-auto max-w-[860px] px-6 py-12 md:px-12 md:py-16">
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <p className="mono mb-4 text-xs uppercase tracking-[0.08em] text-text-gedaempft">
-        Archiv-Suche · Grounded Q&amp;A
+        {t("eyebrow")}
       </p>
       <h1 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
-        Fragen Sie Ihr Meeting-Archiv.
+        {t("title")}
       </h1>
       <p className="mt-4 max-w-[640px] text-text-sekundaer">
-        Stellen Sie eine Frage in natürlicher Sprache. Insilo durchsucht die
-        Transkripte und Zusammenfassungen aller Besprechungen Ihrer
-        Organisation und antwortet mit Quellenangaben.
+        {t("intro")}
       </p>
 
       {/* ── Form ──────────────────────────────────────────────────── */}
@@ -81,15 +77,16 @@ export default function AskPage() {
                 submit(question);
               }
             }}
-            placeholder="Worüber möchten Sie etwas wissen?"
+            placeholder={t("placeholder")}
             rows={3}
             className="block w-full resize-none bg-transparent px-3 py-2 text-base leading-relaxed text-text-primaer outline-none placeholder:text-text-deaktiviert"
             disabled={phase === "asking"}
           />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-trennlinie px-2 pt-2">
             <p className="text-xs text-text-gedaempft">
-              <span className="mono">⌘ ↵</span> zum Absenden · Antwort
-              dauert je nach Modell 5–20 Sekunden
+              {t.rich("submitHint", {
+                taste: (teile) => <span className="mono">{teile}</span>,
+              })}
             </p>
             <button
               type="submit"
@@ -99,11 +96,11 @@ export default function AskPage() {
               {phase === "asking" ? (
                 <>
                   <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  Sucht …
+                  {t("asking")}
                 </>
               ) : (
                 <>
-                  Frage stellen
+                  {t("submit")}
                   <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
                 </>
               )}
@@ -121,11 +118,11 @@ export default function AskPage() {
               strokeWidth={1.75}
             />
             <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
-              Beispiel-Fragen
+              {t("examplesTitle")}
             </p>
           </div>
           <div className="grid gap-2">
-            {EXAMPLES.map((ex) => (
+            {examples.map((ex) => (
               <button
                 key={ex}
                 type="button"
@@ -161,7 +158,7 @@ export default function AskPage() {
             className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--am-fehler)" }}
           >
-            Fehler
+            {t("errorTitle")}
           </p>
           <p className="mt-2 text-sm text-text-sekundaer">{error}</p>
         </div>
@@ -183,12 +180,13 @@ export default function AskPage() {
 }
 
 function AnswerCard({ result }: { result: AskResponse }) {
+  const t = useTranslations("archiv");
   return (
     <section className="mt-12 space-y-10">
       <div>
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
           <p className="mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
-            Antwort
+            {t("answer")}
           </p>
           <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
             {result.llm_model} · {Math.round(result.elapsed_ms / 1000)}s
@@ -204,7 +202,7 @@ function AnswerCard({ result }: { result: AskResponse }) {
       {result.sources.length > 0 && (
         <div>
           <p className="mb-4 mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
-            Quellen · {result.sources.length}
+            {t("sources", { count: result.sources.length })}
           </p>
           <ol className="space-y-3">
             {result.sources.map((s, i) => (
@@ -222,6 +220,7 @@ function AnswerCard({ result }: { result: AskResponse }) {
 }
 
 function SourceItem({ index, source }: { index: number; source: AskSource }) {
+  const t = useTranslations("archiv");
   return (
     <li className="rounded-lg border border-trennlinie bg-seite p-6 transition hover:border-rand-betont">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -240,12 +239,14 @@ function SourceItem({ index, source }: { index: number; source: AskSource }) {
           </Link>
         </div>
         <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
-          Relevanz {Math.max(0, Math.round(source.score * 100))}%
+          {t("relevance", {
+            percent: Math.max(0, Math.round(source.score * 100)),
+          })}
         </p>
       </div>
       <p className="mt-1 text-[0.8125rem] text-text-gedaempft">
-        {formatMeetingDate(Date.parse(source.meeting_date))} · Abschnitt{" "}
-        {source.chunk_index + 1}
+        {formatMeetingDate(Date.parse(source.meeting_date))} ·{" "}
+        {t("section", { n: source.chunk_index + 1 })}
       </p>
       <p className="mt-3 text-sm leading-relaxed text-text-sekundaer">
         {source.content.length > 320

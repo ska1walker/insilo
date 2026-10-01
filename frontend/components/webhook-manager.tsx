@@ -299,10 +299,10 @@ function WebhookRow({
           <button
             type="button"
             onClick={handleDelete}
-            className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1"
-            aria-label={t("deleteAria")}
+            className="btn btn-still btn-klein inline-flex items-center gap-1"
           >
-            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            {t("deleteAria")}
           </button>
         </div>
       </div>

@@ -17,6 +17,8 @@ type LoadState =
   | { kind: "error"; message: string };
 
 export default function Home() {
+  const t = useTranslations("meeting");
+  const tErrors = useTranslations("errors");
   const tPapierkorb = useTranslations("papierkorb");
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -40,8 +42,8 @@ export default function Home() {
         if (cancelled) return;
         const msg =
           err instanceof ApiError
-            ? `Backend nicht erreichbar (HTTP ${err.status}).`
-            : "Backend nicht erreichbar.";
+            ? t("backendUnreachableHttp", { status: err.status })
+            : tErrors("network");
         setState({ kind: "error", message: msg });
       }
     }
@@ -51,17 +53,16 @@ export default function Home() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [selectedTagIds]);
+  }, [selectedTagIds, t, tErrors]);
 
   return (
     <main className="mx-auto max-w-[1280px] px-6 py-10 md:px-12 md:py-16">
       <div className="mb-10 flex items-baseline justify-between gap-4">
-        <h1 className="text-3xl font-medium md:text-4xl">Besprechungen</h1>
+        <h1 className="text-3xl font-medium md:text-4xl">{t("listTitle")}</h1>
         <div className="flex shrink-0 items-baseline gap-5">
           {state.kind === "ok" && state.meetings.length > 0 && (
             <p className="mono text-xs uppercase tracking-[0.08em] text-text-gedaempft">
-              {state.meetings.length}{" "}
-              {state.meetings.length === 1 ? "Aufnahme" : "Aufnahmen"}
+              {t("listCount", { count: state.meetings.length })}
             </p>
           )}
           {/* Der Papierkorb gehört hierher, nicht in die Navigation: man
@@ -90,12 +91,11 @@ export default function Home() {
 
       {state.kind === "ok" && state.meetings.length > 0 && (
         <div className="overflow-hidden rounded-lg border border-trennlinie bg-seite">
-          {state.meetings.map((m, i) => (
+          {state.meetings.map((m) => (
             <Link
               key={m.id}
               href={`/m/${m.id}`}
-              className="stagger-in block"
-              style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}
+              className="block"
             >
               <div className="meeting-row">
                 <div className="min-w-0 flex-1">
@@ -127,12 +127,12 @@ export default function Home() {
 }
 
 function FilteredEmpty() {
+  const t = useTranslations("meeting");
   return (
     <div className="rounded-lg border border-trennlinie bg-seite p-12 text-center">
-      <p className="font-display text-xl font-medium">Keine Treffer</p>
+      <p className="font-display text-xl font-medium">{t("filteredEmptyTitle")}</p>
       <p className="mx-auto mt-3 max-w-[420px] text-text-sekundaer">
-        Keine Besprechung enthält alle ausgewählten Tags. Lösen Sie einen
-        Filter oder versuchen Sie es mit weniger Tags.
+        {t("filteredEmptyText")}
       </p>
     </div>
   );
@@ -152,31 +152,34 @@ function ListSkeleton() {
 }
 
 function EmptyState() {
+  const t = useTranslations("meeting");
+  const tRecording = useTranslations("recording");
   return (
     <div className="rounded-lg border border-trennlinie bg-seite p-12 text-center">
-      <p className="font-display text-xl font-medium">Noch keine Aufnahmen</p>
+      <p className="font-display text-xl font-medium">{t("emptyTitle")}</p>
       <p className="mx-auto mt-3 max-w-[420px] text-text-sekundaer">
-        Starten Sie Ihre erste Besprechung. Audio wird auf der Olares-Box
-        gespeichert — lokal auf Ihrer Hardware, niemals in der Cloud.
+        {t("emptyText")}
       </p>
       <Link href="/aufnahme" className="btn btn-primaer mt-8 inline-flex">
-        Aufnahme starten
+        {tRecording("start")}
       </Link>
     </div>
   );
 }
 
 function ErrorState({ message }: { message: string }) {
+  const t = useTranslations("meeting");
+  const tCommon = useTranslations("common");
   return (
     <div className="rounded-lg border border-trennlinie bg-seite p-12 text-center">
-      <p className="font-display text-xl font-medium">Verbindung unterbrochen</p>
+      <p className="font-display text-xl font-medium">{t("connectionLost")}</p>
       <p className="mx-auto mt-3 max-w-[480px] text-text-sekundaer">{message}</p>
       <button
         type="button"
         onClick={() => window.location.reload()}
         className="btn btn-sekundaer mt-8 inline-flex"
       >
-        Erneut versuchen
+        {tCommon("retry")}
       </button>
     </div>
   );

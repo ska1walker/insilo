@@ -132,7 +132,6 @@ export function TagPicker({
           <TagPill
             key={tag.id}
             name={tag.name}
-            color={tag.color}
             onRemove={() => detach(tag)}
           />
         ))}
@@ -201,10 +200,6 @@ export function TagPicker({
                       onClick={() => attach(tag)}
                       className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-flaeche-1"
                     >
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: tag.color }}
-                      />
                       <span className="truncate text-sm text-text-primaer">
                         {tag.name}
                       </span>

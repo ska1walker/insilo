@@ -374,7 +374,9 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
 
   const isFull = variant === "full";
   const timerSize = isFull ? "text-6xl" : "text-5xl";
-  const showTrustBadge = isFull;
+  // Auch auf der Startseite: Dort stand bis Etappe 2 des CI-Anschlusses ein
+  // festes „keine Drittanbieter“, das nichts gemessen hat (DESIGN.md §5).
+  const showTrustBadge = true;
   const cancelGoesHome = isFull;
 
   return (

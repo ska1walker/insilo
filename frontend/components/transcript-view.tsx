@@ -370,10 +370,11 @@ function SpeakerRoster({
               <button
                 type="button"
                 onClick={() => onRemove(s.id)}
-                className="rounded-full p-1 text-text-gedaempft hover:bg-flaeche-1 hover:text-fehler"
+                className="btn btn-still btn-klein inline-flex items-center gap-1"
                 aria-label={t("removeAria", { name: s.name })}
               >
-                <Trash2 className="h-3 w-3" strokeWidth={2} />
+                <Trash2 className="h-3 w-3" strokeWidth={2} aria-hidden />
+                {tCommon("remove")}
               </button>
             </div>
           ),

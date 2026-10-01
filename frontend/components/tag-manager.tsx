@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
@@ -99,7 +99,7 @@ export function TagManager() {
                 key={tag.id}
                 className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
               >
-                <TagPill name={tag.name} color={tag.color} />
+                <TagPill name={tag.name} />
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
@@ -138,11 +138,11 @@ export function TagManager() {
                         },
                       });
                     }}
-                    className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1"
-                    style={{ color: "var(--am-text-gedaempft)" }}
+                    className="btn btn-still btn-klein inline-flex items-center gap-1"
                     aria-label={t("deleteAria", { name: tag.name })}
                   >
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+                    {tCommon("delete")}
                   </button>
                 </div>
               </div>
@@ -169,7 +169,9 @@ function TagForm({
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
   const [name, setName] = useState(initial?.name ?? "");
-  const [color, setColor] = useState(initial?.color ?? TAG_COLORS[0].value);
+  // Die Farbe wird nicht mehr gewählt und nicht gezeichnet (IN-R7); ein
+  // vorhandener Wert bleibt erhalten, neue Tags bekommen den ersten.
+  const color = initial?.color ?? TAG_COLORS[0].value;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -224,40 +226,6 @@ function TagForm({
             disabled={saving}
           />
         </label>
-        <div>
-          <span className="block text-xs font-medium text-text-sekundaer">
-            {t("colorLabel")}
-          </span>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {TAG_COLORS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={() => setColor(c.value)}
-                className="h-7 w-7 rounded-full border transition"
-                style={{
-                  background: c.value,
-                  borderColor:
-                    color === c.value ? "var(--am-text-primaer)" : "var(--am-trennlinie)",
-                  boxShadow:
-                    color === c.value
-                      ? "0 0 0 2px var(--am-seite) inset"
-                      : undefined,
-                }}
-                title={c.label}
-                aria-label={t("colorAria", { label: c.label })}
-              >
-                {color === c.value && (
-                  <Check
-                    className="mx-auto h-3.5 w-3.5"
-                    style={{ color: "var(--am-seite)" }}
-                    strokeWidth={3}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       {error && (

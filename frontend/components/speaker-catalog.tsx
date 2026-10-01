@@ -2,6 +2,7 @@
 
 import { Mic, Pencil, Plus, Star, Trash2, UserRound, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Rueckfrage } from "@/components/dialog";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/toast";
 import { VoiceEnrollmentDialog } from "@/components/voice-enrollment-dialog";
@@ -148,8 +149,12 @@ function SpeakerRow({
   const t = useTranslations("speakerCatalog");
   const toast = useToast();
 
+  // Endgültig: das Stimmprofil kommt nicht zurück — deshalb die Rückfrage,
+  // als Dialog statt Browser-confirm() (ABGLEICH IN-R2).
+  const [fragt, setFragt] = useState(false);
+
   function handleDelete() {
-    if (!confirm(t("deleteConfirm", { name: speaker.display_name }))) return;
+    setFragt(false);
     deleteSpeaker(speaker.id)
       .then(() => {
         toast.show({ message: t("deletedToast"), variant: "success" });
@@ -227,13 +232,25 @@ function SpeakerRow({
         </button>
         <button
           type="button"
-          onClick={handleDelete}
-          className="rounded-md p-1.5 text-text-gedaempft transition hover:bg-flaeche-1"
-          aria-label={t("deleteAria")}
+          onClick={() => setFragt(true)}
+          className="btn btn-still btn-klein inline-flex items-center gap-1"
         >
-          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+          {t("deleteAria")}
         </button>
       </div>
+      {fragt && (
+        <Rueckfrage
+          titel={t("deleteConfirm", { name: speaker.display_name })}
+          label={t("deleteBtn")}
+          beiSchliessen={() => setFragt(false)}
+          knopf={
+            <button type="button" className="btn btn-gefahr" onClick={handleDelete}>
+              {t("deleteBtn")}
+            </button>
+          }
+        />
+      )}
     </div>
   );
 }

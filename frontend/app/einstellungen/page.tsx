@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiKeyManager } from "@/components/api-key-manager";
+import { AppInstallieren } from "@/components/app-installieren";
 import { DarstellungSwitcher } from "@/components/darstellung";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SpeakerCatalog } from "@/components/speaker-catalog";
@@ -211,6 +212,7 @@ export default function EinstellungenPage() {
       <section className="mb-10 space-y-4">
         <LocaleSwitcher />
         <DarstellungSwitcher />
+        <AppInstallieren />
       </section>
 
       {/* Ohne eingetragene Adresse laufen Aufnahme und Transkription,

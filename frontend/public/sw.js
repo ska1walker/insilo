@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION to force clients to refresh after a release.
  */
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const STATIC_CACHE = `insilo-static-${CACHE_VERSION}`;
 const HTML_CACHE = `insilo-html-${CACHE_VERSION}`;
 
@@ -52,8 +52,12 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const fresh = await fetch(req);
-          const cache = await caches.open(HTML_CACHE);
-          cache.put(req, fresh.clone());
+          // Only keep real pages. A redirect (Olares login after the session
+          // ran out) or an error page must not be served later as "offline".
+          if (fresh.ok && !fresh.redirected && fresh.type === "basic") {
+            const cache = await caches.open(HTML_CACHE);
+            cache.put(req, fresh.clone());
+          }
           return fresh;
         } catch {
           const cached = await caches.match(req);

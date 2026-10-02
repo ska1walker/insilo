@@ -708,6 +708,15 @@
     "dark": "Sombre",
     "saved": "Affichage modifié."
   },
+  "installation": {
+    "title": "En tant qu’application",
+    "hint": "Insilo peut être placé sur l’écran d’accueil comme une application – dans sa propre fenêtre, sans barre de navigateur. S’applique uniquement à cet appareil.",
+    "installieren": "Installer l’application",
+    "installiert": "Insilo fonctionne comme application sur cet appareil.",
+    "ios": "Dans Safari, touchez « Partager », puis « Sur l’écran d’accueil ».",
+    "browser": "Dans le menu de votre navigateur, choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».",
+    "unsicher": "L’installation nécessite une adresse sécurisée (https). Ouvrez Insilo via l’adresse de votre box Olares."
+  },
   "egress": {
     "titel": "Qu'est-ce qui quitte ce boîtier ?",
     "allesBleibt": "Tout reste sur ce boîtier",

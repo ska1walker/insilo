@@ -1743,6 +1743,36 @@
 > hat sie nicht gefunden — der Blick auf die laufende App hat sie
 > gefunden.
 >
+> ## Insilo als App installierbar (v0.1.105, 2. Oktober 2026)
+>
+> Manifest, Symbole und Service Worker gab es schon, installieren ließ
+> sich Insilo trotzdem nicht zuverlässig:
+>
+> - **Das Manifest kam ohne Cookie.** Browser laden es ohne
+>   Anmeldedaten, solange am `<link>` nicht `crossorigin="use-credentials"`
+>   steht. Beim Fernzugriff antwortet dann der Olares-Login statt der
+>   Datei. Next setzt das Attribut nur für Vercel-Vorschauen — der Link
+>   steht deshalb von Hand in `app/layout.tsx`, nicht in den Metadaten.
+> - **iOS öffnete in Safari.** `appleWebApp.capable` fehlte; Next schreibt
+>   dafür nur `mobile-web-app-capable`, ältere iOS lesen allein
+>   `apple-mobile-web-app-capable` — beide stehen jetzt da.
+> - **Der Service Worker legte jede Antwort ab**, auch die Umleitung auf
+>   den Login nach abgelaufener Sitzung — die wäre offline als Seite
+>   gekommen. Abgelegt wird nur noch `ok`, nicht umgeleitet, gleicher
+>   Ursprung (`CACHE_VERSION` v3).
+> - `orientation: portrait-primary` sperrte installierte Tablets im
+>   Hochformat; entfernt. `id: "/"` ergänzt.
+>
+> Neu unter Einstellungen → „Als App" (`components/app-installieren.tsx`,
+> `lib/installation.ts`): ein Knopf, wo Chrome/Edge `beforeinstallprompt`
+> melden (früh gefangen in `ServiceWorkerRegister`), der Weg über „Teilen"
+> auf iPhone/iPad, ein Hinweis ohne https. Wacht: `tests/pwa.test.ts`.
+> Geprüft mit Chromium über CDP: `Page.getInstallabilityErrors` leer.
+>
+> **Offen:** Offline zeigt Insilo nur zuvor besuchte Seiten, ohne Daten
+> (die API wird nie abgelegt). Besprechungen offline lesen
+> (IndexedDB je Box, CLAUDE.md „Offline-First") ist eine eigene Etappe.
+>
 > # ⚠️ v0.1.66 — zwei Fallen beim Box-Update (19. August 2026)
 >
 > **Stand: v0.1.66 läuft auf der Box** (Helm-Rev 44, verifiziert 03:25 UTC).

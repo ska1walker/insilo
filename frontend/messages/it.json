@@ -708,6 +708,15 @@
     "dark": "Scuro",
     "saved": "Aspetto modificato."
   },
+  "installation": {
+    "title": "Come app",
+    "hint": "Insilo può essere aggiunto alla schermata Home come un’app, in una finestra propria e senza barra del browser. Vale solo per questo dispositivo.",
+    "installieren": "Installa come app",
+    "installiert": "Insilo funziona come app su questo dispositivo.",
+    "ios": "In Safari, tocchi «Condividi» e poi «Aggiungi alla schermata Home».",
+    "browser": "Nel menu del Suo browser, scelga «Installa app» o «Aggiungi a schermata Home».",
+    "unsicher": "L’installazione richiede un indirizzo sicuro (https). Apra Insilo tramite l’indirizzo della Sua box Olares."
+  },
   "egress": {
     "titel": "Che cosa esce da questo box?",
     "allesBleibt": "Tutto resta su questo box",

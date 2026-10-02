@@ -1,6 +1,6 @@
 {
-  "stand": "ci-26.10.9",
-  "commit": "09fb89835d7907e79938aa477d1c84edf63abce6",
+  "stand": "ci-26.10.10",
+  "commit": "4ac4f6929fcd05552af9b4d3af813f7d83570ddc",
   "quelle": "ska1walker/aimighty-ci",
   "dateien": {
     "bauteile/AM-BASIS.css": "cff2007fa4abb4f864a1e4b453dc427e7fe00827cd6a178df172ce759997f17d",
@@ -25,7 +25,7 @@
     "bauteile/HB-KONTO.css": "ee84de0d35d00995676078028bfb1c1cc1edd398a1d97a2e3de8bdda997f055a",
     "bauteile/HB-MARKE.css": "b847e9302627856bc54e173d3036c69b3c0b52712dd1946dd181ddc00ffee5b9",
     "bauteile/HB-MEHRFACH.css": "f5604511cb8191ac17633e6bb7c7f6a3fe6f371e8e2d4dc4efbb698465f5281d",
-    "bauteile/HB-PILLE.css": "d14945657ca0da6e261cad90a6f7be2db20835419669bb32c4e5b40f870ccdb6",
+    "bauteile/HB-PILLE.css": "1039c7d1c84b3c3e4bb80c0ac72b0a696e8333d15b4df9c3ae0b583d0d129580",
     "bauteile/HB-SEITENKOPF.css": "9b0ea81c4ffc72aa89cdecababe50591547dd7ee29144f78578cd74ade5cb44b",
     "bauteile/HB-SUCHE.css": "f592eb67fc7c2eb016a2d020476aa49dbe79309b5974ff99df13a7c849af3461",
     "bauteile/HB-SYMBOL.css": "84813586546935266e86c61c5bab78ea8c6315a88f19cbbb82d61d4db878218a",

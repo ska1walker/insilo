@@ -61,6 +61,9 @@ const PAARE: [string, string[], number, string][] = [
   ["--am-hinweis", ["--am-seite"], 4.5, "Zustand als Schrift"],
   ["--am-achtung", ["--am-seite"], 4.5, "Zustand als Schrift"],
   ["--am-fehler", ["--am-seite", "--am-flaeche-1"], 4.5, "Zustand als Schrift, auch in Karten (Briefing, Board)"],
+  // HB-PILLE in der Zustandsfassung (IN-B5): Schrift auf der eigenen Fläche.
+  ["--am-erfolg", ["--am-erfolg-flaeche"], 4.5, "Zustandspille „fertig“"],
+  ["--am-fehler", ["--am-fehler-flaeche"], 4.5, "Zustandspille „Fehler“"],
   ["--am-handlung-text", ["--am-handlung-ruhend", "--am-handlung-hover", "--am-fehler"], 4.5, "Schrift auf Knopf"],
   ["--am-rand-betont-farbe", ["--am-seite", "--am-flaeche-1", "--am-flaeche-3"], 3, "Rand eines Bedienelements"],
   ["--am-fokus-ring", ["--am-seite", "--am-flaeche-1", "--am-flaeche-3"], 3, "Fokusring"],

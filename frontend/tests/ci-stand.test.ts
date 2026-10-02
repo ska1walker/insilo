@@ -79,7 +79,7 @@ describe(`CI-Stand ${stand.stand}`, () => {
     const kennungen = [...new Set([...css.matchAll(/\/\* ── [^\n]*\[((?:AM|HB)-[A-Z]+)\]/g)].map((m) => m[1]))];
     // Wer einen Baustein weglässt, den Insilo schon hatte, merkt es hier.
     expect(kennungen.sort()).toEqual(
-      ["AM-BASIS", "AM-FELD", "AM-HAKEN", "AM-HUELLE", "AM-KARTE", "AM-KNOPF", "AM-LEER", "HB-DIALOG", "HB-MARKE", "HB-SYMBOL", "HB-TABELLE", "HB-ZUSTAND"].sort(),
+      ["AM-BASIS", "AM-FELD", "AM-HAKEN", "AM-HUELLE", "AM-KARTE", "AM-KNOPF", "AM-LEER", "HB-DIALOG", "HB-MARKE", "HB-PILLE", "HB-SYMBOL", "HB-TABELLE", "HB-ZUSTAND"].sort(),
     );
   });
 });

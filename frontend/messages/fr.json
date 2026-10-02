@@ -883,5 +883,27 @@
     "sources": "Sources · {count}",
     "relevance": "Pertinence {percent} %",
     "section": "Section {n}"
+  },
+  "werksvorlagen": {
+    "allgemein": {
+      "name": "Réunion générale",
+      "beschreibung": "Résumé standard pour les réunions internes et externes."
+    },
+    "mandant": {
+      "name": "Entretien client",
+      "beschreibung": "Note de dossier structurée pour les entretiens avec les clients en matière juridique et fiscale."
+    },
+    "vertrieb": {
+      "name": "Entretien commercial",
+      "beschreibung": "Premier entretien ou rendez-vous client commercial, évalué selon le budget, la décision, le besoin et le calendrier (BANT)."
+    },
+    "jahresgespraech": {
+      "name": "Entretien annuel",
+      "beschreibung": "Compte rendu structuré pour les entretiens annuels avec les clients existants."
+    },
+    "schnellnotiz": {
+      "name": "Note rapide",
+      "beschreibung": "Résume une note vocale spontanée (Idée) en quelques points."
+    }
   }
 }

@@ -883,5 +883,27 @@
     "sources": "Quellen · {count}",
     "relevance": "Relevanz {percent} %",
     "section": "Abschnitt {n}"
+  },
+  "werksvorlagen": {
+    "allgemein": {
+      "name": "Allgemeine Besprechung",
+      "beschreibung": "Standard-Zusammenfassung für interne und externe Besprechungen."
+    },
+    "mandant": {
+      "name": "Mandantengespräch",
+      "beschreibung": "Strukturiertes Aktenprotokoll für anwaltliche und steuerliche Mandantengespräche."
+    },
+    "vertrieb": {
+      "name": "Vertriebsgespräch",
+      "beschreibung": "Erstgespräch oder Kundentermin im Vertrieb, ausgewertet nach Budget, Entscheidung, Bedarf und Zeitplan (BANT)."
+    },
+    "jahresgespraech": {
+      "name": "Jahresgespräch",
+      "beschreibung": "Strukturiertes Protokoll für jährliche Kunden- oder Bestandsgespräche."
+    },
+    "schnellnotiz": {
+      "name": "Schnellnotiz",
+      "beschreibung": "Fasst eine spontane Sprachnotiz (Idee) in wenigen Stichpunkten zusammen."
+    }
   }
 }

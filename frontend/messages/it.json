@@ -883,5 +883,27 @@
     "sources": "Fonti · {count}",
     "relevance": "Pertinenza {percent}%",
     "section": "Sezione {n}"
+  },
+  "werksvorlagen": {
+    "allgemein": {
+      "name": "Riunione generale",
+      "beschreibung": "Riepilogo standard per riunioni interne ed esterne."
+    },
+    "mandant": {
+      "name": "Colloquio con il cliente",
+      "beschreibung": "Nota di fascicolo strutturata per colloqui con clienti in ambito legale e fiscale."
+    },
+    "vertrieb": {
+      "name": "Colloquio commerciale",
+      "beschreibung": "Primo colloquio o appuntamento commerciale con un cliente, valutato secondo budget, decisione, esigenza e tempistica (BANT)."
+    },
+    "jahresgespraech": {
+      "name": "Colloquio annuale",
+      "beschreibung": "Verbale strutturato per i colloqui annuali con i clienti esistenti."
+    },
+    "schnellnotiz": {
+      "name": "Nota rapida",
+      "beschreibung": "Riassume una nota vocale spontanea (Idea) in pochi punti."
+    }
   }
 }

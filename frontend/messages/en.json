@@ -883,5 +883,27 @@
     "sources": "Sources · {count}",
     "relevance": "Relevance {percent}%",
     "section": "Section {n}"
+  },
+  "werksvorlagen": {
+    "allgemein": {
+      "name": "General meeting",
+      "beschreibung": "Standard summary for internal and external meetings."
+    },
+    "mandant": {
+      "name": "Client meeting",
+      "beschreibung": "Structured file note for legal and tax client meetings."
+    },
+    "vertrieb": {
+      "name": "Sales conversation",
+      "beschreibung": "First conversation or customer appointment in sales, assessed by budget, authority, need and timeline (BANT)."
+    },
+    "jahresgespraech": {
+      "name": "Annual review",
+      "beschreibung": "Structured minutes for annual customer or account reviews."
+    },
+    "schnellnotiz": {
+      "name": "Quick note",
+      "beschreibung": "Sums up a spontaneous voice note (Idea) in a few bullet points."
+    }
   }
 }

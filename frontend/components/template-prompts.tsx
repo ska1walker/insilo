@@ -23,6 +23,7 @@ import {
   type TemplateDto,
   type TemplatePayload,
 } from "@/lib/api/templates";
+import { useWerksvorlagen } from "@/lib/werksvorlagen";
 
 type EditorState =
   | { kind: "idle" }
@@ -69,6 +70,7 @@ function compactDrafts(drafts: Record<Locale, string>): LocalePromptMap {
 
 export function TemplatePrompts() {
   const t = useTranslations("templatePrompts");
+  const vorlagen = useWerksvorlagen();
   const [list, setList] = useState<TemplateDto[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -137,7 +139,7 @@ export function TemplatePrompts() {
         <p className="text-sm text-text-sekundaer">{t("noneYet")}</p>
       ) : (
         <div className="divide-y divide-trennlinie rounded-lg border border-trennlinie bg-seite">
-          {list.map((tpl) => (
+          {vorlagen.sortiert(list).map((tpl) => (
             <TemplateRow
               key={tpl.id}
               template={tpl}
@@ -374,6 +376,7 @@ function CrmWeitergabe({
   onChanged: () => void;
 }) {
   const t = useTranslations("templatePrompts");
+  const vorlagen = useWerksvorlagen();
   const toast = useToast();
   const [wert, setWert] = useState<boolean>(template.an_crm ?? false);
   const [speichert, setSpeichert] = useState(false);
@@ -388,7 +391,7 @@ function CrmWeitergabe({
     try {
       await setzeWeitergabe(template.id, neu);
       toast.show({
-        message: t(neu ? "crmGespeichert" : "crmEntfernt", { name: template.name }),
+        message: t(neu ? "crmGespeichert" : "crmEntfernt", { name: vorlagen.name(template) }),
         variant: "success",
       });
       onChanged();
@@ -455,6 +458,9 @@ function TemplateRow({
   onDeleted: () => void;
 }) {
   const t = useTranslations("templatePrompts");
+  // Werksvorlagen in der Sprache der Oberfläche (lib/werksvorlagen.ts).
+  // Der Werksname gilt als „unverändert“ — auch in seiner Übersetzung.
+  const vorlagen = useWerksvorlagen();
   const tCommon = useTranslations("common");
   const toast = useToast();
   const [detail, setDetail] = useState<TemplateDetail | null>(null);
@@ -475,8 +481,8 @@ function TemplateRow({
       .then((d) => {
         if (cancelled) return;
         setDetail(d);
-        setName(d.name);
-        setDescription(d.description ?? "");
+        setName(vorlagen.name(d));
+        setDescription(vorlagen.beschreibung(d) ?? "");
         setDrafts(draftsFrom(d));
         setActiveLocale("de");
         setCustomFields(d.custom_fields ?? []);
@@ -508,8 +514,8 @@ function TemplateRow({
   const dirty =
     detail !== null &&
     (promptsDirty ||
-      name.trim() !== (detail.name ?? "") ||
-      (description ?? "").trim() !== (detail.description ?? "") ||
+      name.trim() !== vorlagen.name(detail) ||
+      (description ?? "").trim() !== (vorlagen.beschreibung(detail) ?? "") ||
       JSON.stringify(customFields) !==
         JSON.stringify(detail.custom_fields ?? []));
 
@@ -559,25 +565,28 @@ function TemplateRow({
         // fall back to default".
         const newName = name.trim();
         const newDesc = description.trim();
-        const defaultName = detail.default_name ?? detail.name;
-        const defaultDesc = detail.default_description ?? detail.description ?? "";
+        const gespeicherterName = detail.default_name ?? detail.name;
+        const gespeicherteBeschreibung = detail.default_description ?? detail.description ?? "";
+        const defaultName = vorlagen.standardName(detail.id, gespeicherterName);
+        const defaultDesc = vorlagen.standardBeschreibung(detail.id, gespeicherteBeschreibung) ?? "";
+        // Werksname — übersetzt oder deutsch — heißt: keine eigene Bezeichnung.
         await updateTemplatePrompt(
           template.id,
           compactDrafts(drafts),
-          newName === defaultName ? "" : newName,
-          newDesc === defaultDesc ? "" : newDesc,
+          newName === defaultName || newName === gespeicherterName ? "" : newName,
+          newDesc === defaultDesc || newDesc === gespeicherteBeschreibung ? "" : newDesc,
           customFields,
         );
       }
       const refreshed = await getTemplate(template.id);
       setDetail(refreshed);
-      setName(refreshed.name);
-      setDescription(refreshed.description ?? "");
+      setName(vorlagen.name(refreshed));
+      setDescription(vorlagen.beschreibung(refreshed) ?? "");
       setDrafts(draftsFrom(refreshed));
       setCustomFields(refreshed.custom_fields ?? []);
       onSaved();
       toast.show({
-        message: t("savedToast", { name: refreshed.name }),
+        message: t("savedToast", { name: vorlagen.name(refreshed) }),
         variant: "success",
       });
     } catch (err) {
@@ -659,7 +668,7 @@ function TemplateRow({
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-2">
-            <p className="font-medium text-text-primaer">{template.name}</p>
+            <p className="font-medium text-text-primaer">{vorlagen.name(template)}</p>
             {template.is_system && (
               <span className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
                 {t("tagSystem")}
@@ -679,8 +688,8 @@ function TemplateRow({
               </span>
             )}
           </div>
-          {template.description && (
-            <p className="mt-1 text-sm text-text-sekundaer">{template.description}</p>
+          {vorlagen.beschreibung(template) && (
+            <p className="mt-1 text-sm text-text-sekundaer">{vorlagen.beschreibung(template)}</p>
           )}
         </div>
         <span className="mono text-xs text-text-gedaempft" aria-hidden>
@@ -708,11 +717,11 @@ function TemplateRow({
                   {!isOrgOwned && detail?.default_name && (
                     <span className="mt-0.5 block text-xs text-text-gedaempft">
                       {t("defaultName")}{" "}
-                      <span className="font-mono">{detail.default_name}</span>
+                      <span className="font-mono">{vorlagen.standardName(detail.id, detail.default_name)}</span>
                       {detail.display_name && (
                         <button
                           type="button"
-                          onClick={() => setName(detail.default_name ?? "")}
+                          onClick={() => setName(vorlagen.standardName(detail.id, detail.default_name ?? ""))}
                           className="ml-2 underline hover:text-text-primaer"
                         >
                           {t("resetToDefaultLink")}
@@ -737,7 +746,7 @@ function TemplateRow({
                   </span>
                   {!isOrgOwned && detail?.default_description && (
                     <span className="mt-0.5 block text-xs text-text-gedaempft">
-                      {t("defaultDesc", { value: detail.default_description })}
+                      {t("defaultDesc", { value: vorlagen.standardBeschreibung(detail.id, detail.default_description) ?? "" })}
                     </span>
                   )}
                   <input

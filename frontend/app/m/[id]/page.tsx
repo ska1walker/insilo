@@ -22,6 +22,7 @@ import {
 } from "@/lib/api/meetings";
 import { formatBytes, formatDuration, formatMeetingDate } from "@/lib/format";
 import { pollAbstandMs } from "@/lib/verarbeitung";
+import { useWerksvorlagen } from "@/lib/werksvorlagen";
 
 type Loaded =
   | { kind: "loading" }
@@ -44,6 +45,7 @@ export default function MeetingDetail() {
   const t = useTranslations("meeting");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
+  const vorlagen = useWerksvorlagen();
   const [state, setState] = useState<Loaded>({ kind: "loading" });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -382,7 +384,7 @@ export default function MeetingDetail() {
         <section className="mt-12">
           <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
             <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-text-gedaempft">
-              {t("summaryHeading", { template: meeting.summary.template_name })}
+              {t("summaryHeading", { template: vorlagen.standardName(meeting.summary.template_id, meeting.summary.template_name) })}
             </p>
             <p className="mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-gedaempft">
               {meeting.summary.llm_model} · {Math.round(meeting.summary.generation_time_ms / 1000)}s

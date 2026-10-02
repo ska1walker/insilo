@@ -883,5 +883,27 @@
     "sources": "Fuentes · {count}",
     "relevance": "Relevancia {percent} %",
     "section": "Sección {n}"
+  },
+  "werksvorlagen": {
+    "allgemein": {
+      "name": "Reunión general",
+      "beschreibung": "Resumen estándar para reuniones internas y externas."
+    },
+    "mandant": {
+      "name": "Reunión con cliente",
+      "beschreibung": "Nota de expediente estructurada para reuniones con clientes en materia jurídica y fiscal."
+    },
+    "vertrieb": {
+      "name": "Conversación comercial",
+      "beschreibung": "Primera conversación o cita comercial con un cliente, evaluada según presupuesto, decisión, necesidad y plazo (BANT)."
+    },
+    "jahresgespraech": {
+      "name": "Reunión anual",
+      "beschreibung": "Acta estructurada para reuniones anuales con clientes existentes."
+    },
+    "schnellnotiz": {
+      "name": "Nota rápida",
+      "beschreibung": "Resume una nota de voz espontánea (Idea) en unos pocos puntos."
+    }
   }
 }

@@ -28,6 +28,7 @@ import {
 import { alsGescheitertAblegen, senden, Sicherung } from "@/lib/aufnahmen";
 import { defaultMeetingTitle, formatDuration } from "@/lib/format";
 import { useWachhalten } from "@/lib/wachhalten";
+import { useWerksvorlagen } from "@/lib/werksvorlagen";
 
 const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -110,6 +111,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
   );
 
   const [templates, setTemplates] = useState<TemplateDto[] | null>(null);
+  const vorlagen = useWerksvorlagen();
   const [selectedTemplate, setSelectedTemplate] =
     useState<string>(DEFAULT_TEMPLATE_ID);
   const [audioLanguage, setAudioLanguage] = useState<AudioLanguage>("auto");
@@ -549,7 +551,7 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
               {t("templateLabel")}
             </p>
             <div className="rounded-lg border border-trennlinie bg-seite">
-              {templates.map((t, i) => (
+              {vorlagen.sortiert(templates).map((t, i) => (
                 <label
                   key={t.id}
                   className={`flex cursor-pointer items-start gap-3 p-4 ${
@@ -565,10 +567,10 @@ export function RecordingBlock({ variant = "compact" }: { variant?: Variant }) {
                     className="mt-1"
                   />
                   <div className="min-w-0">
-                    <p className="font-medium text-text-primaer">{t.name}</p>
-                    {t.description && (
+                    <p className="font-medium text-text-primaer">{vorlagen.name(t)}</p>
+                    {vorlagen.beschreibung(t) && (
                       <p className="mt-1 text-sm text-text-sekundaer">
-                        {t.description}
+                        {vorlagen.beschreibung(t)}
                       </p>
                     )}
                   </div>

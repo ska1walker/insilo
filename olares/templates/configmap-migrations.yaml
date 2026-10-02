@@ -1746,7 +1746,7 @@ data:
       '00000000-0000-0000-0000-000000000001',
       null,
       'Allgemeine Besprechung',
-      'Standard-Zusammenfassung für interne und externe Meetings.',
+      'Standard-Zusammenfassung für interne und externe Besprechungen.',
       'general',
       jsonb_build_object(
         'de', $de$## Aufgabe
@@ -2068,7 +2068,7 @@ data:
       '00000000-0000-0000-0000-000000000003',
       null,
       'Vertriebsgespräch',
-      'Discovery Call oder Kundentermin im Vertrieb, ausgewertet im BANT-Schema.',
+      'Erstgespräch oder Kundentermin im Vertrieb, ausgewertet nach Budget, Entscheidung, Bedarf und Zeitplan (BANT).',
       'sales',
       jsonb_build_object(
         'de', $de$## Aufgabe
@@ -2402,7 +2402,7 @@ data:
       '00000000-0000-0000-0000-000000000005',
       null,
       'Schnellnotiz',
-      'Strukturiert eine spontane Sprachnotiz (Schauerfunktion) als scanbare Bullet-Notiz.',
+      'Fasst eine spontane Sprachnotiz (Idee) in wenigen Stichpunkten zusammen.',
       'general',
       jsonb_build_object(
         'de', $de$## Aufgabe

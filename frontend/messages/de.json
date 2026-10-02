@@ -708,6 +708,15 @@
     "dark": "Dunkel",
     "saved": "Darstellung geändert."
   },
+  "installation": {
+    "title": "Als App",
+    "hint": "Insilo lässt sich wie eine App auf den Startbildschirm legen – mit eigenem Fenster, ohne Browserleiste. Gilt nur für dieses Gerät.",
+    "installieren": "Als App installieren",
+    "installiert": "Insilo läuft auf diesem Gerät als App.",
+    "ios": "Tippen Sie in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“.",
+    "browser": "Wählen Sie im Menü Ihres Browsers „App installieren“ oder „Zum Startbildschirm hinzufügen“.",
+    "unsicher": "Installieren geht nur über eine gesicherte Adresse (https). Öffnen Sie Insilo über die Adresse Ihrer Olares-Box."
+  },
   "egress": {
     "titel": "Was verlässt diese Box?",
     "allesBleibt": "Alles bleibt auf dieser Box",

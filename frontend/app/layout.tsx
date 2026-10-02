@@ -32,14 +32,15 @@ export const metadata: Metadata = {
   title: { default: "Insilo", template: "%s · Insilo" },
   description:
     "On-Premise Aufnahme, Transkription und Analyse von Geschäftsgesprächen — vollständig auf der Hardware des Kunden.",
-  manifest: "/manifest.json",
   // Symbole bewusst nicht über die Metadaten (`icons` hier oder
   // app/icon.*): Next 15.5 rendert dann eine Marke <meta name="«nxt-icon»">,
   // die es beim Streamen nur entfernt, wenn sie in einem Stück des
   // Datenstroms liegt — sonst bleibt sie stehen und der Browser meldet
   // React #418 (so in Rocket gefunden). Die Link-Tags stehen deshalb unten
   // im <head>. Unter dem Symbol auf dem Home-Bildschirm steht „Insilo“.
-  appleWebApp: { title: "Insilo" },
+  // `capable` öffnet Insilo vom Home-Bildschirm im eigenen Fenster statt
+  // in Safari. Das Manifest steht unten im <head> (mit Anmeldedaten).
+  appleWebApp: { capable: true, title: "Insilo", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -73,6 +74,14 @@ export default async function RootLayout({
         <link rel="icon" href="/icons/tab.svg" type="image/svg+xml" sizes="any" />
         <link rel="icon" href="/icons/tab-32.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" type="image/png" sizes="180x180" />
+        {/* Mit Anmeldedaten: ohne sie lädt der Browser das Manifest ohne
+            Cookie, und beim Fernzugriff antwortet der Olares-Login statt
+            der Datei — Insilo ließe sich dann nicht installieren. Next
+            setzt das Attribut nur für Vercel-Vorschauen, deshalb von Hand. */}
+        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
+        {/* Next schreibt für `capable` nur die neue Marke; ältere iOS
+            lesen allein diese. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>

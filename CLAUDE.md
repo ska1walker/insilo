@@ -332,6 +332,11 @@ hüpfenden Knöpfe.
 7. **Bei neuem Git-Tag `v*.*.*`:** Tag-Name muss `olares/Chart.yaml.version` matchen — `release.yml` bricht sonst ab. Am einfachsten via `scripts/release.sh X.Y.Z` — bumpt alle 4 Versionsstellen, regen-Migrationen, check-chart, helm package, commit, tag, push, copy to `~/Downloads/`. **Image-Tags werden nicht mehr gebumpt:** sie hängen seit v0.1.81 an `Chart.AppVersion` (siehe Constraint 9), `values.yaml` trägt `tag: ""`. Flag `--chart-only` schreibt dort ausnahmsweise einen Pin auf die Vorversion — das Chart zieht dann weiter die bewährten Images und der Image-Build entfällt. `--dry-run` zeigt was passieren würde. `--no-push` stoppt lokal nach Tag.
 
    **Wichtig zum Zusammenspiel mit `release.yml`:** der Workflow leitet die Image-Version aus dem **Git-Tag** ab, nicht aus `values.yaml`. Bis v0.1.61 lief der Build bei `--chart-only` deshalb trotzdem durch und erzeugte Images, die niemand referenziert (die frühere Behauptung „spart GH-Actions-Build" war schlicht falsch). Seit v0.1.61 überspringt `release.yml` den Build, wenn `values.yaml` den gepushten Tag nicht referenziert. Falls das mal fälschlich greift: `release`-Workflow manuell via `workflow_dispatch` mit expliziter Version starten.
+   **Seit 0.1.103 (wie Rocket):** Ein Merge nach `main` mit neuer Version
+   in `olares/Chart.yaml` baut die Images und legt Tag und Release selbst
+   an; danach bringt `markt.yml` die Version in den Markt. Der Tag von Hand
+   ist nicht mehr nötig. Je Version gehört `olares/markt/<version>.md` dazu
+   (Skill `olares-release`, §6a).
 8. **Bei Veröffentlichung in einen Store:** Skill `olares-release`
    (`.claude/skills/olares-release/SKILL.md`) — Pfadwahl, Reihenfolge
    (erst ausrollen, dann hochladen) und die offenen Punkte für den

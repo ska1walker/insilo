@@ -302,6 +302,42 @@ Schritt 4 ist der wichtige. Alle vier Endpunkte lassen sich vollständig
 lokal beweisen — es gibt keinen Grund, das erst am Live-Katalog zu
 merken.
 
+## 6a. Seit 0.1.103: automatisch, wie bei Rocket
+
+**Ein Release geht ohne Handgriff in den Markt** (Kai, 2.10.2026: „automatisch
+wie bei Rocket"). Der Ablauf ist Rockets, übernommen:
+
+1. **Merge nach `main` mit neuer Version** in `olares/Chart.yaml`:
+   `release.yml` baut die vier Images, legt danach Tag `v<version>` und das
+   Release mit dem Chart als Anhang an. Ein Merge ohne Versionssprung ist
+   kein Release. Einen Tag von Hand braucht es nicht mehr (Claude-Sitzungen
+   dürfen keine Tags pushen, mergen dürfen sie).
+2. Danach läuft **`markt.yml`**: holt den Anhang und Marcs `main` frisch,
+   baut den Eintrag mit `scripts/markt-eintrag.py` (Version, Kategorien aus
+   dem Manifest, Notiz vorn in `upgradeDescription`, Beschreibung auf
+   Englisch und Deutsch, Chart-Schlüssel neu, alte weg,
+   `CANONICAL_EPOCH_MS` darüber), **beweist ihn mit wrangler**
+   (`scripts/markt-beweis.sh`), öffnet den PR aus dem Fork
+   `ska1walker/aimighty-market`, mergt ihn und wartet den
+   Cloudflare-Deploy ab. Kennt der Markt die Version schon, endet sie still.
+
+**Die Notiz schreibt der Release-PR:** `olares/markt/<version>.md` — erste
+Zeile `# <Titel>`, darunter Englisch ab `v<version>: `, nach `## Deutsch`
+dasselbe auf Deutsch. Absätze bleiben erhalten. Kein Backtick, kein `${`.
+Die Beschreibung im Markt steht in `olares/markt/beschreibung.{de,en}.md`
+(`# Kurz`, `# Beschreibung`). `scripts/check-chart.sh` prüft beides.
+
+**Das Geheimnis `MARKT_TOKEN`** (Insilo-Repo › Settings › Secrets and
+variables › Actions) legt Kai an — dasselbe classic Token mit Bereich
+`repo` wie in Rocket. Ohne Token meldet die Action das und tut nichts.
+**Von Hand nachholen:** Actions › markt › *Run workflow*, Version eintragen.
+
+**Was das an §2 ändert:** Die Version kommt in den Markt, ohne vorher auf
+einer Box gelaufen zu sein — geprüft wird vor dem Merge (CI mit Rundgang
+im Browser) und vor dem Eintrag (wrangler). Das ist Kais Entscheidung für
+Rocket, jetzt auch für Insilo. §3 bleibt wahr: Nach dem Update auf der Box
+an den Pods nachsehen, welche Images laufen.
+
 ## 7. Wenn etwas klemmt
 
 Erst `olares-doctor` (offizieller Skill) — der kennt die Laufzeitfehler.

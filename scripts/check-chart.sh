@@ -132,6 +132,41 @@ for mf in "$MANIFEST_FILE" "$ROOT_MANIFEST_FILE"; do
 done
 
 # ---------------------------------------------------------------------------
+# 1c1. Market note for this version (markt.yml, after Rocket)
+#      The action markt.yml writes the note into the market after the
+#      release (docs/HANDOFF.md, "Markt"). Without it the action stops —
+#      the PR should notice that already.
+# ---------------------------------------------------------------------------
+
+section "market note for the current version"
+
+MN="olares/markt/$CHART_VERSION.md"
+if [[ ! -f "$MN" ]]; then
+  fail "$MN missing — title and text for the market (English, then '## Deutsch')"
+else
+  head -1 "$MN" | grep -q '^# ' && ok "$MN: title line" || fail "$MN: first line must be '# <title>'"
+  awk 'NR>1 && NF{print;exit}' "$MN" | grep -q "^v$CHART_VERSION: " \
+    && ok "$MN: English text starts with 'v$CHART_VERSION: '" \
+    || fail "$MN: English text must start with 'v$CHART_VERSION: '"
+  awk '/^## Deutsch[[:space:]]*$/{f=1;next} f&&NF{print;exit}' "$MN" | grep -q "^v$CHART_VERSION: " \
+    && ok "$MN: German part" \
+    || fail "$MN: German part missing — line '## Deutsch', then 'v$CHART_VERSION: …'"
+  if grep -q '`' "$MN" || grep -q '\${' "$MN"; then
+    fail "$MN: no backtick and no '\${' — the text goes into a template string"
+  else
+    ok "$MN: no backtick, no '\${'"
+  fi
+fi
+for SPRACHE in de en; do
+  BF="olares/markt/beschreibung.$SPRACHE.md"
+  if grep -q '^# Kurz' "$BF" 2>/dev/null && grep -q '^# Beschreibung' "$BF"; then
+    ok "$BF"
+  else
+    fail "$BF missing or without '# Kurz' and '# Beschreibung'"
+  fi
+done
+
+# ---------------------------------------------------------------------------
 # 1d. Olares system dependency must be a CLOSED version range
 #     An open '>=x.y.z' is rejected by the Market upload with HTTP 400:
 #     "must restrict the Olares system version to >=A,<B". Cost us the

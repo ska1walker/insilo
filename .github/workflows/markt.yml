@@ -1,0 +1,176 @@
+name: markt
+
+# Bringt eine neue Insilo-Version ohne Handgriff in den Markt
+# (bayerhazard/aimighty-market): Nach einem erfolgreichen Release baut sie den
+# Eintrag auf Marcs frischem main, beweist ihn mit wrangler, öffnet den PR aus
+# dem Fork ska1walker/aimighty-market und mergt ihn. Übernommen aus Rocket
+# (.github/workflows/markt.yml dort); entschieden von Kai am 2.10.2026
+# („automatisch wie bei Rocket“). Ablauf: Skill olares-release, §6a.
+#
+# Braucht das Geheimnis MARKT_TOKEN: ein Token von Kai, das in den Fork pushen
+# und in Marcs Repo PRs öffnen und mergen darf. Fehlt es, meldet die Action das
+# und tut nichts — dann geht der Eintrag wie früher von Hand (Skill
+# olares-release, §6).
+
+on:
+  workflow_run:
+    workflows: [release]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Insilo-Version ohne v (z. B. 0.1.103); leer = olares/Chart.yaml"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: markt
+  cancel-in-progress: false
+
+jobs:
+  eintrag:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      MARKT_TOKEN: ${{ secrets.MARKT_TOKEN }}
+      UPSTREAM: bayerhazard/aimighty-market
+      FORK: ska1walker/aimighty-market
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Version
+        id: v
+        run: |
+          V="${{ github.event.inputs.version }}"
+          [ -n "$V" ] || V=$(awk '/^version:/{print $2}' olares/Chart.yaml | tr -d '"')
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "### Insilo $V in den Markt" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Token vorhanden?
+        id: token
+        run: |
+          if [ -z "$MARKT_TOKEN" ]; then
+            echo "Kein Geheimnis MARKT_TOKEN — der Eintrag geht von Hand (Skill olares-release, §6)." >> "$GITHUB_STEP_SUMMARY"
+            echo "da=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "da=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Release-Anhang holen
+        if: steps.token.outputs.da == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          gh release download "v$V" -p "insilo-$V.tgz" -D "$RUNNER_TEMP"
+          echo "SHA=$(sha256sum "$RUNNER_TEMP/insilo-$V.tgz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
+      - name: Marcs main frisch holen, Eintrag bauen
+        if: steps.token.outputs.da == 'true'
+        id: bau
+        env:
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          git clone -q "https://x-access-token:${MARKT_TOKEN}@github.com/${UPSTREAM}.git" "$RUNNER_TEMP/markt"
+          cd "$RUNNER_TEMP/markt"
+          BASIS=$(git rev-parse HEAD)
+          echo "basis=$BASIS" >> "$GITHUB_OUTPUT"
+          # Was Marc seit dem letzten Insilo-Eintrag geändert hat — steht im PR,
+          # damit sichtbar ist, wenn sich der Markt selbst bewegt hat.
+          LETZTER=$(git log --format=%H --grep='^insilo ' -1 || true)
+          {
+            echo ""
+            echo "Seit dem letzten Insilo-Eintrag auf main:"
+            echo '```'
+            if [ -n "$LETZTER" ]; then git log --format='%h %an %s' "$LETZTER..HEAD" -- functions/; git diff --stat "$LETZTER" HEAD -- functions/ ':!functions/_apps.ts'; fi
+            echo '```'
+          } > "$RUNNER_TEMP/seit.md"
+          set +e
+          TITEL=$(python3 "$GITHUB_WORKSPACE/scripts/markt-eintrag.py" --markt . \
+            --chart "$RUNNER_TEMP/insilo-$V.tgz" --version "$V" \
+            --notizen "$GITHUB_WORKSPACE/olares/markt" --pr-text "$RUNNER_TEMP/pr.md" \
+            --manifest "$GITHUB_WORKSPACE/olares/OlaresManifest.yaml" \
+            --texte "$GITHUB_WORKSPACE/olares/markt")
+          RC=$?
+          set -e
+          if [ $RC -eq 3 ]; then
+            echo "Der Markt kennt $V schon — nichts zu tun." >> "$GITHUB_STEP_SUMMARY"
+            echo "noetig=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          [ $RC -eq 0 ] || exit $RC
+          cat "$RUNNER_TEMP/seit.md" >> "$RUNNER_TEMP/pr.md"
+          echo "titel=$TITEL" >> "$GITHUB_OUTPUT"
+          echo "noetig=true" >> "$GITHUB_OUTPUT"
+          git diff --stat
+
+      - uses: actions/setup-node@v4
+        if: steps.bau.outputs.noetig == 'true'
+        with:
+          node-version: 22
+
+      - name: Mit wrangler beweisen
+        if: steps.bau.outputs.noetig == 'true'
+        env:
+          V: ${{ steps.v.outputs.version }}
+        run: bash scripts/markt-beweis.sh "$RUNNER_TEMP/markt" "$V" "$SHA" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Zweig im Fork, PR, Merge
+        if: steps.bau.outputs.noetig == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.MARKT_TOKEN }}
+          V: ${{ steps.v.outputs.version }}
+          TITEL: ${{ steps.bau.outputs.titel }}
+          BASIS: ${{ steps.bau.outputs.basis }}
+        run: |
+          cd "$RUNNER_TEMP/markt"
+          git config user.name "ska1walker"
+          git config user.email "ska1walker@users.noreply.github.com"
+          git checkout -q -b "insilo-$V"
+          git add functions/_apps.ts functions/_lib.ts
+          [ "$(git diff --cached --name-only | sort | tr '\n' ' ')" = "functions/_apps.ts functions/_lib.ts " ] \
+            || { echo "unerwartete Dateien"; git diff --cached --name-only; exit 1; }
+          git commit -q -m "$TITEL"
+          git push -q -f "https://x-access-token:${MARKT_TOKEN}@github.com/${FORK}.git" "insilo-$V"
+          # main darf sich seit dem Bau nicht bewegt haben (wie in Rocket):
+          # sonst stimmt der Zeitstempel womöglich nicht mehr. Dann neu starten.
+          JETZT=$(git ls-remote "https://x-access-token:${MARKT_TOKEN}@github.com/${UPSTREAM}.git" refs/heads/main | cut -f1)
+          [ "$JETZT" = "$BASIS" ] || { echo "main hat sich bewegt ($BASIS → $JETZT) — Workflow neu starten" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+          URL=$(gh pr create -R "$UPSTREAM" --base main --head "ska1walker:insilo-$V" --title "$TITEL" --body-file "$RUNNER_TEMP/pr.md")
+          echo "PR: $URL" | tee -a "$GITHUB_STEP_SUMMARY"
+          gh pr merge "$URL" --squash --subject "$TITEL (#${URL##*/})" --match-head-commit "$(git rev-parse HEAD)"
+          echo "PR_URL=$URL" >> "$GITHUB_ENV"
+
+      - name: Auf main prüfen und Deploy abwarten
+        if: steps.bau.outputs.noetig == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.MARKT_TOKEN }}
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          [ "$(gh pr view "$PR_URL" --json state -q .state)" = "MERGED" ] || { echo "PR nicht gemergt"; exit 1; }
+          rm -rf "$RUNNER_TEMP/pruef"
+          git clone -q --depth 1 "https://x-access-token:${MARKT_TOKEN}@github.com/${UPSTREAM}.git" "$RUNNER_TEMP/pruef"
+          python3 - "$RUNNER_TEMP/pruef/functions/_lib.ts" "$V" "$SHA" <<'PY'
+          import base64, hashlib, re, sys
+          lib, v, sha = open(sys.argv[1]).read(), sys.argv[2], sys.argv[3]
+          keys = re.findall(r'"(insilo-[0-9.]+\.tgz)": "([A-Za-z0-9+/=]+)"', lib)
+          assert [k for k, _ in keys] == [f"insilo-{v}.tgz"], f"Insilo-Schlüssel auf main: {[k for k, _ in keys]}"
+          assert hashlib.sha256(base64.b64decode(keys[0][1])).hexdigest() == sha, "Chart auf main weicht ab"
+          print(f"main: insilo-{v}.tgz byte-gleich, keine alten Schlüssel")
+          PY
+          MERGE=$(gh pr view "$PR_URL" --json mergeCommit -q .mergeCommit.oid)
+          for _ in $(seq 1 30); do
+            RUN=$(gh run list -R "$UPSTREAM" --workflow deploy.yml --commit "$MERGE" --json databaseId -q '.[0].databaseId' || true)
+            [ -n "$RUN" ] && break; sleep 10
+          done
+          if [ -n "$RUN" ]; then
+            gh run watch "$RUN" -R "$UPSTREAM" --exit-status > /dev/null
+            echo "Cloudflare-Deploy auf main grün ($MERGE)." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Deploy-Lauf nicht gefunden — bitte auf der Box nachsehen." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Insilo $V steht im Markt: $PR_URL" >> "$GITHUB_STEP_SUMMARY"

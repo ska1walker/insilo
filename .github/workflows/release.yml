@@ -1,11 +1,32 @@
 name: release
 
-# Build + push the four container images on every tag like v0.1.0.
-# Images land at ghcr.io/<repo-owner>/insilo-<service>:<version>
-# and are made public so the Olares box pulls them without secrets.
+# Build + push the four container images. Images land at
+# ghcr.io/<repo-owner>/insilo-<service>:<version> and are public, so the
+# Olares box pulls them without secrets. The packaged chart goes along as an
+# artifact and, on a new version, as the release asset — the file that goes
+# into the market (markt.yml).
+#
+# Three triggers, after Rocket's release.yml (Kai, 2.10.2026: "automatisch
+# wie bei Rocket"):
+#
+# - **Merge to main with a new version** (the normal case). If
+#   olares/Chart.yaml carries a version that has no tag yet, build first,
+#   then create tag `v<version>` and the release with the chart attached —
+#   only after a successful build, so a failed build leaves no tag. If the
+#   tag exists, nothing happens: a merge without a version bump is not a
+#   release. The tag is created with GITHUB_TOKEN and therefore does not
+#   trigger this workflow a second time.
+#   Why: Claude sessions may push their branch but no tags — merging they
+#   may. So a release needs no manual step (docs/HANDOFF.md, "Markt").
+# - **Tag by hand** (`git push origin vX.Y.Z`, as scripts/release.sh does).
+# - **workflow_dispatch** with a version — builds, no tag.
 
 on:
   push:
+    branches: [main]
+    # The workflow itself too: whoever changes it should see it run — and a
+    # version not yet tagged is released on the way.
+    paths: [olares/Chart.yaml, .github/workflows/release.yml]
     tags:
       - "v*.*.*"
   workflow_dispatch:
@@ -20,11 +41,48 @@ permissions:
   packages: write
 
 jobs:
+  version:
+    name: which version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      proceed: ${{ steps.v.outputs.proceed }}
+      create_tag: ${{ steps.v.outputs.create_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the tags are part of the decision
+
+      - id: v
+        run: |
+          CHART_VERSION="$(grep -E '^version:' olares/Chart.yaml | head -1 | awk '{print $2}')"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            V="${{ inputs.version }}"; PROCEED=true; CREATE=false
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            V="${GITHUB_REF_NAME#v}"; PROCEED=true; CREATE=false
+          else
+            V="$CHART_VERSION"; CREATE=false
+            if git rev-parse -q --verify "refs/tags/v$V" >/dev/null; then
+              PROCEED=false
+              echo "### v$V ist schon getaggt — kein Release" >> "$GITHUB_STEP_SUMMARY"
+            else
+              PROCEED=true; CREATE=true
+              echo "### Neue Version $V — bauen, dann v$V taggen" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "proceed=$PROCEED" >> "$GITHUB_OUTPUT"
+          echo "create_tag=$CREATE" >> "$GITHUB_OUTPUT"
+
   preflight:
     name: olares chart · sanity
+    needs: version
+    if: needs.version.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     outputs:
       build_images: ${{ steps.decide.outputs.build_images }}
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,45 +94,43 @@ jobs:
       - name: codified Phase-4 lessons (scripts/check-chart.sh)
         run: bash scripts/check-chart.sh
 
-      - name: chart version must match the tag
+      - name: chart version must match the version to release
         if: github.event_name == 'push'
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
           CHART_VERSION="$(grep -E '^version:' olares/Chart.yaml | head -1 | awk '{print $2}')"
-          if [ "$TAG_VERSION" != "$CHART_VERSION" ]; then
-            echo "::error::git tag $GITHUB_REF_NAME (=$TAG_VERSION) does not match olares/Chart.yaml version $CHART_VERSION"
+          if [ "$VERSION" != "$CHART_VERSION" ]; then
+            echo "::error::version $VERSION does not match olares/Chart.yaml version $CHART_VERSION"
             exit 1
           fi
-          echo "tag $GITHUB_REF_NAME matches chart version $CHART_VERSION"
+          echo "version $VERSION matches the chart"
 
       # A `release.sh --chart-only` bump leaves values.yaml pointing at the
-      # PREVIOUS image tags — the images this tag would build are then never
-      # referenced by the chart. Skip the ~9-minute build in that case.
+      # PREVIOUS image tags — the images this version would build are then
+      # never referenced by the chart. Skip the ~9-minute build in that case.
       # Fail-safe: anything unexpected (missing file, changed formatting)
       # falls through to building. If a build is skipped in error, rebuild
       # via workflow_dispatch with an explicit version.
-      - name: are images needed for this tag?
+      - name: are images needed for this version?
         id: decide
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
           BUILD=true
           # Empty tags mean "follow Chart.AppVersion" — the normal case, and
-          # the chart then references exactly this tag. A NON-empty tag is a
-          # --chart-only pin: those images already exist, don't rebuild.
+          # the chart then references exactly this version. A NON-empty tag
+          # is a --chart-only pin: those images already exist, don't rebuild.
           if [ -f olares/values.yaml ]; then
             PINS="$(grep -E "^[[:space:]]+tag:" olares/values.yaml | grep -vE 'tag:[[:space:]]*(""|'"''"')[[:space:]]*$' || true)"
             if [ -n "$PINS" ] \
-               && ! grep -qE "^[[:space:]]+tag:[[:space:]]*[\"']?${TAG_VERSION}[\"']?[[:space:]]*$" olares/values.yaml; then
+               && ! grep -qE "^[[:space:]]+tag:[[:space:]]*[\"']?${VERSION}[\"']?[[:space:]]*$" olares/values.yaml; then
               BUILD=false
             fi
           fi
           echo "build_images=$BUILD" >> "$GITHUB_OUTPUT"
           if [ "$BUILD" = "true" ]; then
-            echo "### Images werden gebaut (\`$TAG_VERSION\`)" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Images werden gebaut (\`$VERSION\`)" >> "$GITHUB_STEP_SUMMARY"
           else
             {
               echo "### Image-Build übersprungen"
-              echo "\`olares/values.yaml\` referenziert **nicht** \`$TAG_VERSION\` —"
+              echo "\`olares/values.yaml\` referenziert **nicht** \`$VERSION\` —"
               echo "sieht nach einem \`--chart-only\`-Release aus. Referenzierte Tags:"
               echo '```'
               grep -E "^[[:space:]]+tag:" olares/values.yaml | sort -u
@@ -83,9 +139,21 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: package chart
+        run: |
+          mkdir -p dist
+          helm package olares -d dist
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chart
+          path: dist/*.tgz
+          if-no-files-found: error
+
   build:
     name: ${{ matrix.service }}
-    needs: preflight
+    needs: [version, preflight]
     if: needs.preflight.outputs.build_images == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
@@ -109,15 +177,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Derive version
-        id: ver
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Lowercase owner
         id: owner
         run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
@@ -140,7 +199,34 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ steps.owner.outputs.owner }}/insilo-${{ matrix.service }}:${{ steps.ver.outputs.version }}
+            ghcr.io/${{ steps.owner.outputs.owner }}/insilo-${{ matrix.service }}:${{ needs.version.outputs.version }}
             ghcr.io/${{ steps.owner.outputs.owner }}/insilo-${{ matrix.service }}:latest
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # Only once all four images are out: tag and release, with the chart as
+  # the asset — the same file that goes into the market.
+  tag:
+    name: tag and release
+    needs: [version, build]
+    if: needs.version.outputs.create_tag == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: chart
+          path: dist
+
+      - name: create tag and release
+        run: |
+          gh release create "v$VERSION" dist/insilo-"$VERSION".tgz \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "v$VERSION" \
+            --notes "Insilo $VERSION — Abbilder ghcr.io/${{ github.repository_owner }}/insilo-{frontend,backend,whisper,embeddings}:$VERSION, Chart im Anhang. Automatisch nach dem Merge angelegt."
+          echo "### Tag und Release v$VERSION angelegt" >> "$GITHUB_STEP_SUMMARY"

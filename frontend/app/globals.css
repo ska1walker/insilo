@@ -766,6 +766,91 @@ select,
   }
 }
 
+  /* ── Stufen-Pille [HB-PILLE] ─────────────────────────────────────────────────
+     Farbe trägt die Aussage nie allein: Der Text steht daneben, immer. */
+@layer components {
+  .stufe {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    padding: 2px var(--am-raum-2);
+    border-radius: var(--am-radius-voll);
+    border: 1px solid var(--am-rand);
+    background: var(--am-flaeche-1);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--am-text-sekundaer);
+    white-space: nowrap;
+  }
+
+  .stufe::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: var(--am-radius-voll);
+    background: currentColor;
+    flex: none;
+  }
+
+  .stufe[data-stufe="customer"],
+  .stufe[data-art="won"] {
+    color: var(--am-erfolg);
+    border-color: var(--am-erfolg-rand);
+    background: var(--am-erfolg-flaeche);
+  }
+
+  /* Auf der Goldfläche trägt erst Gold-900 (5,1:1); die übliche
+     Beschriftung Gold-800 kam dort nur auf 3,7:1. */
+  .stufe[data-stufe="opportunity"] {
+    color: var(--am-gold-900);
+    border-color: var(--am-gold-300);
+    background: var(--am-gold-200);
+  }
+  /* Im Dunkeln ohne Fläche, wie die übrigen Stufen: Die helle Goldfläche
+     hinter heller Beschriftung ergab 1,6:1. */
+  .dunkel .stufe[data-stufe="opportunity"] {
+    color: var(--am-gold-beschriftung);
+    border-color: var(--am-gold-600);
+    background: transparent;
+  }
+
+  /* „Verloren“ und „Disqualifiziert“ sind Ergebnisse, keine Fehler: neutral
+     wie die übrigen Stufen (ABGLEICH R7). Rot bleibt dem Handlungsbedarf. */
+
+  .stufe[data-stufe="qualified"] {
+    color: var(--am-hinweis);
+    border-color: var(--am-hinweis-rand);
+    background: var(--am-hinweis-flaeche);
+  }
+
+  /* Zustand einer Verarbeitung statt Stufe eines Datensatzes — seit Insilo
+     (ABGLEICH IN-B5): wartet (ohne Zustand, neutral), läuft, erledigt,
+     gescheitert. „Läuft“ trägt Gold wie die Aufnahme, auf der Fläche erst
+     mit Gold-900 lesbar; der Punkt steht still — Bewegung ist der
+     Aufnahme vorbehalten (medien/app.md, Insilo). Immer mit Wort. */
+  .stufe[data-zustand="laeuft"] {
+    color: var(--am-gold-900);
+    border-color: var(--am-gold-300);
+    background: var(--am-gold-200);
+  }
+  .stufe[data-zustand="laeuft"]::before { background: var(--am-gold-500); }
+  .dunkel .stufe[data-zustand="laeuft"] {
+    color: var(--am-gold-beschriftung);
+    border-color: var(--am-gold-600);
+    background: transparent;
+  }
+  .stufe[data-zustand="erfolg"] {
+    color: var(--am-erfolg);
+    border-color: var(--am-erfolg-rand);
+    background: var(--am-erfolg-flaeche);
+  }
+  .stufe[data-zustand="fehler"] {
+    color: var(--am-fehler);
+    border-color: var(--am-fehler-rand);
+    background: var(--am-fehler-flaeche);
+  }
+}
+
   /* ── Hinweiszeile [HB-ZUSTAND] ─────────────────────────────────────────────────── */
 @layer components {
   .hinweis {
@@ -1940,12 +2025,12 @@ select,
       animation: none !important;
       transition: none !important;
     }
-    .animate-spin, .pill-recording::before, .btn-record.recording { animation: none !important; }
+    .animate-spin, .btn-record.recording { animation: none !important; }
   }
 }
 
 /* ── Besprechung [IN-BESPRECHUNG] ───────────────────────────────────────────────
-   Zeile der Besprechungsliste und die Zustandspille (ABGLEICH IN-B5, bis HB-PILLE eine neutrale Fassung hat). */
+   Zeile der Besprechungsliste. Die Zustandspille ist seit ci-26.10.10 HB-PILLE (ABGLEICH IN-B5). */
 @layer components {
   .meeting-row {
     display: flex;
@@ -1969,35 +2054,5 @@ select,
     background: var(--am-auswahl-flaeche);
     border-left: 2px solid var(--am-gold-500);
     padding-left: calc(var(--am-raum-6) - 2px);
-  }
-
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-weight: 500;
-    font-size: 0.75rem;
-    background: var(--am-flaeche-1);
-    color: var(--am-text-sekundaer);
-  }
-  /* Laufende Aufnahme trägt Gold — die Auszeichnung, nicht das Fehler-Rot. */
-  .pill-recording {
-    background: var(--am-auswahl-flaeche);
-    color: var(--am-text-primaer);
-  }
-  .pill-recording::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 9999px;
-    background: var(--am-gold-500);
-    animation: blink 1s ease-in-out infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
   }
 }

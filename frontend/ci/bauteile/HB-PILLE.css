@@ -57,4 +57,31 @@
     border-color: var(--am-hinweis-rand);
     background: var(--am-hinweis-flaeche);
   }
+
+  /* Zustand einer Verarbeitung statt Stufe eines Datensatzes — seit Insilo
+     (ABGLEICH IN-B5): wartet (ohne Zustand, neutral), läuft, erledigt,
+     gescheitert. „Läuft“ trägt Gold wie die Aufnahme, auf der Fläche erst
+     mit Gold-900 lesbar; der Punkt steht still — Bewegung ist der
+     Aufnahme vorbehalten (medien/app.md, Insilo). Immer mit Wort. */
+  .stufe[data-zustand="laeuft"] {
+    color: var(--am-gold-900);
+    border-color: var(--am-gold-300);
+    background: var(--am-gold-200);
+  }
+  .stufe[data-zustand="laeuft"]::before { background: var(--am-gold-500); }
+  .dunkel .stufe[data-zustand="laeuft"] {
+    color: var(--am-gold-beschriftung);
+    border-color: var(--am-gold-600);
+    background: transparent;
+  }
+  .stufe[data-zustand="erfolg"] {
+    color: var(--am-erfolg);
+    border-color: var(--am-erfolg-rand);
+    background: var(--am-erfolg-flaeche);
+  }
+  .stufe[data-zustand="fehler"] {
+    color: var(--am-fehler);
+    border-color: var(--am-fehler-rand);
+    background: var(--am-fehler-flaeche);
+  }
 }

@@ -259,7 +259,7 @@ dass jede `IN-` Kennung in dieser Tabelle steht.
 | `IN-HERKUNFT` | „AImighty © Jahr“ mit Verweis auf den Hersteller, am Fuß der Navigation |
 | `IN-AUFNAHME` | der runde Aufnahmeknopf, Ring und Anzeige der laufenden Aufnahme |
 | `IN-IDEE` | Schauerfunktion `/idee` |
-| `IN-BESPRECHUNG` | Zeile der Besprechungsliste, Zustandspille (IN-B5 offen) |
+| `IN-BESPRECHUNG` | Zeile der Besprechungsliste; die Zustandspille ist seit `ci-26.10.10` HB-PILLE (IN-B5) |
 
 ---
 

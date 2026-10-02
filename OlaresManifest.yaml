@@ -153,6 +153,25 @@ spec:
     **Note**: First boot downloads ~3 GB of AI models from HuggingFace (Whisper + BGE-M3). After that, the app operates fully offline.
 
   upgradeDescription: |
+    v0.1.103 — Insilo im Erscheinungsbild von AImighty.
+
+    - Farben, Schrift, Zeichen und Bausteine kommen jetzt aus dem
+      gemeinsamen AImighty-Designsystem — dasselbe Grundgerüst wie in den
+      anderen AImighty-Anwendungen: oben links die AImighty-Marke mit
+      „Insilo", die Navigation links, am Handy vier Ziele und „Mehr".
+    - „AI" statt „KI", in allen Sprachen. Endgültiges Löschen fragt nach
+      und ist rot beschriftet; was im Papierkorb landet, lässt sich
+      zurückholen.
+    - Jede Seite hat einen Titel, und der Browser-Tab nennt sie
+      („Archiv · Insilo"). Im Tab steht nur noch das Mikrofon.
+    - Am Handy wird nichts mehr abgeschnitten: Besprechungsliste und
+      Papierkorb brechen um, Filter sind groß genug für den Finger.
+    - Bessere Lesbarkeit im Dunkelmodus und an einigen schwachen
+      Kontrasten; jedes Zeichen ohne Wort zeigt beim Überfahren, was es tut.
+    - Der Zustand einer Besprechung (läuft, fertig, Fehler) steht als
+      ruhige Pille mit Wort; nichts blinkt mehr außer der laufenden Aufnahme.
+    - Die Beschreibungen der Werksvorlagen sind in klarem Deutsch.
+
     v0.1.102 — Nur Kundengespräche gehen ins CRM.
 
     - Jede Vorlage hat jetzt die Einstellung „Kundengespräch — an das CRM

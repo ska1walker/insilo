@@ -708,6 +708,15 @@
     "dark": "Dark",
     "saved": "Appearance changed."
   },
+  "installation": {
+    "title": "As an app",
+    "hint": "Insilo can sit on your home screen like an app – in its own window, without the browser bar. Applies to this device only.",
+    "installieren": "Install as app",
+    "installiert": "Insilo runs as an app on this device.",
+    "ios": "In Safari, tap “Share”, then “Add to Home Screen”.",
+    "browser": "In your browser’s menu, choose “Install app” or “Add to Home screen”.",
+    "unsicher": "Installing requires a secure address (https). Open Insilo via the address of your Olares box."
+  },
   "egress": {
     "titel": "What leaves this box?",
     "allesBleibt": "Everything stays on this box",

@@ -1,10 +1,10 @@
 {
+  "id": "/",
   "name": "Insilo",
   "short_name": "Insilo",
   "description": "Datensouveräne Meeting-Intelligenz",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#051729",
   "theme_color": "#051729",
   "lang": "de-DE",
@@ -44,12 +44,13 @@
           "sizes": "96x96",
           "type": "image/png"
         }
-      ]
+      ],
+      "description": "Eine Besprechung aufnehmen."
     },
     {
       "name": "Idee aufnehmen",
       "short_name": "Idee",
-      "description": "Schauerfunktion — eine Idee unterwegs strukturieren und weitergeben.",
+      "description": "Eine Idee unterwegs festhalten und strukturieren.",
       "url": "/idee",
       "icons": [
         {

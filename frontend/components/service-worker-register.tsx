@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import { fangeInstallAngebot } from "@/lib/installation";
 
 export function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Vor allem anderen: das Angebot zum Installieren kommt nur einmal.
+    fangeInstallAngebot();
     if (!("serviceWorker" in navigator)) return;
 
     // Only register in production builds; under `next dev` the SW serves

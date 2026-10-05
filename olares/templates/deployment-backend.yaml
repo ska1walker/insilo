@@ -166,7 +166,6 @@ spec:
           imagePullPolicy: {{ .Values.images.backend.pullPolicy }}
           securityContext:
             runAsUser: 1000
-            runAsNonRoot: true
           ports:
             - containerPort: 8000
               name: http

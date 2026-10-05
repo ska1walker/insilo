@@ -708,6 +708,15 @@
     "dark": "Oscuro",
     "saved": "Apariencia cambiada."
   },
+  "installation": {
+    "title": "Como aplicación",
+    "hint": "Insilo puede colocarse en la pantalla de inicio como una aplicación, en su propia ventana y sin barra del navegador. Se aplica solo a este dispositivo.",
+    "installieren": "Instalar como aplicación",
+    "installiert": "Insilo funciona como aplicación en este dispositivo.",
+    "ios": "En Safari, toque «Compartir» y después «Añadir a pantalla de inicio».",
+    "browser": "En el menú de su navegador, elija «Instalar aplicación» o «Añadir a pantalla de inicio».",
+    "unsicher": "La instalación requiere una dirección segura (https). Abra Insilo mediante la dirección de su caja Olares."
+  },
   "egress": {
     "titel": "¿Qué sale de esta caja?",
     "allesBleibt": "Todo permanece en esta caja",

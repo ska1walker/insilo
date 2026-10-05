@@ -66,7 +66,6 @@ spec:
           imagePullPolicy: {{ .Values.images.backend.pullPolicy }}
           securityContext:
             runAsUser: 1000
-            runAsNonRoot: true
           # `--beat` bringt den Zeitplaner im Worker-Prozess mit, statt
           # als zweites Deployment. Zulässig, weil genau ein Worker läuft
           # (`workloads.insilo-worker.replicaCount: 1` auf einer

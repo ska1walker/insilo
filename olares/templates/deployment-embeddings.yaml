@@ -45,7 +45,6 @@ spec:
           imagePullPolicy: {{ .Values.images.embeddings.pullPolicy }}
           securityContext:
             runAsUser: 1000
-            runAsNonRoot: true
           ports:
             - containerPort: 8002
               name: http

@@ -163,6 +163,9 @@ spec:
       Installation jetzt.
     - Auf iPhone und iPad öffnet Insilo vom Home-Bildschirm im eigenen
       Fenster statt in Safari. Auf Tablets dreht die App mit.
+    - Behoben: Die Oberfläche startete auf manchen Boxen nicht, weil die
+      Sicherheitseinstellung „nicht als root“ Hilfscontainer der Plattform
+      abwies.
 
     v0.1.104 — Vorlagen in Ihrer Sprache.
 

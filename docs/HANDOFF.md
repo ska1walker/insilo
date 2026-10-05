@@ -1769,6 +1769,15 @@
 > auf iPhone/iPad, ein Hinweis ohne https. Wacht: `tests/pwa.test.ts`.
 > Geprüft mit Chromium über CDP: `Page.getInstallabilityErrors` leer.
 >
+> **Im selben Release: `runAsNonRoot` raus (Patch von Kai, 5.10.).**
+> Pod-Ebene im Frontend war der Auslöser: `runAsNonRoot: true` gilt dort
+> für **jeden** Container im Pod, auch für die, die Olares selbst
+> hineinlegt und die als root laufen — Kubernetes weist sie ab, der Pod
+> startet nicht (dasselbe Muster wie beim `init-chown`, siehe Tabelle
+> unten). In Backend, Worker und Embeddings auf Container-Ebene der
+> Einheitlichkeit halber ebenfalls entfernt. `runAsUser: 1000` bleibt
+> überall — die Anwendungen laufen weiter nicht als root.
+>
 > **Offen:** Offline zeigt Insilo nur zuvor besuchte Seiten, ohne Daten
 > (die API wird nie abgelegt). Besprechungen offline lesen
 > (IndexedDB je Box, CLAUDE.md „Offline-First") ist eine eigene Etappe.

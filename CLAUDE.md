@@ -233,8 +233,9 @@ unter `frontend/ci/` (mit `stand.json`), geholt mit
   `lucide-react`, Größen 16/20/24/40, Strich 1,5 px; Ausnahme nur der
   runde Aufnahmeknopf.
 
-**Ändern nur im CI**: dort PR, mergen, die Action setzt einen neuen Stand,
-dann hier holen. Wer in Insilo ausprobiert, sieht die eigene CI rot werden —
+**Ändern nur im CI**: dort PR, mergen, die Action setzt einen neuen Stand
+und öffnet hier von selbst einen PR „CI-Stand ci-…“ (seit `ci-26.10.12`,
+CI `STAND.md` „Nachziehen“); bei grün mergen. Wer in Insilo ausprobiert, sieht die eigene CI rot werden —
 das ist gewollt. Eine Abweichung, die bleiben soll, steht als Eintrag mit
 Kais Entscheidung im Abschnitt „Insilo“ der CI-`ABGLEICH.md`, nie still
 hier. Was wacht: `tests/ci-stand.test.ts` (Kopie, Token-Block, Bausteine),
@@ -355,6 +356,21 @@ hüpfenden Knöpfe.
     Claude-Sitzung mit `INSILO_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`).
     Eine neue Seite kommt in `SEITEN` in `e2e/rundgang.spec.ts`.
 11. **Bei Unsicherheit:** stoppen und Kai fragen.
+12. **Sitzungen** (Kai, 5.10.2026): Eine Sitzung je App und je größerem
+    Thema, nicht eine endlose — das Gedächtnis sind diese Datei und `docs/`.
+    Eine Insilo-Sitzung hat `ska1walker/insilo` und `ska1walker/aimighty-ci`
+    mit Schreibrecht, dazu `ska1walker/aimighty-market` zum Prüfen des Markts.
+    Eine gemeinsame Änderung (Token, Zeichen, `AM-`/`HB-`) beginnt in der
+    App-Sitzung, die sie braucht: dort ausprobieren, PR ins CI, mergen; die
+    Action `stand` öffnet dann in jeder App einen PR „CI-Stand ci-…“. Diese
+    PRs mergt dieselbe Sitzung bei grün, auch in Rocket — wenn Rocket mit
+    Schreibrecht verbunden ist. **Zu Beginn jeder Sitzung** nach offenen PRs
+    „CI-Stand ci-…“ in diesem Repo sehen und sie bei grün mergen (rot: im
+    selben PR anpassen). Eine eigene CI-Sitzung nur für reine
+    Designsystem-Arbeit (Abgleich-Pakete, Regeln, eine neue App anschließen),
+    mit allen Apps verbunden. Nie zwei Sitzungen auf demselben Zweig; im
+    CI-Repo nur ein offener PR zur Zeit, weil jeder Merge einen Stand setzt
+    (CI `STAND.md`, „Sitzungen“).
 
 ---
 

@@ -3,6 +3,7 @@
 
     python3 werkzeug/bauteile.py pfad/zur/globals.css                 # prüft: Rückgabe 1 bei Abweichung
     python3 werkzeug/bauteile.py pfad/zur/globals.css --uebernehmen   # schreibt bauteile/ aus der App
+    python3 werkzeug/bauteile.py pfad/zur/globals.css --einsetzen     # schreibt bauteile/ in die App
     python3 werkzeug/bauteile.py --selbst                             # prüft bauteile/ ohne App
     python3 werkzeug/bauteile.py pfad/zur/globals.css --abschnitte    # zeigt die Abschnitte der App
 
@@ -20,6 +21,13 @@ Skript dagegen. ``--uebernehmen`` ist der eine Weg zurück: Einen in der App
 erprobten Baustein schreibt es nach ``bauteile/``, und der Weg geht als PR
 hier hinein, bevor die App ihn holt. Eine App ohne die ``.md``-Dateien (ihre
 Kopie unter ``frontend/ci/``) ruft das Skript mit ``--ohne-md``.
+
+``--einsetzen`` ist der Weg hin: Es schreibt jeden Baustein des Stands in die
+Abschnitte der App, an ihre Stelle und in ihre Schicht. Das Holskript der App
+ruft es nach dem Holen auf; so wird ein neuer Stand in jeder App zu einem
+Diff, den ihre CI prüft (STAND.md, „Nachziehen“). Was sich nicht eindeutig
+einsetzen lässt — ein Baustein, den die App noch nicht hat, eine andere Zahl
+von Abschnitten —, meldet es, statt zu raten.
 """
 import re
 import sys
@@ -82,7 +90,7 @@ def abschnitte(text: str):
                 k = KENNUNG_IM_KOPF.search("\n".join(banner))
                 banner = []
                 if k and tiefe == 0:
-                    aktuell = [k.group(1), None, [], nr, False]
+                    aktuell = [k.group(1), None, [], nr, False, []]
                     ergebnis.append(aktuell)
                     token_vorbei = token_vorbei or k.group(1) != "AM-TOKEN"
             continue
@@ -94,7 +102,7 @@ def abschnitte(text: str):
                     token_vorbei = True
                 if tiefe != (1 if schicht else 0):
                     fehler.append(f"Zeile {nr}: [{kennung}] beginnt mitten in einem Block")
-                aktuell = [kennung, schicht, [], nr, False]
+                aktuell = [kennung, schicht, [], nr, False, []]
                 ergebnis.append(aktuell)
             elif token_vorbei:
                 fehler.append(f"Zeile {nr}: Abschnittskopf ohne Kennung")
@@ -116,11 +124,13 @@ def abschnitte(text: str):
                     fehler.append(f"Zeile {nr}: [{aktuell[0]}] wechselt die Schicht ohne neuen Kopf")
                 aktuell[4] = True
             aktuell[2].append(zeile)
+            aktuell[5].append(nr)
         elif aktuell is None and c.strip() and not zeile.startswith("@import") and not zeile.startswith("@config"):
             fehler.append(f"Zeile {nr}: Regel vor dem ersten Abschnitt")
     for a in ergebnis:
         while a[2] and not a[2][-1].strip():
             a[2].pop()
+            a[5].pop()
         t = 0
         im = False
         for z in a[2]:
@@ -206,6 +216,89 @@ def befunde_md(soll: dict[str, str], schreiben: bool) -> list[str]:
     return fehler
 
 
+def _ohne_code(zeilen: list[str]) -> int:
+    """Wie viele Zeilen am Anfang nur Kommentar oder leer sind."""
+    im, n = False, 0
+    for z in zeilen:
+        c, im = code(z, im)
+        if c.strip():
+            break
+        n += 1
+    return n
+
+
+TOKEN_ANFANG = ":root {"
+TOKEN_ENDE = 'html[data-dichte="kompakt"]'
+
+
+def token_einsetzen(text: str) -> tuple[str, list[str]]:
+    """Ersetzt den Token-Block der App durch tokens/app.css — von „:root {“
+    bis zur Zeile mit der Dichte „kompakt“, wie ihn die Apps prüfen."""
+    quelle = TOKEN.read_text()
+    a, e = text.find(TOKEN_ANFANG), text.find(TOKEN_ENDE)
+    if a < 0 or e < 0 or quelle.find(TOKEN_ANFANG) < 0:
+        return text, ["Token-Block der App nicht gefunden — von Hand einsetzen"]
+    e = text.find("\n", e) + 1 or len(text)
+    return text[:a] + quelle[quelle.find(TOKEN_ANFANG):].rstrip("\n") + "\n" + text[e:], []
+
+
+def einsetzen(text: str) -> tuple[str, list[str], list[str]]:
+    """Schreibt Token und Bausteine aus dem CI in die App.
+
+    Liefert den neuen Text, die Befunde (von Hand zu lösen) und Hinweise.
+    """
+    hinweise: list[str] = []
+    text, fehler = token_einsetzen(text)
+    app, f = abschnitte(text)
+    if f:
+        return text, fehler + f, hinweise
+    in_app: dict[str, list] = {}
+    for a in app:
+        if a[0].startswith(("AM-", "HB-")) and a[0] not in NICHT_IM_CI and a[2]:
+            in_app.setdefault(a[0], []).append(a)
+    ersetzen: list[tuple[int, int, list[str]]] = []  # (erste, letzte, neue Zeilen), 1-basiert
+    for kennung, css in sorted(bausteine_im_ci().items()):
+        ci, f = abschnitte(css)
+        fehler += [f"bauteile/{kennung}.css: {x}" for x in f]
+        ci = [b for b in ci if b[0] == kennung and b[2]]
+        hier = in_app.get(kennung, [])
+        if not hier:
+            # Nicht jede App trägt jeden Baustein (Insilo hat kein Board).
+            # Ein neuer, den sie braucht, kommt von Hand an seinen Ort.
+            hinweise.append(f"[{kennung}] trägt die App nicht — übersprungen")
+            continue
+        if len(hier) != len(ci):
+            fehler.append(f"[{kennung}]: {len(hier)} Abschnitt(e) in der App, {len(ci)} im CI — von Hand einsetzen")
+            continue
+        for alt, neu in zip(hier, ci):
+            if alt[1] != neu[1]:
+                fehler.append(f"Zeile {alt[3]}: [{kennung}] steht in Schicht {alt[1] or '-'}, im CI in {neu[1] or '-'}")
+                continue
+            nrs = alt[5]
+            laeufe = [[nrs[0]]]
+            for n in nrs[1:]:
+                if n == laeufe[-1][-1] + 1:
+                    laeufe[-1].append(n)
+                else:
+                    laeufe.append([n])
+            if len(laeufe) == 1:
+                ersetzen.append((nrs[0], nrs[-1], neu[2]))
+            elif (len(laeufe) == 2 and _ohne_code(alt[2]) >= len(laeufe[0])
+                  and _ohne_code(neu[2]) >= len(laeufe[0])):
+                # Der Kopf steht vor der Schicht, der Rest in ihr. Wie viele
+                # Kommentarzeilen davor stehen, bestimmt die App (im CI stehen
+                # alle führenden Kommentare vor @layer — gleich gerechnet).
+                k = len(laeufe[0])
+                ersetzen.append((laeufe[0][0], laeufe[0][-1], neu[2][:k]))
+                ersetzen.append((laeufe[1][0], laeufe[1][-1], neu[2][k:]))
+            else:
+                fehler.append(f"Zeile {alt[3]}: [{kennung}] ist in der App zerteilt — von Hand einsetzen")
+    zeilen = text.split("\n")
+    for erste, letzte, neu in sorted(ersetzen, reverse=True):
+        zeilen[erste - 1:letzte] = neu
+    return "\n".join(zeilen), fehler, hinweise
+
+
 def main() -> int:
     argumente = [a for a in sys.argv[1:] if not a.startswith("--")]
     if "--selbst" in sys.argv:
@@ -223,11 +316,20 @@ def main() -> int:
         return 2
     ergebnis, fehler = abschnitte(Path(argumente[0]).read_text())
     if "--abschnitte" in sys.argv:
-        for kennung, schicht, zeilen, nr, _ in ergebnis:
+        for kennung, schicht, zeilen, nr, *_ in ergebnis:
             print(f"{nr:5} {kennung:18} {schicht or '-':11} {len(zeilen)} Zeilen")
         for f in fehler:
             print("FEHLER", f)
         return 1 if fehler else 0
+    if "--einsetzen" in sys.argv:
+        pfad = Path(argumente[0])
+        neu, befunde, hinweise = einsetzen(pfad.read_text())
+        if neu != pfad.read_text():
+            pfad.write_text(neu)
+        for h in hinweise:
+            print(h)
+        ergebnis, fehler = abschnitte(neu)
+        fehler = befunde + fehler
     uebernehmen = "--uebernehmen" in sys.argv
     soll = css_je_kennung(ergebnis, "")
     fehler += befunde_css(soll)

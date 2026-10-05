@@ -1,12 +1,12 @@
 {
-  "stand": "ci-26.10.10",
-  "commit": "4ac4f6929fcd05552af9b4d3af813f7d83570ddc",
+  "stand": "ci-26.10.12",
+  "commit": "75d704548765dbfd25f0fe7a33bb70ea0ef2b553",
   "quelle": "ska1walker/aimighty-ci",
   "dateien": {
     "bauteile/AM-BASIS.css": "cff2007fa4abb4f864a1e4b453dc427e7fe00827cd6a178df172ce759997f17d",
     "bauteile/AM-FELD.css": "87f16039d7a3aac74a749b8a23a42994f98b74ac6dd51379e6793c93c6b594f6",
     "bauteile/AM-HAKEN.css": "2b67640ecdce70b67a98dc7aee6a1c751525d2291c81ab6ab0ff73b1a18150ad",
-    "bauteile/AM-HUELLE.css": "ed0190ea872628a6c0c039353fbeea6d640976a0f015fcbff32f522f380f901b",
+    "bauteile/AM-HUELLE.css": "47a1aed17726e526c2e05515f3a07fd49fedbbedd93ee1a535754baff9c4f310",
     "bauteile/AM-KARTE.css": "150b772cb616f865cdaf4edbb78dbb58f34f04464660077004231ce70707180c",
     "bauteile/AM-KNOPF.css": "fafcbb3eedc4808cee2b0592f83503da4395dac784b922f8350f03dcf633060c",
     "bauteile/AM-LEER.css": "5e035471f368060dff3a14f6cec5e89532ab98f4417f0ff6f5e36eb7c69dbe84",
@@ -161,7 +161,7 @@
     "marke/icons/ui/ziel.svg": "14840bc6a4cca057edcd31ed4ffa8fcb2d2bc2487554157145034e1d424ab2d9",
     "marke/icons/ui/zurueck.svg": "136dc6cb84983c621a328637be80bfdd8cf42c7158c52b8496bf9c246badb045",
     "tokens/app.css": "db06739fe8c7cac0ba4d6c6c155e24f8af0927c251cd1cf06c121df9a7a29b6c",
-    "werkzeug/bauteile.py": "77a00926377457f9c8a8170f9a9fa298937a27a5412d3c4ca492bfc884a97383",
+    "werkzeug/bauteile.py": "a366f729f95c3e433c632185a332ebef2df4c51fbdd779fc15c116bf757611bb",
     "werkzeug/lucide-1.31.0/LICENSE": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
   }
 }

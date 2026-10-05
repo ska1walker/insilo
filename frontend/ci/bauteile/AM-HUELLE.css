@@ -62,16 +62,17 @@
 
   /* Ein Rechteck mit knappem Polster, Radius wie jeder Knopf (8 px, ABGLEICH
      G3). Neben einem Suchfeld von 40 px Höhe las sich der runde 24-px-Knopf
-     wie ein Fremdkörper. */
+     wie ein Fremdkörper.
+     Nur Plus und Pfeil, als Zweitknopf (ABGLEICH G2, Kai 2.10.2026): Die
+     Hauptaktion einer Seite steht in ihrem Kopf („Firma anlegen“); ein
+     zweiter gefüllter Knopf oben machte zwei daraus. Der Name „Erstellen“
+     steht als Tooltip und für Vorleser am Knopf. */
   .kopf-neu {
     flex: none;
-    gap: var(--am-raum-2);
-    padding: 0 var(--am-raum-4);
+    gap: var(--am-raum-1);
+    padding: 0 var(--am-raum-3);
     border-radius: var(--am-radius-mittel);
-    font-size: 0.875rem;
   }
-  /* Das Zeichen trägt erst, wenn das Wort weicht. */
-  .kopf-neu-zeichen { display: none; }
 
 
   .huelle-nav {
@@ -99,9 +100,6 @@
   @media (max-width: 1023px) {
     .kopfleiste-marke .marke-produkt,
     .kopfleiste .huelle-klapp { display: none; }
-    .kopf-neu-text { display: none; }
-    .kopf-neu-zeichen { display: block; }
-    .kopf-neu { padding: 0 var(--am-raum-3); }
     .kopfleiste-suche { max-width: none; }
   }
 
@@ -401,6 +399,15 @@
     }
     .huelle-klapp:hover { background: var(--am-flaeche-2); color: var(--am-text-primaer); }
     .huelle-klapp:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+    /* Über der Spalte, nicht neben ihr (Kai, 2.10.2026): Der Markenblock
+       reicht bis zur Linie der Suche, der Schalter endet aber an der
+       rechten Kante der Navigationseinträge — sein Zeichen steht damit
+       genau über der Spalte der Lesezeichen. Abstand = was der Block über
+       die Spalte hinausreicht (Rand der Inhaltsspalte minus Abstand zur
+       Suche) plus Polster und Linie der Spalte. */
+    .kopfleiste .huelle-klapp {
+      margin-right: calc(var(--am-raum-8) - var(--am-raum-3) + var(--am-raum-4) + 1px);
+    }
 
     /* Eingeklappt: Symbole zentriert, Beschriftung als Tooltip, Gruppen
        durch eine Linie getrennt statt durch eine Überschrift. */
@@ -408,6 +415,7 @@
     /* Eingeklappt trägt der Markenblock nur noch Wappen und Schalter —
        eine feste Breite von 64 px klemmte beide übereinander. */
     html[data-navigation="eingeklappt"] .kopfleiste-marke { width: auto; }
+    html[data-navigation="eingeklappt"] .kopfleiste .huelle-klapp { margin-right: 0; }
     html[data-navigation="eingeklappt"] .huelle-nav-titel { display: none; }
     html[data-navigation="eingeklappt"] .huelle-nav-gruppe + .huelle-nav-gruppe { border-top: 1px solid var(--am-trennlinie); padding-top: var(--am-raum-2); }
     html[data-navigation="eingeklappt"] .huelle-nav-eintrag .huelle-nav-item { padding: var(--am-raum-2); justify-content: center; }

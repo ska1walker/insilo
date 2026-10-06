@@ -3,6 +3,7 @@
 // in Rocket. Im Menü Einstellungen, Darstellung und Sprache — kein Abmelden,
 // Olares meldet an. Escape schließt und gibt den Fokus zurück. Der Fuß der
 // Navigation ist weg; Nachweis und Herkunft stehen auf „Über Insilo“.
+// Einstellungen und „Über Insilo“ erreicht man nur über das Profil.
 
 import { expect, test } from "@playwright/test";
 
@@ -22,6 +23,8 @@ test("Profil: ganz rechts, Menü per Tastatur, Darstellung wählbar, kein Abmeld
   });
   expect(lage.leiste - lage.profil).toBeLessThan(24);
   await expect(page.locator(".huelle-fuss")).toHaveCount(0);
+  // Einstellungen und „Über“ nur im Profil, nicht in der Navigation (G8 Nachtrag).
+  await expect(page.locator('.huelle-nav a[href="/einstellungen"], .huelle-nav a[href="/ueber"]')).toHaveCount(0);
 
   await knopf.focus();
   await page.keyboard.press("Enter");
@@ -29,6 +32,7 @@ test("Profil: ganz rechts, Menü per Tastatur, Darstellung wählbar, kein Abmeld
   await expect(menue).toBeVisible();
   await expect(menue.getByRole("link", { name: "Einstellungen" })).toBeFocused();
   await expect(menue.getByRole("button", { name: /Abmelden/ })).toHaveCount(0);
+  await expect(menue.getByRole("link", { name: "Über Insilo" })).toBeVisible();
 
   if (isMobile) {
     const breite = await menue.evaluate((el) => el.getBoundingClientRect().width);

@@ -338,6 +338,13 @@ hüpfenden Knöpfe.
    an; danach bringt `markt.yml` die Version in den Markt. Der Tag von Hand
    ist nicht mehr nötig. Je Version gehört `olares/markt/<version>.md` dazu
    (Skill `olares-release`, §6a).
+   **Kennung des Markts (6.10.2026):** Kais Box kennt den AImighty-Markt als
+   `market.aimighty` (klein; Groß- und Kleinschreibung zählen). Meldet sich
+   der Markt anders (`SOURCE_ID` in Marcs `functions/_lib.ts`), übernimmt die
+   Box kein Update, obwohl die neue Version im Markt steht. Gehalten wird die
+   Kennung von Rockets Action `markt.yml` (`MARKT_QUELLE`); ein „Run
+   workflow“ dort mit Rockets aktueller Version richtet sie. Insilo steht im
+   Markt unter „AI“. Einzelheiten: Rocket `docs/MARKT.md`, „Kennung des Markts“.
 8. **Bei Veröffentlichung in einen Store:** Skill `olares-release`
    (`.claude/skills/olares-release/SKILL.md`) — Pfadwahl, Reihenfolge
    (erst ausrollen, dann hochladen) und die offenen Punkte für den

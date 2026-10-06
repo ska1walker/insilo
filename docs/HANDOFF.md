@@ -1782,6 +1782,23 @@
 > (die API wird nie abgelegt). Besprechungen offline lesen
 > (IndexedDB je Box, CLAUDE.md „Offline-First") ist eine eigene Etappe.
 >
+> ## Profil oben rechts (v0.1.106, 6. Oktober 2026)
+>
+> Gemeinsam mit Rocket 26.10.21 (CI G8, Kai 6.10.2026): Das Profil steht
+> ganz rechts in der Kopfleiste, am Rechner und am Telefon an derselben
+> Stelle — CI-Baustein HB-KONTO, Regeln in `bauteile/HB-KONTO.md` im CI.
+>
+> - **Wer bin ich:** `GET /api/v1/ich` (`routers/ich.py`) gibt
+>   Anmeldename und Anzeigenamen; mehr weiß die Oberfläche nicht.
+> - **Menü:** Einstellungen, Darstellung, Sprache. **Kein Abmelden** —
+>   Olares meldet an und ab, ein Knopf hier wäre eine Attrappe (Regel 4).
+> - **Der Fuß der Navigation ist weg.** Datenschutz-Nachweis und
+>   Herkunft (© AImighty) stehen auf „Über Insilo“ (`IN-NACHWEIS`,
+>   `IN-HERKUNFT`).
+> - HB-KONTO kam von Hand in `globals.css`: `bauteile.py --einsetzen`
+>   ersetzt nur Bausteine, die eine App schon trägt. Seitdem steht er in
+>   der Liste von `tests/ci-stand.test.ts`.
+>
 > # ⚠️ v0.1.66 — zwei Fallen beim Box-Update (19. August 2026)
 >
 > **Stand: v0.1.66 läuft auf der Box** (Helm-Rev 44, verifiziert 03:25 UTC).

@@ -9,11 +9,13 @@
  *
  * - Kopfecke 240 × 56 mit der AImighty-Wortmarke und „Insilo“ (R4, G1).
  *   Insilo sucht nicht und legt nicht von überall an — die Leiste trägt
- *   deshalb nur die Kopfecke, auf derselben Höhe wie in Rocket.
+ *   die Kopfecke und ganz rechts das Profil (HB-KONTO, G8), auf
+ *   derselben Höhe und an derselben Stelle wie in Rocket.
  * - Navigation 240 px, der gewählte Eintrag mit Goldkante (G1).
  * - Am Handy unten höchstens fünf Ziele: vier und „Mehr“; Einstellungen
  *   und „Über“ stehen unter „Mehr“ (G5).
- * - Am Fuß der Datenschutz-Nachweis, gemessen (IN-B4), und die Herkunft.
+ * - Kein Fuß in der Navigation (G8, Kai 6.10.2026): Datenschutz-Nachweis
+ *   und Herkunft stehen auf „Über Insilo“.
  *
  * Die Ablage trägt Kontext zum ausgewählten Ding und ist nie eine zweite
  * Inhaltsspalte. Sie steht nur dort, wo eine Ansicht sie über `useAblage()`
@@ -22,10 +24,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
-import { DatenschutzNachweis } from "@/components/datenschutz-nachweis";
+import { useTranslations } from "next-intl";
 import { Marke } from "@/components/marke";
 import { OffeneAufnahmen } from "@/components/offene-aufnahmen";
+import { Profilknopf } from "@/components/profil";
 import { Archive, Ellipsis, Info, Lightbulb, MessagesSquare, Mic, Settings } from "@/lib/symbole";
 import type { SymbolKomponente } from "@/components/symbol";
 import {
@@ -69,13 +71,6 @@ type Ziel = {
   auch?: string[];
 };
 
-/**
- * Fest statt `new Date().getFullYear()`: Server und Browser würden sonst
- * um Mitternacht unterschiedliche Jahre rendern und React meldete einen
- * Hydration-Fehler. Beim Jahreswechsel hier nachziehen.
- */
-const JAHR = 2026;
-
 // Die Startseite ist die Aufnahme; eine Besprechung gehört zu „Besprechungen“,
 // der Papierkorb auch. Datenschutz und Protokoll stehen unter „Einstellungen“
 // — vorher war auf diesen Seiten gar kein Eintrag gewählt.
@@ -114,7 +109,6 @@ function NavLink({ ziel, pfad, beschriftung }: { ziel: Ziel; pfad: string; besch
 
 export function Huelle({ children }: { children: ReactNode }) {
   const t = useTranslations("nav");
-  const locale = useLocale();
   const pfad = usePathname();
   const [ablage, setAblage] = useState<ReactNode>(null);
   const [mehr, setMehr] = useState(false);
@@ -134,6 +128,8 @@ export function Huelle({ children }: { children: ReactNode }) {
               </span>
             </Link>
           </div>
+          {/* Ganz rechts, auf jedem Gerät an derselben Stelle (CI HB-KONTO). */}
+          <Profilknopf />
         </header>
 
         <nav className="huelle-nav" aria-label={t("navAria")}>
@@ -175,25 +171,6 @@ export function Huelle({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          <div className="huelle-fuss">
-            {/* Gemessen oder gar nicht (DESIGN.md §5, CI HB-KONTO). */}
-            <DatenschutzNachweis locale={locale} />
-            {/* Herkunftsvermerk mit Verweis auf den Hersteller. Die neue
-                Seite bekommt weder Zugriff auf dieses Fenster noch die
-                Herkunfts-URL mit; von selbst verbindet sich hier nichts. */}
-            <p className="huelle-herkunft">
-              <a
-                href="https://aimighty.de"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="huelle-herkunft-marke"
-                aria-label={t("herkunftAria")}
-              >
-                AImighty
-              </a>
-              <span className="huelle-herkunft-recht">© {JAHR}</span>
-            </p>
-          </div>
         </nav>
 
         <div className="huelle-inhalt">

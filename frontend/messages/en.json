@@ -13,6 +13,15 @@
     "mehr": "More",
     "mehrAria": "More destinations"
   },
+  "konto": {
+    "knopf": "Account: {name}",
+    "menue": "Account",
+    "einstellungen": "Settings",
+    "darstellung": "Appearance",
+    "sprache": "Language",
+    "herkunftTitel": "Origin",
+    "nachweisTitel": "What leaves this box"
+  },
   "common": {
     "save": "Save",
     "saving": "Saving …",

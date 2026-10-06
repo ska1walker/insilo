@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Der Datenschutz-Nachweis am unteren Rand der Navigation.
+ * Der Datenschutz-Nachweis auf „Über Insilo“ (bis 0.1.105 am Fuß der
+ * Navigation; den Fuß gibt es seit CI G8 in keiner App mehr).
  *
- * Das AImighty-Designsystem sieht ihn dort vor — „mit gemessenen Werten
- * oder gar nicht". Deshalb steht hier nichts, solange der Zustand nicht
- * abrufbar ist: eine Zusage ohne Beleg wäre schlimmer als gar keine.
+ * „Mit gemessenen Werten oder gar nicht": Solange der Zustand nicht
+ * abrufbar ist, steht hier nichts — eine Zusage ohne Beleg wäre schlimmer
+ * als gar keine.
  *
- * Drei Lagen, wie im CI-Baustein HB-KONTO (Nachweiszeile, CSS in
- * AM-HUELLE; ABGLEICH IN-B4):
+ * Drei Lagen (ABGLEICH IN-B4, CSS in IN-NACHWEIS):
  *   alles intern   → leise, Zeichen `lokal`, „Alles bleibt auf dieser Box"
  *   Ziele aktiv    → `data-extern`, Zeichen `weitergabe` in Gold, Anzahl
  *                    und übertragene Menge
@@ -55,9 +55,8 @@ export function DatenschutzNachweis({ locale }: { locale: string }) {
   const warnung = stt_extern || llm_extern;
   const Icon = warnung ? AlertTriangle : alles_bleibt || llm_eigene_box ? Lokal : Share2;
 
-  // Kurzfassungen: die Navigationsspalte ist 220px breit und die Schrift
-  // hier ist Mono. Die ausführlichen Sätze stehen auf der Detailseite,
-  // erreichbar über denselben Klick.
+  // Kurzfassungen; die ausführlichen Sätze stehen auf der Detailseite
+  // /datenschutz, erreichbar über denselben Klick.
   const kopf = stt_extern
     ? t("navStt")
     : llm_extern

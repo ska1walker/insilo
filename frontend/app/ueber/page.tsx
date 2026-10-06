@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { DatenschutzNachweis } from "@/components/datenschutz-nachweis";
 import { ArrowDown, ArrowRight, Brain, Building2, Database, FileText, Globe, Lock, Mic, Search, Server, ShieldCheck, Star, Waves } from "@/lib/symbole";
 
 export async function generateMetadata() {
@@ -11,6 +12,8 @@ export async function generateMetadata() {
 
 export default async function UeberPage() {
   const t = await getTranslations("about");
+  const tNav = await getTranslations("nav");
+  const locale = await getLocale();
 
   return (
     <main className="mx-auto max-w-[1180px] px-6 py-16 md:px-12 md:py-24">
@@ -49,6 +52,10 @@ export default async function UeberPage() {
         <p className="mt-6 max-w-[720px] text-text-sekundaer">
           {t("promiseBody")}
         </p>
+        {/* Der gemessene Stand — bis 0.1.105 am Fuß der Navigation (G8). */}
+        <div className="mt-6">
+          <DatenschutzNachweis locale={locale} />
+        </div>
 
         <div className="mt-14 grid gap-12 md:grid-cols-[1.4fr_1fr] md:gap-16">
           <ArchitectureDiagram t={t} />
@@ -198,6 +205,21 @@ export default async function UeberPage() {
       <footer className="mt-16">
         <div className="flex flex-col gap-3 border-t border-trennlinie pt-8 text-xs text-text-gedaempft md:flex-row md:items-center md:justify-between">
           <p>{t("footerLeft")}</p>
+          {/* Herkunft mit Verweis auf den Hersteller — bis 0.1.105 am Fuß der
+              Navigation (G8). Die neue Seite bekommt weder dieses Fenster
+              noch die Herkunfts-URL mit. */}
+          <p className="huelle-herkunft">
+            <a
+              href="https://aimighty.de"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="huelle-herkunft-marke"
+              aria-label={tNav("herkunftAria")}
+            >
+              AImighty
+            </a>
+            <span className="huelle-herkunft-recht">© 2026</span>
+          </p>
           <p className="mono inline-flex items-center gap-2">
             <Server size={16} />
             {t("footerRight")}

@@ -198,7 +198,10 @@ Insilo" entfällt dort und bleibt über die Einstellungen erreichbar.
 
 ## 5. Der Datenschutz-Nachweis
 
-Das Paket sieht ihn am unteren Rand der Navigation vor, **mit gemessenen
+Bis 0.1.105 stand er am unteren Rand der Navigation. Seit CI G8 (Kai,
+6.10.2026) gibt es dort in keiner AImighty-App mehr einen Fuß; der
+Nachweis steht auf „Über Insilo“ im Abschnitt Sicherheit, die
+Einzelheiten unter `/datenschutz`. Die Regel bleibt: **mit gemessenen
 Werten — oder gar nicht**. Diese Regel ist bei Insilo keine Formalie: das
 gesamte Verkaufsargument gegenüber PLAUD, Otter und Fireflies hängt
 daran, dass die Aussage stimmt.
@@ -256,7 +259,8 @@ dass jede `IN-` Kennung in dieser Tabelle steht.
 | Kennung | Was |
 |---|---|
 | `IN-AUSWAHL` | gewählte Vorlage, Sprache, Sprecher — Fläche je Modus (IN-T2) |
-| `IN-HERKUNFT` | „AImighty © Jahr“ mit Verweis auf den Hersteller, am Fuß der Navigation |
+| `IN-HERKUNFT` | „AImighty © Jahr“ mit Verweis auf den Hersteller, seit G8 unten auf „Über Insilo“ |
+| `IN-NACHWEIS` | Datenschutz-Nachweis, gemessen (IN-B4), seit G8 auf „Über Insilo“ im Abschnitt Sicherheit |
 | `IN-AUFNAHME` | der runde Aufnahmeknopf, Ring und Anzeige der laufenden Aufnahme |
 | `IN-IDEE` | Schauerfunktion `/idee` |
 | `IN-BESPRECHUNG` | Zeile der Besprechungsliste; die Zustandspille ist seit `ci-26.10.10` HB-PILLE (IN-B5) |

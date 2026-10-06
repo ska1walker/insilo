@@ -13,6 +13,15 @@
     "mehr": "Altro",
     "mehrAria": "Altre destinazioni"
   },
+  "konto": {
+    "knopf": "Account: {name}",
+    "menue": "Account",
+    "einstellungen": "Impostazioni",
+    "darstellung": "Aspetto",
+    "sprache": "Lingua",
+    "herkunftTitel": "Origine",
+    "nachweisTitel": "Cosa lascia questo dispositivo"
+  },
   "common": {
     "save": "Salva",
     "saving": "Salvataggio …",

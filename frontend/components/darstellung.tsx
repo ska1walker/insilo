@@ -41,20 +41,20 @@ export const DARSTELLUNG_SCRIPT = `
 })();
 `;
 
-function setzeCookie(wert: Darstellung) {
+export function setzeCookie(wert: Darstellung) {
   const ablauf = new Date();
   ablauf.setTime(ablauf.getTime() + 365 * 86400 * 1000);
   document.cookie = `${DARSTELLUNG_COOKIE}=${wert}; Path=/; Expires=${ablauf.toUTCString()}; SameSite=Lax`;
 }
 
-function liesCookie(): Darstellung {
+export function liesCookie(): Darstellung {
   if (typeof document === "undefined") return "system";
   const m = document.cookie.match(/(?:^|;\s*)insilo-darstellung=([^;]*)/);
   const wert = m?.[1];
   return wert === "hell" || wert === "dunkel" ? wert : "system";
 }
 
-function wende(wahl: Darstellung) {
+export function wende(wahl: Darstellung) {
   const dunkel =
     wahl === "dunkel" ||
     (wahl === "system" &&

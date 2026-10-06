@@ -1487,16 +1487,6 @@ select,
     font-weight: 600;
   }
 
-  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
-     sichtbar; Farbe und Schnitt gelten unabhängig davon. */
-  /* Der Fuß der Navigation: Kontozeile über der Herkunftszeile. Auf der
-     schmalen Leiste unten am Bildschirm ist dafür kein Platz — dort ist
-     beides ausgeblendet, wie schon vorher der Nachweis. */
-  .huelle-fuss,
-  .nachweis {
-    display: none;
-  }
-
 
   .huelle-inhalt {
     grid-row: 2;
@@ -1746,42 +1736,6 @@ select,
     html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-item { padding: var(--am-raum-2) var(--am-raum-3); padding-right: 2rem; justify-content: flex-start; }
     html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-item span { display: inline; }
     html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-stern { display: inline-flex; }
-    html[data-navigation="eingeklappt"] .huelle-fuss { padding: 0; align-items: center; }
-    html[data-navigation="eingeklappt"] .person-text,
-    html[data-navigation="eingeklappt"] .person-pfeil,
-    html[data-navigation="eingeklappt"] .nachweis { display: none; }
-    html[data-navigation="eingeklappt"] .person-knopf { justify-content: center; padding-inline: 0; }
-
-    .huelle-fuss {
-      display: flex;
-      flex-direction: column;
-      gap: var(--am-raum-2);
-      margin-top: var(--am-raum-3);
-      padding: 0 var(--am-raum-3);
-    }
-
-    .nachweis {
-      display: flex;
-      align-items: center;
-      gap: var(--am-raum-2);
-      padding: var(--am-raum-1) var(--am-raum-2);
-      border-radius: var(--am-radius-klein);
-      font-size: 0.6875rem;
-      line-height: 1.4;
-      color: var(--am-text-gedaempft);
-    }
-    .nachweis svg { flex: none; }
-    .nachweis:hover { color: var(--am-text-primaer); background: var(--am-flaeche-2); }
-    .nachweis:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
-    .nachweis[data-extern="true"] svg { color: var(--am-gold-beschriftung); }
-    /* Der dritte Zustand, aus Insilo (ABGLEICH IN-B4): Ein Ziel draußen
-       bekommt ganze Transkripte oder den Ton (Sprachmodell, Spracherkennung).
-       Das muss auffallen — in der Zustandsfarbe, mit Zeichen und Wort. */
-    .nachweis[data-zustand="achtung"],
-    .nachweis[data-zustand="achtung"] svg { color: var(--am-achtung); }
-    /* Zweite Zeile, wo gemessen wird: der Host oder die übertragene Menge. */
-    .nachweis-text { display: flex; flex-direction: column; min-width: 0; }
-    .nachweis-unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .huelle-inhalt {
       grid-row: 2;
@@ -1841,6 +1795,176 @@ select,
   }
 }
 
+  /* ── Profil oben rechts [HB-KONTO] ──────────────────────────────────────────────
+     Ganz rechts in der Kopfleiste, am Desktop und am Handy an derselben
+     Stelle (ABGLEICH G8, Kai 6.10.2026) — wie bei HubSpot, Google und
+     Microsoft. Ein Kreis mit Initialen öffnet das Menü: Kopf mit Namen,
+     „Mein Konto“, Darstellung, Einträge der App, Abmelden zuletzt. Am Handy
+     wird das Menü ein Blatt über die ganze Breite unter der Kopfleiste. */
+@layer components {
+  .person {
+    position: relative;
+    flex: none;
+    margin-left: auto;
+  }
+
+  /* Nur der Kreis, kein Name daneben: Wer angemeldet ist, sagt der Kopf
+     des Menüs und der Tooltip. Die Zielfläche ist ein Knopf, nicht der
+     Kreis — 40 px am Zeiger, 44 px zum Tippen. */
+  .person-knopf {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--am-ziel-zeiger);
+    height: var(--am-ziel-zeiger);
+    padding: 0;
+    border: 0;
+    border-radius: var(--am-radius-voll);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .person-knopf:hover .person-kreis,
+  .person-knopf[aria-expanded="true"] .person-kreis {
+    box-shadow: 0 0 0 3px var(--am-flaeche-2);
+  }
+
+  .person-knopf:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+  }
+
+  .person-kreis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--am-radius-voll);
+    background: var(--am-blau-600);
+    color: var(--am-text-auf-farbe);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* Im Dunkelmodus trägt Blau auf Blau nicht — der Kreis wird hell. */
+  .dunkel .person-kreis { background: var(--am-blau-400); color: var(--am-blau-950); }
+
+  .person-liste {
+    position: absolute;
+    top: calc(100% + var(--am-raum-2));
+    right: 0;
+    width: 17.5rem;
+    z-index: var(--am-ebene-menue);
+    padding: var(--am-raum-2);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-flaeche-3);
+    box-shadow: var(--am-schatten-1);
+  }
+
+  /* Der Kopf des Menüs: wer hier arbeitet, darunter Anmeldename und Rolle. */
+  .person-kopf {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    padding: var(--am-raum-2) var(--am-raum-2) var(--am-raum-3);
+    margin-bottom: var(--am-raum-2);
+    border-bottom: 1px solid var(--am-trennlinie);
+  }
+
+  .person-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.3;
+  }
+
+  .person-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--am-text-primaer);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .person-unter {
+    font-size: 0.75rem;
+    color: var(--am-text-gedaempft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Beschriftung eines Abschnitts im Menü — wie die Gruppentitel der
+     Navigation: klein, versal, gedämpft. */
+  .konto-abschnitt {
+    margin: 0 0 var(--am-raum-1);
+    padding: var(--am-raum-1) var(--am-raum-2);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--am-text-gedaempft);
+  }
+
+  .konto-teil {
+    margin-top: var(--am-raum-2);
+    padding-top: var(--am-raum-2);
+    border-top: 1px solid var(--am-trennlinie);
+  }
+
+  .person-liste .darstellung-schalter { margin: 0 var(--am-raum-2) var(--am-raum-1); }
+
+  .person-eintrag {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    width: 100%;
+    min-height: var(--am-ziel-zeiger);
+    padding: var(--am-raum-2);
+    border: none;
+    border-radius: var(--am-radius-mittel);
+    background: transparent;
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.8125rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .person-eintrag:hover { background: var(--am-flaeche-2); }
+  .person-eintrag:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: -2px; }
+
+  .person-eintrag-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+
+  /* Am Handy: ein Blatt über die ganze Breite, direkt unter der Kopfleiste,
+     Einträge in Daumengröße. */
+  @media (pointer: coarse), (max-width: 40rem) {
+    .person-knopf { width: var(--am-ziel-beruehrung); height: var(--am-ziel-beruehrung); }
+    .person-eintrag { min-height: var(--am-ziel-beruehrung); }
+  }
+
+  @media (max-width: 40rem) {
+    .person-liste {
+      position: fixed;
+      top: var(--am-leistenhoehe);
+      left: 0;
+      right: 0;
+      width: auto;
+      max-height: calc(100dvh - var(--am-leistenhoehe));
+      overflow-y: auto;
+      border-width: 0 0 1px;
+      border-radius: 0;
+      padding: var(--am-raum-3) var(--am-raum-4) var(--am-raum-4);
+    }
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    Insilos eigene Abschnitte — Kennung IN- (CI ABGLEICH.md, IN-K).
    Alles darüber steht wörtlich so im AImighty-CI (bauteile/<KENNUNG>.css)
@@ -1858,31 +1982,54 @@ select,
 }
 
 /* ── Herkunftsvermerk [IN-HERKUNFT] ────────────────────────────────────
-   „AImighty © Jahr“ unten in der Navigation, mit Verweis auf den Hersteller.
-   Wie der Nachweis nur in der Seitenspalte sichtbar. */
+   „AImighty © Jahr“ mit Verweis auf den Hersteller — seit G8 (Kai,
+   6.10.2026) unten auf „Über Insilo“, nicht mehr am Fuß der Navigation. */
 @layer components {
-  .huelle-herkunft { display: none; }
-  @media (min-width: 1024px) {
-    .huelle-herkunft {
-      display: flex;
-      align-items: baseline;
-      gap: var(--am-raum-2);
-      padding: 0 var(--am-raum-2);
-      font-size: 0.6875rem;
-      color: var(--am-text-gedaempft);
-    }
-    .huelle-herkunft-marke {
-      font-weight: 600;
-      color: var(--am-text-sekundaer);
-      text-decoration: none;
-    }
-    .huelle-herkunft-marke:hover { color: var(--am-text-primaer); }
-    .huelle-herkunft-marke:focus-visible {
-      outline: 2px solid var(--am-fokus-ring);
-      outline-offset: 2px;
-      border-radius: var(--am-radius-klein);
-    }
+  .huelle-herkunft {
+    display: flex;
+    align-items: baseline;
+    gap: var(--am-raum-2);
+    color: var(--am-text-gedaempft);
   }
+  .huelle-herkunft-marke {
+    font-weight: 600;
+    color: var(--am-text-sekundaer);
+    text-decoration: none;
+  }
+  .huelle-herkunft-marke:hover { color: var(--am-text-primaer); }
+  .huelle-herkunft-marke:focus-visible {
+    outline: 2px solid var(--am-fokus-ring);
+    outline-offset: 2px;
+    border-radius: var(--am-radius-klein);
+  }
+}
+
+/* ── Datenschutz-Nachweis [IN-NACHWEIS] ─────────────────────────────────
+   Gemessen oder gar nicht (ABGLEICH IN-B4). Seit G8 auf „Über Insilo“ im
+   Abschnitt Sicherheit; die Einzelheiten stehen unter /datenschutz. Drei
+   Lagen: lokal leise, Ziele draußen in Gold, Sprachmodell oder
+   Spracherkennung draußen in der Zustandsfarbe — immer mit Zeichen. */
+@layer components {
+  .nachweis {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    padding: var(--am-raum-2) var(--am-raum-3);
+    border: 1px solid var(--am-trennlinie);
+    border-radius: var(--am-radius-mittel);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--am-text-sekundaer);
+    text-decoration: none;
+  }
+  .nachweis svg { flex: none; }
+  .nachweis:hover { color: var(--am-text-primaer); background: var(--am-flaeche-2); }
+  .nachweis:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
+  .nachweis[data-extern="true"] svg { color: var(--am-gold-beschriftung); }
+  .nachweis[data-zustand="achtung"],
+  .nachweis[data-zustand="achtung"] svg { color: var(--am-achtung); }
+  .nachweis-text { display: flex; flex-direction: column; min-width: 0; }
+  .nachweis-unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--am-text-gedaempft); }
 }
 
 /* ── Aufnahmeknopf [IN-AUFNAHME] ────────────────────────────────────────────────

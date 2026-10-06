@@ -13,6 +13,15 @@
     "mehr": "Más",
     "mehrAria": "Más destinos"
   },
+  "konto": {
+    "knopf": "Cuenta: {name}",
+    "menue": "Cuenta",
+    "einstellungen": "Ajustes",
+    "darstellung": "Apariencia",
+    "sprache": "Idioma",
+    "herkunftTitel": "Origen",
+    "nachweisTitel": "Lo que sale de este equipo"
+  },
   "common": {
     "save": "Guardar",
     "saving": "Guardando …",

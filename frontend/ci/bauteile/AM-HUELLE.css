@@ -168,16 +168,6 @@
     font-weight: 600;
   }
 
-  /* Herkunftsvermerk — wie der Nachweis nur in der Seitenspalte
-     sichtbar; Farbe und Schnitt gelten unabhängig davon. */
-  /* Der Fuß der Navigation: Kontozeile über der Herkunftszeile. Auf der
-     schmalen Leiste unten am Bildschirm ist dafür kein Platz — dort ist
-     beides ausgeblendet, wie schon vorher der Nachweis. */
-  .huelle-fuss,
-  .nachweis {
-    display: none;
-  }
-
 
   .huelle-inhalt {
     grid-row: 2;
@@ -427,42 +417,6 @@
     html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-item { padding: var(--am-raum-2) var(--am-raum-3); padding-right: 2rem; justify-content: flex-start; }
     html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-item span { display: inline; }
     html[data-navigation="eingeklappt"] .huelle-mehr .huelle-nav-stern { display: inline-flex; }
-    html[data-navigation="eingeklappt"] .huelle-fuss { padding: 0; align-items: center; }
-    html[data-navigation="eingeklappt"] .person-text,
-    html[data-navigation="eingeklappt"] .person-pfeil,
-    html[data-navigation="eingeklappt"] .nachweis { display: none; }
-    html[data-navigation="eingeklappt"] .person-knopf { justify-content: center; padding-inline: 0; }
-
-    .huelle-fuss {
-      display: flex;
-      flex-direction: column;
-      gap: var(--am-raum-2);
-      margin-top: var(--am-raum-3);
-      padding: 0 var(--am-raum-3);
-    }
-
-    .nachweis {
-      display: flex;
-      align-items: center;
-      gap: var(--am-raum-2);
-      padding: var(--am-raum-1) var(--am-raum-2);
-      border-radius: var(--am-radius-klein);
-      font-size: 0.6875rem;
-      line-height: 1.4;
-      color: var(--am-text-gedaempft);
-    }
-    .nachweis svg { flex: none; }
-    .nachweis:hover { color: var(--am-text-primaer); background: var(--am-flaeche-2); }
-    .nachweis:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: 2px; }
-    .nachweis[data-extern="true"] svg { color: var(--am-gold-beschriftung); }
-    /* Der dritte Zustand, aus Insilo (ABGLEICH IN-B4): Ein Ziel draußen
-       bekommt ganze Transkripte oder den Ton (Sprachmodell, Spracherkennung).
-       Das muss auffallen — in der Zustandsfarbe, mit Zeichen und Wort. */
-    .nachweis[data-zustand="achtung"],
-    .nachweis[data-zustand="achtung"] svg { color: var(--am-achtung); }
-    /* Zweite Zeile, wo gemessen wird: der Host oder die übertragene Menge. */
-    .nachweis-text { display: flex; flex-direction: column; min-width: 0; }
-    .nachweis-unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .huelle-inhalt {
       grid-row: 2;

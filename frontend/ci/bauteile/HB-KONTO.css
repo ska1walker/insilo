@@ -1,34 +1,39 @@
 /* Baustein aus dem AImighty-CI (bauteile/) — Quelle ist das CI.
    Eine App trägt den Abschnitt unverändert; geprüft mit werkzeug/bauteile.py. */
 
-  /* ── Wer gerade arbeitet [HB-KONTO] ──────────────────────────────────────────
-     Unten in der Navigation, immer sichtbar — auch allein. Die Frage
-     „unter welchem Namen schreibe ich das gerade" hängt an Besitz,
-     Zuordnung und Protokoll. Es ist trotzdem kein Benutzermenü:
-     angemeldet ist immer derselbe Olares-Zugang. */
+  /* ── Profil oben rechts [HB-KONTO] ──────────────────────────────────────────────
+     Ganz rechts in der Kopfleiste, am Desktop und am Handy an derselben
+     Stelle (ABGLEICH G8, Kai 6.10.2026) — wie bei HubSpot, Google und
+     Microsoft. Ein Kreis mit Initialen öffnet das Menü: Kopf mit Namen,
+     „Mein Konto“, Darstellung, Einträge der App, Abmelden zuletzt. Am Handy
+     wird das Menü ein Blatt über die ganze Breite unter der Kopfleiste. */
 @layer components {
-  .person { position: relative; }
+  .person {
+    position: relative;
+    flex: none;
+    margin-left: auto;
+  }
 
-  /* Eine Zeile, kein Kasten: Wer hier steht, ist eine Auskunft, keine
-     Handlung — der Rahmen wog früher schwerer als jeder Eintrag darüber.
-     Bedienbar bleibt sie trotzdem, sie öffnet Darstellung und Zugang. */
+  /* Nur der Kreis, kein Name daneben: Wer angemeldet ist, sagt der Kopf
+     des Menüs und der Tooltip. Die Zielfläche ist ein Knopf, nicht der
+     Kreis — 40 px am Zeiger, 44 px zum Tippen. */
   .person-knopf {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: var(--am-raum-2);
-    width: 100%;
-    min-height: var(--am-ziel-zeiger);
-    padding: var(--am-raum-2);
+    justify-content: center;
+    width: var(--am-ziel-zeiger);
+    height: var(--am-ziel-zeiger);
+    padding: 0;
     border: 0;
-    border-radius: var(--am-radius-mittel);
+    border-radius: var(--am-radius-voll);
     background: transparent;
-    color: var(--am-text-primaer);
-    font-family: var(--am-schrift-sans);
-    text-align: left;
     cursor: pointer;
   }
 
-  .person-knopf:hover { background: var(--am-flaeche-2); }
+  .person-knopf:hover .person-kreis,
+  .person-knopf[aria-expanded="true"] .person-kreis {
+    box-shadow: 0 0 0 3px var(--am-flaeche-2);
+  }
 
   .person-knopf:focus-visible {
     outline: 2px solid var(--am-fokus-ring);
@@ -40,35 +45,128 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--am-radius-voll);
     background: var(--am-blau-600);
     color: var(--am-text-auf-farbe);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.02em;
   }
 
-  .person-kreis.klein { width: 22px; height: 22px; font-size: 0.625rem; }
-
   /* Im Dunkelmodus trägt Blau auf Blau nicht — der Kreis wird hell. */
   .dunkel .person-kreis { background: var(--am-blau-400); color: var(--am-blau-950); }
+
+  .person-liste {
+    position: absolute;
+    top: calc(100% + var(--am-raum-2));
+    right: 0;
+    width: 17.5rem;
+    z-index: var(--am-ebene-menue);
+    padding: var(--am-raum-2);
+    border: 1px solid var(--am-rand);
+    border-radius: var(--am-radius-mittel);
+    background: var(--am-flaeche-3);
+    box-shadow: var(--am-schatten-1);
+  }
+
+  /* Der Kopf des Menüs: wer hier arbeitet, darunter Anmeldename und Rolle. */
+  .person-kopf {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-3);
+    padding: var(--am-raum-2) var(--am-raum-2) var(--am-raum-3);
+    margin-bottom: var(--am-raum-2);
+    border-bottom: 1px solid var(--am-trennlinie);
+  }
 
   .person-text {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    line-height: 1.25;
+    line-height: 1.3;
   }
 
   .person-name {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 600;
+    color: var(--am-text-primaer);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .person-pfeil { margin-left: auto; flex: none; color: var(--am-text-gedaempft); }
+  .person-unter {
+    font-size: 0.75rem;
+    color: var(--am-text-gedaempft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Beschriftung eines Abschnitts im Menü — wie die Gruppentitel der
+     Navigation: klein, versal, gedämpft. */
+  .konto-abschnitt {
+    margin: 0 0 var(--am-raum-1);
+    padding: var(--am-raum-1) var(--am-raum-2);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--am-text-gedaempft);
+  }
+
+  .konto-teil {
+    margin-top: var(--am-raum-2);
+    padding-top: var(--am-raum-2);
+    border-top: 1px solid var(--am-trennlinie);
+  }
+
+  .person-liste .darstellung-schalter { margin: 0 var(--am-raum-2) var(--am-raum-1); }
+
+  .person-eintrag {
+    display: flex;
+    align-items: center;
+    gap: var(--am-raum-2);
+    width: 100%;
+    min-height: var(--am-ziel-zeiger);
+    padding: var(--am-raum-2);
+    border: none;
+    border-radius: var(--am-radius-mittel);
+    background: transparent;
+    color: var(--am-text-primaer);
+    font-family: var(--am-schrift-sans);
+    font-size: 0.8125rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .person-eintrag:hover { background: var(--am-flaeche-2); }
+  .person-eintrag:focus-visible { outline: 2px solid var(--am-fokus-ring); outline-offset: -2px; }
+
+  .person-eintrag-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+
+  /* Am Handy: ein Blatt über die ganze Breite, direkt unter der Kopfleiste,
+     Einträge in Daumengröße. */
+  @media (pointer: coarse), (max-width: 40rem) {
+    .person-knopf { width: var(--am-ziel-beruehrung); height: var(--am-ziel-beruehrung); }
+    .person-eintrag { min-height: var(--am-ziel-beruehrung); }
+  }
+
+  @media (max-width: 40rem) {
+    .person-liste {
+      position: fixed;
+      top: var(--am-leistenhoehe);
+      left: 0;
+      right: 0;
+      width: auto;
+      max-height: calc(100dvh - var(--am-leistenhoehe));
+      overflow-y: auto;
+      border-width: 0 0 1px;
+      border-radius: 0;
+      padding: var(--am-raum-3) var(--am-raum-4) var(--am-raum-4);
+    }
+  }
 }

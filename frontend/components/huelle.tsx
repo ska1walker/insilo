@@ -12,8 +12,9 @@
  *   die Kopfecke und ganz rechts das Profil (HB-KONTO, G8), auf
  *   derselben Höhe und an derselben Stelle wie in Rocket.
  * - Navigation 240 px, der gewählte Eintrag mit Goldkante (G1).
- * - Am Handy unten höchstens fünf Ziele: vier und „Mehr“; Einstellungen
- *   und „Über“ stehen unter „Mehr“ (G5).
+ * - Am Handy unten die vier Ziele (G5).
+ * - Einstellungen und „Über Insilo“ nur im Profil oben rechts — nicht in
+ *   der Navigation, nicht am Handy (G8 Nachtrag, Kai 6.10.2026).
  * - Kein Fuß in der Navigation (G8, Kai 6.10.2026): Datenschutz-Nachweis
  *   und Herkunft stehen auf „Über Insilo“.
  *
@@ -28,7 +29,7 @@ import { useTranslations } from "next-intl";
 import { Marke } from "@/components/marke";
 import { OffeneAufnahmen } from "@/components/offene-aufnahmen";
 import { Profilknopf } from "@/components/profil";
-import { Archive, Ellipsis, Info, Lightbulb, MessagesSquare, Mic, Settings } from "@/lib/symbole";
+import { Archive, Lightbulb, MessagesSquare, Mic } from "@/lib/symbole";
 import type { SymbolKomponente } from "@/components/symbol";
 import {
   createContext,
@@ -72,8 +73,7 @@ type Ziel = {
 };
 
 // Die Startseite ist die Aufnahme; eine Besprechung gehört zu „Besprechungen“,
-// der Papierkorb auch. Datenschutz und Protokoll stehen unter „Einstellungen“
-// — vorher war auf diesen Seiten gar kein Eintrag gewählt.
+// der Papierkorb auch.
 const HAUPT: Ziel[] = [
   { href: "/aufnahme", schluessel: "record", icon: Mic, auch: ["/"] },
   { href: "/besprechungen", schluessel: "meetings", icon: MessagesSquare, auch: ["/m/", "/papierkorb"] },
@@ -81,10 +81,8 @@ const HAUPT: Ziel[] = [
   { href: "/idee", schluessel: "idee", icon: Lightbulb },
 ];
 
-const NACHRANGIG: Ziel[] = [
-  { href: "/einstellungen", schluessel: "settings", icon: Settings, auch: ["/datenschutz", "/protokoll"] },
-  { href: "/ueber", schluessel: "about", icon: Info },
-];
+// Einstellungen und „Über Insilo“ stehen nicht in der Navigation, sondern im
+// Profil oben rechts (CI HB-KONTO, G8 Nachtrag, Kai 6.10.2026).
 
 function istAktiv(ziel: Ziel, pfad: string): boolean {
   if (pfad === ziel.href || pfad.startsWith(`${ziel.href}/`)) return true;
@@ -111,10 +109,6 @@ export function Huelle({ children }: { children: ReactNode }) {
   const t = useTranslations("nav");
   const pfad = usePathname();
   const [ablage, setAblage] = useState<ReactNode>(null);
-  const [mehr, setMehr] = useState(false);
-
-  // Ein Seitenwechsel schließt „Mehr“.
-  useEffect(() => setMehr(false), [pfad]);
 
   return (
     <AblageContext.Provider value={{ setAblage }}>
@@ -139,37 +133,13 @@ export function Huelle({ children }: { children: ReactNode }) {
             ))}
           </div>
 
-          <div className="huelle-nav-spacer" />
-
-          <div className="huelle-nav-gruppe">
-            {NACHRANGIG.map((z) => (
-              <NavLink key={z.href} ziel={z} pfad={pfad} beschriftung={t(z.schluessel)} />
-            ))}
-          </div>
-
-          {/* Die schmale Leiste unten: vier Ziele und „Mehr“ (G5). */}
+          {/* Die schmale Leiste unten: die vier Ziele. Ein „Mehr“ gibt es nicht
+              mehr — Einstellungen und „Über“ stehen im Profil oben rechts. */}
           <div className="huelle-nav-mobil">
             {HAUPT.map((z) => (
               <NavLink key={z.href} ziel={z} pfad={pfad} beschriftung={t(z.schluessel)} />
             ))}
-            <button
-              type="button"
-              className={`huelle-nav-item${mehr || NACHRANGIG.some((z) => istAktiv(z, pfad)) ? " aktiv" : ""}`}
-              aria-expanded={mehr}
-              aria-controls="huelle-nav-mehr"
-              onClick={() => setMehr((o) => !o)}
-            >
-              <Ellipsis size={20} aria-hidden />
-              <span>{t("mehr")}</span>
-            </button>
           </div>
-          {mehr && (
-            <div className="huelle-nav-mehr" id="huelle-nav-mehr" role="group" aria-label={t("mehrAria")}>
-              {NACHRANGIG.map((z) => (
-                <NavLink key={z.href} ziel={z} pfad={pfad} beschriftung={t(z.schluessel)} />
-              ))}
-            </div>
-          )}
 
         </nav>
 

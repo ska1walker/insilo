@@ -1782,6 +1782,14 @@
 > (die API wird nie abgelegt). Besprechungen offline lesen
 > (IndexedDB je Box, CLAUDE.md „Offline-First") ist eine eigene Etappe.
 >
+> ## Einstellungen nur über das Profil (v0.1.107, 6. Oktober 2026)
+>
+> Nachtrag zu G8 (Kai, 6.10.2026), gemeinsam mit Rocket 26.10.22:
+> Einstellungen und „Über Insilo“ stehen nicht mehr in der Navigation und
+> nicht mehr unter „Mehr“ am Telefon — nur noch im Profil oben rechts
+> (`components/profil.tsx`). Die Handy-Leiste trägt die vier Ziele ohne
+> „Mehr“. Regeln: CI `bauteile/HB-KONTO.md`, `HB-NAVIGATION.md`.
+>
 > ## Profil oben rechts (v0.1.106, 6. Oktober 2026)
 >
 > Gemeinsam mit Rocket 26.10.21 (CI G8, Kai 6.10.2026): Das Profil steht

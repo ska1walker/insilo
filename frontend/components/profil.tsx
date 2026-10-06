@@ -5,7 +5,9 @@
  *
  * Ganz rechts in der Kopfleiste, am Desktop und am Handy an derselben
  * Stelle wie in Rocket. Das Menü folgt der festen Reihenfolge des CI:
- * Kopf mit Namen › Einstellungen › Darstellung › Sprache. Ein Abmelden gibt
+ * Kopf mit Namen › Einstellungen › Darstellung › Sprache › Über Insilo.
+ * Seit 0.1.107 der einzige Weg dorthin: Die Navigation trägt nur noch die
+ * Arbeit (G8 Nachtrag, Kai 6.10.2026). Ein Abmelden gibt
  * es nicht: Olares meldet an und ab, ein Knopf hier wäre eine Attrappe.
  * Escape, ein Klick außerhalb und ein Seitenwechsel schließen das Menü;
  * der Fokus kehrt zum Knopf zurück.
@@ -17,7 +19,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { liesCookie, setzeCookie, wende, type Darstellung } from "@/components/darstellung";
 import { apiGet } from "@/lib/api/client";
-import { Check, Globe, Monitor, Moon, Settings, Sun } from "@/lib/symbole";
+import { Check, Globe, Info, Monitor, Moon, Settings, Sun } from "@/lib/symbole";
 
 type Ich = { anmeldename: string; name: string };
 
@@ -89,6 +91,7 @@ function Kontomenue({
   const t = useTranslations("konto");
   const tD = useTranslations("darstellung");
   const tL = useTranslations("locale.names");
+  const tNav = useTranslations("nav");
   const locale = useLocale();
   const wurzel = useRef<HTMLDivElement>(null);
   const [wahl, setWahl] = useState<Darstellung | null>(null);
@@ -157,6 +160,13 @@ function Kontomenue({
         <Link href="/einstellungen#sprache" className="person-eintrag">
           <Globe size={16} aria-hidden />
           <span className="person-eintrag-text">{tL(locale)}</span>
+        </Link>
+      </div>
+
+      <div className="konto-teil">
+        <Link href="/ueber" className="person-eintrag">
+          <Info size={16} aria-hidden />
+          <span className="person-eintrag-text">{tNav("about")}</span>
         </Link>
       </div>
     </div>

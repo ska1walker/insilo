@@ -1,12 +1,12 @@
 {
-  "stand": "ci-26.10.13",
-  "commit": "48060c3e2644c72bd7092cabe780eacc2ffa8aa9",
+  "stand": "ci-26.10.14",
+  "commit": "b2899f905208ce4df2d16aba976d4a2f31b1689a",
   "quelle": "ska1walker/aimighty-ci",
   "dateien": {
     "bauteile/AM-BASIS.css": "cff2007fa4abb4f864a1e4b453dc427e7fe00827cd6a178df172ce759997f17d",
     "bauteile/AM-FELD.css": "87f16039d7a3aac74a749b8a23a42994f98b74ac6dd51379e6793c93c6b594f6",
     "bauteile/AM-HAKEN.css": "2b67640ecdce70b67a98dc7aee6a1c751525d2291c81ab6ab0ff73b1a18150ad",
-    "bauteile/AM-HUELLE.css": "fcd9cf6e6d91cae96dd5dac5b27a58c37cd303efd7272a6578eaeffd846d5112",
+    "bauteile/AM-HUELLE.css": "90b1b08ba640d6bbb1f805ea9065287e66dcd27cb07b5bb92df21a71ae67983d",
     "bauteile/AM-KARTE.css": "150b772cb616f865cdaf4edbb78dbb58f34f04464660077004231ce70707180c",
     "bauteile/AM-KNOPF.css": "fafcbb3eedc4808cee2b0592f83503da4395dac784b922f8350f03dcf633060c",
     "bauteile/AM-LEER.css": "5e035471f368060dff3a14f6cec5e89532ab98f4417f0ff6f5e36eb7c69dbe84",

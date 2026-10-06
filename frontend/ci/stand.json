@@ -1,6 +1,6 @@
 {
-  "stand": "ci-26.10.14",
-  "commit": "b2899f905208ce4df2d16aba976d4a2f31b1689a",
+  "stand": "ci-26.10.15",
+  "commit": "d86ece7776893c3781f8550d9a88e3e75a6f12bc",
   "quelle": "ska1walker/aimighty-ci",
   "dateien": {
     "bauteile/AM-BASIS.css": "cff2007fa4abb4f864a1e4b453dc427e7fe00827cd6a178df172ce759997f17d",
@@ -161,7 +161,7 @@
     "marke/icons/ui/ziel.svg": "14840bc6a4cca057edcd31ed4ffa8fcb2d2bc2487554157145034e1d424ab2d9",
     "marke/icons/ui/zurueck.svg": "136dc6cb84983c621a328637be80bfdd8cf42c7158c52b8496bf9c246badb045",
     "tokens/app.css": "db06739fe8c7cac0ba4d6c6c155e24f8af0927c251cd1cf06c121df9a7a29b6c",
-    "werkzeug/bauteile.py": "a366f729f95c3e433c632185a332ebef2df4c51fbdd779fc15c116bf757611bb",
+    "werkzeug/bauteile.py": "e6530589a0f991f7c14c9f57171c43fe9b3351d6302475579e366336d9f7b31d",
     "werkzeug/lucide-1.31.0/LICENSE": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
   }
 }

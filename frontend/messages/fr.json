@@ -13,6 +13,15 @@
     "mehr": "Plus",
     "mehrAria": "Autres destinations"
   },
+  "konto": {
+    "knopf": "Compte : {name}",
+    "menue": "Compte",
+    "einstellungen": "Paramètres",
+    "darstellung": "Apparence",
+    "sprache": "Langue",
+    "herkunftTitel": "Origine",
+    "nachweisTitel": "Ce qui quitte ce boîtier"
+  },
   "common": {
     "save": "Enregistrer",
     "saving": "Enregistrement …",

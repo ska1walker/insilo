@@ -26,6 +26,7 @@ from app.routers import (
     audio,
     egress,
     external_api,
+    ich,
     locale,
     meetings,
     protokoll,
@@ -462,3 +463,4 @@ app.include_router(external_api.router)
 app.include_router(speakers.router)
 app.include_router(locale.router)
 app.include_router(protokoll.router)
+app.include_router(ich.router)

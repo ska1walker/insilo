@@ -210,7 +210,9 @@ export default function EinstellungenPage() {
       </div>
 
       <section className="mb-10 space-y-4">
-        <LocaleSwitcher />
+        <div id="sprache">
+          <LocaleSwitcher />
+        </div>
         <DarstellungSwitcher />
         <AppInstallieren />
       </section>

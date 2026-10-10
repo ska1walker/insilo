@@ -108,12 +108,19 @@
     border-top: 1px solid var(--am-trennlinie);
     background: var(--am-flaeche-1);
   }
+  /* Am Handy brechen die Knöpfe um, statt über den Rand zu laufen
+     (Relay, 10.10.2026: „Aufgabe löschen“ war abgeschnitten). */
+  @media (max-width: 40rem) {
+    .dialog-fuss { flex-wrap: wrap; padding: var(--am-raum-4); }
+  }
 
   /* Zwei kurze Felder nebeneinander. Unter 30rem Fensterbreite gibt es
      dafür keinen Platz — dann untereinander. */
   .feld-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--am-raum-4); }
   @media (max-width: 30rem) {
     .feld-paar { grid-template-columns: minmax(0, 1fr); }
+    /* Untereinander braucht auch das zweite Feld seinen Abstand. */
+    .dialog-koerper .feld-paar > .feld:last-child { margin-bottom: var(--am-raum-4); }
   }
 
   .erfassung {

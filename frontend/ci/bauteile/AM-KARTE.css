@@ -9,4 +9,17 @@
     border-radius: var(--am-radius-mittel);
     padding: var(--am-raum-6);
   }
+  /* Am Handy reicht eine Karte im Seitenfluss von Kante zu Kante (Kai,
+     10.10.2026, „die gesamte Bildschirmbreite nutzen“): Strich oben und
+     unten, links und rechts keiner, keine Rundung, der Inhalt raum-4 vom
+     Bildschirmrand. Die Seite hat dort raum-4 Saum, den die Karte
+     überspannt. Nur mit `.seitenkarte` — ein Dialog bleibt eine Karte. */
+  @media (max-width: 40rem) {
+    .karte.seitenkarte {
+      margin-inline: calc(-1 * var(--am-raum-4));
+      border-inline: 0;
+      border-radius: 0;
+      padding: var(--am-raum-4);
+    }
+  }
 }

@@ -7,9 +7,14 @@
    auf ein Feld, es verschwand, und ein zweites erschien woanders. */
 .kopfsuche { position: relative; display: flex; align-items: center; width: 100%; }
 
+/* Als Flex-Kasten, nicht im Textfluss: Ein Zeichen im Fluss steht auf
+   der Grundlinie und sitzt knapp 3 px über der Mitte des Felds — sichtbar
+   in jeder App, deren Grundstil ein svg nicht als Block setzt (Relay,
+   Kai 07.10.2026). */
 .kopfsuche-zeichen {
   position: absolute;
   left: var(--am-raum-3);
+  display: flex;
   color: var(--am-text-gedaempft);
   pointer-events: none;
 }

@@ -208,6 +208,21 @@
      Text verschwindet — dort hebt eine dunklere Blaustufe den Eintrag,
      und die Auszeichnung übernimmt der goldene Rand. */
   --am-auswahl-flaeche: var(--am-gold-200);
+
+  /* ── Kalender — sechs Töne, nach Reihenfolge vergeben (ABGLEICH RL-R5,
+     Kai 06.10.2026) ────────────────────────────────────────────────────
+     Nur aus Blau- und Goldleiter: Grün und Rot sind Zustandsfarben, eine
+     dritte Familie gibt es nicht. Getragen werden sie als Grafik — Punkt,
+     Rand eines Termins —, nie als Schrift; der Name daneben bleibt Text.
+     Jeder Ton hält 3:1 (WCAG 1.4.11) auf Seite, Fläche 1 und Fläche 2:
+     Gold 700 3,19 · Blau 500 4,17 · Gold 900 6,24 · Blau 800 14,6 ·
+     Gold 800 4,43 · Blau 600 7,00. Gold und Blau wechseln sich ab. */
+  --am-kalender-1: var(--am-gold-700);
+  --am-kalender-2: var(--am-blau-500);
+  --am-kalender-3: var(--am-gold-900);
+  --am-kalender-4: var(--am-blau-800);
+  --am-kalender-5: var(--am-gold-800);
+  --am-kalender-6: var(--am-blau-600);
 }
 
 /* ── Dunkelmodus — Gold handelt, Blau trägt die Fläche ────────────────
@@ -263,6 +278,16 @@ html.dunkel {
      Dunkelmodus, also bleibt die Sprache geschlossen. */
   --am-gold-beschriftung: var(--am-gold-500);
   --am-auswahl-flaeche: var(--am-blau-700);
+
+  /* Kalender im Dunkeln, 3:1 auf Seite, Fläche 1 und 2: Gold 500 6,19 ·
+     Blau 400 4,83 · Gold 300 8,49 · Blau 200 9,88 · Gold 700 3,93 ·
+     Blau 300 7,47. */
+  --am-kalender-1: var(--am-gold-500);
+  --am-kalender-2: var(--am-blau-400);
+  --am-kalender-3: var(--am-gold-300);
+  --am-kalender-4: var(--am-blau-200);
+  --am-kalender-5: var(--am-gold-700);
+  --am-kalender-6: var(--am-blau-300);
 }
 
 /* ── Dichte — Zeiger vs. Berührung ─────────────────────────────────── */
